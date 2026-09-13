@@ -9,7 +9,7 @@ using System.Windows.Threading;
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
-/// Coordinates immediate input-method access on the owning dispatcher.
+/// Coordinates input-method commands and read-only state observation on the owning Dispatcher.
 /// </summary>
 public partial class SoftKeyboard
 {
@@ -18,8 +18,11 @@ public partial class SoftKeyboard
 #pragma warning restore IDISP006
 
     private int  _inputMethodSessionVersion;
+    private int  _inputMethodInvalidationVersion;
     private bool _inputMethodOperationActive;
     private bool _inputMethodStateRefreshQueued;
+
+    private CultureInfo? _observedInputCulture;
 
     #region DP: InputMethodSource
 
@@ -88,11 +91,11 @@ public partial class SoftKeyboard
         = InputMethodsPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets the current immutable catalog, or an empty list before discovery or after source replacement.
+    /// Gets the last successfully observed immutable input-method catalog.
     /// </summary>
     /// <remarks>
-    /// Each refresh replaces the complete list. Bind to this property to observe catalog replacement.
-    /// A previously obtained list remains a stable snapshot and is not updated in place.
+    /// A refresh replaces this value only when catalog content changes. A previously obtained list
+    /// remains immutable, and transient read failures preserve the last successful value.
     /// </remarks>
     public IReadOnlyList<SoftKeyboardInputMethod> InputMethods
     {
@@ -102,27 +105,111 @@ public partial class SoftKeyboard
     #endregion
 
     /// <summary>
-    /// Reads and publishes the input-method catalog and current mode on the owning dispatcher.
+    /// Reads one complete input-method observation and publishes only semantic changes.
     /// </summary>
     /// <remarks>
-    /// Reentrant requests are rejected. Native callbacks cannot start a second operation in the middle
-    /// of publication or activation. Source failures are exposed through InputMethodError.
+    /// The catalog, active profile, input mode, culture, focus target, and notification version are
+    /// treated as one snapshot. A notification arriving during the read discards the observation
+    /// and schedules another one. Failures preserve the last successfully published state.
     /// </remarks>
     /// <returns>
-    /// True when catalog and state were refreshed; false on failure or reentrancy.
+    /// True when a current observation was published or confirmed unchanged; otherwise false.
     /// </returns>
     public bool RefreshInputMethods()
     {
-        return RunInputMethodOperation((session, isCurrent) =>
-            PublishInputMethods(session, isCurrent) && ReadImeState(session, isCurrent));
+        VerifyAccess();
+
+        if (_inputMethodOperationActive)
+        {
+            QueueInputMethodStateRefresh();
+            return false;
+        }
+
+        _inputMethodOperationActive = true;
+
+        var sessionVersion      = _inputMethodSessionVersion;
+        var inputVersion        = _inputOperationVersion;
+        var invalidationVersion = _inputMethodInvalidationVersion;
+        var monitorVersion      = _session?.InputMethodVersion ?? 0;
+        var target              = ActiveTarget;
+        var session             = _inputMethodSession;
+
+        bool IsCurrent()
+        {
+            return sessionVersion == _inputMethodSessionVersion
+                && inputVersion == _inputOperationVersion
+                && invalidationVersion == _inputMethodInvalidationVersion
+                && monitorVersion == (_session?.InputMethodVersion ?? 0)
+                && ReferenceEquals(target, ActiveTarget)
+                && ReferenceEquals(session, _inputMethodSession);
+        }
+
+        try
+        {
+            session = GetOrCreateInputMethodSession(
+                session,
+                sessionVersion,
+                inputVersion
+            );
+
+            if (session is null || !IsCurrent())
+            {
+                return false;
+            }
+
+            var observation = ReadInputMethodObservation(session, IsCurrent, target);
+            if (observation is null || !IsCurrent())
+            {
+                return false;
+            }
+
+            if (!PublishInputMethodObservation(observation, IsCurrent))
+            {
+                return false;
+            }
+
+            PublishPendingInputMethodLayout(publishInputMethodState: true);
+
+            if (!IsCurrent())
+            {
+                return false;
+            }
+
+            SetValue(InputMethodErrorPropertyKey, null);
+            UpdateInputStateRecoveryInterval();
+
+            return IsCurrent();
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            if (sessionVersion == _inputMethodSessionVersion && inputVersion == _inputOperationVersion)
+            {
+                SetValue(InputMethodErrorPropertyKey, exception);
+                UpdateInputStateRecoveryInterval();
+            }
+
+            return false;
+        }
+        finally
+        {
+            if (!ReferenceEquals(session, _inputMethodSession))
+            {
+                DisposeInputMethodSession(session);
+            }
+
+            _inputMethodOperationActive = false;
+            PublishPendingInputMethodLayout();
+        }
     }
 
     /// <summary>
-    /// Activates a catalog entry and refreshes the catalog; IME entries also enable native input.
+    /// Requests activation of a catalog entry without changing its native/direct input mode.
     /// </summary>
-    /// <param name="inputMethod">An entry from the current InputMethods collection.</param>
+    /// <param name="inputMethod">
+    /// An entry from the current <see cref="InputMethods"/> snapshot.
+    /// </param>
     /// <returns>
-    /// True when all native requests were accepted and the source and input target remained current.
+    /// True when the profile activation request was accepted in the current context.
     /// </returns>
     public bool TryActivateInputMethod(SoftKeyboardInputMethod inputMethod)
     {
@@ -141,195 +228,27 @@ public partial class SoftKeyboard
             );
         }
 
-        return RunInputMethodOperation(
-            (session, isCurrent) => ActivateInputMethodCore(session, isCurrent, inputMethod)
+        var accepted = RunInputMethodCommand(
+            (session, isCurrent) => session.TryActivate(inputMethod) && isCurrent()
         );
-    }
-
-    /// <summary>
-    /// Executes the activation stages inside the caller's existing native-state transaction.
-    /// </summary>
-    private bool ActivateInputMethodCore(
-        ISoftKeyboardInputMethodSession session, Func<bool> isCurrent, SoftKeyboardInputMethod inputMethod)
-    {
-        if (!session.TryActivate(inputMethod) || !isCurrent())
-        {
-            return false;
-        }
-
-        if (!PublishInputMethods(session, isCurrent) || !isCurrent())
-        {
-            return false;
-        }
-
-        if (ActiveInputMethod?.SupportsImeToggle == true
-            && !TrySetInputMethodState(session, isCurrent, InputMethodState.On))
-        {
-            return false;
-        }
-
-        if (!ReadImeState(session, isCurrent))
-        {
-            return false;
-        }
 
         QueueInputMethodStateRefresh();
-
-        return true;
+        return accepted;
     }
 
     /// <summary>
-    /// Reads focused-document state without introducing a cancellable operation for observation.
+    /// Queues a complete observation after an adapter, focus, or extension policy change.
     /// </summary>
     private void RefreshImeState()
     {
-        if (_inputMethodOperationActive)
-        {
-            QueueInputMethodStateRefresh();
-            return;
-        }
-
-        RunInputMethodOperation(ReadImeState);
+        QueueInputMethodStateRefresh();
     }
 
     /// <summary>
-    /// Publishes immediate state inside the caller's native-state transaction.
+    /// Writes one native input-method command without reading or publishing observable state.
     /// </summary>
-    private bool ReadImeState(ISoftKeyboardInputMethodSession session, Func<bool> isCurrent)
-    {
-        if ((_inputMethodMenu?.IsOpen == true || SettingsMenu?.IsOpen == true)
-            && !ReferenceEquals(Keyboard.FocusedElement, ActiveTarget))
-        {
-            // A menu's text-service context does not describe the retained editor. Closing the
-            // menu queues a fresh observation after WPF has restored keyboard focus.
-            return isCurrent();
-        }
-
-        var adapter = ResolveInputStateAdapter();
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        var observed = ActiveInputMethod?.SupportsImeToggle != true
-            ? InputMethodState.DoNotCare
-            : adapter?.GetState(ActiveInputMethod) ?? session.GetState();
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        SetValue(ImeStatePropertyKey, observed is InputMethodState.On or InputMethodState.Off
-            ? observed
-            : InputMethodState.DoNotCare);
-
-        if (isCurrent() && IsLoaded && !CanPresentCandidates)
-        {
-            ReleaseCandidatePresentation();
-        }
-
-        return isCurrent();
-    }
-
-    /// <summary>
-    /// Changes focused-document state through exactly one selected state mechanism.
-    /// </summary>
-    private bool TrySetInputMethodState(
-        ISoftKeyboardInputMethodSession session, Func<bool> isCurrent, InputMethodState requestedState)
-    {
-        var adapter = ResolveInputStateAdapter();
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        if (ActiveInputMethod?.SupportsImeToggle != true)
-        {
-            return false;
-        }
-
-        var succeeded = adapter is null
-            ? session.TrySetState(requestedState)
-            : adapter.TrySetState(ActiveInputMethod, requestedState);
-
-        return succeeded && isCurrent();
-    }
-
-    /// <summary>
-    /// Publishes a snapshot while checking ownership after provider and WPF notification callbacks.
-    /// </summary>
-    private bool PublishInputMethods(ISoftKeyboardInputMethodSession session, Func<bool> isCurrent)
-    {
-        var snapshot = session.GetSnapshot();
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        if (snapshot is null)
-        {
-            throw new InvalidOperationException("The input-method source returned a null snapshot.");
-        }
-
-        var previous = ActiveInputMethod;
-
-        SetValue(InputMethodsPropertyKey, snapshot.InputMethods);
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        SetValue(ActiveInputMethodPropertyKey, snapshot.ActiveInputMethod);
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        if (!HaveSameInputMethod(previous, snapshot.ActiveInputMethod))
-        {
-            CancelCandidateOperations();
-
-            if (!isCurrent())
-            {
-                return false;
-            }
-
-            ReleaseCandidatePresentation();
-
-            if (!isCurrent())
-            {
-                return false;
-            }
-
-            RebuildLayout();
-
-            if (!isCurrent())
-            {
-                return false;
-            }
-
-            RequestCandidateRefresh();
-        }
-
-        if (!isCurrent())
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Owns one synchronous transaction, including reentrant native callbacks and deferred disposal.
-    /// </summary>
-    private bool RunInputMethodOperation(
-        Func<ISoftKeyboardInputMethodSession, Func<bool>, bool> operation)
+    private bool RunInputMethodCommand(
+        Func<ISoftKeyboardInputMethodSession, Func<bool>, bool> command)
     {
         VerifyAccess();
 
@@ -342,82 +261,218 @@ public partial class SoftKeyboard
 
         var sessionVersion = _inputMethodSessionVersion;
         var inputVersion   = _inputOperationVersion;
+        var target         = ActiveTarget;
         var session        = _inputMethodSession;
 
         bool IsCurrent()
         {
             return sessionVersion == _inputMethodSessionVersion
                 && inputVersion == _inputOperationVersion
+                && ReferenceEquals(target, ActiveTarget)
                 && ReferenceEquals(session, _inputMethodSession);
         }
 
         try
         {
-            if (session is null)
-            {
-                session = InputMethodSource.CreateSession()
-                    ?? throw new InvalidOperationException(
-                        "The input-method source returned a null session."
-                    );
+            session = GetOrCreateInputMethodSession(
+                session,
+                sessionVersion,
+                inputVersion
+            );
 
-                if (sessionVersion != _inputMethodSessionVersion || inputVersion != _inputOperationVersion)
-                {
-                    return false;
-                }
-
-                _inputMethodSession = session;
-            }
-
-            var succeeded = operation(session, IsCurrent);
-
-            if (_inputMethodLayoutPending)
-            {
-                _inputMethodLayoutPending = false;
-                // Layout providers can invoke application code. Keep the operation gate closed
-                // and validate ownership after publishing, just as for dependency properties.
-                RebuildLayout(publishInputMethodState: true);
-            }
-
-            if (!IsCurrent())
-            {
-                return false;
-            }
-
-            SetValue(InputMethodErrorPropertyKey, null);
-
-            return succeeded && IsCurrent();
+            return session is not null && IsCurrent() && command(session, IsCurrent) && IsCurrent();
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
             if (sessionVersion == _inputMethodSessionVersion && inputVersion == _inputOperationVersion)
             {
                 SetValue(InputMethodErrorPropertyKey, exception);
-                SetValue(ImeStatePropertyKey, InputMethodState.DoNotCare);
+                UpdateInputStateRecoveryInterval();
             }
 
             return false;
         }
         finally
         {
-            // A source replaced inside its own callback remains alive until that call has unwound.
-            // Keep the reentrancy gate closed during Dispose, which can call application code too.
             if (!ReferenceEquals(session, _inputMethodSession))
             {
                 DisposeInputMethodSession(session);
             }
 
             _inputMethodOperationActive = false;
-
-            if (_inputMethodLayoutPending)
-            {
-                _inputMethodLayoutPending = false;
-                RebuildLayout();
-            }
+            PublishPendingInputMethodLayout();
         }
     }
 
     /// <summary>
-    /// Invalidates the source before calling its cleanup code.
+    /// Creates and attaches a session only while its source and target context remain current.
+    /// </summary>
+    private ISoftKeyboardInputMethodSession? GetOrCreateInputMethodSession(
+        ISoftKeyboardInputMethodSession? session,
+        int sessionVersion,
+        int inputVersion)
+    {
+        if (session is not null)
+        {
+            return session;
+        }
+
+        session = InputMethodSource.CreateSession()
+            ?? throw new InvalidOperationException(
+                "The input-method source returned a null session."
+            );
+
+        if (sessionVersion != _inputMethodSessionVersion || inputVersion != _inputOperationVersion)
+        {
+            return session;
+        }
+
+        _inputMethodSession = session;
+
+        if (session is ISoftKeyboardInputMethodObservableSession observable)
+        {
+            observable.StateInvalidated += OnInputMethodSourceStateInvalidated;
+        }
+
+        UpdateInputStateRecoveryInterval();
+
+        return session;
+    }
+
+    /// <summary>
+    /// Reads all state used by public properties and layout from one notification version.
+    /// </summary>
+    private InputMethodObservation? ReadInputMethodObservation(
+        ISoftKeyboardInputMethodSession session,
+        Func<bool> isCurrent,
+        IInputElement? target)
+    {
+        var snapshot = session.GetSnapshot()
+            ?? throw new InvalidOperationException(
+                "The input-method source returned a null snapshot."
+            );
+
+        if (!isCurrent())
+        {
+            return null;
+        }
+
+        var culture = CultureInfo.ReadOnly(
+            (CultureInfo)InputLanguageManager.Current.CurrentInputLanguage.Clone()
+        );
+
+        var state = ImeState;
+        var menuOwnsFocus = (_inputMethodMenu?.IsOpen == true || SettingsMenu?.IsOpen == true)
+            && !ReferenceEquals(Keyboard.FocusedElement, target);
+
+        if (!menuOwnsFocus)
+        {
+            var active = snapshot.ActiveInputMethod;
+            if (active?.SupportsImeToggle != true)
+            {
+                state = InputMethodState.DoNotCare;
+            }
+            else
+            {
+                var adapter  = ResolveInputStateAdapter();
+                var observed = adapter?.GetState(active) ?? session.GetState();
+                if (observed is not (InputMethodState.On or InputMethodState.Off))
+                {
+                    throw new InvalidOperationException(
+                        "The active input method did not return a readable input state."
+                    );
+                }
+
+                state = observed;
+            }
+        }
+
+        return isCurrent()
+            ? new InputMethodObservation(snapshot, state, culture)
+            : null;
+    }
+
+    /// <summary>
+    /// Publishes one validated observation and records at most one pending layout rebuild.
+    /// </summary>
+    private bool PublishInputMethodObservation(
+        InputMethodObservation observation,
+        Func<bool> isCurrent)
+    {
+        var snapshot       = observation.Snapshot;
+        var catalogChanged = !HaveSameCatalog(InputMethods, snapshot.InputMethods);
+
+        var profileChanged = !HaveSamePublishedInputMethod(
+            ActiveInputMethod,
+            snapshot.ActiveInputMethod
+        );
+
+        var stateChanged   = ImeState != observation.State;
+        var cultureChanged = _observedInputCulture?.Name != observation.Culture.Name;
+
+        if (catalogChanged)
+        {
+            SetValue(InputMethodsPropertyKey, snapshot.InputMethods);
+        }
+
+        if (!isCurrent())
+        {
+            return false;
+        }
+
+        if (profileChanged)
+        {
+            SetValue(ActiveInputMethodPropertyKey, snapshot.ActiveInputMethod);
+        }
+
+        if (!isCurrent())
+        {
+            return false;
+        }
+
+        if (stateChanged)
+        {
+            SetValue(ImeStatePropertyKey, observation.State);
+        }
+
+        _observedInputCulture     =  observation.Culture;
+        _inputMethodLayoutPending |= profileChanged || stateChanged || cultureChanged;
+
+        if (!isCurrent())
+        {
+            return false;
+        }
+
+        if (profileChanged)
+        {
+            CancelCandidateOperations();
+            ReleaseCandidatePresentation();
+            RequestCandidateRefresh();
+        }
+        else if (stateChanged && IsLoaded && !CanPresentCandidates)
+        {
+            ReleaseCandidatePresentation();
+        }
+
+        return isCurrent();
+    }
+
+    /// <summary>
+    /// Rebuilds the layout once after all fields from an observation have been published.
+    /// </summary>
+    private void PublishPendingInputMethodLayout(bool publishInputMethodState = false)
+    {
+        if (!_inputMethodLayoutPending)
+        {
+            return;
+        }
+
+        _inputMethodLayoutPending = false;
+        RebuildLayout(publishInputMethodState);
+    }
+
+    /// <summary>
+    /// Invalidates a source before invoking its application-defined cleanup code.
     /// </summary>
     private void ResetInputMethodSession()
     {
@@ -430,12 +485,23 @@ public partial class SoftKeyboard
 
         try
         {
-            SetValue(InputMethodsPropertyKey, Array.Empty<SoftKeyboardInputMethod>());
+            if (!HaveSameCatalog(InputMethods, []))
+            {
+                SetValue(InputMethodsPropertyKey, Array.Empty<SoftKeyboardInputMethod>());
+            }
 
-            if (version == _inputMethodSessionVersion)
+            if (version == _inputMethodSessionVersion && ActiveInputMethod is not null)
             {
                 SetValue(ActiveInputMethodPropertyKey, null);
             }
+
+            if (version == _inputMethodSessionVersion && ImeState != InputMethodState.DoNotCare)
+            {
+                SetValue(ImeStatePropertyKey, InputMethodState.DoNotCare);
+            }
+
+            _observedInputCulture     = null;
+            _inputMethodLayoutPending = true;
 
             if (!operationActive)
             {
@@ -450,6 +516,8 @@ public partial class SoftKeyboard
             {
                 QueueInputMethodStateRefresh();
             }
+
+            UpdateInputStateRecoveryInterval();
         }
     }
 
@@ -458,12 +526,22 @@ public partial class SoftKeyboard
     /// </summary>
     private void DisposeInputMethodSession(ISoftKeyboardInputMethodSession? session)
     {
+        if (session is null)
+        {
+            return;
+        }
+
         var version = _inputMethodSessionVersion;
 
         try
         {
+            if (session is ISoftKeyboardInputMethodObservableSession observable)
+            {
+                observable.StateInvalidated -= OnInputMethodSourceStateInvalidated;
+            }
+
 #pragma warning disable IDISP007 // The session was created by this control and detached before disposal.
-            session?.Dispose();
+            session.Dispose();
 #pragma warning restore IDISP007
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
@@ -481,10 +559,15 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Coalesces native notifications into one observation after the current dispatcher callback.
+    /// Coalesces invalidations into one input-priority observation after native callbacks unwind.
     /// </summary>
     private void QueueInputMethodStateRefresh()
     {
+        unchecked
+        {
+            _inputMethodInvalidationVersion++;
+        }
+
         if (_inputMethodStateRefreshQueued)
         {
             return;
@@ -493,11 +576,12 @@ public partial class SoftKeyboard
         _inputMethodStateRefreshQueued = true;
 
         _ = Dispatcher.BeginInvoke(
-            DispatcherPriority.ContextIdle,
+            DispatcherPriority.Input,
             new Action(
                 () =>
                 {
                     _inputMethodStateRefreshQueued = false;
+
                     if (IsLoaded)
                     {
                         RefreshInputMethods();
@@ -509,8 +593,24 @@ public partial class SoftKeyboard
         );
     }
 
+    private void OnInputMethodSourceStateInvalidated(object? sender, EventArgs eventArgs)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.BeginInvoke(
+                DispatcherPriority.Input,
+                new Action(() => OnInputMethodSourceStateInvalidated(sender, eventArgs))
+            );
+
+            return;
+        }
+
+        QueueInputMethodStateRefresh();
+    }
+
     private static void OnInputMethodSourceChanged(
-        DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
+        DependencyObject dependencyObject,
+        DependencyPropertyChangedEventArgs args)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
 
@@ -524,11 +624,40 @@ public partial class SoftKeyboard
         }
 
         keyboard.RefreshInputMethods();
-        keyboard.RefreshImeState();
+    }
+
+    private static bool HaveSameCatalog(
+        IReadOnlyList<SoftKeyboardInputMethod> left,
+        IReadOnlyList<SoftKeyboardInputMethod> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.Count; index++)
+        {
+            if (!HaveSamePublishedInputMethod(left[index], right[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HaveSamePublishedInputMethod(
+        SoftKeyboardInputMethod? left,
+        SoftKeyboardInputMethod? right)
+    {
+        return HaveSameInputMethod(left, right)
+            && left?.DisplayName == right?.DisplayName
+            && left?.IsActive == right?.IsActive;
     }
 
     private static bool HaveSameInputMethod(
-        SoftKeyboardInputMethod? left, SoftKeyboardInputMethod? right)
+        SoftKeyboardInputMethod? left,
+        SoftKeyboardInputMethod? right)
     {
         return left?.ProfileId == right?.ProfileId
             && left?.ClassId == right?.ClassId
@@ -536,4 +665,13 @@ public partial class SoftKeyboard
             && left?.TouchLayoutPreference == right?.TouchLayoutPreference
             && left?.SupportsImeToggle == right?.SupportsImeToggle;
     }
+
+    /// <summary>
+    /// Carries values read under one focus target and notification version.
+    /// </summary>
+    private sealed record InputMethodObservation(
+        SoftKeyboardInputMethodSnapshot Snapshot,
+        InputMethodState State,
+        CultureInfo Culture
+    );
 }

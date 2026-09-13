@@ -79,14 +79,19 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Observes language changes after native profile activation has completed.
+    /// Invalidates the published input-method snapshot after any WPF or TSF notification.
+    /// </summary>
+    internal void OnSessionInputMethodStateInvalidated()
+    {
+        QueueInputMethodStateRefresh();
+    }
+
+    /// <summary>
+    /// Invalidates input-method state for tests and compatibility with existing internal callers.
     /// </summary>
     internal void OnSessionInputLanguageChanged()
     {
-        // Culture is an independent layout input, even when a custom source keeps its profile.
-        // The next observation (or the current activation) flushes this pending layout once.
-        _inputMethodLayoutPending = true;
-        QueueInputMethodStateRefresh();
+        OnSessionInputMethodStateInvalidated();
     }
 
     /// <summary>

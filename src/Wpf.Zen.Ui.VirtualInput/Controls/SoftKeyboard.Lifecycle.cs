@@ -3,12 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Input;
-
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
-/// Coordinates dispatcher, window, and platform-service ownership across load and visibility changes.
+/// Coordinates dispatcher, window, and platform-service ownership across load and visibility
+/// changes.
 /// </summary>
 public partial class SoftKeyboard
 {
@@ -19,12 +18,6 @@ public partial class SoftKeyboard
 
         _ = EnsureCandidateSession();
 
-        // Loaded runs on this control's dispatcher; WPF creates InputMethod.Current for that dispatcher.
-        if (InputMethod.Current is { } inputMethod)
-        {
-            inputMethod.StateChanged += OnInputMethodStateChanged;
-        }
-
         StartInputStateObservation();
 
         // todo: 在没有 Window 的环境下（例如 WinForms/HostElement），如何让此机制生效？
@@ -32,7 +25,7 @@ public partial class SoftKeyboard
 
         if (_window is not null)
         {
-            _window.Activated   += OnWindowActivated;
+            _window.Activated += OnWindowActivated;
             _window.Deactivated += OnWindowDeactivated;
         }
 
@@ -63,11 +56,6 @@ public partial class SoftKeyboard
 
         ResetCandidateSession();
         ResetInputMethodSession();
-
-        if (InputMethod.Current is { } inputMethod)
-        {
-            inputMethod.StateChanged -= OnInputMethodStateChanged;
-        }
 
         _inputStateTimer?.Stop();
 
@@ -126,16 +114,6 @@ public partial class SoftKeyboard
             QueueInputMethodStateRefresh();
             RequestSystemKeyboardHide();
             QueueCandidateBridgeRefresh();
-        }
-    }
-
-    private void OnInputMethodStateChanged(object sender, InputMethodStateChangedEventArgs args)
-    {
-        if (args.IsImeStateChanged || args.IsImeConversionModeChanged)
-        {
-            // Open and conversion compartments can notify separately during a single switch.
-            // Observe their combined result after the native callback sequence has unwound.
-            QueueInputMethodStateRefresh();
         }
     }
 

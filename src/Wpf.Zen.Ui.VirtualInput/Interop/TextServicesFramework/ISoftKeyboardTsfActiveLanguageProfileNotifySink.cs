@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
 /// <summary>
-/// Defines the COM-callable active-language-profile callback implemented by the keyboard session.
+/// Defines the COM-callable active-language-profile callback implemented by the input monitor.
 /// </summary>
 /// <remarks>
 /// This interop contract is public only to satisfy CLR COM visibility requirements and is hidden

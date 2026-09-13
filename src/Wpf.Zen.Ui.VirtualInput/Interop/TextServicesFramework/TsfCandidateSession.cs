@@ -10,18 +10,17 @@ using System.Windows.Threading;
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
 /// <summary>
-/// Owns dispatcher-wide TSF candidate presentation and scopes asynchronous operations to one UI element.
+/// Owns dispatcher-wide TSF candidate presentation and scopes asynchronous operations to one UI
+/// element.
 /// </summary>
 [ComVisible(true)]
 [ClassInterface(ClassInterfaceType.None)]
-internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
-    ISoftKeyboardTsfActiveLanguageProfileNotifySink, IDisposable
+internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisposable
 {
     private const uint UiElementEnabledOnly = 0x00000004;
 
-    private static readonly Guid UIElementSinkId             = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
-    private static readonly Guid ActiveLanguageProfileSinkId = new("B246CB75-A93E-4652-BF8C-B3FE0CFD7E57");
-    private static readonly Guid ThreadManagerClassId        = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
+    private static readonly Guid UIElementSinkId      = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
+    private static readonly Guid ThreadManagerClassId = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
 
     private readonly Dispatcher          _dispatcher;
     private readonly List<WeakReference> _keyboards = [];
@@ -34,9 +33,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
     private ITfCandidateListUIElementBehavior? _activeBehavior;
     private SoftKeyboard?                      _activeKeyboard;
     private uint                               _cookie;
-    private uint                               _profileCookie;
     private IntPtr                             _sinkPointer;
-    private IntPtr                             _profileSinkPointer;
     private uint                               _activeElementId;
     private uint[]                             _activePageStarts = [];
     private uint                               _activePageNumber;
@@ -183,25 +180,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             }
 
             _cookie = cookie;
-
-            // Profile changes within the same language need not raise WPF's InputLanguageChanged
-            // event. A second sink keeps the embedded picker and key labels synchronized.
-            var profileSinkId = ActiveLanguageProfileSinkId;
-
-            _profileSinkPointer = Marshal.GetComInterfaceForObject(
-                this,
-                typeof(ISoftKeyboardTsfActiveLanguageProfileNotifySink)
-            );
-
-            if (_source.AdviseSink(ref profileSinkId, _profileSinkPointer, out var profileCookie) < 0)
-            {
-                _ = Marshal.Release(_profileSinkPointer);
-                _profileSinkPointer = IntPtr.Zero;
-            }
-            else
-            {
-                _profileCookie = profileCookie;
-            }
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -509,19 +487,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         if (elementId == _activeElementId)
         {
             ClearActiveCandidate();
-        }
-
-        return 0;
-    }
-
-    int ISoftKeyboardTsfActiveLanguageProfileNotifySink.OnActivated(ref Guid classId, ref Guid profileId, int activated)
-    {
-        foreach (var keyboard in _keyboards.Select(reference => reference.Target as SoftKeyboard))
-        {
-            if (keyboard is { IsLoaded: true })
-            {
-                keyboard.OnSessionInputLanguageChanged();
-            }
         }
 
         return 0;
@@ -923,7 +888,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
 
     /// <summary>
     /// Revalidates both element generation and focused document before native input operations.
-    /// COM document queries may reenter the sink, so identity is checked on both sides of validation.
+    /// COM document queries may reenter the sink, so identity is checked on both sides of
+    /// validation.
     /// </summary>
     private bool ValidateCandidateOperation(
         SoftKeyboard keyboard,
@@ -997,31 +963,12 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             }
         }
 
-        if (_source is not null && _profileCookie != 0)
-        {
-            try
-            {
-                _ = _source.UnadviseSink(_profileCookie);
-            }
-            catch (Exception exception) when (IsUnavailable(exception))
-            {
-                // The profile sink has the same Dispatcher-owned lifetime as the candidate sink.
-            }
-        }
-
-        _cookie        = 0;
-        _profileCookie = 0;
+        _cookie = 0;
 
         if (_sinkPointer != IntPtr.Zero)
         {
-            _ = Marshal.Release(_sinkPointer);
+            _            = Marshal.Release(_sinkPointer);
             _sinkPointer = IntPtr.Zero;
-        }
-
-        if (_profileSinkPointer != IntPtr.Zero)
-        {
-            _ = Marshal.Release(_profileSinkPointer);
-            _profileSinkPointer = IntPtr.Zero;
         }
 
         _source         = null;

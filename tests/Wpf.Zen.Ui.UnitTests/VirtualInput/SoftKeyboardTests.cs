@@ -94,17 +94,17 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var other  = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var other = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(other);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -176,8 +176,8 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
+                Content = root,
+                Width = 700,
                 ShowInTaskbar = false
             };
             try
@@ -227,13 +227,13 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             var action = new CapturingKeyboardAction();
-            var key    = SoftKeyboardKey.FromAction(action, "Fn", "Custom input");
+            var key = SoftKeyboardKey.FromAction(action, "Fn", "Custom input");
             var invoke = typeof(SoftKeyboard).GetMethod("InvokeKey", BindingFlags.Instance | BindingFlags.NonPublic)!;
             try
             {
@@ -256,7 +256,7 @@ public class SoftKeyboardTests
 
     private sealed class CapturingKeyboardAction : ISoftKeyboardKeyAction
     {
-        internal int                        Calls   { get; private set; }
+        internal int Calls { get; private set; }
         internal SoftKeyboardActionContext? Context { get; private set; }
 
         public void Execute(SoftKeyboardActionContext context)
@@ -283,9 +283,9 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             var action = new DeferredKeyboardAction();
@@ -337,7 +337,7 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             var action = new CapturingAlternateAction();
@@ -380,7 +380,7 @@ public class SoftKeyboardTests
             SoftKeyboardActionContext context,
             CancellationToken cancellationToken)
         {
-            Context           = context;
+            Context = context;
             CancellationToken = cancellationToken;
             try
             {
@@ -426,7 +426,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out _, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -437,8 +437,8 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 640,
+                Content = root,
+                Width = 640,
                 ShowInTaskbar = false
             };
             try
@@ -459,7 +459,7 @@ public class SoftKeyboardTests
                     PumpDispatcher();
                     window.UpdateLayout();
 
-                    var items     = (SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard);
+                    var items = (SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard);
                     var container = (FrameworkElement)items.ItemContainerGenerator.ContainerFromIndex(selectedIndex);
                     var viewer =
                         Descendants<DynamicScrollViewer>(
@@ -491,14 +491,14 @@ public class SoftKeyboardTests
                     .Select(index => new SoftKeyboardCandidate((uint)index, $"Candidate {index}")));
             var list = new SoftKeyboardCandidateList
             {
-                ItemsSource            = candidates,
+                ItemsSource = candidates,
                 SelectedCandidateIndex = 119
             };
             var window = new Window
             {
-                Content       = list,
-                Width         = 320,
-                Height        = 120,
+                Content = list,
+                Width = 320,
+                Height = 120,
                 ShowInTaskbar = false
             };
             try
@@ -540,7 +540,7 @@ public class SoftKeyboardTests
                 PumpDispatcher();
                 Assert.True(((SoftKeyboardCandidateItem)list.ItemContainerGenerator.ContainerFromIndex(0)).IsSelected);
 
-                list.Visibility             = Visibility.Collapsed;
+                list.Visibility = Visibility.Collapsed;
                 list.SelectedCandidateIndex = 119;
                 window.UpdateLayout();
                 PumpDispatcher();
@@ -555,7 +555,7 @@ public class SoftKeyboardTests
                 // recovery must complete the pending request through the ordinary layout retry.
                 var host = Descendants<StackPanel>(list)
                     .Single(panel => ItemsControl.GetItemsOwner(panel) == list);
-                host.Visibility             = Visibility.Collapsed;
+                host.Visibility = Visibility.Collapsed;
                 list.SelectedCandidateIndex = 100;
                 window.UpdateLayout();
                 PumpDispatcher();
@@ -599,8 +599,8 @@ public class SoftKeyboardTests
             };
             var window = new Window
             {
-                Content       = list,
-                Width         = 100,
+                Content = list,
+                Width = 100,
                 ShowInTaskbar = false
             };
 
@@ -673,8 +673,8 @@ public class SoftKeyboardTests
             };
             var window = new Window
             {
-                Content       = keyboard,
-                Width         = 640,
+                Content = keyboard,
+                Width = 640,
                 ShowInTaskbar = false
             };
             try
@@ -685,8 +685,8 @@ public class SoftKeyboardTests
                     SoftKeyboardCandidatePresentationState.Embedded,
                     selectedCandidateIndex: 40);
                 window.UpdateLayout();
-                var list      = (SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard);
-                var first     = keyboard.Candidates[0];
+                var list = (SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard);
+                var first = keyboard.Candidates[0];
                 var container = (SoftKeyboardCandidateItem)list.ItemContainerGenerator.ContainerFromIndex(0);
 
                 keyboard.ReplaceCandidates(
@@ -770,17 +770,17 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new Grid();
+            var root = new Grid();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
 
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -817,15 +817,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             TextComposition? composition = null;
@@ -877,7 +877,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out RecordingInputBackend input, out _, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true
@@ -886,12 +886,12 @@ public class SoftKeyboardTests
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -916,7 +916,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out RecordingInputBackend input, out _, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true
@@ -925,12 +925,12 @@ public class SoftKeyboardTests
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -957,7 +957,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             Key receivedKey = Key.None;
-            var editor      = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             editor.PreviewKeyDown += (_, eventArgs) => receivedKey = eventArgs.Key;
             var keyboard = new SoftKeyboard
             {
@@ -967,12 +967,12 @@ public class SoftKeyboardTests
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1013,12 +1013,12 @@ public class SoftKeyboardTests
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1040,6 +1040,12 @@ public class SoftKeyboardTests
                 .GetMethod("ActivateInputMethod", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(keyboard, [pinyin]);
             PumpDispatcher();
+            if (keyboard.ImeState == InputMethodState.Off)
+            {
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                PumpDispatcher();
+            }
+
             InvokeKey(keyboard, FindKey(keyboard, Key.N));
             InvokeKey(keyboard, FindKey(keyboard, Key.I));
             PumpDispatcher();
@@ -1129,7 +1135,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out _, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true
@@ -1138,12 +1144,12 @@ public class SoftKeyboardTests
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1156,12 +1162,14 @@ public class SoftKeyboardTests
                 item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
             button.Invoke();
+            PumpDispatcher();
 
             Assert.Equal(InputMethodState.Off, keyboard.ImeState);
             Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
             Assert.Same(editor, Keyboard.FocusedElement);
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+            PumpDispatcher();
             Assert.Equal(InputMethodState.On, keyboard.ImeState);
             window.Close();
         });
@@ -1222,12 +1230,12 @@ public class SoftKeyboardTests
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.TargetScope = root;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1259,9 +1267,9 @@ public class SoftKeyboardTests
             };
             var window = new Window
             {
-                Content       = keyboard,
-                Width         = 700,
-                Height        = 500,
+                Content = keyboard,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -1288,16 +1296,16 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var keyboard = new SoftKeyboard();
-            var scope    = new Grid();
+            var scope = new Grid();
             var external = new System.Windows.Controls.TextBox();
             var window = new Window
             {
-                Content       = scope,
+                Content = scope,
                 ShowInTaskbar = false
             };
             window.Show();
             keyboard.TargetScope = scope;
-            keyboard.Target      = external;
+            keyboard.Target = external;
 
             Assert.Null(keyboard.ActiveTarget);
 
@@ -1314,18 +1322,18 @@ public class SoftKeyboardTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var scope  = new Grid();
+            var scope = new Grid();
             var editor = new System.Windows.Controls.TextBox();
             scope.Children.Add(editor);
             var keyboard = new SoftKeyboard
             {
-                TargetScope  = scope,
+                TargetScope = scope,
                 AutoShowMode = SoftKeyboardAutoShowMode.AnyFocus,
             };
             scope.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = scope,
+                Content = scope,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1369,7 +1377,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out FakeCandidateBackend candidates, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -1380,8 +1388,8 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 640,
+                Content = root,
+                Width = 640,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1421,7 +1429,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out FakeCandidateBackend candidates, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -1432,8 +1440,8 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 640,
+                Content = root,
+                Width = 640,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1478,7 +1486,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out FakeCandidateBackend candidates, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -1489,16 +1497,16 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
-                Width         = 640,
+                Content = root,
+                Width = 640,
                 ShowInTaskbar = false
             };
             window.Show();
             Assert.True(editor.Focus());
             candidates.Publish(keyboard, 1, 1, "first", "second");
             window.UpdateLayout();
-            SoftKeyboardCandidate firstItem       = keyboard.Candidates[0];
-            int                   snapshotVersion = keyboard.CandidateSnapshotVersion;
+            SoftKeyboardCandidate firstItem = keyboard.Candidates[0];
+            int snapshotVersion = keyboard.CandidateSnapshotVersion;
             SoftKeyboardCandidateItem firstButton = Assert.Single(
                 Descendants<SoftKeyboardCandidateItem>(keyboard),
                 button => ReferenceEquals(button.Candidate, firstItem)
@@ -1566,7 +1574,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out FakeCandidateBackend candidates, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -1579,14 +1587,14 @@ public class SoftKeyboardTests
             root.Children.Add(keyboardHost);
             var window = new Window
             {
-                Content       = root,
-                Width         = 640,
+                Content = root,
+                Width = 640,
                 ShowInTaskbar = false
             };
             window.Show();
             window.UpdateLayout();
             candidates.Publish(keyboard, 1, 1, "candidate");
-            int releasesBeforeHide  = candidates.ReleasePresentationCount;
+            int releasesBeforeHide = candidates.ReleasePresentationCount;
             int refreshesBeforeHide = candidates.RefreshCount;
 
             keyboardHost.Visibility = Visibility.Collapsed;
@@ -1608,7 +1616,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out FakeCandidateBackend candidates, out _);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true
@@ -1619,9 +1627,9 @@ public class SoftKeyboardTests
             keyboard.TargetScope = root;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1643,7 +1651,7 @@ public class SoftKeyboardTests
         WpfTestThread.Run(() =>
         {
             var keyboard = new SoftKeyboard();
-            var peer     = new SoftKeyboardAutomationPeer(keyboard);
+            var peer = new SoftKeyboardAutomationPeer(keyboard);
             var provider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
                 peer.GetPattern(PatternInterface.ExpandCollapse)
             );
@@ -1677,7 +1685,7 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1702,7 +1710,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out _, out FakeInputPaneBackend pane);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -1724,7 +1732,7 @@ public class SoftKeyboardTests
             root.Children.Add(keyboardHost);
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1777,7 +1785,7 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out _, out FakeInputPaneBackend pane);
-            var editor   = new System.Windows.Controls.TextBox();
+            var editor = new System.Windows.Controls.TextBox();
             var firstKeyboard = new SoftKeyboard(services)
             {
                 IsOpen = true,
@@ -1794,7 +1802,7 @@ public class SoftKeyboardTests
             root.Children.Add(secondKeyboard);
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -1808,7 +1816,7 @@ public class SoftKeyboardTests
             secondKeyboard.IsOpen = false;
             Assert.Equal(1, pane.ShowCount);
 
-            pane.Result          = SoftKeyboardSystemKeyboardSuppressionState.Rejected;
+            pane.Result = SoftKeyboardSystemKeyboardSuppressionState.Rejected;
             firstKeyboard.IsOpen = true;
             Assert.Equal(
                 SoftKeyboardSystemKeyboardSuppressionState.Rejected,
@@ -1826,8 +1834,8 @@ public class SoftKeyboardTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var services     = CreateServices(out _, out _, out FakeInputPaneBackend pane);
-            var firstEditor  = new System.Windows.Controls.TextBox();
+            var services = CreateServices(out _, out _, out FakeInputPaneBackend pane);
+            var firstEditor = new System.Windows.Controls.TextBox();
             var secondEditor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
@@ -1839,7 +1847,7 @@ public class SoftKeyboardTests
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             try
@@ -1886,13 +1894,13 @@ public class SoftKeyboardTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var services      = CreateServices(out _, out _, out FakeInputPaneBackend pane);
-            var editor        = new System.Windows.Controls.TextBox();
+            var services = CreateServices(out _, out _, out FakeInputPaneBackend pane);
+            var editor = new System.Windows.Controls.TextBox();
             var outsideEditor = new System.Windows.Controls.TextBox();
-            var scope         = new StackPanel();
+            var scope = new StackPanel();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen      = true,
+                IsOpen = true,
                 TargetScope = scope
             };
             scope.Children.Add(editor);
@@ -1902,7 +1910,7 @@ public class SoftKeyboardTests
             root.Children.Add(outsideEditor);
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             try
@@ -1936,8 +1944,8 @@ public class SoftKeyboardTests
             var keyboard = new SoftKeyboard(services);
             var window = new Window
             {
-                Content       = keyboard,
-                Width         = 340,
+                Content = keyboard,
+                Width = 340,
                 SizeToContent = SizeToContent.Height,
                 ShowInTaskbar = false,
             };
@@ -1966,16 +1974,16 @@ public class SoftKeyboardTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var firstEditor  = new System.Windows.Controls.TextBox();
+            var firstEditor = new System.Windows.Controls.TextBox();
             var secondEditor = new System.Windows.Controls.TextBox();
-            var keyboard     = new SoftKeyboard();
-            var scope        = new StackPanel();
+            var keyboard = new SoftKeyboard();
+            var scope = new StackPanel();
             scope.Children.Add(firstEditor);
             scope.Children.Add(secondEditor);
             scope.Children.Add(keyboard);
             var window = new Window
             {
-                Content       = scope,
+                Content = scope,
                 ShowInTaskbar = false
             };
             window.Show();
@@ -2022,8 +2030,8 @@ public class SoftKeyboardTests
 
             var window = new Window
             {
-                Content       = keyboard,
-                Width         = 720,
+                Content = keyboard,
+                Width = 720,
                 SizeToContent = SizeToContent.Height,
                 ShowInTaskbar = false
             };
@@ -2037,6 +2045,7 @@ public class SoftKeyboardTests
                 methods.TrySetImeState(InputMethodState.Off);
                 typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, null);
+                PumpDispatcher();
                 window.UpdateLayout();
                 Assert.Equal(SoftKeyboardPages.MoreSymbols, keyboard.Page);
                 Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "[");
@@ -2065,14 +2074,14 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 720,
+                Content = root,
+                Width = 720,
                 SizeToContent = SizeToContent.Height,
                 ShowInTaskbar = false
             };
@@ -2123,8 +2132,8 @@ public class SoftKeyboardTests
             };
             var window = new Window
             {
-                Content       = keyboard,
-                Width         = 720,
+                Content = keyboard,
+                Width = 720,
                 SizeToContent = SizeToContent.Height,
                 ShowInTaskbar = false
             };
@@ -2133,7 +2142,7 @@ public class SoftKeyboardTests
                 window.Show();
                 window.UpdateLayout();
 
-                var    layout = keyboard.CurrentLayout;
+                var layout = keyboard.CurrentLayout;
                 double height = keyboard.ActualHeight;
 
                 keyboard.ShowInputMethodMenu();
@@ -2172,9 +2181,9 @@ public class SoftKeyboardTests
         out FakeInputMethodBackend inputMethods
     )
     {
-        input        = new RecordingInputBackend();
-        candidates   = new FakeCandidateBackend();
-        inputPane    = new FakeInputPaneBackend();
+        input = new RecordingInputBackend();
+        candidates = new FakeCandidateBackend();
+        inputPane = new FakeInputPaneBackend();
         inputMethods = new FakeInputMethodBackend();
         return new SoftKeyboardPlatformServices(
             input,
@@ -2213,9 +2222,9 @@ public class SoftKeyboardTests
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2247,15 +2256,15 @@ public class SoftKeyboardTests
                 IsOpen = true,
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2269,8 +2278,8 @@ public class SoftKeyboardTests
                 Assert.True(keyboard.CanPresentCandidates);
                 Assert.True(keyboard.HasCandidates);
                 Assert.Equal(released, candidates.ReleasePresentationCount);
-                InputMethodState imeState    = keyboard.ImeState;
-                int              activations = inputMethods.ActivationCount;
+                InputMethodState imeState = keyboard.ImeState;
+                int activations = inputMethods.ActivationCount;
                 var back = Assert.Single(
                     Descendants<SoftKeyboardKeyControl>(keyboard),
                     button => button.IsVisible && button.DataContext is SoftKeyboardKey
@@ -2307,15 +2316,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2360,20 +2369,20 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var other  = new System.Windows.Controls.TextBox();
-            var scope  = new StackPanel();
+            var other = new System.Windows.Controls.TextBox();
+            var scope = new StackPanel();
             scope.Children.Add(editor);
             scope.Children.Add(keyboard);
             keyboard.TargetScope = scope;
-            keyboard.Target      = editor;
+            keyboard.Target = editor;
             var root = new StackPanel();
             root.Children.Add(scope);
             root.Children.Add(other);
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2446,7 +2455,7 @@ public class SoftKeyboardTests
                     SoftKeyboardShiftState.Locked
                 )
             ));
-        IReadOnlyList<SoftKeyboardKey> keys       = layout.Keys;
+        IReadOnlyList<SoftKeyboardKey> keys = layout.Keys;
         IReadOnlyList<SoftKeyboardKey> lockedKeys = lockedLayout.Keys;
 
         Assert.Equal(
@@ -2489,9 +2498,9 @@ public class SoftKeyboardTests
             };
             var window = new Window
             {
-                Content       = keyboard,
-                Width         = 700,
-                Height        = 500,
+                Content = keyboard,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false,
             };
 
@@ -2527,15 +2536,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2573,15 +2582,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2623,15 +2632,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2669,15 +2678,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2730,9 +2739,9 @@ public class SoftKeyboardTests
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
 
@@ -2752,7 +2761,7 @@ public class SoftKeyboardTests
                 keyboard.OnSessionTextComposition(new TextCompositionEventArgs(Keyboard.PrimaryDevice, composition)
                 {
                     RoutedEvent = routedEvent,
-                    Source      = source,
+                    Source = source,
                 });
             }
 
@@ -2781,8 +2790,10 @@ public class SoftKeyboardTests
                 Assert.Same(editor, Keyboard.FocusedElement);
 
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                PumpDispatcher();
                 Assert.Equal(InputMethodState.On, keyboard.ImeState);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                PumpDispatcher();
                 Assert.Equal(InputMethodState.Off, keyboard.ImeState);
             }
             finally
@@ -2802,15 +2813,15 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2856,17 +2867,17 @@ public class SoftKeyboardTests
                 IsOpen = true
             };
             var editor = new System.Windows.Controls.TextBox();
-            var other  = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var other = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(other);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
-                Width         = 700,
-                Height        = 500,
+                Content = root,
+                Width = 700,
+                Height = 500,
                 ShowInTaskbar = false
             };
             try
@@ -2882,9 +2893,9 @@ public class SoftKeyboardTests
                 switch (change)
                 {
                     case "nextKey": FindCap(keyboard, Key.A).BeginPress(); break;
-                    case "target":  keyboard.Target = other; break;
-                    case "layout":  keyboard.ShowPage(SoftKeyboardPages.Symbols); break;
-                    case "close":   keyboard.IsOpen = false; break;
+                    case "target": keyboard.Target = other; break;
+                    case "layout": keyboard.ShowPage(SoftKeyboardPages.Symbols); break;
+                    case "close": keyboard.IsOpen = false; break;
                     case "deactivate":
                         typeof(SoftKeyboard).GetMethod(
                                 "OnWindowDeactivated",
@@ -2996,30 +3007,31 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void CustomInputStateAdapter_RejectsWritesWithoutInventingStateAndDegradesOnFailure()
+    public void CustomInputStateAdapter_RejectsWritesAndPreservesStateOnReadFailure()
     {
         WpfApplicationTestHost.Run(() =>
         {
             var adapter = new TestInputStateAdapter();
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen            = true,
+                IsOpen = true,
                 InputStateAdapter = adapter,
             };
             var editor = new System.Windows.Controls.TextBox();
-            var root   = new StackPanel();
+            var root = new StackPanel();
             root.Children.Add(editor);
             root.Children.Add(keyboard);
             keyboard.Target = editor;
             var window = new Window
             {
-                Content       = root,
+                Content = root,
                 ShowInTaskbar = false
             };
             try
             {
                 window.Show();
                 editor.Focus();
+                PumpDispatcher();
                 Assert.Equal(InputMethodState.Off, keyboard.ImeState);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
                 Assert.Equal(InputMethodState.On, adapter.LastRequest);
@@ -3027,8 +3039,11 @@ public class SoftKeyboardTests
                 adapter.ThrowOnRead = true;
                 typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, null);
-                Assert.Equal(InputMethodState.DoNotCare, keyboard.ImeState);
+                PumpDispatcher();
+                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.IsType<InvalidOperationException>(keyboard.InputMethodError);
                 keyboard.InputStateAdapter = null;
+                PumpDispatcher();
                 Assert.Equal(InputMethodState.On, keyboard.ImeState);
             }
             finally
@@ -3056,10 +3071,10 @@ public class SoftKeyboardTests
 
     private sealed class FakeInputMethodBackend : ISoftKeyboardInputMethodBackend
     {
-        private static readonly Guid             FakeClassId    = new("D9400B6B-9E48-4D79-90A6-62A3C085B3C2");
-        private static readonly Guid             FakeProfileId  = new("451C2C15-CE41-49D1-A05E-D6474366F501");
-        private                 InputMethodState _imeState      = InputMethodState.On;
-        private                 bool             _profileActive = true;
+        private static readonly Guid FakeClassId = new("D9400B6B-9E48-4D79-90A6-62A3C085B3C2");
+        private static readonly Guid FakeProfileId = new("451C2C15-CE41-49D1-A05E-D6474366F501");
+        private InputMethodState _imeState = InputMethodState.On;
+        private bool _profileActive = true;
 
         internal int ActivationCount { get; private set; }
 
@@ -3091,7 +3106,7 @@ public class SoftKeyboardTests
 
         internal void UseDirectKeyboardLayout()
         {
-            _imeState      = InputMethodState.Off;
+            _imeState = InputMethodState.Off;
             _profileActive = false;
         }
     }

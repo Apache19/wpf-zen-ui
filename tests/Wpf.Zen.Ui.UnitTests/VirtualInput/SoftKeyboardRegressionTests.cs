@@ -28,17 +28,19 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardRegressionTests
 {
     /// <summary>
-    /// Profile, mode, and reentrant language notifications publish one final layout per activation.
+    /// Profile activation writes no mode and coalesces reentrant notifications into one observation.
     /// </summary>
     [Fact]
-    public Task InputMethodActivation_BatchesLayoutUntilFinalState()
+    public Task InputMethodActivation_OnlySelectsProfileAndPublishesOneObservation()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             var keyboard = scope.Keyboard;
-            keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            var source = CreateSource(scope.Method, out var session);
+            session.GetState().Returns(InputMethodState.Off);
+            keyboard.InputMethodSource = source;
             var next = new SoftKeyboardInputMethod(
                 Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Chinese", false);
             var active = scope.Method;
@@ -54,11 +56,6 @@ public class SoftKeyboardRegressionTests
                 keyboard.OnSessionInputLanguageChanged();
                 return true;
             });
-            session.TrySetState(InputMethodState.On).Returns(_ =>
-            {
-                state = InputMethodState.On;
-                return true;
-            });
             var contexts = new List<SoftKeyboardLayoutContext>();
             var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
             provider.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(call =>
@@ -70,28 +67,30 @@ public class SoftKeyboardRegressionTests
             contexts.Clear();
 
             Assert.True(keyboard.TryActivateInputMethod(next));
+            session.Received(1).TryActivate(next);
+            session.DidNotReceive().TrySetState(Arg.Any<InputMethodState>());
+            Assert.Empty(contexts);
+            await scope.DrainAsync();
             var context = Assert.Single(contexts);
             Assert.Same(next, context.InputMethod);
-            Assert.Equal(InputMethodState.On, context.ImeState);
-            await scope.DrainAsync();
-            Assert.Single(contexts);
+            Assert.Equal(InputMethodState.Off, context.ImeState);
         });
     }
 
     /// <summary>
-    /// Publishing the final layout retains the activation gate and validates target ownership.
+    /// Publishing an observation retains the gate and rejects target changes from layout code.
     /// </summary>
     [Fact]
-    public Task InputMethodActivation_RejectsTargetChangeFromFinalLayout()
+    public Task InputMethodObservation_RejectsTargetChangeFromLayout()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             var keyboard = scope.Keyboard;
-            keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            var source = CreateSource(scope.Method, out var session);
             session.GetState().Returns(InputMethodState.Off);
-            Assert.True(keyboard.RefreshInputMethods());
+            keyboard.InputMethodSource = source;
             var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
             provider.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(call =>
             {
@@ -106,8 +105,8 @@ public class SoftKeyboardRegressionTests
             keyboard.LayoutProvider = provider;
             session.GetState().Returns(InputMethodState.On);
 
-            Assert.False(keyboard.TryActivateInputMethod(scope.Method));
-            session.Received(1).TryActivate(scope.Method);
+            Assert.False(keyboard.RefreshInputMethods());
+            session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
         });
     }
 
@@ -164,8 +163,7 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Capability updates for the same identity rebuild the layout even if raw mode stays Off.
-    /// Read failures hide the key, and recovery restores the direct-mode A cap.
+    /// Capability updates rebuild the layout, while transient failures retain the last valid mode.
     /// </summary>
     [Fact]
     public Task ModeSwitch_TracksCapabilityAndStateRecovery()
@@ -191,8 +189,7 @@ public class SoftKeyboardRegressionTests
             session.GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([method], method));
             session.GetState().Returns(_ => throw new InvalidOperationException("State unavailable"));
             Assert.False(scope.Keyboard.RefreshInputMethods());
-            Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
-                key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+            Assert.Equal(InputMethodState.DoNotCare, scope.Keyboard.ImeState);
 
             session.Configure().GetState().Returns(InputMethodState.Off);
             Assert.True(scope.Keyboard.RefreshInputMethods());
@@ -274,50 +271,204 @@ public class SoftKeyboardRegressionTests
 
             Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
             session.Received(1).TryActivate(scope.Method);
-            session.Received(1).TrySetState(InputMethodState.On);
+            session.DidNotReceive().TrySetState(Arg.Any<InputMethodState>());
         });
     }
 
     /// <summary>
-    /// Activation requires a successful state write and rejects context changes inside that write.
-    /// </summary>
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public Task Activation_RequiresCurrentSuccessfulStateWrite(bool close)
-    {
-        return WpfApplicationTestHost.RunAsync(async () =>
-        {
-            using var scope = new SoftKeyboardRegressionScope();
-            await scope.DrainAsync();
-            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
-            session.TrySetState(InputMethodState.On).Returns(_ =>
-            {
-                if (close)
-                {
-                    scope.Keyboard.IsOpen = false;
-                }
-
-                return close;
-            });
-
-            Assert.False(scope.Keyboard.TryActivateInputMethod(scope.Method));
-        });
-    }
-
-    /// <summary>
-    /// A current activation completes all three source operations synchronously.
+    /// Activation never consults or writes the current input mode.
     /// </summary>
     [Fact]
-    public Task Activation_CompletesCurrentSuccessfulOperation()
+    public Task Activation_IgnoresInputModeWriter()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            session.TrySetState(Arg.Any<InputMethodState>()).Returns(_ =>
+            {
+                scope.Keyboard.IsOpen = false;
+                return true;
+            });
+
             Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
-            session.Received(1).TrySetState(InputMethodState.On);
+            session.DidNotReceive().TrySetState(Arg.Any<InputMethodState>());
+        });
+    }
+
+    /// <summary>
+    /// A current activation performs only the profile write and defers observation.
+    /// </summary>
+    [Fact]
+    public Task Activation_PerformsOnlyProfileCommand()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var source = CreateSource(scope.Method, out var session);
+            session.GetState().Returns(InputMethodState.Off);
+            scope.Keyboard.InputMethodSource = source;
+            session.ClearReceivedCalls();
+            Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
+            session.Received(1).TryActivate(scope.Method);
+            session.DidNotReceive().GetSnapshot();
+            session.DidNotReceive().GetState();
+            session.DidNotReceive().TrySetState(Arg.Any<InputMethodState>());
+            await scope.DrainAsync();
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+        });
+    }
+
+    /// <summary>
+    /// Toggling writes exactly one mode value and leaves publication to the queued observation.
+    /// </summary>
+    [Fact]
+    public Task ToggleIme_WritesModeWithoutReadingOrActivatingProfile()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            session.ClearReceivedCalls();
+
+            typeof(SoftKeyboard).GetMethod(
+                "ToggleImeCore",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!.Invoke(scope.Keyboard, null);
+
+            session.Received(1).TrySetState(InputMethodState.Off);
+            session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
+            session.DidNotReceive().GetSnapshot();
+            session.DidNotReceive().GetState();
+            Assert.Equal(InputMethodState.On, scope.Keyboard.ImeState);
+
+            session.GetState().Returns(InputMethodState.Off);
+            await scope.DrainAsync();
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+        });
+    }
+
+    /// <summary>
+    /// An unchanged observation retains both the catalog instance and the generated layout.
+    /// </summary>
+    [Fact]
+    public Task InputMethodObservation_DoesNotPublishUnchangedState()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out _);
+            var catalog = scope.Keyboard.InputMethods;
+            var layout = scope.Keyboard.CurrentLayout;
+
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+
+            Assert.Same(catalog, scope.Keyboard.InputMethods);
+            Assert.Same(layout, scope.Keyboard.CurrentLayout);
+        });
+    }
+
+    /// <summary>
+    /// Multiple custom-source invalidations in one callback turn produce one observation.
+    /// </summary>
+    [Fact]
+    public Task ObservableInputMethodSource_CoalescesInvalidations()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var source = Substitute.For<ISoftKeyboardInputMethodSource>();
+            var session = Substitute.For<ISoftKeyboardInputMethodObservableSession>();
+#pragma warning disable IDISP004 // The control owns and disposes the configured session.
+            source.CreateSession().Returns(session);
+#pragma warning restore IDISP004
+            var state = InputMethodState.On;
+            session.GetSnapshot().Returns(
+                new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
+            );
+            session.GetState().Returns(_ => state);
+            scope.Keyboard.InputMethodSource = source;
+            session.ClearReceivedCalls();
+            state = InputMethodState.Off;
+
+            session.StateInvalidated += Raise.Event<EventHandler>(session, EventArgs.Empty);
+            session.StateInvalidated += Raise.Event<EventHandler>(session, EventArgs.Empty);
+            await scope.DrainAsync();
+
+            session.Received(1).GetSnapshot();
+            session.Received(1).GetState();
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+        });
+    }
+
+    /// <summary>
+    /// A notification raised during a read invalidates the entire observation before publication.
+    /// </summary>
+    [Fact]
+    public Task InputMethodObservation_DiscardsSnapshotCrossedByNotification()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            var next = new SoftKeyboardInputMethod(
+                Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true
+            );
+            var invalidate = true;
+            session.GetSnapshot().Returns(_ =>
+            {
+                if (invalidate)
+                {
+                    invalidate = false;
+                    scope.Keyboard.OnSessionInputMethodStateInvalidated();
+                }
+
+                return new SoftKeyboardInputMethodSnapshot([next], next);
+            });
+
+            Assert.False(scope.Keyboard.RefreshInputMethods());
+            Assert.Same(scope.Method, scope.Keyboard.ActiveInputMethod);
+
+            await scope.DrainAsync();
+            Assert.Same(next, scope.Keyboard.ActiveInputMethod);
+        });
+    }
+
+    /// <summary>
+    /// A transient state read failure preserves the last valid profile, mode, and layout.
+    /// </summary>
+    [Fact]
+    public Task InputMethodObservation_FailurePreservesLastValidState()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            session.GetState().Returns(InputMethodState.Off);
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            var catalog = scope.Keyboard.InputMethods;
+            var profile = scope.Keyboard.ActiveInputMethod;
+            var layout = scope.Keyboard.CurrentLayout;
+            var error = new InvalidOperationException("temporary state failure");
+            session.GetState().Returns(_ => throw error);
+
+            Assert.False(scope.Keyboard.RefreshInputMethods());
+
+            Assert.Same(error, scope.Keyboard.InputMethodError);
+            Assert.Same(catalog, scope.Keyboard.InputMethods);
+            Assert.Same(profile, scope.Keyboard.ActiveInputMethod);
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+            Assert.Same(layout, scope.Keyboard.CurrentLayout);
+            Assert.Contains(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
         });
     }
 

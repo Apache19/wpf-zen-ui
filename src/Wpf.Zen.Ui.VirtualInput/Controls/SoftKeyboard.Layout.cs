@@ -33,9 +33,10 @@ public partial class SoftKeyboard
     /// Gets the last layout failure, or null after successful resolution.
     /// </summary>
     /// <remarks>
-    /// Default is null. A provider exception or an unhandled page records the reason before a built-in
-    /// fallback is displayed. This diagnostic does not inherit or affect layout itself and cannot be
-    /// animated. Returning null to delegate a supported built-in page is ordinary resolution, not an error.
+    /// Default is null. A provider exception or an unhandled page records the reason before a
+    /// built-in fallback is displayed. This diagnostic does not inherit or affect layout itself
+    /// and cannot be animated. Returning null to delegate a supported built-in page is ordinary
+    /// resolution, not an error.
     /// </remarks>
     public Exception? LayoutError => (Exception?)GetValue(LayoutErrorProperty);
 
@@ -43,8 +44,9 @@ public partial class SoftKeyboard
     /// Requests a new immutable layout snapshot after application-owned data changes.
     /// </summary>
     /// <remarks>
-    /// Call on the owning dispatcher. This cancels held-key interactions before replacing their data.
-    /// Providers must not call this while constructing a layout; recursive construction is ignored.
+    /// Call on the owning dispatcher. This cancels held-key interactions before replacing their
+    /// data. Providers must not call this while constructing a layout; recursive construction is
+    /// ignored.
     /// </remarks>
     public void RefreshLayout()
     {
@@ -56,7 +58,7 @@ public partial class SoftKeyboard
     /// Builds a layout from the current context, batching requests during input-method operations.
     /// </summary>
     /// <param name="publishInputMethodState">
-    /// True when the owning operation has finished reading state and is publishing its layout.
+    /// True while publishing a complete observed snapshot under the input-method operation gate.
     /// </param>
     private void RebuildLayout(bool publishInputMethodState = false)
     {
@@ -67,8 +69,7 @@ public partial class SoftKeyboard
 
         if (_inputMethodOperationActive && !publishInputMethodState)
         {
-            // Profile publication precedes the final IME state read. Publish their layout together
-            // after the native operation and its synchronous notifications have completed.
+            // A complete input-method observation publishes all fields before one layout rebuild.
             _inputMethodLayoutPending = true;
             return;
         }
@@ -85,7 +86,9 @@ public partial class SoftKeyboard
                 ? adapter.GetInputScope(ActiveTarget)
                 : InputScopeNameValue.Default;
 
-            var culture = InputLanguageManager.Current.CurrentInputLanguage;
+            var culture = _observedInputCulture
+                ?? InputLanguageManager.Current.CurrentInputLanguage;
+
             var supplementalSelection = ReadSupplementalSelection();
 
             SetValue(SelectedSupplementalLayoutPropertyKey, supplementalSelection);
@@ -114,7 +117,7 @@ public partial class SoftKeyboard
             );
 
             SoftKeyboardLayout? layout = null;
-            Exception?          error  = null;
+            Exception? error = null;
 
             if (LayoutProvider is not null)
             {

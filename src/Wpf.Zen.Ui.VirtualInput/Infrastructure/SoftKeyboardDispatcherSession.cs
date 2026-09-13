@@ -14,15 +14,17 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// </summary>
 /// <remarks>
 /// Multiple Pages or dialogs can keep keyboard instances loaded at once. Centralizing observation
-/// prevents each instance from installing competing TSF sinks and makes focus routing deterministic.
+/// prevents each instance from installing competing TSF sinks and makes focus routing
+/// deterministic.
 /// Instances are retained weakly so a templated page cannot be kept alive by the dispatcher.
 /// </remarks>
-internal sealed class SoftKeyboardDispatcherSession
+internal sealed class SoftKeyboardDispatcherSession : IDisposable
 {
     private static readonly ConditionalWeakTable<Dispatcher, SoftKeyboardDispatcherSession> Sessions = new();
 
     private readonly Dispatcher          _dispatcher;
     private readonly List<WeakReference> _keyboards = [];
+    private readonly InputMethodMonitor  _inputMethodMonitor;
 
     private int _lastTouchOrPenTick;
 
@@ -30,8 +32,9 @@ internal sealed class SoftKeyboardDispatcherSession
     {
         _dispatcher = dispatcher;
 
+        _inputMethodMonitor = new InputMethodMonitor(dispatcher, OnInputMethodStateInvalidated);
+
         InputManager.Current.PreProcessInput += OnPreProcessInput;
-        InputLanguageManager.Current.InputLanguageChanged += OnInputLanguageChanged;
 
         dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
     }
@@ -54,6 +57,25 @@ internal sealed class SoftKeyboardDispatcherSession
         }
 
         _keyboards.Add(new WeakReference(keyboard));
+        _inputMethodMonitor.EnsureProfileNotifications();
+    }
+
+    /// <summary>
+    /// Gets the input-method notification version for validating a synchronous observation.
+    /// </summary>
+    internal int InputMethodVersion => _inputMethodMonitor.Version;
+
+    /// <summary>
+    /// Gets whether all system notification paths required for normal synchronization are active.
+    /// </summary>
+    internal bool HasReliableInputMethodNotifications => _inputMethodMonitor.HasReliableNotifications;
+
+    /// <summary>
+    /// Retries profile monitoring after WPF creates a text-services host for a focused editor.
+    /// </summary>
+    internal void EnsureInputMethodMonitoring()
+    {
+        _inputMethodMonitor.EnsureProfileNotifications();
     }
 
     internal void Unregister(SoftKeyboard keyboard)
@@ -62,12 +84,12 @@ internal sealed class SoftKeyboardDispatcherSession
     }
 
     /// <summary>
-    /// Determines whether another keyboard on this Dispatcher still owns the embedded input surface.
+    /// Determines whether another keyboard still owns the embedded input surface.
     /// </summary>
     /// <remarks>
-    /// InputPane is HWND-scoped rather than control-scoped. Without this arbitration, closing one of
-    /// two loaded keyboards could issue TryShow while the other keyboard still needs the native pane
-    /// hidden, causing the controls to fight over the same Windows surface.
+    /// InputPane is HWND-scoped rather than control-scoped. Without this arbitration, closing one
+    /// of two loaded keyboards could issue TryShow while the other keyboard still needs the native
+    /// pane hidden, causing the controls to fight over the same Windows surface.
     /// </remarks>
     internal bool IsSystemKeyboardSuppressionRequiredByOther(SoftKeyboard owner)
     {
@@ -104,8 +126,10 @@ internal sealed class SoftKeyboardDispatcherSession
             return;
         }
 
-        var elapsed = unchecked(Environment.TickCount - _lastTouchOrPenTick);
+        var elapsed             = unchecked(Environment.TickCount - _lastTouchOrPenTick);
         var touchOrPenInitiated = elapsed is >= 0 and <= 1000;
+
+        _inputMethodMonitor.EnsureProfileNotifications();
 
         ForEachKeyboard(
             keyboard => keyboard.OnSessionFocusChanged(
@@ -114,15 +138,24 @@ internal sealed class SoftKeyboardDispatcherSession
         );
     }
 
-    private void OnInputLanguageChanged(object sender, InputLanguageEventArgs eventArgs)
+    private void OnInputMethodStateInvalidated()
     {
-        ForEachKeyboard(static keyboard => keyboard.OnSessionInputLanguageChanged());
+        ForEachKeyboard(static keyboard => keyboard.OnSessionInputMethodStateInvalidated());
     }
 
     private void OnDispatcherShutdownStarted(object? sender, EventArgs eventArgs)
     {
+        Dispose();
+    }
+
+    /// <summary>
+    /// Releases dispatcher-wide managed and native input observation.
+    /// </summary>
+    public void Dispose()
+    {
         InputManager.Current.PreProcessInput -= OnPreProcessInput;
-        InputLanguageManager.Current.InputLanguageChanged -= OnInputLanguageChanged;
+
+        _inputMethodMonitor.Dispose();
 
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;
 

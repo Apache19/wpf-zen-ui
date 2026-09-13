@@ -46,14 +46,14 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         {
             var editor = new TextBox
             {
-                Height   = 40,
+                Height = 40,
                 FontSize = 24
             };
             var keyboard = new SoftKeyboard
             {
-                IsOpen            = true,
-                Target            = editor,
-                AutoShowMode      = SoftKeyboardAutoShowMode.AnyFocus,
+                IsOpen = true,
+                Target = editor,
+                AutoShowMode = SoftKeyboardAutoShowMode.AnyFocus,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
             };
             var root = new DockPanel();
@@ -66,14 +66,14 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
             var window = new Window
             {
-                Title   = "SoftKeyboard supplemental panel verification",
+                Title = "SoftKeyboard supplemental panel verification",
                 Content = root,
-                Width   = 900,
-                Height  = 460
+                Width = 900,
+                Height = 460
             };
-            var                      backend       = new TsfInputMethodService();
-            SoftKeyboardInputMethod? original      = null;
-            var                      originalState = InputMethodState.DoNotCare;
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            var originalState = InputMethodState.DoNotCare;
             try
             {
                 window.Show();
@@ -90,7 +90,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                     PumpFor(400);
                 }
 
-                original      = keyboard.ActiveInputMethod;
+                original = keyboard.ActiveInputMethod;
                 originalState = backend.GetImeState();
                 var profile = keyboard.InputMethods.FirstOrDefault(p => p.LanguageId == language
                     && (language != 0x0404 || p.ProfileId == new Guid("B2F9C502-1742-11D4-9790-0080C882687E")));
@@ -245,15 +245,18 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
                 Assert.True(backend.TrySetImeState(InputMethodState.Off));
                 keyboard.OnSessionInputLanguageChanged();
+                PumpFor(100);
                 Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => Equals(key.Content, caps[0]));
                 var other = keyboard.InputMethods.First(p => p.LanguageId != language);
                 Assert.True(backend.TryActivate(other));
                 PumpFor(350);
                 keyboard.OnSessionInputLanguageChanged();
+                PumpFor(100);
                 Assert.Equal(SoftKeyboardSupplementalLayouts.Automatic, keyboard.SelectedSupplementalLayout);
                 Assert.True(backend.TryActivate(profile));
                 PumpFor(350);
                 keyboard.OnSessionInputLanguageChanged();
+                PumpFor(100);
                 Assert.Equal(supplemental, keyboard.SelectedSupplementalLayout);
             }
             finally
@@ -289,15 +292,15 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         {
             var editor = new TextBox
             {
-                Height   = 40,
+                Height = 40,
                 FontSize = 24
             };
             var keyboard = new SoftKeyboard
             {
-                IsOpen            = true,
-                Target            = editor,
-                AutoHideMode      = SoftKeyboardAutoHideMode.Manual,
-                CandidateMode     = mode,
+                IsOpen = true,
+                Target = editor,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                CandidateMode = mode,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
             };
             var root = new DockPanel();
@@ -306,14 +309,14 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             root.Children.Add(keyboard);
             var window = new Window
             {
-                Title   = "SoftKeyboard native IME verification",
+                Title = "SoftKeyboard native IME verification",
                 Content = root,
-                Width   = 850,
-                Height  = 420
+                Width = 850,
+                Height = 420
             };
-            var                      backend       = new TsfInputMethodService();
-            SoftKeyboardInputMethod? original      = null;
-            var                      originalState = InputMethodState.DoNotCare;
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            var originalState = InputMethodState.DoNotCare;
             PreProcessInputEventHandler trace = (_, args) =>
             {
                 if (args.StagingItem.Input is KeyboardFocusChangedEventArgs focus &&
@@ -337,7 +340,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 window.UpdateLayout();
                 PumpFor(400);
                 PumpUntil(() => keyboard.ActiveInputMethod is not null, 1500);
-                original      = keyboard.ActiveInputMethod;
+                original = keyboard.ActiveInputMethod;
                 originalState = backend.GetImeState();
                 output.WriteLine(string.Join(
                     Environment.NewLine,
@@ -388,9 +391,9 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         "Weasel did not expose at least three candidates.");
 
                     var candidate = keyboard.Candidates[Math.Min(requested, keyboard.Candidates.Count - 1)];
-                    var expected  = candidate.Text.TrimEnd('\0');
+                    var expected = candidate.Text.TrimEnd('\0');
                     output.WriteLine($"Click {requested}: {expected}, selected={keyboard.SelectedCandidateIndex}");
-                    var elapsed    = Stopwatch.StartNew();
+                    var elapsed = Stopwatch.StartNew();
                     var selections = new List<uint?>();
                     var descriptor = DependencyPropertyDescriptor.FromProperty(
                         SoftKeyboard.SelectedCandidateIndexProperty, typeof(SoftKeyboard));
@@ -591,7 +594,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     {
         // Opt-in desktop tests need a real foreground host before exercising SendInput guards.
         var foregroundThread = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), IntPtr.Zero);
-        var currentThread    = NativeMethods.GetCurrentThreadId();
+        var currentThread = NativeMethods.GetCurrentThreadId();
         var attached = foregroundThread != currentThread &&
             NativeMethods.AttachThreadInput(currentThread, foregroundThread, true);
         try

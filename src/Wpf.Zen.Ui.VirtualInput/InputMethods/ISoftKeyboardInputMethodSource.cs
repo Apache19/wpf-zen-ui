@@ -8,6 +8,10 @@ namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 /// <summary>
 /// Creates a dispatcher-owned input-method catalog and activation session.
 /// </summary>
+/// <remarks>
+/// Custom sessions should implement <see cref="ISoftKeyboardInputMethodObservableSession"/> when
+/// their catalog or state can change externally. Other sessions use periodic recovery observation.
+/// </remarks>
 public interface ISoftKeyboardInputMethodSource
 {
     /// <summary>

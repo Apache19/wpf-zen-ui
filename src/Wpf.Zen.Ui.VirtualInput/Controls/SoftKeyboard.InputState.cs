@@ -30,12 +30,13 @@ public partial class SoftKeyboard
         );
 
     /// <summary>
-    /// Gets or sets the adapter for nonstandard text-service mode APIs. Defaults to null, using WPF state.
+    /// Gets or sets the adapter for nonstandard text-service mode APIs.
     /// </summary>
     /// <remarks>
-    /// This property is not inherited or animated. Changing it re-reads state and may regenerate
-    /// the layout. Adapter exceptions degrade to unknown state or a rejected write; a failed
-    /// adapter is never followed by a second write through a different state mechanism.
+    /// The default is null, which uses WPF state. This property is not inherited or animated.
+    /// Changing it schedules a complete observation and may regenerate the layout. Adapter read
+    /// failures preserve the last valid state. A failed adapter write is never followed by a
+    /// second write through another state mechanism.
     /// </remarks>
     public ISoftKeyboardInputStateAdapter? InputStateAdapter
     {
@@ -43,27 +44,57 @@ public partial class SoftKeyboard
         set => SetValue(InputStateAdapterProperty, value);
     }
 
-    // WPF StateChanged covers TSF compartments, but a same-language profile switch need not
-    // raise InputLanguageChanged. Observe profiles at a bounded cadence while this keyboard owns
-    // foreground input. Never restore focus or write system state from this read-only fallback.
-    // The timer is stopped on Unloaded, so it cannot retain a discarded keyboard through Dispatcher.
+    /// <summary>
+    /// Starts a recovery-only observation timer whose cadence reflects notification health.
+    /// </summary>
     private void StartInputStateObservation()
     {
         _inputStateTimer ??= new DispatcherTimer(
-            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(30),
             DispatcherPriority.Background,
             (_, _) =>
             {
+                _session?.EnsureInputMethodMonitoring();
+                UpdateInputStateRecoveryInterval();
+
                 if (IsOpen && IsVisible && IsEnabled && IsWindowForeground()
                     && ActiveTarget is not null && ReferenceEquals(Keyboard.FocusedElement, ActiveTarget))
                 {
-                    RefreshInputMethods();
-                    RefreshImeState();
+                    QueueInputMethodStateRefresh();
                 }
             },
             Dispatcher
         );
 
+        UpdateInputStateRecoveryInterval();
         _inputStateTimer.Start();
+    }
+
+    /// <summary>
+    /// Uses rapid recovery only for failed reads or sources without complete change notifications.
+    /// </summary>
+    private void UpdateInputStateRecoveryInterval()
+    {
+        if (_inputStateTimer is null)
+        {
+            return;
+        }
+
+        var sourceHasNotifications = _inputMethodSession
+            is ISoftKeyboardInputMethodObservableSession;
+
+        var systemNotificationsHealthy = InputMethodSource
+            is WindowsSoftKeyboardInputMethodSource
+            && _session?.HasReliableInputMethodNotifications == true;
+
+        var interval = InputMethodError is not null
+            || (!sourceHasNotifications && !systemNotificationsHealthy)
+                ? TimeSpan.FromSeconds(1)
+                : TimeSpan.FromSeconds(30);
+
+        if (_inputStateTimer.Interval != interval)
+        {
+            _inputStateTimer.Interval = interval;
+        }
     }
 }

@@ -224,7 +224,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Reads and changes native input state within one source and focused-target transaction.
+    /// Writes the opposite of the last observed input mode through exactly one state mechanism.
     /// </summary>
     private void ToggleImeCore()
     {
@@ -233,53 +233,35 @@ public partial class SoftKeyboard
             return;
         }
 
-        RunInputMethodOperation((session, isCurrent) =>
+        var inputMethod  = ActiveInputMethod;
+        var currentState = ImeState;
+
+        if (inputMethod?.SupportsImeToggle != true
+            || currentState is not (InputMethodState.On or InputMethodState.Off))
         {
-            if (!PublishInputMethods(session, isCurrent) || !ReadImeState(session, isCurrent))
+            return;
+        }
+
+        var requestedState = currentState == InputMethodState.On
+            ? InputMethodState.Off
+            : InputMethodState.On;
+
+        _ = RunInputMethodCommand((session, isCurrent) =>
+        {
+            if (!isCurrent())
             {
                 return false;
             }
 
-            if (ActiveInputMethod?.SupportsImeToggle != true
-                || ImeState is not (InputMethodState.On or InputMethodState.Off))
-            {
-                return false;
-            }
+            var adapter  = ResolveInputStateAdapter();
+            var accepted = adapter?.TrySetState(inputMethod, requestedState)
+                ?? session.TrySetState(requestedState);
 
-            if (ImeState == InputMethodState.On)
-            {
-                if (!TrySetInputMethodState(session, isCurrent, InputMethodState.Off))
-                {
-                    return false;
-                }
-
-                ReleaseCandidatePresentation();
-
-                if (!isCurrent())
-                {
-                    return false;
-                }
-
-                ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
-            }
-            else
-            {
-                if (!TrySetInputMethodState(session, isCurrent, InputMethodState.On))
-                {
-                    return false;
-                }
-            }
-
-            if (!isCurrent() || !ReadImeState(session, isCurrent))
-            {
-                return false;
-            }
-
-            QueueInputMethodStateRefresh();
-            RequestSystemKeyboardHide();
-
-            return isCurrent();
+            return accepted && isCurrent();
         });
+
+        QueueInputMethodStateRefresh();
+        RequestSystemKeyboardHide();
     }
 
     private bool TrySendVirtualKey(Key key, bool shift)

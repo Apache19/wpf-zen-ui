@@ -490,9 +490,9 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// <see cref="InputMethodState.DoNotCare"/> indicates that the active text service does not
-    /// expose a controllable open state or its state is unavailable. Built-in layouts omit the mode
-    /// switch in this state. A supported IME in direct mode retains its A key
-    /// to enable native input.
+    /// expose a controllable open state, or that no valid state has been observed yet. Built-in
+    /// layouts omit the mode switch in this state. A transient read failure preserves the last valid
+    /// mode. A supported IME in direct mode retains its A key to enable native input.
     /// </remarks>
     public InputMethodState ImeState
     {
