@@ -5,7 +5,6 @@
     <TargetFramework>net472</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>wpfui.ico</ApplicationIcon>
-    <NoWarn>$(NoWarn);SA1601</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

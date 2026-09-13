@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.Controls;
+using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Layouts;

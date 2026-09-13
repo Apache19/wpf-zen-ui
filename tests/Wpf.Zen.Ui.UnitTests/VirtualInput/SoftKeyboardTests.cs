@@ -20,6 +20,7 @@ using System.Windows.Media;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 using Wpf.Zen.Ui.VirtualInput.Controls;
+using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Infrastructure;
 using Wpf.Zen.Ui.VirtualInput.Input;

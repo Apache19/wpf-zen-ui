@@ -15,7 +15,7 @@ global using System.Windows.Interop;
 global using System.Windows.Media;
 global using Wpf.Zen.Ui.VirtualInput.Candidates;
 global using Wpf.Zen.Ui.VirtualInput.Controls;
-global using Wpf.Zen.Ui.VirtualInput.Extensions;
+global using Wpf.Zen.Ui.VirtualInput.Extensibility;
 global using Wpf.Zen.Ui.VirtualInput.Infrastructure;
 global using Wpf.Zen.Ui.VirtualInput.Input;
 global using Wpf.Zen.Ui.VirtualInput.InputMethods;

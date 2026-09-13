@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Lepo.i18n.Wpf;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.DependencyInjection;
 using Wpf.Zen.Ui.Gallery.DependencyModel;
@@ -76,13 +75,6 @@ public partial class App
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
-        // Lepo.i18n's WPF integration owns its localization provider; routing it through the
-        // application DI container adds registrations without providing a useful lifetime boundary.
-        _ = this.UseStringLocalizer(builder =>
-        {
-            builder.FromResource<Translations>(new("pl-PL"));
-        });
-
         /*
         var theme = LoadAppTheme();
 

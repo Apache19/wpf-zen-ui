@@ -4,9 +4,5 @@
 // All Rights Reserved.
 
 using System.Runtime.CompilerServices;
-using System.Windows.Markup;
 
 [assembly: InternalsVisibleTo("Wpf.Zen.Ui.UnitTests")]
-
-[assembly: XmlnsPrefix("http://schemas.thezendev.com/wpf/2027/virtual-input/extensions", "keyboardExtensions")]
-[assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/virtual-input/extensions", "Wpf.Zen.Ui.VirtualInput.Extensions")]

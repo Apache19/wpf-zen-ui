@@ -81,7 +81,7 @@
                     <ui:AutoSuggestBox
                         x:Name="AutoSuggestBox"
                         AutomationProperties.AutomationId="NavigationAutoSuggestBox"
-                        PlaceholderText="{i18n:StringLocalizer 'Search'}">
+                        PlaceholderText="Search">
                         <ui:AutoSuggestBox.Icon>
                             <ui:FluentIcon Symbol="Search24" />
                         </ui:AutoSuggestBox.Icon>

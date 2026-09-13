@@ -1,17 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Wpf.Zen.Ui.Gallery</RootNamespace>
     <OutputType>WinExe</OutputType>
     <StartupObject>Wpf.Zen.Ui.Gallery.Program</StartupObject>
-    <TargetFrameworks>net10.0-windows;net472</TargetFrameworks>
-    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <TargetFrameworks>net472;net10.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>wpfui.ico</ApplicationIcon>
-    <NoWarn>$(NoWarn);SA1601</NoWarn>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <Platforms>AnyCPU;x86;x64;arm64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,13 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lepo.i18n.Wpf" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Web.WebView2" />
-    <PackageReference Include="ReflectionEventing" />
-    <PackageReference Include="ReflectionEventing.DependencyInjection" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,13 +62,6 @@
 
   <ItemGroup>
     <Folder Include="Assets\Monaco\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="WpfAnalyzers">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
