@@ -19,12 +19,13 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
 {
     private const uint UiElementEnabledOnly = 0x00000004;
 
-    private static readonly Guid UIElementSinkId = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
+    private static readonly Guid UIElementSinkId             = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
     private static readonly Guid ActiveLanguageProfileSinkId = new("B246CB75-A93E-4652-BF8C-B3FE0CFD7E57");
-    private static readonly Guid ThreadManagerClassId = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
-    private readonly        Dispatcher _dispatcher;
-    private readonly        List<WeakReference> _keyboards = [];
-    private readonly        DispatcherTimer _candidatePollTimer;
+    private static readonly Guid ThreadManagerClassId        = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
+
+    private readonly Dispatcher          _dispatcher;
+    private readonly List<WeakReference> _keyboards = [];
+    private readonly DispatcherTimer     _candidatePollTimer;
 
     private object?                            _threadManagerObject;
     private ITfThreadMgr?                      _threadManager;
@@ -256,7 +257,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
                     SoftKeyboardCandidateOperationResult result;
                     try
                     {
-                        result = await behavior.CommitAsync(context, candidate, cancellationToken);
+                        result = await behavior
+                            .CommitAsync(context, candidate, cancellationToken)
+                            .ConfigureAwait(true);
                     }
                     catch (OperationCanceledException) when (operationToken.IsCancellationRequested)
                     {
@@ -373,7 +376,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
                     SoftKeyboardCandidateOperationResult result;
                     try
                     {
-                        result = await behavior.MovePageAsync(context, delta, cancellationToken);
+                        result = await behavior
+                            .MovePageAsync(context, delta, cancellationToken)
+                            .ConfigureAwait(true);
                     }
                     catch (OperationCanceledException) when (operationToken.IsCancellationRequested)
                     {

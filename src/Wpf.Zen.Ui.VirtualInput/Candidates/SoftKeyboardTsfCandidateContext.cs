@@ -113,8 +113,13 @@ public sealed class SoftKeyboardTsfCandidateContext
         );
 
         var token = acknowledgementCancellation.Token;
+
         token.ThrowIfCancellationRequested();
-        var changed = await _host.WaitForSnapshotChangeAsync(SnapshotVersion, timeout, token);
+
+        var changed = await _host
+            .WaitForSnapshotChangeAsync(SnapshotVersion, timeout, token)
+            .ConfigureAwait(false);
+
         token.ThrowIfCancellationRequested();
 
         return changed;

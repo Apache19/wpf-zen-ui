@@ -129,7 +129,7 @@ public partial class SoftKeyboard
 
         try
         {
-            await state.Session.RefreshAsync(operation.Token);
+            await state.Session.RefreshAsync(operation.Token).ConfigureAwait(true);
 
             if (operation.IsCurrent && IsCandidateSessionCurrent(state.Version, state.Session))
             {
@@ -302,7 +302,7 @@ public partial class SoftKeyboard
             () => cancellation.TrySetResult(false)
         );
 
-        var completed = await Task.WhenAny(signal, cancellation.Task);
+        var completed = await Task.WhenAny(signal, cancellation.Task).ConfigureAwait(true);
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -345,7 +345,7 @@ public partial class SoftKeyboard
 
         try
         {
-            var result = await operation(state.Session, execution.Token);
+            var result = await operation(state.Session, execution.Token).ConfigureAwait(true);
 
             if (!IsCandidateSessionCurrent(state.Version, state.Session)
                 || !execution.IsCurrent)

@@ -85,7 +85,9 @@ public sealed class WeaselCandidateBehavior : ISoftKeyboardTsfCandidateBehavior
             );
         }
 
-        return await context.WaitForSnapshotChangeAsync(TimeSpan.FromMilliseconds(750), cancellationToken)
+        return await context
+            .WaitForSnapshotChangeAsync(TimeSpan.FromMilliseconds(750), cancellationToken)
+            .ConfigureAwait(false)
             ? SoftKeyboardCandidateOperationResult.Success
             : SoftKeyboardCandidateOperationResult.Failure(
                 new TimeoutException("Weasel did not acknowledge the candidate number key within 750 ms.")
@@ -110,7 +112,9 @@ public sealed class WeaselCandidateBehavior : ISoftKeyboardTsfCandidateBehavior
             );
         }
 
-        return await context.WaitForSnapshotChangeAsync(TimeSpan.FromMilliseconds(750), cancellationToken)
+        return await context
+            .WaitForSnapshotChangeAsync(TimeSpan.FromMilliseconds(750), cancellationToken)
+            .ConfigureAwait(false)
             ? SoftKeyboardCandidateOperationResult.Success
             : SoftKeyboardCandidateOperationResult.Failure(
                 new TimeoutException("Weasel did not acknowledge the paging key within 750 ms.")

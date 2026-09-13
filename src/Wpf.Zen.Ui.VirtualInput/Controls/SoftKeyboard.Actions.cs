@@ -58,8 +58,7 @@ public partial class SoftKeyboard
                 && action is IAsyncSoftKeyboardAlternateKeyAction asyncAlternate)
             {
                 await asyncAlternate.ExecuteAlternateAsync(
-                    context, alternative, operation.Token
-                );
+                    context, alternative, operation.Token).ConfigureAwait(true);
             }
             else if (alternative is not null
                 && action is ISoftKeyboardAlternateKeyAction alternate)
@@ -68,7 +67,7 @@ public partial class SoftKeyboard
             }
             else if (action is IAsyncSoftKeyboardKeyAction asyncAction)
             {
-                await asyncAction.ExecuteAsync(context, operation.Token);
+                await asyncAction.ExecuteAsync(context, operation.Token).ConfigureAwait(true);
             }
             else if (action is ISoftKeyboardKeyAction synchronousAction)
             {
