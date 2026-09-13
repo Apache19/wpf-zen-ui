@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.VirtualInput.Extensions;
+namespace Wpf.Zen.Ui.VirtualInput.Extensibility;
 
 /// <summary>
 /// Resolves the ordered input-method extensions that apply to one immutable keyboard context.

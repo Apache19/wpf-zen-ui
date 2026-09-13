@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.VirtualInput.Extensions;
+namespace Wpf.Zen.Ui.VirtualInput.Extensibility;
 
 /// <summary>
 /// Describes the immutable environment used to select input-method extensions.

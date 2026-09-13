@@ -10,7 +10,7 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Wpf.Zen.Ui.VirtualInput.Candidates;
 global using Wpf.Zen.Ui.VirtualInput.Controls;
-global using Wpf.Zen.Ui.VirtualInput.Extensions;
+global using Wpf.Zen.Ui.VirtualInput.Extensibility;
 global using Wpf.Zen.Ui.VirtualInput.Input;
 global using Wpf.Zen.Ui.VirtualInput.Layouts;
 global using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;

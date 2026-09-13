@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.VirtualInput.Extensions;
+namespace Wpf.Zen.Ui.VirtualInput.Extensibility;
 
 /// <summary>
 /// Concatenates several extension providers while preserving their declaration order.
