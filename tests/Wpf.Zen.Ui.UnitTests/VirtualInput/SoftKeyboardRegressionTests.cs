@@ -28,6 +28,117 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardRegressionTests
 {
     /// <summary>
+    /// Profile, mode, and reentrant language notifications publish one final layout per activation.
+    /// </summary>
+    [Fact]
+    public Task InputMethodActivation_BatchesLayoutUntilFinalState()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var keyboard = scope.Keyboard;
+            keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            var next = new SoftKeyboardInputMethod(
+                Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Chinese", false);
+            var active = scope.Method;
+            var state = InputMethodState.Off;
+            session.GetSnapshot().Returns(_ =>
+                new SoftKeyboardInputMethodSnapshot([scope.Method, next], active));
+            session.GetState().Returns(_ => state);
+            Assert.True(keyboard.RefreshInputMethods());
+            session.TryActivate(next).Returns(_ =>
+            {
+                keyboard.OnSessionInputLanguageChanged();
+                active = next;
+                keyboard.OnSessionInputLanguageChanged();
+                return true;
+            });
+            session.TrySetState(InputMethodState.On).Returns(_ =>
+            {
+                state = InputMethodState.On;
+                return true;
+            });
+            var contexts = new List<SoftKeyboardLayoutContext>();
+            var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
+            provider.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(call =>
+            {
+                contexts.Add(call.Arg<SoftKeyboardLayoutContext>());
+                return null;
+            });
+            keyboard.LayoutProvider = provider;
+            contexts.Clear();
+
+            Assert.True(keyboard.TryActivateInputMethod(next));
+            var context = Assert.Single(contexts);
+            Assert.Same(next, context.InputMethod);
+            Assert.Equal(InputMethodState.On, context.ImeState);
+            await scope.DrainAsync();
+            Assert.Single(contexts);
+        });
+    }
+
+    /// <summary>
+    /// Publishing the final layout retains the activation gate and validates target ownership.
+    /// </summary>
+    [Fact]
+    public Task InputMethodActivation_RejectsTargetChangeFromFinalLayout()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var keyboard = scope.Keyboard;
+            keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            session.GetState().Returns(InputMethodState.Off);
+            Assert.True(keyboard.RefreshInputMethods());
+            var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
+            provider.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(call =>
+            {
+                if (call.Arg<SoftKeyboardLayoutContext>().ImeState == InputMethodState.On)
+                {
+                    Assert.False(keyboard.TryActivateInputMethod(scope.Method));
+                    keyboard.Target = scope.OtherEditor;
+                }
+
+                return null;
+            });
+            keyboard.LayoutProvider = provider;
+            session.GetState().Returns(InputMethodState.On);
+
+            Assert.False(keyboard.TryActivateInputMethod(scope.Method));
+            session.Received(1).TryActivate(scope.Method);
+        });
+    }
+
+    /// <summary>
+    /// A menu's temporary IME state is ignored and closing it schedules an editor-state refresh.
+    /// </summary>
+    [Fact]
+    public Task InputMethodMenu_PreservesEditorStateUntilFocusReturns()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            session.GetState().Returns(InputMethodState.On);
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            scope.Keyboard.ShowInputMethodMenu();
+            var menu = Assert.IsType<ContextMenu>(GetMenu(scope.Keyboard));
+            Assert.True(menu.Focus());
+            session.GetState().Returns(InputMethodState.Off);
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.Equal(InputMethodState.On, scope.Keyboard.ImeState);
+
+            menu.IsOpen = false;
+            Assert.True(scope.Editor.Focus());
+            await scope.DrainAsync();
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+        });
+    }
+
+    /// <summary>
     /// Selecting an ordinary keyboard succeeds without writing an IME compartment.
     /// Stale On values supplied by the backend cannot expose a mode switch for this entry.
     /// </summary>

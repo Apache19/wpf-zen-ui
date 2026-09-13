@@ -54,9 +54,6 @@ public partial class SoftKeyboard
 
             if (IsOpen)
             {
-                RefreshInputMethods();
-                RefreshImeState();
-
                 QueueInputMethodStateRefresh();
 
                 RequestSystemKeyboardHide();
@@ -81,11 +78,14 @@ public partial class SoftKeyboard
         ResetCandidateSession();
     }
 
+    /// <summary>
+    /// Observes language changes after native profile activation has completed.
+    /// </summary>
     internal void OnSessionInputLanguageChanged()
     {
-        RefreshInputMethods();
-        RefreshImeState();
-        RebuildLayout();
+        // Culture is an independent layout input, even when a custom source keeps its profile.
+        // The next observation (or the current activation) flushes this pending layout once.
+        _inputMethodLayoutPending = true;
         QueueInputMethodStateRefresh();
     }
 

@@ -197,6 +197,14 @@ public partial class SoftKeyboard
     /// </summary>
     private bool ReadImeState(ISoftKeyboardInputMethodSession session, Func<bool> isCurrent)
     {
+        if ((_inputMethodMenu?.IsOpen == true || SettingsMenu?.IsOpen == true)
+            && !ReferenceEquals(Keyboard.FocusedElement, ActiveTarget))
+        {
+            // A menu's text-service context does not describe the retained editor. Closing the
+            // menu queues a fresh observation after WPF has restored keyboard focus.
+            return isCurrent();
+        }
+
         var adapter = ResolveInputStateAdapter();
 
         if (!isCurrent())
@@ -362,6 +370,14 @@ public partial class SoftKeyboard
 
             var succeeded = operation(session, IsCurrent);
 
+            if (_inputMethodLayoutPending)
+            {
+                _inputMethodLayoutPending = false;
+                // Layout providers can invoke application code. Keep the operation gate closed
+                // and validate ownership after publishing, just as for dependency properties.
+                RebuildLayout(publishInputMethodState: true);
+            }
+
             if (!IsCurrent())
             {
                 return false;
@@ -391,6 +407,12 @@ public partial class SoftKeyboard
             }
 
             _inputMethodOperationActive = false;
+
+            if (_inputMethodLayoutPending)
+            {
+                _inputMethodLayoutPending = false;
+                RebuildLayout();
+            }
         }
     }
 
@@ -479,7 +501,7 @@ public partial class SoftKeyboard
                     if (IsLoaded)
                     {
                         RefreshInputMethods();
-                        RefreshImeState();
+                        RequestCandidateRefresh();
                         QueueCandidateBridgeRefresh();
                     }
                 }

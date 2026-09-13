@@ -13,6 +13,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     private bool _isRebuildingLayout;
+    private bool _inputMethodLayoutPending;
 
     private static readonly DependencyPropertyKey LayoutErrorPropertyKey
         = DependencyProperty.RegisterReadOnly(
@@ -51,10 +52,24 @@ public partial class SoftKeyboard
         RebuildLayout();
     }
 
-    private void RebuildLayout()
+    /// <summary>
+    /// Builds a layout from the current context, batching requests during input-method operations.
+    /// </summary>
+    /// <param name="publishInputMethodState">
+    /// True when the owning operation has finished reading state and is publishing its layout.
+    /// </param>
+    private void RebuildLayout(bool publishInputMethodState = false)
     {
         if (_isRebuildingLayout)
         {
+            return;
+        }
+
+        if (_inputMethodOperationActive && !publishInputMethodState)
+        {
+            // Profile publication precedes the final IME state read. Publish their layout together
+            // after the native operation and its synchronous notifications have completed.
+            _inputMethodLayoutPending = true;
             return;
         }
 

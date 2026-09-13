@@ -133,8 +133,9 @@ public partial class SoftKeyboard
     {
         if (args.IsImeStateChanged || args.IsImeConversionModeChanged)
         {
-            RefreshImeState();
-            RequestCandidateRefresh();
+            // Open and conversion compartments can notify separately during a single switch.
+            // Observe their combined result after the native callback sequence has unwound.
+            QueueInputMethodStateRefresh();
         }
     }
 

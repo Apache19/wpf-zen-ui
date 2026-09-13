@@ -151,6 +151,8 @@ public partial class SoftKeyboard
                         {
                             PrepareTargetForInput();
                         }
+
+                        QueueInputMethodStateRefresh();
                     }
                 )
             );
