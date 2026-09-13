@@ -53,10 +53,7 @@ public sealed class SoftKeyboardLayoutContext
 
         Page = !string.IsNullOrWhiteSpace(page)
             ? page
-            : throw new ArgumentException(
-                "A page identifier is required.",
-                nameof(page)
-            );
+            : throw new ArgumentException("A page identifier is required.", nameof(page));
 
         ShiftState         = shiftState;
         ImeState           = imeState;
@@ -96,6 +93,13 @@ public sealed class SoftKeyboardLayoutContext
     /// Gets the observed native/direct input state, never an optimistic toggle request.
     /// </summary>
     public InputMethodState ImeState { get; }
+
+    /// <summary>
+    /// Gets whether the active profile supports mode switching and has a known observed state.
+    /// False when no profile is selected, the entry is a plain keyboard, or state is unavailable.
+    /// </summary>
+    public bool CanToggleIme => InputMethod?.SupportsImeToggle == true
+        && ImeState is InputMethodState.On or InputMethodState.Off;
 
     /// <summary>
     /// Gets the active profile identity, or null when Windows exposes none.

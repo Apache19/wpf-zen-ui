@@ -490,8 +490,9 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// <see cref="InputMethodState.DoNotCare"/> indicates that the active text service does not
-    /// expose a controllable open state. The default template's ABC button requests the opposite
-    /// state and leaves this value unchanged when the input method rejects the request.
+    /// expose a controllable open state or its state is unavailable. Built-in layouts omit the mode
+    /// switch in this state. A supported IME in direct mode retains its A key
+    /// to enable native input.
     /// </remarks>
     public InputMethodState ImeState
     {

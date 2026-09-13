@@ -6,6 +6,8 @@
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
+using Windows.Win32;
+using Windows.Win32.UI.TextServices;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
@@ -22,7 +24,8 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     private const uint ProfileTypeInputProcessor = 0x0001;
     private const uint ActivateForProcess        = 0x10000000;
 
-    private static readonly Guid ProfilesClassId = new("33C53A50-F456-4884-B049-85FD643ECFED");
+    private static readonly Guid ProfilesClassId    = new("33C53A50-F456-4884-B049-85FD643ECFED");
+    private static readonly Guid KeyboardCategoryId = new("34745C63-B2F0-4784-8B67-5E12C8701A31");
 
     public void Refresh(
         ObservableCollection<SoftKeyboardInputMethod> destination,
@@ -251,6 +254,8 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                 return result;
             }
 
+            var activeProfile = ReadActiveKeyboardProfile(profiles);
+
             for (var languageIndex = 0; languageIndex < languageCount; languageIndex++)
             {
                 var languageId = unchecked(
@@ -277,12 +282,19 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                             out var enabled
                         );
 
-                        if (r < 0 || enabled == 0)
+                        if (r < 0 || enabled == 0 || nativeProfile.CategoryId != KeyboardCategoryId)
                         {
                             continue;
                         }
 
                         var description = GetDescription(profiles, in nativeProfile);
+                        // IsActive on a legacy language profile is not sufficient to distinguish
+                        // the current keyboard category from a remembered per-language selection.
+                        var isActive = activeProfile is { } current
+                            && current.dwProfileType == ProfileTypeInputProcessor
+                            && current.clsid == nativeProfile.ClassId
+                            && current.guidProfile == nativeProfile.ProfileId
+                            && current.langid == nativeProfile.LanguageId;
 
                         result.Add(
                             new SoftKeyboardInputMethod(
@@ -290,8 +302,8 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                                 nativeProfile.ProfileId,
                                 nativeProfile.LanguageId,
                                 description,
-                                nativeProfile.IsActive != 0,
-                                nativeProfile.IsActive != 0 ? TsfTouchLayoutQuery.Query(nativeProfile.ClassId) : null
+                                isActive,
+                                isActive ? TsfTouchLayoutQuery.Query(nativeProfile.ClassId) : null
                             )
                         );
                     }
@@ -319,6 +331,35 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         return result;
     }
 
+    /// <summary>
+    /// Reads the current keyboard-category profile, including ordinary keyboard layouts.
+    /// An unavailable query leaves the active TSF identity unknown instead of guessing a profile.
+    /// </summary>
+    private static TF_INPUTPROCESSORPROFILE? ReadActiveKeyboardProfile(ITfInputProcessorProfiles profiles)
+    {
+        if (profiles is not ITfInputProcessorProfileMgr manager)
+        {
+            return null;
+        }
+
+        var buffer = Marshal.AllocHGlobal(Marshal.SizeOf<TF_INPUTPROCESSORPROFILE>());
+        try
+        {
+            return manager.GetActiveProfile(in KeyboardCategoryId, buffer) == 0
+                ? Marshal.PtrToStructure<TF_INPUTPROCESSORPROFILE>(buffer)
+                : null;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    /// <summary>
+    /// Provides language-level fallback entries when TSF discovery yields no enabled profiles.
+    /// Identifies an active legacy IMM IME so its native/direct mode can still be switched.
+    /// WPF language entries select a language rather than a specific layout within that language.
+    /// </summary>
     private static List<SoftKeyboardInputMethod> EnumerateWpfLanguages()
     {
         var result  = new List<SoftKeyboardInputMethod>();
@@ -336,13 +377,17 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                 continue;
             }
 
+            var languageId = unchecked((ushort)culture.LCID);
+            var isActive   = culture.Equals(current);
+
             result.Add(
                 new SoftKeyboardInputMethod(
                     Guid.Empty,
                     Guid.Empty,
-                    unchecked((ushort)culture.LCID),
+                    languageId,
                     culture.NativeName,
-                    culture.Equals(current)
+                    isActive,
+                    supportsImeToggle: isActive && PInvoke.ImmIsIME(PInvoke.GetKeyboardLayout(0))
                 )
             );
         }

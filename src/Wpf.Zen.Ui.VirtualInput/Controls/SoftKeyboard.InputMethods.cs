@@ -102,20 +102,23 @@ public partial class SoftKeyboard
     #endregion
 
     /// <summary>
-    /// Reads and publishes the input-method catalog on the owning dispatcher.
+    /// Reads and publishes the input-method catalog and current mode on the owning dispatcher.
     /// </summary>
     /// <remarks>
     /// Reentrant requests are rejected. Native callbacks cannot start a second operation in the middle
     /// of publication or activation. Source failures are exposed through InputMethodError.
     /// </remarks>
-    /// <returns>True when a current snapshot was published; false on failure or reentrancy.</returns>
+    /// <returns>
+    /// True when catalog and state were refreshed; false on failure or reentrancy.
+    /// </returns>
     public bool RefreshInputMethods()
     {
-        return RunInputMethodOperation(PublishInputMethods);
+        return RunInputMethodOperation((session, isCurrent) =>
+            PublishInputMethods(session, isCurrent) && ReadImeState(session, isCurrent));
     }
 
     /// <summary>
-    /// Activates a catalog entry, refreshes the catalog, and enables native input as one operation.
+    /// Activates a catalog entry and refreshes the catalog; IME entries also enable native input.
     /// </summary>
     /// <param name="inputMethod">An entry from the current InputMethods collection.</param>
     /// <returns>
@@ -159,12 +162,17 @@ public partial class SoftKeyboard
             return false;
         }
 
-        if (!TrySetInputMethodState(session, isCurrent, InputMethodState.On))
+        if (ActiveInputMethod?.SupportsImeToggle == true
+            && !TrySetInputMethodState(session, isCurrent, InputMethodState.On))
         {
             return false;
         }
 
-        _preferredImeInputMethod = inputMethod;
+        if (!ReadImeState(session, isCurrent))
+        {
+            return false;
+        }
+
         QueueInputMethodStateRefresh();
 
         return true;
@@ -196,7 +204,9 @@ public partial class SoftKeyboard
             return false;
         }
 
-        var observed = adapter is null ? session.GetState() : adapter.GetState(ActiveInputMethod);
+        var observed = ActiveInputMethod?.SupportsImeToggle != true
+            ? InputMethodState.DoNotCare
+            : adapter?.GetState(ActiveInputMethod) ?? session.GetState();
 
         if (!isCurrent())
         {
@@ -224,6 +234,11 @@ public partial class SoftKeyboard
         var adapter = ResolveInputStateAdapter();
 
         if (!isCurrent())
+        {
+            return false;
+        }
+
+        if (ActiveInputMethod?.SupportsImeToggle != true)
         {
             return false;
         }
@@ -297,11 +312,6 @@ public partial class SoftKeyboard
         if (!isCurrent())
         {
             return false;
-        }
-
-        if (snapshot.ActiveInputMethod is not null)
-        {
-            _preferredImeInputMethod = snapshot.ActiveInputMethod;
         }
 
         return true;
@@ -448,31 +458,6 @@ public partial class SoftKeyboard
         RunAfterActiveCompositionCancellation(() => TryActivateInputMethod(inputMethod));
     }
 
-    private SoftKeyboardInputMethod? FindPreferredImeInputMethod()
-    {
-        var remembered = _preferredImeInputMethod is null
-            ? null
-            : InputMethods.FirstOrDefault(
-                inputMethod => HaveSameInputMethod(inputMethod, _preferredImeInputMethod)
-            );
-
-        if (remembered is not null)
-        {
-            return remembered;
-        }
-
-        var uiLanguage         = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
-        var formattingLanguage = unchecked((ushort)CultureInfo.CurrentCulture.LCID);
-
-        return InputMethods.FirstOrDefault(
-                inputMethod => SamePrimaryLanguage(inputMethod.LanguageId, uiLanguage)
-            )
-            ?? InputMethods.FirstOrDefault(
-                inputMethod => SamePrimaryLanguage(inputMethod.LanguageId, formattingLanguage)
-            )
-            ?? InputMethods.FirstOrDefault();
-    }
-
     /// <summary>
     /// Coalesces native notifications into one observation after the current dispatcher callback.
     /// </summary>
@@ -526,12 +511,7 @@ public partial class SoftKeyboard
         return left?.ProfileId == right?.ProfileId
             && left?.ClassId == right?.ClassId
             && left?.LanguageId == right?.LanguageId
-            && left?.TouchLayoutPreference == right?.TouchLayoutPreference;
-    }
-
-    private static bool SamePrimaryLanguage(ushort left, ushort right)
-    {
-        const ushort primaryLanguageMask = 0x03FF;
-        return (left & primaryLanguageMask) == (right & primaryLanguageMask);
+            && left?.TouchLayoutPreference == right?.TouchLayoutPreference
+            && left?.SupportsImeToggle == right?.SupportsImeToggle;
     }
 }

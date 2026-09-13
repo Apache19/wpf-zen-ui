@@ -19,13 +19,18 @@ public sealed class SoftKeyboardInputMethod
     /// <param name="displayName">The nonempty localized presentation name.</param>
     /// <param name="isActive">Whether this profile was active when its source was refreshed.</param>
     /// <param name="touchLayoutPreference">The optional touch-layout capability reported by the profile.</param>
+    /// <param name="supportsImeToggle">
+    /// Whether the source supports native/direct mode changes for this entry. Defaults to true for
+    /// TSF profiles and false for language-only entries; sources can override either default.
+    /// </param>
     public SoftKeyboardInputMethod(
         Guid   classId,
         Guid   profileId,
         ushort languageId,
         string displayName,
         bool   isActive,
-        SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null)
+        SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null,
+        bool? supportsImeToggle = null)
     {
         if (languageId == 0)
         {
@@ -51,6 +56,7 @@ public sealed class SoftKeyboardInputMethod
         IsActive    = isActive;
 
         TouchLayoutPreference = touchLayoutPreference;
+        SupportsImeToggle     = supportsImeToggle ?? classId != Guid.Empty;
     }
 
     /// <summary>
@@ -77,6 +83,13 @@ public sealed class SoftKeyboardInputMethod
     /// Gets a value indicating whether this profile was active when the list was refreshed.
     /// </summary>
     public bool IsActive { get; }
+
+    /// <summary>
+    /// Gets whether this entry supports switching between native and direct input.
+    /// Sources must set this to false for text services without an open/close mode contract.
+    /// This capability is independent of the current mode and input language.
+    /// </summary>
+    public bool SupportsImeToggle { get; }
 
     /// <summary>
     /// Gets the active TIP's preferred Windows touch layout, or null when querying is unavailable.

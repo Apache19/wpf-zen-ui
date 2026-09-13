@@ -225,7 +225,7 @@ internal static class JapaneseLayoutHelpers
 {
     internal static bool CanCreate(SoftKeyboardLayoutContext context, string identifier)
     {
-        return context.ImeState == InputMethodState.On
+        return context is { CanToggleIme: true, ImeState: InputMethodState.On }
             && context.SupplementalLayout == identifier
             && context.Page is SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters
             && UrlSoftKeyboardLayoutProvider.Default.CreateLayout(context) is null

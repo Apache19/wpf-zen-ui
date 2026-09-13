@@ -28,6 +28,69 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardRegressionTests
 {
     /// <summary>
+    /// Selecting an ordinary keyboard succeeds without writing an IME compartment.
+    /// Stale On values supplied by the backend cannot expose a mode switch for this entry.
+    /// </summary>
+    [Fact]
+    public Task OrdinaryKeyboard_ActivatesWithoutImeStateWrites()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var method = new SoftKeyboardInputMethod(Guid.Empty, Guid.Empty, 0x0409, "English", true);
+            scope.Keyboard.InputMethodSource = CreateSource(method, out var session);
+            Assert.Equal(InputMethodState.DoNotCare, scope.Keyboard.ImeState);
+            Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+
+            Assert.True(scope.Keyboard.TryActivateInputMethod(method));
+            session.Received(1).TryActivate(method);
+            session.DidNotReceive().TrySetState(Arg.Any<InputMethodState>());
+            session.DidNotReceive().GetState();
+            Assert.Equal(InputMethodState.DoNotCare, scope.Keyboard.ImeState);
+        });
+    }
+
+    /// <summary>
+    /// Capability updates for the same identity rebuild the layout even if raw mode stays Off.
+    /// Read failures hide the key, and recovery restores the direct-mode A cap.
+    /// </summary>
+    [Fact]
+    public Task ModeSwitch_TracksCapabilityAndStateRecovery()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var method = scope.Method;
+            scope.Keyboard.InputMethodSource = CreateSource(method, out var session);
+            session.GetState().Returns(InputMethodState.Off);
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.Equal("A", Assert.Single(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.ToggleIme).Content);
+
+            var unsupported = new SoftKeyboardInputMethod(method.ClassId, method.ProfileId,
+                method.LanguageId, method.DisplayName, true, supportsImeToggle: false);
+            session.GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([unsupported], unsupported));
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+
+            session.GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([method], method));
+            session.GetState().Returns(_ => throw new InvalidOperationException("State unavailable"));
+            Assert.False(scope.Keyboard.RefreshInputMethods());
+            Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+
+            session.Configure().GetState().Returns(InputMethodState.Off);
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.Equal("A", Assert.Single(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.ToggleIme).Content);
+        });
+    }
+
+    /// <summary>
     /// Reentrant source and target transitions invalidate the whole synchronous activation transaction.
     /// </summary>
     [Theory]

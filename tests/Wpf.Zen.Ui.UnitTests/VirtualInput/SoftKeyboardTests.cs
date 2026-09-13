@@ -753,7 +753,7 @@ public class SoftKeyboardTests
 
             Assert.Contains(phone.Keys, key => key.Text == "+");
             Assert.Contains(phone.Keys, key => key.Text == "0");
-            Assert.Contains(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+            Assert.DoesNotContain(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
             Assert.Contains(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
             Assert.Contains(symbols.Keys, key => key.Text == "$");
         });
@@ -1207,7 +1207,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void ImeKey_ActivatesEnabledTipBeforeOpeningImeFromDirectKeyboardLayout()
+    public void ImeKey_IsAbsentAndCannotActivateAnotherTipFromDirectKeyboardLayout()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -1234,15 +1234,15 @@ public class SoftKeyboardTests
             window.UpdateLayout();
             Assert.True(editor.Focus());
 
-            SoftKeyboardKeyControl button = Assert.Single(
+            Assert.DoesNotContain(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
                 item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
-            button.Invoke();
+            InvokeKey(keyboard, new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "A", "Toggle IME"));
 
-            Assert.Equal(1, inputMethods.ActivationCount);
-            Assert.Equal(InputMethodState.On, keyboard.ImeState);
-            Assert.NotNull(keyboard.ActiveInputMethod);
+            Assert.Equal(0, inputMethods.ActivationCount);
+            Assert.Equal(InputMethodState.DoNotCare, keyboard.ImeState);
+            Assert.Null(keyboard.ActiveInputMethod);
             Assert.Same(editor, Keyboard.FocusedElement);
             window.Close();
         });

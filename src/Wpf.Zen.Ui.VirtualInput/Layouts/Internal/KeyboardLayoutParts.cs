@@ -32,17 +32,82 @@ internal static class KeyboardLayoutParts
     internal static readonly FluentIconSource SpaceIcon        = new(SymbolRegular.Spacebar24);
     internal static readonly FluentIconSource EnterIcon        = new(SymbolRegular.ArrowEnterLeft24);
 
-    // The cap reports the current state. Latin A is culture-neutral; native modes use familiar
-    // language abbreviations while unknown services retain the same reliable toggle action.
+    /// <summary>
+    /// Creates an IME toggle whose cap reflects the observed input state and active input language.
+    /// Direct or unknown states display A; native input uses a language-specific label.
+    /// </summary>
     internal static SoftKeyboardKey CreateImeKey(SoftKeyboardLayoutContext context)
     {
         return new SoftKeyboardKey(
             kind: SoftKeyboardKeyKind.ToggleIme,
-            content: context.ImeState != InputMethodState.On ? "A" : "文",
+            content: context.ImeState == InputMethodState.On ? GetNativeInputLabel(context.Culture) : "A",
             automationName: context.ImeState == InputMethodState.On
                 ? "Native input; switch to direct input"
                 : "Direct input; enable input method"
         );
+    }
+
+    /// <summary>
+    /// Selects a compact native-script label for recognized input languages.
+    /// Unmapped languages and explicitly Latin-script cultures use their uppercase ISO language
+    /// code. An invariant or undetermined language displays IME.
+    /// </summary>
+    /// <remarks>
+    /// These caps identify the input language, not the service's current conversion mode.
+    /// Languages sharing a writing system can share a cap. Regional variants use the same label.
+    /// </remarks>
+    private static string GetNativeInputLabel(CultureInfo culture)
+    {
+        // Use the layout snapshot so application UI culture cannot change the input-mode label.
+        var language = culture.TwoLetterISOLanguageName;
+
+        // Honor an explicit Latin-script variant, such as hi-Latn, before selecting native letters.
+        foreach (var subtag in culture.Name.Split('-'))
+        {
+            if (string.Equals(subtag, "Latn", StringComparison.OrdinalIgnoreCase))
+            {
+                return language.ToUpperInvariant();
+            }
+        }
+
+        return language switch
+        {
+            // East Asian input-mode labels.
+            "zh" => "中",
+            "ja" => "あ",
+            "ko" => "한",
+
+            // Representative letters from South and Southeast Asian writing systems.
+            "hi" or "mr" or "ne" or "sa" => "अ",
+            "bn" or "as" => "অ",
+            "gu" => "અ",
+            "or" => "ଅ",
+            "ta" => "அ",
+            "te" => "అ",
+            "kn" => "ಅ",
+            "ml" => "അ",
+            "si" => "අ",
+            "th" => "ก",
+            "lo" => "ກ",
+            "km" => "ក",
+            "my" => "က",
+            "bo" or "dz" => "ཀ",
+
+            // West Asian, African, and European native-script labels.
+            "ar" => "ع",
+            "fa" => "ف",
+            "ur" => "ا",
+            "ps" => "پ",
+            "he" or "yi" => "א",
+            "am" or "ti" => "አ",
+            "hy" => "Ա",
+            "ka" => "ა",
+            "el" => "α",
+            "ru" or "uk" or "bg" or "be" or "mk" => "Ж",
+
+            "" or "iv" or "und" => "IME",
+            _ => language.ToUpperInvariant(),
+        };
     }
 
     /// <summary>

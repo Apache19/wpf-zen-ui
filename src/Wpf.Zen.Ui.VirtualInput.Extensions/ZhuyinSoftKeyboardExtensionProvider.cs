@@ -100,7 +100,7 @@ public sealed class ZhuyinSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
     public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
     {
         if (!ZhuyinSoftKeyboardExtensionProvider.IsZhuyin(context)
-            || context.ImeState != InputMethodState.On
+            || !context.CanToggleIme || context.ImeState != InputMethodState.On
             || context.SupplementalLayout != ZhuyinSoftKeyboardLayouts.Standard
             || context.Page is not (SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters)
             || UrlSoftKeyboardLayoutProvider.Default.CreateLayout(context) is not null

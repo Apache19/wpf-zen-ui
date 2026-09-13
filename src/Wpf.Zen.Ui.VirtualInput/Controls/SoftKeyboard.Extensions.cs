@@ -240,6 +240,8 @@ public partial class SoftKeyboard
         keyboard.ReleaseCandidatePresentation();
         keyboard.RebuildLayout();
         keyboard.RefreshImeState();
+        // Extension registrations can change available settings without changing the input state.
+        keyboard.RefreshSettings();
 
         if (keyboard.IsLoaded && keyboard.IsOpen)
         {

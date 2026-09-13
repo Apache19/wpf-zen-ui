@@ -17,6 +17,60 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 public class DefaultSoftKeyboardLayoutProviderTests
 {
+    /// <summary>
+    /// Every built-in surface removes unavailable mode switches and fills the released grid space.
+    /// Capability, selection, and observed state are tested independently of input language.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false, InputMethodState.Off, false)]
+    [InlineData(false, true, InputMethodState.On, false)]
+    [InlineData(true, false, InputMethodState.On, false)]
+    [InlineData(true, true, InputMethodState.DoNotCare, false)]
+    [InlineData(true, true, InputMethodState.Off, true)]
+    [InlineData(true, true, InputMethodState.On, true)]
+    public void ModeSwitch_RequiresActiveCapabilityAndKnownState(
+        bool selected, bool supported, InputMethodState state, bool visible)
+    {
+        var method = selected
+            ? new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test", true,
+                supportsImeToggle: supported)
+            : null;
+
+        foreach (var scope in new[]
+            { InputScopeNameValue.Default, InputScopeNameValue.Url, InputScopeNameValue.EmailSmtpAddress })
+        {
+            foreach (var page in SoftKeyboardPages.BuiltInPages)
+            {
+                var context = new SoftKeyboardLayoutContext(CultureInfo.GetCultureInfo("en-US"),
+                    scope, page, SoftKeyboardShiftState.Off, state, method);
+                var layout = Assert.IsType<SoftKeyboardLayout>(
+                    DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context));
+
+                Assert.Equal(visible, context.CanToggleIme);
+                Assert.Equal(visible ? 1 : 0,
+                    layout.Keys.Count(key => key.Kind == SoftKeyboardKeyKind.ToggleIme));
+                Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
+                foreach (var row in layout.Keys.Where(key => key.Row == 3
+                    || page == SoftKeyboardPages.Numbers).GroupBy(key => key.Row))
+                {
+                    var end = 0;
+                    foreach (var key in row.OrderBy(key => key.Column))
+                    {
+                        Assert.Equal(end, key.Column);
+                        end += key.ColumnSpan;
+                    }
+
+                    Assert.Equal(layout.ColumnCount, end);
+                }
+
+                if (visible && state == InputMethodState.Off)
+                {
+                    Assert.Equal("A", layout.Keys.Single(key => key.Kind == SoftKeyboardKeyKind.ToggleIme).Content);
+                }
+            }
+        }
+    }
+
     [Theory]
     [InlineData(InputScopeNameValue.Url, "http", "/")]
     [InlineData(InputScopeNameValue.EmailSmtpAddress, "@", "-")]
@@ -43,7 +97,8 @@ public class DefaultSoftKeyboardLayoutProviderTests
                         var layout = Assert.IsType<SoftKeyboardLayout>(
                             DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
                                 new SoftKeyboardLayoutContext(
-                                    CultureInfo.GetCultureInfo(culture), scope, mode, shift, ime
+                                    CultureInfo.GetCultureInfo(culture), scope, mode, shift, ime,
+                                    new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test IME", true)
                                 )
                             )
                         );
@@ -240,7 +295,8 @@ public class DefaultSoftKeyboardLayoutProviderTests
             InputScopeNameValue.Default,
             mode,
             SoftKeyboardShiftState.Off,
-            native ? InputMethodState.On : InputMethodState.Off
+            native ? InputMethodState.On : InputMethodState.Off,
+            new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Test IME", true)
         );
     }
 }

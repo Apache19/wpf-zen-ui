@@ -75,7 +75,10 @@ public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvide
                         automationName: "Numbers and symbols"
                     ),
 
-                    CreateImeKey(context),
+                    ..
+                    
+                    context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
+
                     SoftKeyboardKey.FromText("@"),
 
                     new SoftKeyboardKey(
@@ -101,7 +104,7 @@ public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvide
                         Key.Enter
                     ),
                 ],
-                [2, 2, 2, 4, 2, 2, 2, 2, 2]
+                context.CanToggleIme ? [2, 2, 2, 4, 2, 2, 2, 2, 2] : [2, 2, 6, 2, 2, 2, 2, 2]
             )
             .Build();
     }

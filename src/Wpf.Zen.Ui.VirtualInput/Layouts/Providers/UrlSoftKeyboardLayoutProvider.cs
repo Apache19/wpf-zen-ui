@@ -50,14 +50,16 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
                 [
                     new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift"),
                     .. rows[2],
-                    new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
+                    new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back,
+                        isRepeatEnabled: true),
                 ],
                 [2, 2, 2, 2, 2, 2, 2, 2, 4])
             .AddRow(
                 3,
                 [
                     SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "Numbers and symbols"),
-                    CreateImeKey(context),
+                    ..
+                    context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "http", "http", text: "http", alternates: ["https"], alternateHint: "https"),
                     SoftKeyboardKey.FromText(":"),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
@@ -67,7 +69,8 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
                     new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
                 ],
-                [2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+                context.CanToggleIme ? [2, 2, 2, 2, 2, 2, 2, 2, 2, 2] : [2, 2, 2, 4, 2, 2, 2, 2, 2]
+            )
             .Build();
     }
 }

@@ -4,3 +4,5 @@ GetKeyboardLayout
 MapVirtualKeyEx
 SendInput
 ToUnicodeEx
+TF_INPUTPROCESSORPROFILE
+ImmIsIME

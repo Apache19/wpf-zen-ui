@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -60,7 +60,8 @@ public sealed class NumberSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
 
         for (var row = 0; row < 4; row++)
         {
-            keys.AddRow(row, [.. values[row].Select(CreateTextKey)], startColumn: 0, columnSpan:  5);
+            keys.AddRow(row, values[row].Select(CreateTextKey),
+                columnSpans: row == 1 && !context.CanToggleIme ? [5, 5, 10] : [5, 5, 5]);
         }
 
         // Numeric input uses the same four tracks as letters and symbols. Commands occupy a
@@ -78,7 +79,10 @@ public sealed class NumberSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
             )
         );
 
-        keys.Add(CreateImeKey(context).WithPlacement(1, 15, 5));
+        if (context.CanToggleIme)
+        {
+            keys.Add(CreateImeKey(context).WithPlacement(1, 15, 5));
+        }
 
         keys.Add(
             new SoftKeyboardKey(

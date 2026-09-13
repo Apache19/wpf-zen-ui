@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -31,9 +31,10 @@ internal static class LetterKeyboardLayout
         [
             // 数字和符号面板切换键
             new(SoftKeyboardKeyKind.ChangePage, "123", "Numbers and symbols", page: SoftKeyboardPages.Symbols),
-
+            .. 
             // 输入法开关
-            CreateImeKey(context),
+            context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
+
             CreateTextKey(repertoire.Comma),
 
             new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left, isRepeatEnabled: true),
@@ -66,7 +67,9 @@ internal static class LetterKeyboardLayout
 
         builder.AddRow(2, thirdRow, columnSpans: [2, 2, 2, 2, 2, 2, 2, 2, 4]);
 
-        builder.AddRow(3, bottom, columnSpans: [2, 2, 2, 2, 4, 2, 2, 2, 2]);
+        builder.AddRow(3, bottom, columnSpans: context.CanToggleIme
+            ? [2, 2, 2, 2, 4, 2, 2, 2, 2]
+            : [2, 2, 2, 6, 2, 2, 2, 2]);
 
         return builder.Build();
     }

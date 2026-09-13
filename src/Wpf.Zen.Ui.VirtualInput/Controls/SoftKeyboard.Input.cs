@@ -240,6 +240,12 @@ public partial class SoftKeyboard
                 return false;
             }
 
+            if (ActiveInputMethod?.SupportsImeToggle != true
+                || ImeState is not (InputMethodState.On or InputMethodState.Off))
+            {
+                return false;
+            }
+
             if (ImeState == InputMethodState.On)
             {
                 if (!TrySetInputMethodState(session, isCurrent, InputMethodState.Off))
@@ -258,17 +264,7 @@ public partial class SoftKeyboard
             }
             else
             {
-                var inputMethod = ActiveInputMethod ?? FindPreferredImeInputMethod();
-                if (inputMethod is null)
-                {
-                    return false;
-                }
-
-                var succeeded = ActiveInputMethod is null
-                    ? ActivateInputMethodCore(session, isCurrent, inputMethod)
-                    : TrySetInputMethodState(session, isCurrent, InputMethodState.On);
-
-                if (!succeeded)
+                if (!TrySetInputMethodState(session, isCurrent, InputMethodState.On))
                 {
                     return false;
                 }

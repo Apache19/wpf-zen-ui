@@ -187,7 +187,7 @@ public class SoftKeyboardRoutingTests
 
                 Assert.Equal(20, layout.ColumnCount);
                 Assert.Equal([0, 1, 2, 3], layout.Keys.Select(key => key.Row).Distinct());
-                Assert.Equal(scope == InputScopeNameValue.Url ? 38 : 37, layout.Keys.Count);
+                Assert.Equal(scope == InputScopeNameValue.Url ? 37 : 36, layout.Keys.Count);
                 Assert.Contains(layout.Keys, key => key.Text == (scope == InputScopeNameValue.Url ? "http" : "@"));
                 Assert.DoesNotContain(layout.Keys, key => key.Text == "ー");
             }

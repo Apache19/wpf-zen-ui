@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
-// Every member is declared in SDK vtable order. Only ActivateProfile is used, but omitting later
-// declarations would make a future extension deceptively unsafe and harder to compare with msctf.idl.
+// Every member is declared in SDK vtable order. Activation and current-profile discovery share
+// this interface; preserving every slot keeps dispatch consistent with msctf.idl.
 [Guid("71C6E74C-0F28-11D8-A82A-00065B84435C")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 [ComImport]

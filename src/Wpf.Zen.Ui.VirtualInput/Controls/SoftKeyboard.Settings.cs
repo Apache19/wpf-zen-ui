@@ -381,6 +381,7 @@ public partial class SoftKeyboard
         if (previous is null
             || previous.Page != context.Page
             || previous.ImeState != context.ImeState
+            || previous.CanToggleIme != context.CanToggleIme
             || previous.InputScope != context.InputScope
             || previous.ShiftState != context.ShiftState
             || previous.Culture.Name != context.Culture.Name

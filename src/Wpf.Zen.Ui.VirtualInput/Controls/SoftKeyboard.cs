@@ -63,7 +63,6 @@ public partial class SoftKeyboard : Control
     private TextComposition?               _activeTextComposition;
     private IInputElement?                 _compositionTarget;
     private bool                           _compositionCancellationRequested;
-    private SoftKeyboardInputMethod?       _preferredImeInputMethod;
     private SoftKeyboardKeyControl?        _activeKeyControl;
     private UIElement?                     _inputMethodMenuAnchor;
     private int                            _inputOperationVersion;
