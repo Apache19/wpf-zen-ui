@@ -461,7 +461,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             {
                 show = 1;
                 keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
-                ReleaseComReference(candidate);
                 return 0;
             }
 
@@ -534,11 +533,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         }
 
         candidate = element as ITfCandidateListUIElement;
-        if (candidate is null)
-        {
-            ReleaseComReference(element);
-        }
-
         return candidate is not null;
     }
 
@@ -556,11 +550,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             return;
         }
 
-        object? enumeratorObject = null;
-
         try
         {
-            if (_elementManager.EnumUIElements(out enumeratorObject) < 0
+            if (_elementManager.EnumUIElements(out var enumeratorObject) < 0
                 || enumeratorObject is not IEnumTfUIElements enumerator)
             {
                 return;
@@ -568,63 +560,50 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
 
             while (enumerator.Next(1, out var element, out var fetched) >= 0 && fetched == 1)
             {
-                var retained = false;
-                try
+                if (element is not ITfCandidateListUIElement candidate
+                    || !MatchesFocusedDocument(candidate))
                 {
-                    if (element is not ITfCandidateListUIElement candidate
-                        || !MatchesFocusedDocument(candidate))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    if (element is not ITfCandidateListUIElementBehavior behavior
-                        || !ShouldEmbedCandidate(keyboard, behavior))
-                    {
-                        keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
-                        continue;
-                    }
+                if (element is not ITfCandidateListUIElementBehavior behavior
+                    || !ShouldEmbedCandidate(keyboard, behavior))
+                {
+                    keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
+                    continue;
+                }
 
-                    // A normally activated WPF TSF thread is not guaranteed to receive the
-                    // BeginUIElement callback. UIElement-capable TIPs, including Microsoft
-                    // Pinyin, still publish their active element through the manager. Discovering
-                    // it after the injected key lets the application transition into embedded
-                    // presentation without deactivating WPF's ThreadManager or invalidating its
-                    // TextStore client id.
-                    ClearActiveCandidate();
+                // A normally activated WPF TSF thread is not guaranteed to receive the
+                // BeginUIElement callback. UIElement-capable TIPs, including Microsoft
+                // Pinyin, still publish their active element through the manager. Discovering
+                // it after the injected key lets the application transition into embedded
+                // presentation without deactivating WPF's ThreadManager or invalidating its
+                // TextStore client id.
+                ClearActiveCandidate();
 
-                    _activeKeyboard  = keyboard;
-                    _activeBehavior  = behavior;
-                    _activeElementId = uint.MaxValue;
+                _activeKeyboard  = keyboard;
+                _activeBehavior  = behavior;
+                _activeElementId = uint.MaxValue;
 
 #pragma warning disable IDISP003 // ClearActiveCandidate disposed the previous element cancellation source.
-                    _activeCandidateCancellation = new CancellationTokenSource();
+                _activeCandidateCancellation = new CancellationTokenSource();
 #pragma warning restore IDISP003
 
-                    retained = true;
+                if (behavior.Show(0) < 0)
+                {
+                    RestoreNativeCandidate();
+                    ClearActiveCandidate();
 
-                    if (behavior.Show(0) < 0)
-                    {
-                        RestoreNativeCandidate();
-                        ClearActiveCandidate();
-
-                        keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
-
-                        return;
-                    }
-
-                    _candidatePollTimer.Start();
-
-                    UpdateCandidateSnapshot();
+                    keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
 
                     return;
                 }
-                finally
-                {
-                    if (!retained)
-                    {
-                        ReleaseComReference(element);
-                    }
-                }
+
+                _candidatePollTimer.Start();
+
+                UpdateCandidateSnapshot();
+
+                return;
             }
         }
         catch (Exception exception) when (IsUnavailable(exception))
@@ -632,29 +611,17 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             // Enumeration is an enhancement for a TIP running in normal WPF TSF mode. Failure
             // leaves its native candidate surface untouched and never affects text composition.
         }
-        finally
-        {
-            ReleaseComReference(enumeratorObject);
-        }
     }
 
+    /// <summary>
+    /// Checks whether the candidate belongs to WPF's currently focused TSF document.
+    /// </summary>
     private bool MatchesFocusedDocument(ITfCandidateListUIElement candidate)
     {
-        object? candidateDocument = null;
-        object? focusedDocument   = null;
-
-        try
-        {
-            return _threadManager is not null
-                && candidate.GetDocumentMgr(out candidateDocument) >= 0
-                && _threadManager.GetFocus(out focusedDocument) >= 0
-                && HaveSameComIdentity(candidateDocument, focusedDocument);
-        }
-        finally
-        {
-            ReleaseComReference(candidateDocument);
-            ReleaseComReference(focusedDocument);
-        }
+        return _threadManager is not null
+            && candidate.GetDocumentMgr(out var candidateDocument) >= 0
+            && _threadManager.GetFocus(out var focusedDocument) >= 0
+            && HaveSameComIdentity(candidateDocument, focusedDocument);
     }
 
     private void UpdateCandidateSnapshot()
@@ -964,12 +931,12 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
     }
 
     /// <summary>
-    /// Detaches the current element and cancels its pending extension work before a later element takes ownership.
+    /// Detaches the current element and cancels its pending extension work before
+    /// a later element takes ownership.
     /// </summary>
     private void ClearActiveCandidate()
     {
         var keyboard     = _activeKeyboard;
-        var behavior     = _activeBehavior;
         var cancellation = _activeCandidateCancellation;
 
         _activeCandidateVersion++;
@@ -983,8 +950,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         _activeElementId  = 0;
         _activePageStarts = [];
         _activePageNumber = 0;
-
-        ReleaseComReference(behavior);
 
         keyboard?.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
 
@@ -1190,21 +1155,5 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             or PlatformNotSupportedException
             or TargetInvocationException
             or TypeLoadException;
-    }
-
-    private static void ReleaseComReference(object? value)
-    {
-        if (value is not null && Marshal.IsComObject(value))
-        {
-            try
-            {
-                _ = Marshal.ReleaseComObject(value);
-            }
-            catch (InvalidComObjectException)
-            {
-                // TSF may invalidate a transient UI element before EndUIElement is dispatched.
-                // Cleanup is deliberately idempotent so that shutdown cannot crash the UI thread.
-            }
-        }
     }
 }
