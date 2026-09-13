@@ -17,11 +17,13 @@ public partial class SoftKeyboard
         _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
         _session.Register(this);
 
-        _platform.Candidates.Register(this);
+        _ = EnsureCandidateSession();
 
-        // todo: InputMethod.Current 有可能为 null
         // Loaded runs on this control's dispatcher; WPF creates InputMethod.Current for that dispatcher.
-        InputMethod.Current.StateChanged += OnInputMethodStateChanged;
+        if (InputMethod.Current is { } inputMethod)
+        {
+            inputMethod.StateChanged += OnInputMethodStateChanged;
+        }
 
         StartInputStateObservation();
 
@@ -40,7 +42,7 @@ public partial class SoftKeyboard
         if (IsOpen)
         {
             RequestSystemKeyboardHide();
-            _platform.Candidates.Refresh(this);
+            RequestCandidateRefresh();
             QueueCandidateBridgeRefresh();
         }
     }
@@ -59,10 +61,13 @@ public partial class SoftKeyboard
 
         _session?.Unregister(this);
 
-        _platform.Candidates.Unregister(this);
+        ResetCandidateSession();
+        ResetInputMethodSession();
 
-        // todo: InputMethod.Current 有可能为 null
-        InputMethod.Current.StateChanged -= OnInputMethodStateChanged;
+        if (InputMethod.Current is { } inputMethod)
+        {
+            inputMethod.StateChanged -= OnInputMethodStateChanged;
+        }
 
         _inputStateTimer?.Stop();
 
@@ -92,7 +97,7 @@ public partial class SoftKeyboard
             CancelKeyInteraction();
             CloseFlyouts();
 
-            _platform.Candidates.ReleasePresentation(this);
+            ResetCandidateSession();
 
             ReleaseSystemKeyboardSuppression(tryRestore: true);
 
@@ -104,7 +109,7 @@ public partial class SoftKeyboard
         // user to type another character.
         if (IsLoaded && IsOpen && ActiveTarget is not null)
         {
-            _platform.Candidates.Refresh(this);
+            RequestCandidateRefresh();
             RequestSystemKeyboardHide();
         }
     }
@@ -129,7 +134,7 @@ public partial class SoftKeyboard
         if (args.IsImeStateChanged || args.IsImeConversionModeChanged)
         {
             RefreshImeState();
-            _platform.Candidates.Refresh(this);
+            RequestCandidateRefresh();
         }
     }
 
@@ -143,7 +148,7 @@ public partial class SoftKeyboard
         CloseFlyouts();
         ReleaseSystemKeyboardSuppression(tryRestore: false);
 
-        _platform.Candidates.ReleasePresentation(this);
+        ResetCandidateSession();
     }
 
     private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs args)
@@ -157,13 +162,13 @@ public partial class SoftKeyboard
             CancelKeyInteraction();
             CloseFlyouts();
 
-            _platform.Candidates.ReleasePresentation(this);
+            ResetCandidateSession();
 
             ReleaseSystemKeyboardSuppression(tryRestore: true);
         }
         else if (IsLoaded && IsOpen)
         {
-            _platform.Candidates.Refresh(this);
+            RequestCandidateRefresh();
             RequestSystemKeyboardHide();
         }
     }

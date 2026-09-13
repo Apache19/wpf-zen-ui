@@ -71,10 +71,23 @@ public partial class SoftKeyboard
                 : InputScopeNameValue.Default;
 
             var culture = InputLanguageManager.Current.CurrentInputLanguage;
-            var supplementalLayout = ReadSupplementalSelection();
+            var supplementalSelection = ReadSupplementalSelection();
 
-            SetValue(SelectedSupplementalLayoutPropertyKey, supplementalLayout);
+            SetValue(SelectedSupplementalLayoutPropertyKey, supplementalSelection);
 
+            var settingsContext = new SoftKeyboardLayoutContext(
+                culture,
+                inputScope,
+                Page,
+                ShiftState,
+                ImeState,
+                ActiveInputMethod,
+                supplementalLayout: supplementalSelection
+            );
+
+            ResolveExtensions(settingsContext);
+
+            var supplementalLayout = ResolveSupplementalLayout(supplementalSelection);
             var context = new SoftKeyboardLayoutContext(
                 culture,
                 inputScope,
@@ -82,20 +95,51 @@ public partial class SoftKeyboard
                 ShiftState,
                 ImeState,
                 ActiveInputMethod,
-                supplementalLayout: supplementalLayout
+                supplementalLayout: supplementalLayout.Id
             );
 
             SoftKeyboardLayout? layout = null;
             Exception?          error  = null;
 
-            try
+            if (LayoutProvider is not null)
             {
-                layout = LayoutProvider.CreateLayout(context);
+                try
+                {
+                    layout = LayoutProvider.CreateLayout(context);
+                }
+                catch (Exception exception) when (exception is not OutOfMemoryException)
+                {
+                    error = exception;
+                }
             }
-            catch (Exception exception) when (exception is not OutOfMemoryException)
+
+            if (layout is null && supplementalLayout.Id != SoftKeyboardSupplementalLayouts.Standard)
             {
-                // Extension failures must be observable without taking away the usable keyboard.
-                error = exception;
+                try
+                {
+                    layout = supplementalLayout.LayoutProvider.CreateLayout(context);
+                }
+                catch (Exception exception) when (exception is not OutOfMemoryException)
+                {
+                    ReportExtensionError(exception);
+                }
+            }
+
+            foreach (var extension in _activeExtensions)
+            {
+                if (layout is not null || extension.LayoutProvider is null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    layout = extension.LayoutProvider.CreateLayout(context);
+                }
+                catch (Exception exception) when (exception is not OutOfMemoryException)
+                {
+                    ReportExtensionError(exception);
+                }
             }
 
             layout ??= DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context);
@@ -115,7 +159,7 @@ public partial class SoftKeyboard
                     ShiftState,
                     ImeState,
                     ActiveInputMethod,
-                    supplementalLayout: supplementalLayout
+                    supplementalLayout: SoftKeyboardSupplementalLayouts.Standard
                 );
 
                 layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context)!;
@@ -124,7 +168,7 @@ public partial class SoftKeyboard
             SetValue(CurrentLayoutPropertyKey, layout);
             SetValue(LayoutErrorPropertyKey, error);
 
-            UpdateSettingsContext(context);
+            UpdateSettingsContext(settingsContext);
         }
         finally
         {

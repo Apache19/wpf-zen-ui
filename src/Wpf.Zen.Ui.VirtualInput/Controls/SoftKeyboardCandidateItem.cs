@@ -20,7 +20,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// IsMouseOver and IsEnabled. Instances are created only by the list; the public type supports styling.
 /// IsSelected reflects input-method state and never changes as a side effect of clicking.
 /// </remarks>
-public sealed class SoftKeyboardCandidateItem : ButtonBase
+public class SoftKeyboardCandidateItem : ButtonBase
 {
     static SoftKeyboardCandidateItem()
     {
@@ -40,17 +40,23 @@ public sealed class SoftKeyboardCandidateItem : ButtonBase
         );
     }
 
-    // Only the list creates containers. The public type exists so applications can style its template.
-    internal SoftKeyboardCandidateItem()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SoftKeyboardCandidateItem"/> class.
+    /// </summary>
+    public SoftKeyboardCandidateItem()
     {
     }
 
-    internal SoftKeyboardCandidate? Candidate { get; private set; }
+    /// <summary>
+    /// Gets the immutable candidate currently represented by this container, or null while it is detached.
+    /// </summary>
+    public SoftKeyboardCandidate? Candidate { get; private set; }
 
     internal void SetCandidate(SoftKeyboardCandidate? candidate)
     {
+        SoftKeyboardCandidate? oldCandidate = Candidate;
         Candidate = candidate;
-        SetCurrentValue(ContentProperty, candidate?.Text);
+        OnCandidateChanged(oldCandidate, candidate);
     }
 
     private static readonly DependencyPropertyKey IsSelectedPropertyKey
@@ -79,7 +85,34 @@ public sealed class SoftKeyboardCandidateItem : ButtonBase
 
     internal void SetIsSelected(bool value)
     {
+        bool oldValue = IsSelected;
         SetValue(IsSelectedPropertyKey, value);
+
+        if (oldValue != value)
+        {
+            OnIsSelectedChanged(oldValue, value);
+        }
+    }
+
+    /// <summary>
+    /// Called when this container is associated with a different candidate.
+    /// </summary>
+    /// <param name="oldCandidate">The previously represented candidate.</param>
+    /// <param name="newCandidate">The newly represented candidate.</param>
+    protected virtual void OnCandidateChanged(
+        SoftKeyboardCandidate? oldCandidate,
+        SoftKeyboardCandidate? newCandidate
+    )
+    {
+    }
+
+    /// <summary>
+    /// Called when the input method changes the selected state of this container.
+    /// </summary>
+    /// <param name="oldValue">The previous selected state.</param>
+    /// <param name="newValue">The new selected state.</param>
+    protected virtual void OnIsSelectedChanged(bool oldValue, bool newValue)
+    {
     }
 
     /// <inheritdoc />

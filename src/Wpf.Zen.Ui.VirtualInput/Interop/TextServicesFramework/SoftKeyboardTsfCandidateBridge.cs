@@ -20,14 +20,14 @@ internal static class SoftKeyboardTsfCandidateBridge
 {
     private static readonly ConditionalWeakTable<Dispatcher, TsfCandidateSession> Sessions = new();
 
-    internal static void Register(SoftKeyboard keyboard)
+    internal static void Register(SoftKeyboard keyboard, SoftKeyboardCandidateHost host)
     {
         var session = Sessions.GetValue(
             keyboard.Dispatcher,
             static dispatcher => new TsfCandidateSession(dispatcher)
         );
 
-        session.Register(keyboard);
+        session.Register(keyboard, host);
     }
 
     internal static void Unregister(SoftKeyboard keyboard)
@@ -54,15 +54,29 @@ internal static class SoftKeyboardTsfCandidateBridge
         }
     }
 
-    internal static bool TryCommit(SoftKeyboard keyboard, uint index)
+    internal static Task<SoftKeyboardCandidateOperationResult> TryCommitAsync(
+        SoftKeyboard keyboard,
+        SoftKeyboardCandidate candidate,
+        CancellationToken cancellationToken)
     {
-        return Sessions.TryGetValue(keyboard.Dispatcher, out var session)
-            && session.TryCommit(keyboard, index);
+        if (!Sessions.TryGetValue(keyboard.Dispatcher, out var session))
+        {
+            return Task.FromResult(SoftKeyboardCandidateOperationResult.NotHandled);
+        }
+
+        return session.TryCommitAsync(keyboard, candidate, cancellationToken);
     }
 
-    internal static bool TryMovePage(SoftKeyboard keyboard, int delta)
+    internal static Task<SoftKeyboardCandidateOperationResult> TryMovePageAsync(
+        SoftKeyboard keyboard,
+        int delta,
+        CancellationToken cancellationToken)
     {
-        return Sessions.TryGetValue(keyboard.Dispatcher, out var session)
-            && session.TryMovePage(keyboard, delta);
+        if (!Sessions.TryGetValue(keyboard.Dispatcher, out var session))
+        {
+            return Task.FromResult(SoftKeyboardCandidateOperationResult.NotHandled);
+        }
+
+        return session.TryMovePageAsync(keyboard, delta, cancellationToken);
     }
 }

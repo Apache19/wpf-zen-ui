@@ -14,34 +14,58 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     private ContextMenu? _inputMethodMenu;
+    private int _inputMethodMenuRequestVersion;
 
     /// <summary>
     /// Opens the installed input-method menu without replacing or resizing the keyboard.
     /// </summary>
     /// <remarks>
     /// The menu is anchored to the last invoked key.
+    /// The catalog is refreshed before opening. A closed, superseded, or expired request stays closed.
     /// Selection restores editor focus before activation.
     /// </remarks>
     public void ShowInputMethodMenu()
     {
+        VerifyAccess();
+
         if (!IsEnabled || !IsOpen || !IsVisible)
         {
             return;
         }
 
         var anchor = _inputMethodMenuAnchor ?? this;
-        RunAfterActiveCompositionCancellation(() => OpenInputMethodMenuCore(anchor));
+
+        CloseFlyouts();
+
+        var requestVersion = _inputMethodMenuRequestVersion;
+
+        RunAfterActiveCompositionCancellation(
+            () => OpenInputMethodMenuCore(anchor, requestVersion)
+        );
     }
 
-    private void OpenInputMethodMenuCore(UIElement anchor)
+    /// <summary>
+    /// Reads the catalog before constructing the menu and rejects reentrant source or target changes.
+    /// </summary>
+    private void OpenInputMethodMenuCore(UIElement anchor, int requestVersion)
     {
-        if (!IsLoaded || !IsOpen || !IsEnabled || !IsVisible)
+        if (requestVersion != _inputMethodMenuRequestVersion
+            || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible)
         {
             return;
         }
 
-        CloseFlyouts();
-        RefreshInputMethods();
+        var operationVersion = _inputOperationVersion;
+        var sessionVersion = _inputMethodSessionVersion;
+
+        if (!RefreshInputMethods()
+            || requestVersion != _inputMethodMenuRequestVersion
+            || operationVersion != _inputOperationVersion
+            || sessionVersion != _inputMethodSessionVersion
+            || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
+        {
+            return;
+        }
 
         var menu = new ContextMenu
         {
@@ -53,21 +77,12 @@ public partial class SoftKeyboard
         {
             var item = new MenuItem
             {
-                Header      = inputMethod.DisplayName,
-                IsCheckable = true,
-                IsChecked   = inputMethod.IsActive
-            };
-
-            item.Click += (_, _) =>
-            {
-                // Close the menu first: focus restoration and composition cancellation must target
-                // the editor's TSF document, not the menu's temporary focus scope.
-                menu.IsOpen = false;
-
-                if (PrepareTargetForInput())
-                {
-                    ActivateInputMethod(inputMethod);
-                }
+                Header           = inputMethod.DisplayName,
+                IsCheckable      = true,
+                IsChecked        = inputMethod.IsActive,
+                Command          = SoftKeyboardCommands.ActivateInputMethod,
+                CommandParameter = inputMethod,
+                CommandTarget    = this
             };
 
             menu.Items.Add(item);

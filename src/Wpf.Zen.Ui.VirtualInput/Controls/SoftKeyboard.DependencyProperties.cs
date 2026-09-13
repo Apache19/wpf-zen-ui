@@ -273,7 +273,7 @@ public partial class SoftKeyboard
             typeof(ISoftKeyboardLayoutProvider),
             typeof(SoftKeyboard),
             new PropertyMetadata(
-                DefaultSoftKeyboardLayoutProvider.Default,
+                null,
                 OnLayoutContextChanged
             )
         );
@@ -282,20 +282,17 @@ public partial class SoftKeyboard
     /// Gets or sets the provider that creates positioned keys for the active input context.
     /// </summary>
     /// <remarks>
-    /// Defaults to DefaultSoftKeyboardLayoutProvider.Default. Returning null delegates to the
+    /// Defaults to null. A non-null application provider has priority over extensions and the
     /// built-in provider; use CompositeSoftKeyboardLayoutProvider for ordered partial overrides.
     /// Replacing this non-inherited property cancels key interactions and rebuilds the surface.
     /// LayoutError exposes provider failures while a usable built-in layout is retained.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
-    public ISoftKeyboardLayoutProvider LayoutProvider
+    public ISoftKeyboardLayoutProvider? LayoutProvider
     {
-        get => (ISoftKeyboardLayoutProvider)GetValue(LayoutProviderProperty);
-        set => SetValue(
-            LayoutProviderProperty,
-            value ?? throw new ArgumentNullException(nameof(value))
-        );
+        get => (ISoftKeyboardLayoutProvider?)GetValue(LayoutProviderProperty);
+        set => SetValue(LayoutProviderProperty, value);
     }
 
     #endregion
@@ -741,7 +738,7 @@ public partial class SoftKeyboard
             keyboard.RefreshImeState();
             keyboard.RequestSystemKeyboardHide();
 
-            keyboard._platform.Candidates.Refresh(keyboard);
+            keyboard.RequestCandidateRefresh();
         }
         else
         {
@@ -752,9 +749,7 @@ public partial class SoftKeyboard
             keyboard.CancelKeyInteraction();
             keyboard.CloseFlyouts();
 
-            keyboard._platform.Candidates.ReleasePresentation(keyboard);
-
-            keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
+            keyboard.ResetCandidateSession();
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: true);
         }
     }
@@ -831,7 +826,19 @@ public partial class SoftKeyboard
         // only while that editor remains the target.
         keyboard.SetValue(PagePropertyKey, SoftKeyboardPages.Automatic);
         keyboard.RebuildLayout();
-        keyboard._platform.Candidates.ReleasePresentation(keyboard);
+        keyboard.ResetCandidateSession();
+
+        if (keyboard is
+            {
+                IsLoaded: true,
+                IsOpen: true,
+                IsVisible: true,
+                IsEnabled: true,
+                ActiveTarget: not null
+            })
+        {
+            keyboard.RequestCandidateRefresh();
+        }
 
         if (args.NewValue is null)
         {
@@ -853,11 +860,11 @@ public partial class SoftKeyboard
         // live editor and IME state. Reevaluate it immediately after a surface transition.
         if (keyboard.CanPresentCandidates)
         {
-            keyboard._platform.Candidates.Refresh(keyboard);
+            keyboard.RequestCandidateRefresh();
         }
         else
         {
-            keyboard._platform.Candidates.ReleasePresentation(keyboard);
+            keyboard.ReleaseCandidatePresentation();
         }
     }
 

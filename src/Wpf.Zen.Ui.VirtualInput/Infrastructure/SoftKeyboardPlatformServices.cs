@@ -19,14 +19,14 @@ internal sealed class SoftKeyboardPlatformServices
         new WindowsInputBackend(),
         new WindowsInputPaneBackend(),
         new TsfInputMethodService(),
-        new TsfCandidateBackend()
+        TsfSoftKeyboardCandidateSource.Default
     );
 
     internal SoftKeyboardPlatformServices(
         ISoftKeyboardInputBackend input,
         ISoftKeyboardInputPaneBackend inputPane,
         ISoftKeyboardInputMethodBackend inputMethods,
-        ISoftKeyboardCandidateBackend candidates)
+        ISoftKeyboardCandidateSource candidates)
     {
         Input        = input ?? throw new ArgumentNullException(nameof(input));
         InputPane    = inputPane ?? throw new ArgumentNullException(nameof(inputPane));
@@ -40,5 +40,5 @@ internal sealed class SoftKeyboardPlatformServices
 
     internal ISoftKeyboardInputMethodBackend InputMethods { get; }
 
-    internal ISoftKeyboardCandidateBackend Candidates { get; }
+    internal ISoftKeyboardCandidateSource Candidates { get; }
 }

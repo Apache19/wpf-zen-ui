@@ -1,0 +1,16 @@
+// This Source Code Form is subject to the terms of the MIT License.
+// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+// All Rights Reserved.
+
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using Wpf.Zen.Ui.VirtualInput.Candidates;
+global using Wpf.Zen.Ui.VirtualInput.Controls;
+global using Wpf.Zen.Ui.VirtualInput.Extensions;
+global using Wpf.Zen.Ui.VirtualInput.Input;
+global using Wpf.Zen.Ui.VirtualInput.Layouts;
+global using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;

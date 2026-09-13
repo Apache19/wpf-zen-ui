@@ -19,19 +19,4 @@ public static class SoftKeyboardSupplementalLayouts
     /// The ordinary alphabetic keyboard.
     /// </summary>
     public const string Standard = "Standard";
-
-    /// <summary>
-    /// The Japanese fifty-sound grid.
-    /// </summary>
-    public const string JapaneseFifty = "JapaneseFifty";
-
-    /// <summary>
-    /// The Japanese twelve-key kana groups.
-    /// </summary>
-    public const string JapaneseTwelve = "JapaneseTwelve";
-
-    /// <summary>
-    /// The Taiwan standard phonetic keyboard.
-    /// </summary>
-    public const string Zhuyin = "Zhuyin";
 }

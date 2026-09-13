@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.UnitTests;
@@ -38,6 +39,19 @@ internal static class WpfApplicationTestHost
     public static void Run(Action action)
     {
         ApplicationDispatcher.Value.Invoke(action);
+    }
+
+    /// <summary>
+    /// Executes asynchronous test work on the application dispatcher while preserving dispatcher affinity across
+    /// awaited continuations.
+    /// </summary>
+    /// <param name="action">The asynchronous WPF test work to execute.</param>
+    /// <returns>A task that completes when the dispatched test work has finished.</returns>
+    public static Task RunAsync(Func<Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+
+        return ApplicationDispatcher.Value.InvokeAsync(action).Task.Unwrap();
     }
 
     /// <summary>

@@ -56,7 +56,6 @@ public partial class SoftKeyboard : Control
     private const string NextCandidatePageButtonPartName     = "PART_NextCandidatePageButton";
 
     private readonly ObservableCollection<SoftKeyboardCandidate>   _candidates   = [];
-    private readonly ObservableCollection<SoftKeyboardInputMethod> _inputMethods = [];
     private readonly SoftKeyboardPlatformServices                  _platform;
 
     private SoftKeyboardDispatcherSession? _session;
@@ -76,6 +75,8 @@ public partial class SoftKeyboard : Control
 
     static SoftKeyboard()
     {
+        RegisterCommands();
+
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(SoftKeyboard),
             new FrameworkPropertyMetadata(typeof(SoftKeyboard))
@@ -110,13 +111,7 @@ public partial class SoftKeyboard : Control
 
         InitializeSettings();
 
-        AddHandler(
-            SoftKeyboardCandidateList.CandidateInvokedEvent,
-            new EventHandler<SoftKeyboardCandidateInvokedEventArgs>(OnCandidateInvoked)
-        );
-
-        Candidates   = [with(_candidates)];
-        InputMethods = [with(_inputMethods)];
+        Candidates = [with(_candidates)];
 
         // todo: 按钮事件是哪些按钮的事件？
         AddHandler(
@@ -140,6 +135,19 @@ public partial class SoftKeyboard : Control
         IsVisibleChanged += OnIsVisibleChanged;
         IsEnabledChanged += OnIsEnabledChanged;
 
+        if (!ReferenceEquals(platform, SoftKeyboardPlatformServices.Default))
+        {
+            SetCurrentValue(
+                CandidateSourceProperty,
+                platform.Candidates
+            );
+
+            SetCurrentValue(
+                InputMethodSourceProperty,
+                new WindowsSoftKeyboardInputMethodSource(platform.InputMethods)
+            );
+        }
+
         RebuildLayout();
     }
 
@@ -147,11 +155,6 @@ public partial class SoftKeyboard : Control
     /// Gets the candidates supplied by the current TSF input method.
     /// </summary>
     public ReadOnlyObservableCollection<SoftKeyboardCandidate> Candidates { get; }
-
-    /// <summary>
-    /// Gets the enabled Windows input methods.
-    /// </summary>
-    public ReadOnlyObservableCollection<SoftKeyboardInputMethod> InputMethods { get; }
 
     /// <summary>
     /// Changes the visible keyboard surface and ends any pending long-press gesture.
@@ -227,6 +230,8 @@ public partial class SoftKeyboard : Control
 
     private void CancelKeyInteraction()
     {
+        CancelAsyncAction();
+
         // Clear ownership before calling the child: closing its popup may synchronously raise
         // routed/lifecycle events. The child alone owns timers, capture and submission suppression.
         var keyControl = _activeKeyControl;
@@ -237,7 +242,11 @@ public partial class SoftKeyboard : Control
 
     private void CloseFlyouts()
     {
+        // Pending composition callbacks must not reopen a flyout after a lifecycle or navigation change.
+        _inputMethodMenuRequestVersion++;
+
         CancelKeyInteraction();
+
         SettingsMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (_inputMethodMenu is not null)

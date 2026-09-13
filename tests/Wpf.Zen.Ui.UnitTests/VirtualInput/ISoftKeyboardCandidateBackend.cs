@@ -3,7 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
+using System.Threading;
+using System.Threading.Tasks;
+using Wpf.Zen.Ui.VirtualInput.Candidates;
+using Wpf.Zen.Ui.VirtualInput.Controls;
+using Wpf.Zen.Ui.VirtualInput.Input;
+
+namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
 /// Abstracts the lifecycle and commands of an embedded TSF candidate presentation.

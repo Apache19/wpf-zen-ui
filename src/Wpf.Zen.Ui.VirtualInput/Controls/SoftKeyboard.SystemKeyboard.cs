@@ -95,7 +95,10 @@ public partial class SoftKeyboard
         }
     }
 
-    private void OnInputPaneHideTimerTick(object? sender, EventArgs args) => HideSystemKeyboardIfRequired();
+    private void OnInputPaneHideTimerTick(object? sender, EventArgs args)
+    {
+        HideSystemKeyboardIfRequired();
+    }
 
     /// <summary>
     /// Gets a value indicating whether this control currently has enough live context to suppress

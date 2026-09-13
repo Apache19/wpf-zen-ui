@@ -6,22 +6,14 @@
 namespace Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
 
 /// <summary>
-/// Selects a complete language composition, then falls back to the standard keyboard.
+/// Provides the language-neutral URL, email, number, letter, and symbol layouts.
 /// </summary>
 /// <remarks>
-/// Language selection precedes every input-scope and page decision, including numbers and addresses.
-/// A language provider owns its complete routing tree and may use any geometry, page set or action.
-/// No repertoire or compact-layout renderer is required by this contract. Applications can prepend
-/// profile-specific or cross-language scope overrides using CompositeSoftKeyboardLayoutProvider.
+/// Language and input-method-specific routes belong to explicitly configured extensions. This
+/// provider is the final core fallback and does not inspect profile identities or language families.
 /// </remarks>
 public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
 {
-    private readonly CompositeSoftKeyboardLayoutProvider _layouts = new(
-        JapaneseSoftKeyboardLayoutProvider.Default,
-        ChineseSoftKeyboardLayoutProvider.Default,
-        StandardSoftKeyboardLayoutProvider.Default
-    );
-
     /// <summary>
     /// Gets the shared, stateless default composition.
     /// </summary>
@@ -30,6 +22,6 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     /// <inheritdoc />
     public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
     {
-        return _layouts.CreateLayout(context);
+        return StandardSoftKeyboardLayoutProvider.Default.CreateLayout(context);
     }
 }

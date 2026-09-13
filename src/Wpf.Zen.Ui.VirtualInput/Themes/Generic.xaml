@@ -75,6 +75,20 @@
 
     <Style TargetType="{x:Type keyboard:SoftKeyboardCandidateList}">
         <Setter Property="Focusable" Value="False" />
+        <Setter Property="ItemTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Text}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboardCandidateList}">
@@ -85,7 +99,7 @@
                         IsHorizontalMouseWheelEnabled="True"
                         ScrollSpillMode="Disabled"
                         VerticalScrollBarVisibility="Disabled">
-                        <ContentPresenter x:Name="PART_ItemsHost" />
+                        <ItemsPresenter />
                     </controls:DynamicScrollViewer>
                 </ControlTemplate>
             </Setter.Value>
@@ -256,9 +270,10 @@
                                         <controls:Button
                                             x:Name="PART_NextCandidatePageButton"
                                             AutomationProperties.Name="Next candidate page"
+                                            Command="{x:Static keyboard:SoftKeyboardCommands.MoveToNextCandidatePage}"
+                                            CommandTarget="{Binding RelativeSource={RelativeSource AncestorType={x:Type keyboard:SoftKeyboard}}}"
                                             DockPanel.Dock="Right"
-                                            FontSize="20"
-                                            IsEnabled="{Binding CanGoToNextCandidatePage, RelativeSource={RelativeSource TemplatedParent}}">
+                                            FontSize="20">
                                             <controls:Button.Style>
                                                 <Style BasedOn="{StaticResource SoftKeyboardToolButtonStyle}" TargetType="{x:Type controls:Button}">
                                                     <Setter Property="Content" Value="{controls:FluentIconSource ChevronRight24}" />
@@ -276,9 +291,10 @@
                                             x:Name="PART_PreviousCandidatePageButton"
                                             Margin="4,0"
                                             AutomationProperties.Name="Previous candidate page"
+                                            Command="{x:Static keyboard:SoftKeyboardCommands.MoveToPreviousCandidatePage}"
+                                            CommandTarget="{Binding RelativeSource={RelativeSource AncestorType={x:Type keyboard:SoftKeyboard}}}"
                                             DockPanel.Dock="Right"
-                                            FontSize="20"
-                                            IsEnabled="{Binding CanGoToPreviousCandidatePage, RelativeSource={RelativeSource TemplatedParent}}">
+                                            FontSize="20">
                                             <controls:Button.Style>
                                                 <Style BasedOn="{StaticResource SoftKeyboardToolButtonStyle}" TargetType="{x:Type controls:Button}">
                                                     <Setter Property="Content" Value="{controls:FluentIconSource ChevronLeft24}" />
@@ -294,7 +310,8 @@
                                         <!--  候选词列表 填充剩余空间  -->
                                         <keyboard:SoftKeyboardCandidateList
                                             x:Name="PART_Candidates"
-                                            Candidates="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}"
+                                            Command="{x:Static keyboard:SoftKeyboardCommands.CommitCandidate}"
+                                            ItemsSource="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}"
                                             SelectedCandidateIndex="{Binding SelectedCandidateIndex, RelativeSource={RelativeSource TemplatedParent}}" />
                                     </DockPanel>
                                 </Grid>
@@ -347,12 +364,14 @@
                                         <DoubleAnimation
                                             Storyboard.TargetName="KeyboardRoot"
                                             Storyboard.TargetProperty="Opacity"
+                                            FillBehavior="Stop"
                                             From="0"
                                             To="1"
                                             Duration="0:0:0.12" />
                                         <DoubleAnimation
                                             Storyboard.TargetName="KeyboardRoot"
                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                            FillBehavior="Stop"
                                             From="10"
                                             To="0"
                                             Duration="0:0:0.12" />

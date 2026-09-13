@@ -45,7 +45,7 @@ public partial class SoftKeyboard
 
         if (!ReferenceEquals(Keyboard.FocusedElement, target)
             || !IsWindowForeground()
-            || !_platform.Input.SendVirtualKey(Key.Escape, shift: false))
+            || !_platform.Input.SendVirtualKey(Key.Escape, ModifierKeys.None))
         {
             return false;
         }

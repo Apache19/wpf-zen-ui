@@ -178,7 +178,7 @@ public partial class SoftKeyboard
                 _settingsLayoutContext,
                 AutoShowMode,
                 AutoHideMode,
-                SupplementalLayoutCatalog.GetOptions(_settingsLayoutContext),
+                _availableLayoutOptions,
                 CandidateMode
             );
 
@@ -253,7 +253,7 @@ public partial class SoftKeyboard
         VerifyAccess();
 
         if (_settingsLayoutContext is null
-            || SupplementalLayoutCatalog.GetOptions(_settingsLayoutContext).All(o => o.Id != id))
+            || _availableLayoutOptions.All(option => option.Id != id))
         {
             throw new ArgumentException(
                 "The supplemental layout is not available for the active input method.",

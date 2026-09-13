@@ -11,17 +11,23 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// Provides short-lived input and navigation services for a custom key action.
 /// </summary>
 /// <remarks>
-/// Every input call revalidates the target. TrySendText cancels active composition; virtual keys and
-/// TrySendJapaneseKana preserve the IME pipeline. Expired contexts throw instead of typing into a later editor.
-/// This object is dispatcher-affine and is not an asynchronous input channel.
+/// Every input call revalidates the target. Literal text cancels active composition while virtual
+/// keys preserve the IME pipeline. Expired contexts throw instead of typing into a later editor.
 /// </remarks>
 public sealed class SoftKeyboardActionContext
 {
+    private readonly int _operationVersion;
+    private readonly CancellationToken _cancellationToken;
     private SoftKeyboard? _keyboard;
 
-    internal SoftKeyboardActionContext(SoftKeyboard keyboard)
+    internal SoftKeyboardActionContext(
+        SoftKeyboard keyboard,
+        int operationVersion,
+        CancellationToken cancellationToken)
     {
         _keyboard = keyboard;
+        _operationVersion = operationVersion;
+        _cancellationToken = cancellationToken;
     }
 
     /// <summary>
@@ -47,16 +53,41 @@ public sealed class SoftKeyboardActionContext
     /// <param name="key">
     /// The virtual key to send.
     /// </param>
-    /// <param name="shift">
-    /// Whether this specific keystroke uses Shift; defaults to false.
+    /// <param name="modifiers">
+    /// The Shift, Control, Alt, or Windows modifiers held for this chord.
     /// </param>
     /// <returns>
     /// Whether Windows accepted the input.
     /// </returns>
-    public bool TrySendKey(Key key, bool shift = false)
+    public bool TrySendKey(Key key, ModifierKeys modifiers = ModifierKeys.None)
     {
-        return GetKeyboard().SendActionKey(key, shift);
+        return GetKeyboard().SendActionKey(key, modifiers);
     }
+
+    /// <summary>
+    /// Gets the token cancelled when a newer action or input session takes ownership.
+    /// </summary>
+    public CancellationToken CancellationToken => _cancellationToken;
+
+    /// <summary>
+    /// Gets the active input-method profile captured through the owning keyboard.
+    /// </summary>
+    public SoftKeyboardInputMethod? InputMethod => GetKeyboard().ActiveInputMethod;
+
+    /// <summary>
+    /// Gets the current native/direct input state.
+    /// </summary>
+    public InputMethodState ImeState => GetKeyboard().ImeState;
+
+    /// <summary>
+    /// Gets the current Windows keyboard-layout handle.
+    /// </summary>
+    public IntPtr KeyboardLayoutHandle => GetKeyboard().CurrentKeyboardLayoutHandle;
+
+    /// <summary>
+    /// Gets the containing window handle, or zero when the keyboard has no WPF window.
+    /// </summary>
+    public IntPtr HostWindowHandle => GetKeyboard().HostWindowHandle;
 
     /// <summary>
     /// Requests a built-in or custom page, preserving the normal composition guard.
@@ -82,26 +113,6 @@ public sealed class SoftKeyboardActionContext
         _keyboard = null;
     }
 
-    /// <summary>
-    /// Enters a kana through the Japanese IME's standard kana keyboard mode.
-    /// </summary>
-    /// <param name="kana">One supported hiragana character or the long-vowel mark.</param>
-    /// <returns>Whether the active target and input stream accepted the packets.</returns>
-    /// <remarks>
-    /// Requires Japanese native input mode. Selects full-width hiragana and kana-key input rather
-    /// than Roman-key input, then sends the current Windows layout's matching keys. The IME continues
-    /// to own composition and conversion. Its kana-key mode remains active after the request.
-    /// </remarks>
-    public bool TrySendJapaneseKana(string kana)
-    {
-        if (string.IsNullOrEmpty(kana))
-        {
-            throw new ArgumentException("Input text is required.", nameof(kana));
-        }
-
-        return GetKeyboard().SendJapaneseKana(kana);
-    }
-
     private SoftKeyboard GetKeyboard()
     {
         var keyboard = _keyboard ?? throw new InvalidOperationException(
@@ -109,6 +120,13 @@ public sealed class SoftKeyboardActionContext
         );
 
         keyboard.VerifyAccess();
+
+        _cancellationToken.ThrowIfCancellationRequested();
+
+        if (!keyboard.IsActionContextCurrent(_operationVersion))
+        {
+            throw new InvalidOperationException("The key action context no longer owns the input session.");
+        }
 
         return keyboard;
     }

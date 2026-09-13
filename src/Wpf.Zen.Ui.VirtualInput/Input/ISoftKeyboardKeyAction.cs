@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -15,7 +15,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// Native conversion-mode changes belong in ISoftKeyboardInputStateAdapter; layout construction
 /// must not mutate IME state. Exceptions from application action code propagate to the caller.
 /// </remarks>
-public interface ISoftKeyboardKeyAction
+public interface ISoftKeyboardKeyAction : ISoftKeyboardAction
 {
     /// <summary>
     /// Executes the function using the current keyboard's guarded services.

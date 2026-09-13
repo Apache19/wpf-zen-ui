@@ -15,9 +15,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// </summary>
 internal sealed class WindowsInputBackend : ISoftKeyboardInputBackend
 {
-    public bool SendVirtualKey(Key key, bool shift)
+    public bool SendVirtualKey(Key key, ModifierKeys modifiers)
     {
-        return SoftKeyboardInputInjector.SendVirtualKey(key, shift);
+        return SoftKeyboardInputInjector.SendVirtualKey(key, modifiers);
     }
 
     public bool SendUnicode(string text)

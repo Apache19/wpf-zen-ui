@@ -134,9 +134,9 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                 return openState;
             }
 
-            // Microsoft Pinyin can keep the TSF keyboard-open compartment set while its own
-            // Chinese/English mode is alphanumeric. For this control, "IME" means native
-            // composition is active, so expose the combined state that matches what users see.
+            // A TIP can keep the TSF keyboard-open compartment set while its conversion mode is
+            // alphanumeric. For this control, "IME" means native composition is active, so expose
+            // the combined state that matches what users see.
             var conversionMode = InputMethod.Current.ImeConversionMode;
             return (conversionMode & ImeConversionModeValues.Native) != 0
                 ? InputMethodState.On
@@ -158,10 +158,9 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         try
         {
             // WPF maps this public property to the TSF keyboard-open compartment and mirrors it to
-            // IMM32 when required. Microsoft Pinyin has a separate conversion compartment for its
-            // Chinese/English mode, so the open state alone can report On while letters still pass
-            // through directly. Keep both compartments aligned without synthesizing a locale-
-            // specific hotkey such as Shift or Ctrl+Space. Read the conversion mode before changing
+            // IMM32 when required. A TIP may use a separate conversion compartment, so the open
+            // state alone can report On while letters still pass through directly. Keep both
+            // compartments aligned without synthesizing a locale-specific hotkey. Read the mode before changing
             // the open compartment: activating a TIP establishes that profile's current preferences,
             // including full/half shape and Roman input, and the keyboard must not replace them with
             // its own policy.
@@ -184,7 +183,7 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     /// input preferences such as full shape, Roman input, symbol input, or fixed conversion.
     /// </summary>
     /// <param name="currentMode">The active TIP's conversion flags before the transition.</param>
-    /// <param name="state">The requested logical Chinese/native or direct-letter state.</param>
+    /// <param name="state">The requested logical native-composition or direct-letter state.</param>
     /// <returns>The same preferences with only the native-language dimension changed.</returns>
     /// <remarks>
     /// <see cref="ImeConversionModeValues.Alphanumeric"/> is WPF's managed sentinel for the native

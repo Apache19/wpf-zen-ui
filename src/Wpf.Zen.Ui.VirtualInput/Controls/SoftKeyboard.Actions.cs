@@ -7,34 +7,90 @@ using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
+#pragma warning disable CA1001 // WPF owns control lifetime; Unloaded releases operation-owned resources.
+
 /// <summary>
-/// Coordinates custom key execution with the standard input validation boundary.
+/// Coordinates synchronous and asynchronous custom actions with the target-validation boundary.
 /// </summary>
 public partial class SoftKeyboard
 {
-    private void ExecuteCustomAction(ISoftKeyboardKeyAction action, string? alternative = null)
+    private readonly SoftKeyboardOperationSlot _actionOperation = new();
+
+    internal IntPtr CurrentKeyboardLayoutHandle => KeyboardLayoutLabels.GetCurrentLayout();
+
+    internal IntPtr HostWindowHandle
+    {
+        get
+        {
+            var window = Window.GetWindow(this);
+            return window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
+        }
+    }
+
+    private void ExecuteCustomAction(ISoftKeyboardAction action, string? alternative = null)
+    {
+        _ = ExecuteCustomActionAsync(action, alternative);
+    }
+
+    private async Task ExecuteCustomActionAsync(ISoftKeyboardAction action, string? alternative)
     {
         if (!PrepareTargetForInput())
         {
             return;
         }
 
-        var context = new SoftKeyboardActionContext(this);
+        using var operation = _actionOperation.Start(
+            CancellationToken.None, replace: true, ReportExtensionError
+        );
+
+        if (operation is null || !operation.IsCurrent)
+        {
+            return;
+        }
+
+        var operationVersion = _inputOperationVersion;
+
+        var context = new SoftKeyboardActionContext(this, operationVersion, operation.Token);
+
         try
         {
             if (alternative is not null
-                && action is ISoftKeyboardAlternateKeyAction alternateAction)
+                && action is IAsyncSoftKeyboardAlternateKeyAction asyncAlternate)
             {
-                alternateAction.ExecuteAlternate(context, alternative);
+                await asyncAlternate.ExecuteAlternateAsync(
+                    context, alternative, operation.Token
+                );
+            }
+            else if (alternative is not null
+                && action is ISoftKeyboardAlternateKeyAction alternate)
+            {
+                alternate.ExecuteAlternate(context, alternative);
+            }
+            else if (action is IAsyncSoftKeyboardKeyAction asyncAction)
+            {
+                await asyncAction.ExecuteAsync(context, operation.Token);
+            }
+            else if (action is ISoftKeyboardKeyAction synchronousAction)
+            {
+                synchronousAction.Execute(context);
             }
             else
             {
-                action.Execute(context);
+                throw new InvalidOperationException("The custom key action has no executable capability.");
+            }
+        }
+        catch (OperationCanceledException) when (!operation.IsCurrent)
+        {
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            if (operation.IsCurrent)
+            {
+                ReportExtensionError(exception);
             }
         }
         finally
         {
-            // Retaining a context must never grant a later callback access to a different editor.
             context.Expire();
         }
     }
@@ -50,14 +106,14 @@ public partial class SoftKeyboard
         return sent;
     }
 
-    internal bool SendActionKey(Key key, bool shift)
+    internal bool SendActionKey(Key key, ModifierKeys modifiers)
     {
         if (key == Key.None || !Enum.IsDefined(typeof(Key), key))
         {
             throw new ArgumentOutOfRangeException(nameof(key));
         }
 
-        var sent = TrySendVirtualKey(key, shift);
+        var sent = TrySendVirtualKey(key, modifiers);
         if (sent && IsCharacterKey(key) && ShiftState == SoftKeyboardShiftState.Once)
         {
             SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
@@ -66,39 +122,19 @@ public partial class SoftKeyboard
         return sent;
     }
 
-    // todo: 通用模块里不应有专项功能，职责边界不清晰
-    internal bool SendJapaneseKana(string kana)
+    internal bool IsActionContextCurrent(int operationVersion)
     {
-        if (!PrepareTargetForInput() || ImeState != InputMethodState.On
-            || ActiveInputMethod is not { LanguageId: 0x0411 })
-        {
-            return false;
-        }
+        return operationVersion == _inputOperationVersion
+            && IsOpen
+            && IsVisible
+            && IsEnabled
+            && ActiveTarget is not null;
+    }
 
-        var window = Window.GetWindow(this);
-        var keys = JapaneseImeInput.GetKanaKeys(kana, KeyboardLayoutLabels.GetCurrentLayout());
-
-        if (keys.Length == 0)
-        {
-            return false;
-        }
-
-        if (window is null || !JapaneseImeInput.TryEnableKanaMode(new WindowInteropHelper(window).Handle))
-        {
-            return false;
-        }
-
-        foreach (var (key, shift) in keys)
-        {
-            if (!_platform.Input.SendVirtualKey(key, shift))
-            {
-                return false;
-            }
-        }
-
-        QueueCandidateBridgeRefresh();
-        RequestSystemKeyboardHide();
-
-        return true;
+    private void CancelAsyncAction()
+    {
+        _actionOperation.Cancel(ReportExtensionError);
     }
 }
+
+#pragma warning restore CA1001

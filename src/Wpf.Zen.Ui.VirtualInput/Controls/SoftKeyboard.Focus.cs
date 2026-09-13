@@ -61,7 +61,7 @@ public partial class SoftKeyboard
 
                 RequestSystemKeyboardHide();
 
-                _platform.Candidates.Refresh(this);
+                RequestCandidateRefresh();
 
                 QueueCandidateBridgeRefresh();
             }
@@ -78,7 +78,7 @@ public partial class SoftKeyboard
         // local suppression marker immediately, but do not request TryShow for another window or
         // scope—the new focus owner and Windows input policy must decide what UI it needs.
         ReleaseSystemKeyboardSuppression(tryRestore: false);
-        _platform.Candidates.ReleasePresentation(this);
+        ResetCandidateSession();
     }
 
     internal void OnSessionInputLanguageChanged()

@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Wpf.Zen.Ui.VirtualInput.Extensions\Wpf.Zen.Ui.VirtualInput.Extensions.csproj" />
     <ProjectReference Include="..\..\src\Wpf.Zen.Ui.VirtualInput\Wpf.Zen.Ui.VirtualInput.csproj" />
     <ProjectReference Include="..\..\src\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
     <ProjectReference Include="..\..\src\Wpf.Zen.Ui.DependencyInjection\Wpf.Zen.Ui.DependencyInjection.csproj" />

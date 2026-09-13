@@ -3,31 +3,31 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Specialized;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
-/// Displays one input-method candidate page without exposing a general-purpose Items collection.
-/// The host supplies immutable candidate data and the current backend index; this control owns
-/// generated containers, current-item presentation and scrolling, but never commits input itself.
+/// Presents an input-method candidate page through the standard WPF items-control model.
 /// </summary>
 /// <remarks>
-/// The optional PART_ItemsHost ContentPresenter receives an internally owned, non-virtualizing
-/// items surface. Templates should put it inside a ScrollViewer. Omitting the part removes candidate
-/// presentation safely. Candidate item styles may change appearance but cannot change item identity.
-/// Direct child items and caller-supplied containers are not supported.
+/// <para>
+/// Applications can replace <see cref="ItemsControl.ItemsPanel"/>,
+/// <see cref="ItemsControl.ItemTemplate"/> and <see cref="ItemsControl.ItemContainerStyle"/> without
+/// replacing candidate behavior. Generated containers do not take keyboard focus from the active editor.
+/// </para>
+/// <para>
+/// Invoking a candidate raises <see cref="CandidateInvoked"/> first. Unless a handler marks the event as
+/// handled, <see cref="Command"/> is executed with the candidate as its parameter. The default command is
+/// <see cref="SoftKeyboardCommands.CommitCandidate"/>.
+/// </para>
 /// </remarks>
-[TemplatePart(Name = ItemsHostPartName, Type = typeof(ContentPresenter))]
-public sealed class SoftKeyboardCandidateList : Control
+public class SoftKeyboardCandidateList : ItemsControl
 {
-    private const string ItemsHostPartName = "PART_ItemsHost";
-
-    private readonly SoftKeyboardCandidateItemsHost _itemsHost;
-
-    private ContentPresenter?    _presenter;
     private DispatcherOperation? _revealOperation;
 
     private bool _revealPending;
@@ -56,49 +56,12 @@ public sealed class SoftKeyboardCandidateList : Control
     /// </summary>
     public SoftKeyboardCandidateList()
     {
-        _itemsHost = new SoftKeyboardCandidateItemsHost(this);
-
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnItemClick));
 
-        Loaded   += (_, _) => QueueReveal();
-        Unloaded += (_, _) => CancelReveal();
+        Loaded   += OnLoaded;
+        Unloaded += OnUnloaded;
 
-        IsVisibleChanged += (_, _) =>
-        {
-            if (IsVisible)
-            {
-                QueueReveal();
-            }
-            else
-            {
-                CancelReveal();
-            }
-        };
-    }
-
-    /// <summary>
-    /// Identifies the <see cref="Candidates"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty CandidatesProperty
-        = DependencyProperty.Register(
-            nameof(Candidates),
-            typeof(IEnumerable<SoftKeyboardCandidate>),
-            typeof(SoftKeyboardCandidateList),
-            new PropertyMetadata(null, OnCandidatesChanged)
-        );
-
-    /// <summary>
-    /// Gets or sets the candidate page supplied by the input method; the default is null.
-    /// </summary>
-    /// <remarks>
-    /// Observable sources update through WPF collection views. Plain enumerables update when replaced.
-    /// The source must contain non-null candidates with unique backend indices. This property is not
-    /// inherited or animated; changes regenerate affected containers and request current-item visibility.
-    /// </remarks>
-    public IEnumerable<SoftKeyboardCandidate>? Candidates
-    {
-        get => (IEnumerable<SoftKeyboardCandidate>?)GetValue(CandidatesProperty);
-        set => SetValue(CandidatesProperty, value);
+        IsVisibleChanged += OnIsVisibleChanged;
     }
 
     /// <summary>
@@ -118,12 +81,59 @@ public sealed class SoftKeyboardCandidateList : Control
     /// <remarks>
     /// Defaults to null and is not a page-relative position. An index outside the current page selects
     /// no container. Changes update appearance and scrolling only; they never invoke a candidate.
-    /// The value is not inherited or coerced and does not itself force synchronous layout.
     /// </remarks>
     public uint? SelectedCandidateIndex
     {
         get => (uint?)GetValue(SelectedCandidateIndexProperty);
         set => SetValue(SelectedCandidateIndexProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="Command"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CommandProperty
+        = DependencyProperty.Register(
+            nameof(Command),
+            typeof(ICommand),
+            typeof(SoftKeyboardCandidateList),
+            new PropertyMetadata(SoftKeyboardCommands.CommitCandidate)
+        );
+
+    /// <summary>
+    /// Gets or sets the command invoked for a candidate whose routed event was not handled.
+    /// </summary>
+    /// <remarks>
+    /// The candidate is supplied as the command parameter. The default command routes to the containing
+    /// <see cref="SoftKeyboard"/>. Set this property to null to use only <see cref="CandidateInvoked"/>.
+    /// </remarks>
+    public ICommand? Command
+    {
+        get => (ICommand?)GetValue(CommandProperty);
+        set => SetValue(CommandProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="CommandTarget"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CommandTargetProperty
+        = DependencyProperty.Register(
+            nameof(CommandTarget),
+            typeof(IInputElement),
+            typeof(SoftKeyboardCandidateList),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the explicit target for a routed candidate command.
+    /// </summary>
+    /// <remarks>
+    /// When null, routed commands start at this list and follow the normal WPF command route.
+    /// Non-routed commands ignore this property.
+    /// </remarks>
+    public IInputElement? CommandTarget
+    {
+        get => (IInputElement?)GetValue(CommandTargetProperty);
+        set => SetValue(CommandTargetProperty, value);
     }
 
     /// <summary>
@@ -138,57 +148,114 @@ public sealed class SoftKeyboardCandidateList : Control
         );
 
     /// <summary>
-    /// Occurs when a current generated container is invoked; its host validates and commits the request.
+    /// Occurs when a current generated container is invoked.
     /// </summary>
+    /// <remarks>
+    /// Mark the event as handled to suppress automatic execution of <see cref="Command"/>.
+    /// </remarks>
     public event EventHandler<SoftKeyboardCandidateInvokedEventArgs> CandidateInvoked
     {
         add => AddHandler(CandidateInvokedEvent, value);
         remove => RemoveHandler(CandidateInvokedEvent, value);
     }
 
-    /// <inheritdoc />
-    public override void OnApplyTemplate()
+    /// <summary>
+    /// Creates the container used to present one candidate.
+    /// </summary>
+    /// <returns>A non-focusable candidate container.</returns>
+    protected virtual SoftKeyboardCandidateItem CreateCandidateContainer()
     {
-        base.OnApplyTemplate();
+        return new SoftKeyboardCandidateItem();
+    }
 
-        _presenter = GetTemplateChild(ItemsHostPartName) as ContentPresenter;
+    /// <summary>
+    /// Called after a generated candidate container has been prepared.
+    /// </summary>
+    /// <param name="container">The prepared container.</param>
+    /// <param name="candidate">The immutable candidate represented by the container.</param>
+    protected virtual void OnCandidateContainerPrepared(
+        SoftKeyboardCandidateItem container,
+        SoftKeyboardCandidate candidate)
+    {
+    }
 
-        if (_presenter is not null)
+    /// <summary>
+    /// Called before a generated candidate container is cleared for reuse.
+    /// </summary>
+    /// <param name="container">The container being cleared.</param>
+    /// <param name="candidate">The immutable candidate previously represented by the container.</param>
+    protected virtual void OnCandidateContainerClearing(
+        SoftKeyboardCandidateItem container,
+        SoftKeyboardCandidate candidate)
+    {
+    }
+
+    /// <inheritdoc />
+    protected override bool IsItemItsOwnContainerOverride(object item)
+    {
+        return false;
+    }
+
+    /// <inheritdoc />
+    protected override DependencyObject GetContainerForItemOverride()
+    {
+        return CreateCandidateContainer();
+    }
+
+    /// <inheritdoc />
+    protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
+    {
+        if (element is not SoftKeyboardCandidateItem container
+            || item is not SoftKeyboardCandidate candidate)
         {
-            _presenter.SetCurrentValue(ContentPresenter.ContentProperty, _itemsHost);
+            throw new InvalidOperationException(
+                $"{nameof(SoftKeyboardCandidateList)} items must be {nameof(SoftKeyboardCandidate)} instances."
+            );
         }
 
+        base.PrepareContainerForItemOverride(element, item);
+
+        container.SetCandidate(candidate);
+
+        UpdateSelection(container);
+        OnCandidateContainerPrepared(container, candidate);
         QueueReveal();
     }
 
     /// <inheritdoc />
-    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
     {
-        CancelReveal();
-
-        if (_presenter is not null)
+        if (element is SoftKeyboardCandidateItem { Candidate: { } candidate } container)
         {
-            // The same internal items surface is reused, but cannot belong to two visual parents.
-            _presenter.SetCurrentValue(ContentPresenter.ContentProperty, null);
-            _presenter = null;
+            OnCandidateContainerClearing(container, candidate);
+
+            container.SetCandidate(null);
+            container.SetIsSelected(false);
+
+            if (container.IsMouseCaptured)
+            {
+                container.ReleaseMouseCapture();
+            }
         }
 
-        base.OnTemplateChanged(oldTemplate, newTemplate);
+        base.ClearContainerForItemOverride(element, item);
     }
 
-    private static void OnCandidatesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    /// <inheritdoc />
+    protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
     {
-        var list = (SoftKeyboardCandidateList)d;
-        list._itemsHost.SetCurrentValue(ItemsControl.ItemsSourceProperty, e.NewValue);
-        list.QueueReveal();
+        base.OnItemsChanged(e);
+
+        QueueReveal();
     }
 
-    private static void OnSelectedCandidateIndexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnSelectedCandidateIndexChanged(
+        DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var list = (SoftKeyboardCandidateList)d;
-        for (var index = 0; index < list._itemsHost.Items.Count; index++)
+        for (var index = 0; index < list.Items.Count; index++)
         {
-            if (list._itemsHost.ItemContainerGenerator.ContainerFromIndex(index) is SoftKeyboardCandidateItem container)
+            if (list.ItemContainerGenerator.ContainerFromIndex(index) is SoftKeyboardCandidateItem container)
             {
                 list.UpdateSelection(container);
             }
@@ -197,7 +264,7 @@ public sealed class SoftKeyboardCandidateList : Control
         list.QueueReveal();
     }
 
-    internal void UpdateSelection(SoftKeyboardCandidateItem container)
+    private void UpdateSelection(SoftKeyboardCandidateItem container)
     {
         container.SetIsSelected(
             SelectedCandidateIndex.HasValue
@@ -207,24 +274,70 @@ public sealed class SoftKeyboardCandidateList : Control
 
     private void OnItemClick(object sender, RoutedEventArgs e)
     {
-        if (e.OriginalSource is SoftKeyboardCandidateItem container
-            && ItemsControl.ItemsControlFromItemContainer(container) == _itemsHost
-            && _itemsHost.ItemContainerGenerator.ItemFromContainer(container) is SoftKeyboardCandidate candidate)
+        if (e.OriginalSource is not SoftKeyboardCandidateItem container
+            || ItemsControlFromItemContainer(container) != this
+            || ItemContainerGenerator.ItemFromContainer(container) is not SoftKeyboardCandidate candidate)
         {
-            // The generator, not mutable presentation Content, identifies the invoked data item.
-            e.Handled = true;
-            RaiseEvent(new SoftKeyboardCandidateInvokedEventArgs(this, candidate));
+            return;
+        }
+
+        e.Handled = true;
+
+        var invokedArgs = new SoftKeyboardCandidateInvokedEventArgs(this, candidate);
+        RaiseEvent(invokedArgs);
+
+        if (!invokedArgs.Handled)
+        {
+            ExecuteCommand(candidate);
         }
     }
 
-    // Loaded priority coalesces binding updates and also handles render-only selection changes.
-    // A pending request survives an unarranged container; LayoutUpdated is used only for that retry.
-    internal void QueueReveal()
+    private void ExecuteCommand(SoftKeyboardCandidate candidate)
+    {
+        if (Command is RoutedCommand routedCommand)
+        {
+            IInputElement target = CommandTarget ?? this;
+            if (routedCommand.CanExecute(candidate, target))
+            {
+                routedCommand.Execute(candidate, target);
+            }
+
+            return;
+        }
+
+        if (Command?.CanExecute(candidate) == true)
+        {
+            Command.Execute(candidate);
+        }
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        QueueReveal();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        CancelReveal();
+    }
+
+    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (IsVisible)
+        {
+            QueueReveal();
+        }
+        else
+        {
+            CancelReveal();
+        }
+    }
+
+    private void QueueReveal()
     {
         CancelReveal();
 
-        if (SelectedCandidateIndex.HasValue
-            && IsLoaded && IsVisible && _presenter is not null)
+        if (SelectedCandidateIndex.HasValue && IsLoaded && IsVisible)
         {
             _revealPending = true;
 
@@ -262,26 +375,24 @@ public sealed class SoftKeyboardCandidateList : Control
     {
         _revealOperation = null;
 
-        if (!_revealPending || !IsLoaded || !IsVisible || _presenter is null)
+        if (!_revealPending || !IsLoaded || !IsVisible)
         {
             CancelReveal();
             return;
         }
 
-        for (var index = 0; index < _itemsHost.Items.Count; index++)
+        for (var index = 0; index < Items.Count; index++)
         {
-            if (_itemsHost.Items[index] is not SoftKeyboardCandidate candidate ||
-                candidate.Index != SelectedCandidateIndex)
+            if (Items[index] is not SoftKeyboardCandidate candidate
+                || candidate.Index != SelectedCandidateIndex)
             {
                 continue;
             }
 
-            if (_itemsHost.ItemContainerGenerator.ContainerFromIndex(index) is SoftKeyboardCandidateItem container
-                && container.IsVisible && container.IsArrangeValid)
+            if (ItemContainerGenerator.ContainerFromIndex(index)
+                is SoftKeyboardCandidateItem { IsVisible: true, IsArrangeValid: true } container)
             {
-                // Detach before scrolling because BringIntoView schedules additional layout.
                 CancelReveal();
-
                 container.BringIntoView();
             }
             else if (!_waitingForLayout)
@@ -293,7 +404,6 @@ public sealed class SoftKeyboardCandidateList : Control
             return;
         }
 
-        // No candidate on this page matches. A later collection update starts a fresh request.
         CancelReveal();
     }
 }

@@ -20,7 +20,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop;
 /// </remarks>
 internal static class SoftKeyboardInputInjector
 {
-    internal static bool SendVirtualKey(Key key, bool shift)
+    internal static bool SendVirtualKey(Key key, ModifierKeys modifiers)
     {
         var virtualKey = KeyInterop.VirtualKeyFromKey(key);
         if (virtualKey is <= 0 or > ushort.MaxValue)
@@ -28,16 +28,21 @@ internal static class SoftKeyboardInputInjector
             return false;
         }
 
-        var inputs = new List<INPUT>(shift ? 4 : 2);
-        if (shift)
+        const ModifierKeys SupportedModifiers = ModifierKeys.Shift
+            | ModifierKeys.Control
+            | ModifierKeys.Alt
+            | ModifierKeys.Windows;
+
+        if ((modifiers & ~SupportedModifiers) != ModifierKeys.None)
         {
-            inputs.Add(
-                CreateVirtualKeyInput(
-                    KeyInterop.VirtualKeyFromKey(Key.LeftShift),
-                    false,
-                    false
-                )
-            );
+            throw new ArgumentOutOfRangeException(nameof(modifiers));
+        }
+
+        var modifierKeys = GetModifierKeys(modifiers);
+        var inputs = new List<INPUT>((modifierKeys.Length * 2) + 2);
+        foreach (var modifierKey in modifierKeys)
+        {
+            inputs.Add(CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(modifierKey), false, false));
         }
 
         var extended = IsExtendedKey(key);
@@ -45,18 +50,59 @@ internal static class SoftKeyboardInputInjector
         inputs.Add(CreateVirtualKeyInput(virtualKey, false, extended));
         inputs.Add(CreateVirtualKeyInput(virtualKey, true, extended));
 
-        if (shift)
+        for (var index = modifierKeys.Length - 1; index >= 0; index--)
         {
-            inputs.Add(
-                CreateVirtualKeyInput(
-                    KeyInterop.VirtualKeyFromKey(Key.LeftShift),
-                    true,
-                    false
-                )
-            );
+            inputs.Add(CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(modifierKeys[index]), true, false));
         }
 
-        return Send(inputs);
+        var sent = Send(inputs);
+        if (!sent)
+        {
+            // SendInput can report a partial insertion. A partial chord may have delivered one or
+            // more key-down records without their matching key-up records, so always issue an
+            // idempotent release sequence before returning failure.
+            var releases = new List<INPUT>(modifierKeys.Length + 1)
+            {
+                CreateVirtualKeyInput(virtualKey, true, extended),
+            };
+
+            for (var index = modifierKeys.Length - 1; index >= 0; index--)
+            {
+                releases.Add(
+                    CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(modifierKeys[index]), true, false)
+                );
+            }
+
+            Send(releases);
+        }
+
+        return sent;
+    }
+
+    private static Key[] GetModifierKeys(ModifierKeys modifiers)
+    {
+        var keys = new List<Key>(4);
+        if ((modifiers & ModifierKeys.Control) != 0)
+        {
+            keys.Add(Key.LeftCtrl);
+        }
+
+        if ((modifiers & ModifierKeys.Shift) != 0)
+        {
+            keys.Add(Key.LeftShift);
+        }
+
+        if ((modifiers & ModifierKeys.Alt) != 0)
+        {
+            keys.Add(Key.LeftAlt);
+        }
+
+        if ((modifiers & ModifierKeys.Windows) != 0)
+        {
+            keys.Add(Key.LWin);
+        }
+
+        return [.. keys];
     }
 
     internal static bool SendUnicode(string text)

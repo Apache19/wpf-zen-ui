@@ -70,7 +70,7 @@ public sealed class DefaultSoftKeyboardSettingsProvider : ISoftKeyboardSettingsP
                 }
             ]);
 
-        if (context.AvailableLayouts.Count > 1)
+        if (context.AvailableLayouts.Count > 2)
         {
             yield return new SoftKeyboardSetting("layout.separator")
             {

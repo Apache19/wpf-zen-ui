@@ -9,41 +9,40 @@ using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
+/// <summary>
+/// Owns dispatcher-wide TSF candidate presentation and scopes asynchronous operations to one UI element.
+/// </summary>
 [ComVisible(true)]
 [ClassInterface(ClassInterfaceType.None)]
 internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
-    ISoftKeyboardTsfActiveLanguageProfileNotifySink
+    ISoftKeyboardTsfActiveLanguageProfileNotifySink, IDisposable
 {
     private const uint UiElementEnabledOnly = 0x00000004;
 
-    private static readonly Guid UIElementSinkId             = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
+    private static readonly Guid UIElementSinkId = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
     private static readonly Guid ActiveLanguageProfileSinkId = new("B246CB75-A93E-4652-BF8C-B3FE0CFD7E57");
-    private static readonly Guid ThreadManagerClassId        = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
-    private static readonly Guid WeaselCandidateElementId    = new("36C3C795-7159-45AA-AB12-30229A51DBD3");
+    private static readonly Guid ThreadManagerClassId = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
+    private readonly        Dispatcher _dispatcher;
+    private readonly        List<WeakReference> _keyboards = [];
+    private readonly        DispatcherTimer _candidatePollTimer;
 
-    private readonly Dispatcher          _dispatcher;
-    private readonly List<WeakReference> _keyboards = [];
-    private readonly DispatcherTimer     _candidatePollTimer;
-
-    private object?          _threadManagerObject;
-    private ITfThreadMgr?    _threadManager;
-    private ITfUIElementMgr? _elementManager;
-    private ITfSource?       _source;
+    private object?                            _threadManagerObject;
+    private ITfThreadMgr?                      _threadManager;
+    private ITfUIElementMgr?                   _elementManager;
+    private ITfSource?                         _source;
     private ITfCandidateListUIElementBehavior? _activeBehavior;
-    private SoftKeyboard?    _activeKeyboard;
-    private uint             _cookie;
-    private uint             _profileCookie;
-    private IntPtr           _sinkPointer;
-    private IntPtr           _profileSinkPointer;
-    private uint             _activeElementId;
-    private uint[]           _activePageStarts = [];
-    private uint             _activePageNumber;
-    private bool             _reflectionUnavailable;
-    private bool             _ownsUiLessActivation;
-    private string[]?        _pendingKeyCommit;
-    private int              _keyCommitSentAt;
-    private IInputElement?   _keyCommitTarget;
-    private int              _keyCommitVersion;
+    private SoftKeyboard?                      _activeKeyboard;
+    private uint                               _cookie;
+    private uint                               _profileCookie;
+    private IntPtr                             _sinkPointer;
+    private IntPtr                             _profileSinkPointer;
+    private uint                               _activeElementId;
+    private uint[]                             _activePageStarts = [];
+    private uint                               _activePageNumber;
+    private int                                _activeCandidateVersion;
+    private CancellationTokenSource?           _activeCandidateCancellation;
+    private bool                               _reflectionUnavailable;
+    private bool                               _ownsUiLessActivation;
 
     internal TsfCandidateSession(Dispatcher dispatcher)
     {
@@ -69,6 +68,19 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         }
 
         EnsureConnected();
+    }
+
+    internal void Register(SoftKeyboard keyboard, SoftKeyboardCandidateHost host)
+    {
+        if (!ReferenceEquals(host.Keyboard, keyboard))
+        {
+            throw new ArgumentException(
+                "The candidate host belongs to another keyboard.",
+                nameof(host)
+            );
+        }
+
+        Register(keyboard);
     }
 
     internal void Refresh(SoftKeyboard keyboard)
@@ -199,139 +211,234 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         }
     }
 
-    internal bool TryCommit(SoftKeyboard keyboard, uint index)
+    internal async Task<SoftKeyboardCandidateOperationResult> TryCommitAsync(
+        SoftKeyboard keyboard,
+        SoftKeyboardCandidate candidate,
+        CancellationToken cancellationToken)
     {
-        if (!ReferenceEquals(_activeKeyboard, keyboard) || _activeBehavior is null)
+        if (!ReferenceEquals(_activeKeyboard, keyboard)
+            || _activeBehavior is not { } nativeBehavior || _activeCandidateCancellation is null)
         {
-            return false;
+            return SoftKeyboardCandidateOperationResult.NotHandled;
         }
+
+        var version = _activeCandidateVersion;
+
+        using var operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken, _activeCandidateCancellation.Token
+        );
+
+        var operationToken = operationCancellation.Token;
 
         try
         {
-            if (!ValidateActiveCandidate())
+            operationToken.ThrowIfCancellationRequested();
+            if (!ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                || nativeBehavior.GetCount(out var count) < 0
+                || !ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                || candidate.Index >= count)
             {
-                return false;
+                return SoftKeyboardCandidateOperationResult.NotHandled;
             }
 
-            if (_activeBehavior!.GetCount(out var count) < 0 || index >= count)
+            var context = CreateBehaviorContext(keyboard, nativeBehavior, operationToken, cancellationToken);
+            if (context is not null)
             {
-                return false;
+                foreach (var behavior in keyboard.GetTsfCandidateBehaviors())
+                {
+                    operationToken.ThrowIfCancellationRequested();
+
+                    if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
+                    {
+                        return SoftKeyboardCandidateOperationResult.NotHandled;
+                    }
+
+                    SoftKeyboardCandidateOperationResult result;
+                    try
+                    {
+                        result = await behavior.CommitAsync(context, candidate, cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (operationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch (Exception exception) when (exception is not OutOfMemoryException)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (!IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
+                        {
+                            return SoftKeyboardCandidateOperationResult.NotHandled;
+                        }
+
+                        keyboard.SetCandidateError(exception);
+                        continue;
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (result?.Handled == true)
+                    {
+                        return result;
+                    }
+                }
             }
 
-            if (_activeBehavior.GetGuid(out var elementType) == 0
-                && elementType == WeaselCandidateElementId)
-            {
-                // Weasel's Behavior.SetSelection changes only UI highlight and Finalize destroys
-                // its window without committing the engine (rime/weasel, WeaselTSF/CandidateList.cpp).
-                // Its published list is the current engine page (GetPageIndex returns [0]).
-                // A number selects that page-relative candidate in one engine operation, without
-                // intermediate highlights. This adapter assumes the standard 1-9 selection keys;
-                // custom Rime key bindings are not described by the TSF candidate interface.
-                if (!TryGetCandidateNumberKey(index, count, out var key))
-                {
-                    return false;
-                }
+            operationToken.ThrowIfCancellationRequested();
 
-                ObserveKeyCommit();
+            // SetSelection can synchronously end this UI element and begin another in the same
+            // document. Only finalize the captured element if its generation survived selection.
+            var succeeded = ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                && nativeBehavior.SetSelection(candidate.Index) >= 0
+                && ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                && nativeBehavior.FinalizeCandidate() >= 0;
 
-                if (_pendingKeyCommit is not null)
-                {
-                    return true;
-                }
-
-                if (!ValidateActiveCandidate())
-                {
-                    return false;
-                }
-
-                var strings = ReadCandidateStrings(count);
-                if (strings is null)
-                {
-                    return false;
-                }
-
-                _pendingKeyCommit = strings;
-                _keyCommitTarget  = keyboard.ActiveTarget;
-                _keyCommitVersion = keyboard.CandidateInteractionVersion;
-                _keyCommitSentAt  = Environment.TickCount;
-
-                // Install the guard before SendInput: TSF callbacks may run synchronously.
-                if (keyboard.SendCandidateNavigationKey(key))
-                {
-                    return true;
-                }
-
-                _pendingKeyCommit = null;
-
-                return false;
-            }
-
-            // SetSelection can synchronously dispatch TSF callbacks and invalidate ownership.
-            return _activeBehavior!.SetSelection(index) >= 0
-                && ValidateActiveCandidate()
-                && _activeBehavior!.FinalizeCandidate() >= 0;
+            return succeeded
+                ? SoftKeyboardCandidateOperationResult.Success
+                : SoftKeyboardCandidateOperationResult.NotHandled;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException) when (operationToken.IsCancellationRequested)
+        {
+            return SoftKeyboardCandidateOperationResult.NotHandled;
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
             RestoreNativeCandidate();
             ClearActiveCandidate();
 
             keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
 
-            return false;
+            return SoftKeyboardCandidateOperationResult.Failure(exception);
         }
     }
 
-    internal bool TryMovePage(SoftKeyboard keyboard, int delta)
+    internal async Task<SoftKeyboardCandidateOperationResult> TryMovePageAsync(
+        SoftKeyboard keyboard,
+        int delta,
+        CancellationToken cancellationToken)
     {
         if (!ReferenceEquals(_activeKeyboard, keyboard)
-            || _activeBehavior is null || delta == 0 || _activePageNumber == 0)
+            || _activeBehavior is not { } nativeBehavior || _activeCandidateCancellation is null
+            || delta == 0 || _activePageNumber == 0)
         {
-            return false;
+            return SoftKeyboardCandidateOperationResult.NotHandled;
         }
 
         var targetPage = checked((int)_activePageNumber - 1 + delta);
         if (targetPage < 0 || targetPage >= _activePageStarts.Length)
         {
-            return false;
+            return SoftKeyboardCandidateOperationResult.NotHandled;
         }
+
+        var version   = _activeCandidateVersion;
+        var pageStart = _activePageStarts[targetPage];
+
+        using var operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken, _activeCandidateCancellation.Token
+        );
+
+        var operationToken = operationCancellation.Token;
 
         try
         {
-            if (!ValidateActiveCandidate())
+            operationToken.ThrowIfCancellationRequested();
+
+            if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
             {
-                return false;
+                return SoftKeyboardCandidateOperationResult.NotHandled;
             }
 
-            if (_activeBehavior.GetGuid(out var elementType) == 0 && elementType == WeaselCandidateElementId)
+            var context = CreateBehaviorContext(keyboard, nativeBehavior, operationToken, cancellationToken);
+            if (context is not null)
             {
-                // SetSelection also leaves Weasel's engine behind when paging. Keep engine and
-                // displayed selection synchronized so a later click cannot confirm stale UI state.
-                _pendingKeyCommit = null;
+                foreach (var behavior in keyboard.GetTsfCandidateBehaviors())
+                {
+                    operationToken.ThrowIfCancellationRequested();
 
-                return keyboard.SendCandidateNavigationKey(delta > 0
-                    ? System.Windows.Input.Key.PageDown : System.Windows.Input.Key.PageUp);
+                    if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
+                    {
+                        return SoftKeyboardCandidateOperationResult.NotHandled;
+                    }
+
+                    SoftKeyboardCandidateOperationResult result;
+                    try
+                    {
+                        result = await behavior.MovePageAsync(context, delta, cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (operationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch (Exception exception) when (exception is not OutOfMemoryException)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (!IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
+                        {
+                            return SoftKeyboardCandidateOperationResult.NotHandled;
+                        }
+
+                        keyboard.SetCandidateError(exception);
+                        continue;
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (result?.Handled == true)
+                    {
+                        return result;
+                    }
+                }
             }
+
+            operationToken.ThrowIfCancellationRequested();
 
             // TSF owns the page boundaries. Selecting the first item on an adjacent page asks
             // the TIP to move its current page without committing text; FinalizeCandidate is
             // deliberately reserved for an actual candidate-button invocation.
-            if (_activeBehavior.SetSelection(_activePageStarts[targetPage]) < 0)
+            if (!ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                || nativeBehavior.SetSelection(pageStart) < 0
+                || !ValidateCandidateOperation(keyboard, nativeBehavior, version))
             {
-                return false;
+                return SoftKeyboardCandidateOperationResult.NotHandled;
             }
 
             UpdateCandidateSnapshot();
-            return true;
+            return SoftKeyboardCandidateOperationResult.Success;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException) when (operationToken.IsCancellationRequested)
+        {
+            return SoftKeyboardCandidateOperationResult.NotHandled;
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
             RestoreNativeCandidate();
             ClearActiveCandidate();
 
             keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
 
-            return false;
+            return SoftKeyboardCandidateOperationResult.Failure(exception);
         }
     }
 
@@ -364,6 +471,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             _activeBehavior  = behavior;
             _activeElementId = elementId;
 
+#pragma warning disable IDISP003 // ClearActiveCandidate disposed the previous element cancellation source.
+            _activeCandidateCancellation = new CancellationTokenSource();
+#pragma warning restore IDISP003
+
             show = 0;
 
             _candidatePollTimer.Start();
@@ -384,7 +495,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         if (elementId == _activeElementId)
         {
             UpdateCandidateSnapshot();
-            ObserveKeyCommit();
         }
 
         return 0;
@@ -485,6 +595,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
                     _activeKeyboard  = keyboard;
                     _activeBehavior  = behavior;
                     _activeElementId = uint.MaxValue;
+
+#pragma warning disable IDISP003 // ClearActiveCandidate disposed the previous element cancellation source.
+                    _activeCandidateCancellation = new CancellationTokenSource();
+#pragma warning restore IDISP003
 
                     retained = true;
 
@@ -589,13 +703,19 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
                 }
             }
 
-            _activeKeyboard.ReplaceCandidates(
-                candidates,
-                SoftKeyboardCandidatePresentationState.Embedded,
-                pageNumber,
-                pageCount,
-                selection
-            );
+            var host = _activeKeyboard.ActiveCandidateHost;
+            if (host is not null)
+            {
+                host.Publish(
+                    new SoftKeyboardCandidateSnapshot(
+                        candidates,
+                        SoftKeyboardCandidatePresentationState.Embedded,
+                        pageNumber,
+                        pageCount,
+                        selection
+                    )
+                );
+            }
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -702,18 +822,77 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             return false;
         }
 
-        return ShouldEmbedCandidate(keyboard.CandidateMode, elementType);
+        var context = CreateBehaviorContext(keyboard, elementType);
+        if (context is not null)
+        {
+            foreach (var candidateBehavior in keyboard.GetTsfCandidateBehaviors())
+            {
+                try
+                {
+                    var presentation = candidateBehavior.GetPresentation(context);
+                    if (presentation != SoftKeyboardTsfCandidatePresentation.Default)
+                    {
+                        return presentation == SoftKeyboardTsfCandidatePresentation.Embedded;
+                    }
+                }
+                catch (Exception exception) when (exception is not OutOfMemoryException)
+                {
+                    keyboard.SetCandidateError(exception);
+                }
+            }
+        }
+
+        return ShouldEmbedCandidate(keyboard.CandidateMode);
     }
 
-    // Weasel's CCandidateList combines candidates and non-inline pre-edit in one native window.
-    // Its QueryInterface exposes neither reading information nor the private preedit string;
-    // hiding this element can therefore erase the user's only preview. Decide before BeginUIElement
-    // returns: Weasel creates the native window only when pbShow is true, and later Show(true) alone
-    // cannot undo that decision reliably. Explicit Embedded remains available for inline-preedit users.
-    internal static bool ShouldEmbedCandidate(SoftKeyboardCandidateMode mode, Guid elementType)
+    /// <summary>
+    /// Captures extension metadata with the cancellation boundary of the element being operated on.
+    /// </summary>
+    private static SoftKeyboardTsfCandidateContext? CreateBehaviorContext(
+        SoftKeyboard keyboard,
+        ITfCandidateListUIElementBehavior behavior,
+        CancellationToken cancellationToken,
+        CancellationToken callerCancellationToken)
     {
-        return mode != SoftKeyboardCandidateMode.Native
-            && (mode == SoftKeyboardCandidateMode.Embedded || elementType != WeaselCandidateElementId);
+        if (behavior.GetGuid(out var elementType) < 0)
+        {
+            return null;
+        }
+
+        return CreateBehaviorContext(keyboard, elementType, cancellationToken, callerCancellationToken);
+    }
+
+    /// <summary>
+    /// Creates an extension context from an element type that the caller has already
+    /// obtained from TSF.
+    /// </summary>
+    private static SoftKeyboardTsfCandidateContext? CreateBehaviorContext(
+        SoftKeyboard keyboard,
+        Guid elementType,
+        CancellationToken cancellationToken = default,
+        CancellationToken callerCancellationToken = default)
+    {
+        var host = keyboard.ActiveCandidateHost;
+        if (host is null)
+        {
+            return null;
+        }
+
+        return new SoftKeyboardTsfCandidateContext(
+            host,
+            elementType,
+            keyboard.Candidates.ToArray(),
+            keyboard.CandidatePageNumber,
+            keyboard.CandidatePageCount,
+            keyboard.SelectedCandidateIndex,
+            cancellationToken,
+            callerCancellationToken
+        );
+    }
+
+    internal static bool ShouldEmbedCandidate(SoftKeyboardCandidateMode mode)
+    {
+        return mode != SoftKeyboardCandidateMode.Native;
     }
 
     /// <summary>
@@ -722,15 +901,26 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
     /// </summary>
     private bool ValidateActiveCandidate()
     {
-        if (CanEmbedCandidates(_activeKeyboard)
+        var version = _activeCandidateVersion;
+        var valid = CanEmbedCandidates(_activeKeyboard)
             && _activeBehavior is ITfCandidateListUIElement candidate
-            && MatchesFocusedDocument(candidate))
+            && MatchesFocusedDocument(candidate);
+
+        // A document query can synchronously replace the element. Its result only describes the
+        // captured generation and must not restore or clear the later element's presentation.
+        if (version != _activeCandidateVersion)
+        {
+            return false;
+        }
+
+        if (valid)
         {
             return true;
         }
 
         RestoreNativeCandidate();
         ClearActiveCandidate();
+
         return false;
     }
 
@@ -746,17 +936,47 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         }
     }
 
+    /// <summary>
+    /// Tests identity without touching COM or the presentation of a later element.
+    /// </summary>
+    private bool IsCandidateOperationCurrent(
+        SoftKeyboard keyboard,
+        ITfCandidateListUIElementBehavior behavior,
+        int version)
+    {
+        return version == _activeCandidateVersion
+            && ReferenceEquals(keyboard, _activeKeyboard)
+            && ReferenceEquals(behavior, _activeBehavior);
+    }
+
+    /// <summary>
+    /// Revalidates both element generation and focused document before native input operations.
+    /// COM document queries may reenter the sink, so identity is checked on both sides of validation.
+    /// </summary>
+    private bool ValidateCandidateOperation(
+        SoftKeyboard keyboard,
+        ITfCandidateListUIElementBehavior behavior,
+        int version)
+    {
+        return IsCandidateOperationCurrent(keyboard, behavior, version)
+            && ValidateActiveCandidate()
+            && IsCandidateOperationCurrent(keyboard, behavior, version);
+    }
+
+    /// <summary>
+    /// Detaches the current element and cancels its pending extension work before a later element takes ownership.
+    /// </summary>
     private void ClearActiveCandidate()
     {
-        _pendingKeyCommit  = null;
-        _keyCommitTarget   = null;
+        var keyboard     = _activeKeyboard;
+        var behavior     = _activeBehavior;
+        var cancellation = _activeCandidateCancellation;
 
-        var keyboard = _activeKeyboard;
+        _activeCandidateVersion++;
+        _activeCandidateCancellation = null;
 
         _candidatePollTimer.Stop();
         _candidatePollTimer.Interval = TimeSpan.FromMilliseconds(75);
-
-        ReleaseComReference(_activeBehavior);
 
         _activeBehavior   = null;
         _activeKeyboard   = null;
@@ -764,7 +984,22 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         _activePageStarts = [];
         _activePageNumber = 0;
 
+        ReleaseComReference(behavior);
+
         keyboard?.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
+
+        try
+        {
+            cancellation?.Cancel();
+        }
+        catch (AggregateException exception)
+        {
+            keyboard?.SetCandidateError(exception);
+        }
+        finally
+        {
+            cancellation?.Dispose();
+        }
     }
 
     private void SetUnavailableState()
@@ -896,98 +1131,20 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         // Poll only while such an element is embedded; the timer stops as soon as the element
         // becomes invalid, the composition is committed, or the keyboard session is released.
         UpdateCandidateSnapshot();
-        ObserveKeyCommit();
-    }
-
-    private string[]? ReadCandidateStrings(uint count)
-    {
-        if (_activeBehavior is null || count > 256)
-        {
-            return null;
-        }
-
-        var strings = new string[count];
-
-        for (uint i = 0; i < count; i++)
-        {
-            if (_activeBehavior.GetString(i, out var value) < 0 || value is null)
-            {
-                return null;
-            }
-
-            strings[i] = value;
-        }
-
-        return strings;
-    }
-
-    /// <summary>
-    /// Maps the current Weasel page to its standard number shortcuts; never guesses beyond 1-9.
-    /// </summary>
-    internal static bool TryGetCandidateNumberKey(uint index, uint count, out System.Windows.Input.Key key)
-    {
-        key = System.Windows.Input.Key.None;
-        if (count is 0 or > 9 || index >= count)
-        {
-            return false;
-        }
-
-        key = System.Windows.Input.Key.D1 + (int)index;
-        return true;
-    }
-
-    // A key is sent once, never retried or followed by Space. Keep duplicate clicks blocked until
-    // the list changes or ends. A timeout reports missing acknowledgement without guessing whether
-    // the engine ignored the number or is still processing it; later UI changes release the guard.
-    private void ObserveKeyCommit()
-    {
-        var pending  = _pendingKeyCommit;
-        var keyboard = _activeKeyboard;
-
-        if (pending is null || keyboard is null)
-        {
-            return;
-        }
-
-        try
-        {
-            if (!ReferenceEquals(keyboard.ActiveTarget, _keyCommitTarget)
-                || keyboard.CandidateInteractionVersion != _keyCommitVersion
-                || !ValidateActiveCandidate() || _activeBehavior!.GetCount(out var count) < 0
-                || ReadCandidateStrings(count) is not { } strings)
-            {
-                _pendingKeyCommit = null;
-
-                keyboard.SetCandidateCommitError(
-                    "Candidate ownership or its input target changed during submission."
-                );
-
-                return;
-            }
-
-            if (!pending.SequenceEqual(strings))
-            {
-                // Selecting one syllable can leave the remaining syllables composing in the same
-                // UI element. The new list starts a new click cycle without sending another key.
-                _pendingKeyCommit = null;
-                return;
-            }
-
-            if (unchecked((uint)(Environment.TickCount - _keyCommitSentAt)) > 750)
-            {
-                keyboard.SetCandidateCommitError("The input method did not acknowledge the candidate number key; check its selection key bindings.");
-            }
-        }
-        catch (Exception exception) when (IsUnavailable(exception))
-        {
-            _pendingKeyCommit = null;
-            RestoreNativeCandidate();
-            ClearActiveCandidate();
-        }
     }
 
     private void OnDispatcherShutdown(object? sender, EventArgs eventArgs)
     {
+        Dispose();
+    }
+
+    /// <summary>
+    /// Releases native subscriptions and pending candidate work on the owning dispatcher.
+    /// The dispatcher calls this at shutdown; repeated disposal is safe.
+    /// </summary>
+    public void Dispose()
+    {
+        _dispatcher.VerifyAccess();
         Disconnect();
         _dispatcher.ShutdownStarted -= OnDispatcherShutdown;
     }

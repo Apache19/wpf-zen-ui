@@ -42,7 +42,7 @@ public sealed class SoftKeyboardKey
     /// <param name="content">Presentation data for the key cap.</param>
     /// <param name="automationName">Accessible description of the function.</param>
     /// <returns>A custom key with repetition disabled by default.</returns>
-    public static SoftKeyboardKey FromAction(ISoftKeyboardKeyAction action, object content, string automationName)
+    public static SoftKeyboardKey FromAction(ISoftKeyboardAction action, object content, string automationName)
     {
         return new SoftKeyboardKey(SoftKeyboardKeyKind.Custom, content, automationName, action: action);
     }
@@ -92,7 +92,7 @@ public sealed class SoftKeyboardKey
         IEnumerable<string>? alternates = null,
         bool isRepeatEnabled = false,
         string? alternateHint = null,
-        ISoftKeyboardKeyAction? action = null)
+        ISoftKeyboardAction? action = null)
     {
         if (content is null)
         {
@@ -197,7 +197,7 @@ public sealed class SoftKeyboardKey
     /// <remarks>
     /// The action is reusable behavior, not mutable per-keyboard state. Execution receives a short-lived context.
     /// </remarks>
-    public ISoftKeyboardKeyAction? Action { get; }
+    public ISoftKeyboardAction? Action { get; }
 
     /// <summary>
     /// Gets the visual content presented on the key.

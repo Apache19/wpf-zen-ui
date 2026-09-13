@@ -4,7 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Input;
-using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
+using Wpf.Zen.Ui.VirtualInput.Extensions;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
@@ -20,7 +20,13 @@ public class CandidateNumberCommitTests
     [InlineData(uint.MaxValue, 9, Key.None)]
     public void NumberShortcut_OnlyAcceptsPublishedPositionsInStandardNineCandidatePages(uint index, uint count, Key expected)
     {
-        Assert.Equal(expected != Key.None, TsfCandidateSession.TryGetCandidateNumberKey(index, count, out var key));
+        Key key = Key.None;
+
+        bool available = count is > 0 and <= 9
+            && index < count
+            && WeaselCandidateBehavior.TryGetCandidateNumberKey((int)index, out key);
+
+        Assert.Equal(expected != Key.None, available);
         Assert.Equal(expected, key);
     }
 }

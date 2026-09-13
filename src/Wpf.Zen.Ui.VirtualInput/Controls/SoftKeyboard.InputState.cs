@@ -43,36 +43,6 @@ public partial class SoftKeyboard
         set => SetValue(InputStateAdapterProperty, value);
     }
 
-    private InputMethodState ReadInputState()
-    {
-        try
-        {
-            var state = InputStateAdapter?.GetState(ActiveInputMethod)
-                ?? _platform.InputMethods.GetImeState();
-
-            return state is InputMethodState.On or InputMethodState.Off
-                ? state
-                : InputMethodState.DoNotCare;
-        }
-        catch (Exception exception) when (exception is not OutOfMemoryException)
-        {
-            return InputMethodState.DoNotCare;
-        }
-    }
-
-    private bool TryChangeInputState(InputMethodState state)
-    {
-        try
-        {
-            return InputStateAdapter?.TrySetState(ActiveInputMethod, state)
-                ?? _platform.InputMethods.TrySetImeState(state);
-        }
-        catch (Exception exception) when (exception is not OutOfMemoryException)
-        {
-            return false;
-        }
-    }
-
     // WPF StateChanged covers TSF compartments, but a same-language profile switch need not
     // raise InputLanguageChanged. Observe profiles at a bounded cadence while this keyboard owns
     // foreground input. Never restore focus or write system state from this read-only fallback.

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
@@ -49,46 +50,9 @@ public partial class SoftKeyboard
 
     #endregion
 
-    #region Read-Only DP: CandidateCommitError
-
-    private static readonly DependencyPropertyKey CandidateCommitErrorPropertyKey
-        = DependencyProperty.RegisterReadOnly(
-            nameof(CandidateCommitError),
-            typeof(string),
-            typeof(SoftKeyboard),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="CandidateCommitError"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty CandidateCommitErrorProperty
-        = CandidateCommitErrorPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets the last failed candidate request's reason, or null when no failure has been reported.
-    /// </summary>
-    /// <remarks>
-    /// Does not inherit or affect layout. A new click clears the diagnostic; null is not proof of committed text.
-    /// </remarks>
-    public string? CandidateCommitError => (string?)GetValue(CandidateCommitErrorProperty);
-
-    #endregion
-
-    internal void SetCandidateCommitError(string? reason)
-    {
-        SetValue(CandidateCommitErrorPropertyKey, reason);
-    }
-
     internal int CandidateInteractionVersion { get; private set; }
 
-    internal bool SendCandidateNavigationKey(System.Windows.Input.Key key)
-    {
-        // Both paging and number selection must retain foreground, editor and input ownership.
-        return TrySendVirtualKey(key, false);
-    }
-
-    internal void ReplaceCandidates(
+    internal bool ReplaceCandidates(
         IEnumerable<SoftKeyboardCandidate>     candidates,
         SoftKeyboardCandidatePresentationState presentationState,
         uint  pageNumber = 0,
@@ -116,7 +80,7 @@ public partial class SoftKeyboard
             && CandidatePageCount == pageCount
             && SelectedCandidateIndex == selectedCandidateIndex)
         {
-            return;
+            return false;
         }
 
         if (!sameCandidates)
@@ -135,6 +99,16 @@ public partial class SoftKeyboard
         SetValue(CanGoToPreviousCandidatePagePropertyKey, pageNumber > 1);
         SetValue(CanGoToNextCandidatePagePropertyKey, pageNumber > 0 && pageNumber < pageCount);
         SetValue(CandidatePresentationStatePropertyKey, presentationState);
+
+        CommandManager.InvalidateRequerySuggested();
+
+        CandidateSnapshotVersion++;
+
+        var previous = _candidateSnapshotChanged;
+        _candidateSnapshotChanged = CreateCandidateSnapshotSignal();
+        previous.TrySetResult(CandidateSnapshotVersion);
+
+        return true;
     }
 
     private void QueueCandidateBridgeRefresh()
@@ -150,35 +124,10 @@ public partial class SoftKeyboard
                 {
                     if (IsLoaded && IsVisible && IsOpen && ActiveTarget is not null)
                     {
-                        _platform.Candidates.Refresh(this);
+                        RequestCandidateRefresh();
                     }
                 }
             )
         );
-    }
-
-    private void OnCandidateInvoked(object? sender, SoftKeyboardCandidateInvokedEventArgs args)
-    {
-        // Ownership is the current template part, independent of how its candidate data is bound.
-        if (args.OriginalSource is SoftKeyboardCandidateList list
-            && ReferenceEquals(list, GetTemplateChild(CandidatesPartName)))
-        {
-            CommitCandidate(args.Candidate);
-            args.Handled = true;
-        }
-    }
-
-    private void CommitCandidate(SoftKeyboardCandidate candidate)
-    {
-        // Reject containers retained from an obsolete page before sending a native index.
-        if (_session is not null && CanPresentCandidates && _candidates.Contains(candidate)
-            && PrepareTargetForInput() && _candidates.Contains(candidate))
-        {
-            SetCandidateCommitError(null);
-
-            // A successful HRESULT or queued key is not a composition-end notification. Keep the
-            // snapshot until TSF actually changes it, including multi-segment candidate conversion.
-            _ = _platform.Candidates.TryCommit(this, candidate.Index);
-        }
     }
 }

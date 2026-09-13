@@ -38,15 +38,7 @@ internal static class KeyboardLayoutParts
     {
         return new SoftKeyboardKey(
             kind: SoftKeyboardKeyKind.ToggleIme,
-            content: context.ImeState != InputMethodState.On
-                ? "A"
-                : context.Culture.TwoLetterISOLanguageName switch
-                {
-                    "ja" => "あ",
-                    "zh" => "中",
-                    "ko" => "한",
-                    _    => "文",
-                },
+            content: context.ImeState != InputMethodState.On ? "A" : "文",
             automationName: context.ImeState == InputMethodState.On
                 ? "Native input; switch to direct input"
                 : "Direct input; enable input method"

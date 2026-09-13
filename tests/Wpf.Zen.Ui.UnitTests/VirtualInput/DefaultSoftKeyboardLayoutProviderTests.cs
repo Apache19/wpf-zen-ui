@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
 using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.VirtualInput.Controls;
+using Wpf.Zen.Ui.VirtualInput.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
@@ -22,47 +22,90 @@ public class DefaultSoftKeyboardLayoutProviderTests
     public void AddressLayouts_PreserveLiteralShortcutsAndPlacementAcrossInputStates(
         InputScopeNameValue scope, string shortcut, string punctuation)
     {
-        foreach (var mode in new[] { SoftKeyboardPages.Automatic, SoftKeyboardPages.Letters })
-        foreach (var shift in System.Enum.GetValues<SoftKeyboardShiftState>())
-        foreach (var culture in new[] { "en-US", "zh-CN", "ja-JP" })
-        foreach (var ime in new[] { InputMethodState.On, InputMethodState.Off })
+        foreach (var mode in new[]
+            {
+                SoftKeyboardPages.Automatic, SoftKeyboardPages.Letters
+            })
         {
-            var layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(new(
-                CultureInfo.GetCultureInfo(culture), scope, mode, shift, ime)));
-            Assert.Equal(20, layout.ColumnCount);
-            bool url = scope == InputScopeNameValue.Url;
-            Assert.Equal(new[] { 10, 9, 9, url ? 10 : 9 }, layout.Keys.GroupBy(key => key.Row).Select(row => row.Count()));
-            var bottom = layout.Keys.Where(key => key.Row == 3).ToArray();
-            Assert.Equal(url ? new[] { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18 } : new[] { 0, 2, 4, 6, 10, 12, 14, 16, 18 }, bottom.Select(key => key.Column));
-            Assert.Equal(url ? new[] { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 } : new[] { 2, 2, 2, 4, 2, 2, 2, 2, 2 }, bottom.Select(key => key.ColumnSpan));
-            Assert.Equal("123", bottom[0].Content);
-            Assert.Equal(SoftKeyboardPages.Symbols, bottom[0].Page);
-            Assert.Equal(SoftKeyboardKeyKind.ToggleIme, bottom[1].Kind);
-            Assert.Equal(shortcut, bottom[2].Text);
-            if (url)
+            foreach (var shift in Enum.GetValues<SoftKeyboardShiftState>())
             {
-                Assert.Equal(SoftKeyboardKeyKind.Text, bottom[3].Kind);
-                Assert.Equal(":", bottom[3].Content);
-                Assert.Equal(":", bottom[3].Text);
-                // Compare the shared remaining actions after verifying the URL-only colon placement.
-                bottom = bottom.Where((_, index) => index != 3).ToArray();
-            }
+                foreach (var culture in new[]
+                    {
+                        "en-US", "zh-CN", "ja-JP"
+                    })
+                {
+                    foreach (var ime in new[]
+                        {
+                            InputMethodState.On, InputMethodState.Off
+                        })
+                    {
+                        var layout = Assert.IsType<SoftKeyboardLayout>(
+                            DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+                                new SoftKeyboardLayoutContext(
+                                    CultureInfo.GetCultureInfo(culture), scope, mode, shift, ime
+                                )
+                            )
+                        );
 
-            Assert.Equal(Key.Space, bottom[3].Key);
-            Assert.Equal(".com", bottom[4].Text);
-            Assert.Contains(culture switch { "zh-CN" => ".cn", "ja-JP" => ".jp", _ => ".us" }, bottom[4].Alternates);
-            Assert.Contains(bottom[4].AlternateHint!, bottom[4].Alternates);
-            Assert.True(bottom[4].Alternates.Count > 1);
-            Assert.Equal(".", bottom[5].Content);
-            Assert.Equal(".", bottom[5].Text);
-            Assert.Equal("?", bottom[5].AlternateHint);
-            Assert.Equal("?", Assert.Single(bottom[5].Alternates));
-            Assert.Equal(punctuation, bottom[6].Text);
-            Assert.Equal(SoftKeyboardKeyKind.InputMethods, bottom[7].Kind);
-            Assert.Equal(Key.Enter, bottom[8].Key);
-            if (scope == InputScopeNameValue.Url)
-            {
-                Assert.Equal("https", Assert.Single(bottom[2].Alternates));
+                        Assert.Equal(20, layout.ColumnCount);
+
+                        bool url = scope == InputScopeNameValue.Url;
+
+                        Assert.Equal(
+                            [10, 9, 9, url ? 10 : 9],
+                            layout.Keys.GroupBy(key => key.Row).Select(row => row.Count())
+                        );
+
+                        var bottom = layout.Keys.Where(key => key.Row == 3).ToArray();
+
+                        Assert.Equal(
+                            url ? [0, 2, 4, 6, 8, 10, 12, 14, 16, 18] : [0, 2, 4, 6, 10, 12, 14, 16, 18],
+                            bottom.Select(key => key.Column)
+                        );
+
+                        Assert.Equal(
+                            url ? [2, 2, 2, 2, 2, 2, 2, 2, 2, 2] : [2, 2, 2, 4, 2, 2, 2, 2, 2],
+                            bottom.Select(key => key.ColumnSpan)
+                        );
+
+                        Assert.Equal("123", bottom[0].Content);
+                        Assert.Equal(SoftKeyboardPages.Symbols, bottom[0].Page);
+                        Assert.Equal(SoftKeyboardKeyKind.ToggleIme, bottom[1].Kind);
+                        Assert.Equal(shortcut, bottom[2].Text);
+
+                        if (url)
+                        {
+                            Assert.Equal(SoftKeyboardKeyKind.Text, bottom[3].Kind);
+                            Assert.Equal(":", bottom[3].Content);
+                            Assert.Equal(":", bottom[3].Text);
+                            // Compare the shared remaining actions after verifying the URL-only colon placement.
+                            bottom = bottom.Where((_, index) => index != 3).ToArray();
+                        }
+
+                        Assert.Equal(Key.Space, bottom[3].Key);
+                        Assert.Equal(".com", bottom[4].Text);
+
+                        Assert.Contains(
+                            culture switch { "zh-CN" => ".cn", "ja-JP" => ".jp", _ => ".us" },
+                            bottom[4].Alternates
+                        );
+
+                        Assert.Contains(bottom[4].AlternateHint!, bottom[4].Alternates);
+                        Assert.True(bottom[4].Alternates.Count > 1);
+                        Assert.Equal(".", bottom[5].Content);
+                        Assert.Equal(".", bottom[5].Text);
+                        Assert.Equal("?", bottom[5].AlternateHint);
+                        Assert.Equal("?", Assert.Single(bottom[5].Alternates));
+                        Assert.Equal(punctuation, bottom[6].Text);
+                        Assert.Equal(SoftKeyboardKeyKind.InputMethods, bottom[7].Kind);
+                        Assert.Equal(Key.Enter, bottom[8].Key);
+
+                        if (scope == InputScopeNameValue.Url)
+                        {
+                            Assert.Equal("https", Assert.Single(bottom[2].Alternates));
+                        }
+                    }
+                }
             }
         }
     }
@@ -72,15 +115,22 @@ public class DefaultSoftKeyboardLayoutProviderTests
     [InlineData(InputScopeNameValue.EmailSmtpAddress)]
     public void AddressScopes_AllowExplicitNumericAndSymbolPagesAndReturnToAddressLetters(InputScopeNameValue scope)
     {
-        foreach (var mode in new[] { SoftKeyboardPages.Numbers, SoftKeyboardPages.Symbols, SoftKeyboardPages.MoreSymbols })
+        foreach (var mode in new[]
+            {
+                SoftKeyboardPages.Numbers, SoftKeyboardPages.Symbols, SoftKeyboardPages.MoreSymbols
+            })
         {
             var layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(new(
                 CultureInfo.InvariantCulture, scope, mode, SoftKeyboardShiftState.Off)));
+
             Assert.DoesNotContain(layout.Keys, key => key.Text == ".com");
+
             var back = Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.ChangePage
                 && key.Page == SoftKeyboardPages.Letters);
+
             var letters = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(new(
                 CultureInfo.InvariantCulture, scope, back.Page, SoftKeyboardShiftState.Off)));
+
             Assert.Contains(letters.Keys, key => key.Text == ".com");
         }
     }
@@ -88,17 +138,36 @@ public class DefaultSoftKeyboardLayoutProviderTests
     [Theory]
     [InlineData(false, false, "! @ # $ % & _ - = +", "; : ( ) / ' \"")]
     [InlineData(false, true, "% [ ] { } < > € £ ¥", "* ` ° × ÷ ~ |")]
-    [InlineData(true, false, "！ @ # ￥ % & _ - = +", "/ ； ： “ ” （ ）")]
-    [InlineData(true, true, "、 【 】 ｛ ｝ 〈 〉 * … •", "µ ½ ｜ © ¶ ° ~")]
+    [InlineData(true, false, "! @ # $ % & _ - = +", "; : ( ) / ' \"")]
+    [InlineData(true, true, "% [ ] { } < > € £ ¥", "* ` ° × ÷ ~ |")]
     public void SymbolPages_DeclareExpectedPunctuation(bool native, bool more, string second, string third)
     {
-        var layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(Context(
-            more ? SoftKeyboardPages.MoreSymbols : SoftKeyboardPages.Symbols, native)));
-        Assert.Equal(second, string.Join(" ", layout.Keys.Where(key => key.Row == 1).Select(key => key.Text)));
-        Assert.Equal(third, string.Join(" ", layout.Keys.Where(key => key.Row == 2 && key.Kind == SoftKeyboardKeyKind.Text).Select(key => key.Text)));
-        var pageKey = Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.ChangePage
-            && key.Page == (more ? SoftKeyboardPages.Symbols : SoftKeyboardPages.MoreSymbols));
+        var layout = Assert.IsType<SoftKeyboardLayout>(
+            DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+                Context(more ? SoftKeyboardPages.MoreSymbols : SoftKeyboardPages.Symbols, native)
+            )
+        );
+
+        Assert.Equal(
+            second, string.Join(" ", layout.Keys.Where(key => key.Row == 1).Select(key => key.Text))
+        );
+
+        Assert.Equal(
+            third,
+            string.Join(
+                " ",
+                layout.Keys.Where(key => key is { Row: 2, Kind: SoftKeyboardKeyKind.Text }).Select(key => key.Text)
+            )
+        );
+
+        var pageKey = Assert.Single(
+            layout.Keys,
+            key => key.Kind == SoftKeyboardKeyKind.ChangePage
+                && key.Page == (more ? SoftKeyboardPages.Symbols : SoftKeyboardPages.MoreSymbols)
+        );
+
         var icon = Assert.IsType<FluentIconSource>(pageKey.Content);
+
         Assert.Equal(more ? SymbolRegular.CaretLeft24 : SymbolRegular.CaretRight24, icon.Symbol);
         Assert.True(icon.Filled);
     }
@@ -108,13 +177,22 @@ public class DefaultSoftKeyboardLayoutProviderTests
     {
         foreach (string mode in SoftKeyboardPages.BuiltInPages)
         {
-            foreach (bool native in new[] { false, true })
+            foreach (bool native in new[]
+                {
+                    false, true
+                })
             {
-                var layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(Context(mode, native)));
-                Assert.Equal(new[] { 0, 1, 2, 3 }, layout.Keys.Select(key => key.Row).Distinct());
+                var layout = Assert.IsType<SoftKeyboardLayout>(
+                    DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+                        Context(mode, native)
+                    )
+                );
+
+                Assert.Equal([0, 1, 2, 3], layout.Keys.Select(key => key.Row).Distinct());
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
                 Assert.DoesNotContain(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.Close);
+
                 foreach (var row in layout.Keys.GroupBy(key => key.Row))
                 {
                     int end = 0;
@@ -132,16 +210,36 @@ public class DefaultSoftKeyboardLayoutProviderTests
     [Fact]
     public void JapaneseNativeLayout_ExposesLongVowelVariantWithoutAddingRows()
     {
-        var layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(new SoftKeyboardLayoutContext(
-            CultureInfo.GetCultureInfo("ja-JP"), InputScopeNameValue.Default,
-            SoftKeyboardPages.Letters, SoftKeyboardShiftState.Off, InputMethodState.On)));
-        var key = Assert.Single(layout.Keys, key => key.Text == "ー");
+        var context = new SoftKeyboardLayoutContext(
+            CultureInfo.GetCultureInfo("ja-JP"),
+            InputScopeNameValue.Default,
+            SoftKeyboardPages.Letters,
+            SoftKeyboardShiftState.Off,
+            InputMethodState.On,
+            new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true)
+        );
+
+        var provider = JapaneseSoftKeyboardExtensionProvider.Default
+            .GetExtensions(new SoftKeyboardExtensionContext(context))
+            .Select(extension => extension.LayoutProvider)
+            .First(layoutProvider => layoutProvider is not null)!;
+
+        var layout = Assert.IsType<SoftKeyboardLayout>(provider.CreateLayout(context));
+        var key    = Assert.Single(layout.Keys, key => key.Text == "ー");
+
         Assert.Equal(1, key.Row);
         Assert.Contains("・", key.Alternates);
-        Assert.Equal(10, layout.Keys.Count(key => key.Row == 1));
+        Assert.Equal(10, layout.Keys.Count(k => k.Row == 1));
     }
 
-    private static SoftKeyboardLayoutContext Context(string mode, bool native = false) => new(
-        CultureInfo.GetCultureInfo("zh-CN"), InputScopeNameValue.Default, mode,
-        SoftKeyboardShiftState.Off, native ? InputMethodState.On : InputMethodState.Off);
+    private static SoftKeyboardLayoutContext Context(string mode, bool native = false)
+    {
+        return new SoftKeyboardLayoutContext(
+            CultureInfo.GetCultureInfo("zh-CN"),
+            InputScopeNameValue.Default,
+            mode,
+            SoftKeyboardShiftState.Off,
+            native ? InputMethodState.On : InputMethodState.Off
+        );
+    }
 }

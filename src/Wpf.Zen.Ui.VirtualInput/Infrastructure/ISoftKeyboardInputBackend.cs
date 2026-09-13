@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// </summary>
 internal interface ISoftKeyboardInputBackend
 {
-    bool SendVirtualKey(Key key, bool shift);
+    bool SendVirtualKey(Key key, ModifierKeys modifiers);
 
     bool SendUnicode(string text);
 

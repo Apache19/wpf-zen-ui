@@ -10,19 +10,46 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// </summary>
 public sealed class SoftKeyboardInputMethod
 {
-    internal SoftKeyboardInputMethod(
-        Guid classId,
-        Guid profileId,
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SoftKeyboardInputMethod"/> class.
+    /// </summary>
+    /// <param name="classId">The TSF text-service class identifier, or empty for a language-only entry.</param>
+    /// <param name="profileId">The TSF language-profile identifier, or empty for a language-only entry.</param>
+    /// <param name="languageId">The nonzero Windows language identifier.</param>
+    /// <param name="displayName">The nonempty localized presentation name.</param>
+    /// <param name="isActive">Whether this profile was active when its source was refreshed.</param>
+    /// <param name="touchLayoutPreference">The optional touch-layout capability reported by the profile.</param>
+    public SoftKeyboardInputMethod(
+        Guid   classId,
+        Guid   profileId,
         ushort languageId,
         string displayName,
-        bool isActive,
+        bool   isActive,
         SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null)
     {
+        if (languageId == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(languageId));
+        }
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            throw new ArgumentException("An input-method display name is required.", nameof(displayName));
+        }
+
+        if ((classId == Guid.Empty) != (profileId == Guid.Empty))
+        {
+            throw new ArgumentException(
+                "A TSF class identifier and profile identifier must either both be empty or both be present."
+            );
+        }
+
         ClassId     = classId;
         ProfileId   = profileId;
         LanguageId  = languageId;
         DisplayName = displayName;
         IsActive    = isActive;
+
         TouchLayoutPreference = touchLayoutPreference;
     }
 

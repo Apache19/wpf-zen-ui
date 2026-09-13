@@ -11,7 +11,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public enum SoftKeyboardCandidateMode
 {
     /// <summary>
-    /// Embeds supported candidate elements, preserving native UI for known incomplete integrations such as Weasel.
+    /// Uses the first matching candidate behavior, then embeds candidate elements by default.
     /// </summary>
     Automatic,
 
@@ -21,11 +21,10 @@ public enum SoftKeyboardCandidateMode
     Native,
 
     /// <summary>
-    /// Attempts TSF candidate integration even for known incomplete implementations.
+    /// Requests TSF candidate integration even when an extension would otherwise prefer native UI.
     /// </summary>
     /// <remarks>
-    /// Does not create missing reading text or force the IME to publish candidates. For Weasel,
-    /// enable inline_preedit in the IME configuration before choosing this mode to keep pre-edit visible.
+    /// Does not create missing reading or pre-edit text and does not force an input method to publish candidates.
     /// </remarks>
     Embedded,
 }

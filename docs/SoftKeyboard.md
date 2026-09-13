@@ -1,12 +1,13 @@
 # SoftKeyboard
 
-`SoftKeyboard` 是可参与 WPF 布局、保持编辑器焦点的软键盘控件，适合平板、Kiosk、POS
+`SoftKeyboard` 是可参与 WPF 布局、保持编辑器焦点的软键盘控件，适合平板、电子触控互动设备、POS
 和需要让键盘稳定占据 Page、ContentDialog 或表单指定区域的应用。
 
-软键盘位于独立的 `Wpf.Zen.Ui.VirtualInput` 程序集。XAML 使用专属 XML 命名空间，C# API
-则按职责分布在 `Wpf.Zen.Ui.VirtualInput.Controls`、`.Layouts`、`.Layouts.Providers`、`.Input`
-与 `.Settings`、`.Theming` 中；
-通用 `Wpf.Zen.Ui` 程序集不再自动加载软键盘的类型和主题资源。
+软键盘核心位于 `Wpf.Zen.Ui.VirtualInput` 程序集。中文、注音、日语和小狼毫适配位于单向依赖
+核心的 `Wpf.Zen.Ui.VirtualInput.Extensions` 程序集。核心不扫描程序集、不执行模块初始化，也不维护
+进程级扩展注册表；每个 `SoftKeyboard` 通过 `ExtensionProvider` 显式选择自己的扩展组合。
+XAML 使用专属 XML 命名空间，C# API 按职责分布在 `.Controls`、`.Candidates`、`.Extensions`、
+`.InputMethods`、`.Input`、`.Layouts`、`.Settings` 与 `.Theming` 中。
 
 ## 基本用法
 
@@ -34,10 +35,35 @@
 </Window>
 ```
 
+上例只引用核心包，提供标准字母、网址、邮箱、数字和通用符号布局，以及 Windows 输入法枚举和
+通用 TSF 候选能力。要启用本仓库提供的全部输入法适配，可引用扩展包并显式设置默认组合：
+
+```xaml
+<Window
+    xmlns:keyboard="http://schemas.thezendev.com/wpf/2027/virtual-input"
+    xmlns:keyboardExtensions="http://schemas.thezendev.com/wpf/2027/virtual-input/extensions">
+    <keyboard:SoftKeyboard
+        ExtensionProvider="{x:Static keyboardExtensions:DefaultSoftKeyboardExtensionProvider.Default}" />
+</Window>
+```
+
+也可以只组合应用需要的扩展。声明顺序就是每类能力的优先级，且作用域仅限当前控件：
+
+```csharp
+keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
+    ChineseSoftKeyboardExtensionProvider.Default,
+    WeaselSoftKeyboardExtensionProvider.Default
+);
+```
+
+扩展能力按布局、附加布局、输入状态和 TSF 候选行为分别解析。显式 `LayoutProvider` 和
+`InputStateAdapter` 始终优先；候选行为采用第一个返回已处理结果的策略；附加布局聚合全部匹配项，
+重复 ID 保留首项并写入 `ExtensionError`。扩展异常会被隔离并安全降级。
+
 键盘及默认键帽均不可获得键盘焦点。每次输入前都会重新验证目标、作用域、前台 HWND、
 启用/只读状态和焦点。普通键通过虚拟键进入 WPF 原有的命令、选区、撤销、死键和 TSF/IME
-管线；普通符号和长按变体使用 Unicode `SendInput`，日语假名及其变体使用 IME 按键组合。
-默认不包含 Emoji 目录、搜索或面板。
+管线；普通符号和长按变体使用 Unicode `SendInput`，扩展提供的日语假名使用 IME 按键组合。
+默认不包含搜索或面板。
 
 ## 目标与自动开关
 
@@ -55,8 +81,8 @@
 
 标准布局使用四行；附加语言面板可以采用自己的行列结构。标准字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
 底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
-符号面提供 `Symbols` / `MoreSymbols` 两页，分别采用通用、中文和日文符号规则。
-只有相应语言且 IME 开启时才使用中文或日文符号；韩文及未知语言不会套用中文标点。
+符号面提供 `Symbols` / `MoreSymbols` 两页。核心只提供通用符号；中文和日文符号规则由对应扩展
+按语言及 IME 状态贡献，韩文及未知语言不会套用中文标点。
 数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー` 键，键帽提示并可长按选择 `・`。
 符号面也保留地球菜单键，以便在任何默认布局中直接选择输入法。
 
@@ -75,7 +101,8 @@
 
 `ISoftKeyboardLayoutProvider.CreateLayout` 只需处理自己负责的上下文，不负责时返回 `null`。
 `CompositeSoftKeyboardLayoutProvider` 按声明顺序查询，首个非 null 布局胜出，空布局也是有效结果。
-建议依次注册特定 TSF profile、特定地区/语言、通用默认提供器。异常表示实现缺陷，不作为“不匹配”吞掉。
+建议依次注册特定 TSF profile、特定地区/语言、通用默认提供器。应用显式布局异常写入
+`LayoutError`；扩展布局异常写入 `ExtensionError`，随后继续安全降级。
 `SoftKeyboardLayoutRule` 将匹配条件与构建函数组合成一个小提供器，适合只扩展一个页面或一种输入法。
 
 上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`ImeState`、`InputMethod`
@@ -193,16 +220,17 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 这是这两个内置实现的策略，不是地址场景的接口限制。它们分别组装所有四行，只复用未定位的字母键与少量字面快捷键。
 即使默认页面恰好共享四行形状，也可以独立修改 URL 的首行、邮箱的命令键或整个网格，不需要修改普通字母布局。
 
-日语符号页包含 `「」`、`『』`、`・`、`※`、`〒` 等独立数据。这是库的紧凑布局，
+日语扩展的符号页包含 `「」`、`『』`、`・`、`※`、`〒` 等独立数据。这是扩展包的紧凑布局，
 不声称逐键复刻 Win11 触摸键盘；附加假名面板独立实现，滑行输入和候选算法不由布局层实现。
 需要不同网格、更多页面或不同功能时，直接注册独立提供器，无需修改公共符号网格或核心控件。
 
-普通键优先使用内置 `VirtualKey`、`Text`、`ChangePage` 等语义。特有功能实现 `ISoftKeyboardKeyAction`，
-通过 `SoftKeyboardKey.FromAction()` 放入布局；动作获得短生命周期的 `SoftKeyboardActionContext`，
-可用 `TrySendKey()`、`TrySendText()`、`TrySendJapaneseKana()`、`ShowPage()` 和 `RefreshLayout()`。每次输入重新校验目标，
-Unicode 输入仍经过组合取消；成功字符输入会消耗一次性 Shift。虚拟键的 Shift 参数由动作明确指定。
-动作只能同步执行，上下文返回后失效；不得绕过此入口直接写编辑器或从提供器注入输入。
-自定义动作本身的异常按普通应用回调传播，不作为布局错误处理。输入法状态读写仍由 `InputStateAdapter` 负责。
+普通键优先使用内置 `VirtualKey`、`Text`、`ChangePage` 等语义。特有功能实现
+`ISoftKeyboardKeyAction` 或 `IAsyncSoftKeyboardKeyAction`，通过 `SoftKeyboardKey.FromAction()` 放入布局；
+长按特有行为实现对应的同步或异步备选动作接口。动作获得短生命周期的
+`SoftKeyboardActionContext`，可用 `TrySendKey()`、`TrySendText()`、`ShowPage()` 和 `RefreshLayout()`。
+`TrySendKey` 接受 Shift、Ctrl、Alt 和 Windows 的 `ModifierKeys` 组合；输入层在部分失败时补发释放键。
+异步上下文在任务完成前有效；新动作或输入会话失效会取消令牌并使旧上下文不能继续输入。
+动作异常写入 `ExtensionError`，输入法状态读写仍由 `InputStateAdapter` 负责。
 
 运行时 `SoftKeyboardLayout.Keys` 是不可变的扁平集合，每键显式指定 `Row`、`Column`、
 `ColumnSpan`。所有行共享 `ColumnCount`，短行不会被拉伸；跳过的 Row 编号不预留空行。
@@ -271,7 +299,8 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 键盘内嵌尝试（`Embedded`）。策略属于当前控件实例，不会修改输入法配置；已接管的候选元素保持其
 呈现方式直到结束，避免切换设置时丢弃正在输入的内容。完成或取消当前组合后，新策略完整生效。
 
-自动策略通过固定候选 GUID 识别小狼毫并保留其原生浮窗。小狼毫关闭 `inline_preedit` 时，拼音预编辑
+启用 `WeaselSoftKeyboardExtensionProvider` 后，扩展通过候选 GUID 识别小狼毫，并在自动策略下保留
+其原生浮窗。小狼毫关闭 `inline_preedit` 时，拼音预编辑
 保存在它自己的浮窗中，WPF 文档可能只得到占位空格。它的候选接口不提供该字符串，也不实现
 `ITfReadingInformationUIElement`；隐藏浮窗会同时隐藏唯一的拼音预览。WPF `TextStore.OnUpdateComposition`
 从文档组合范围读取文字，反射同一范围不能恢复输入法没有写入的内容。
@@ -289,7 +318,7 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 新候选列表或 UI 元素结束后允许下一次选择，支持部分转换后的连续选词。
 750ms 未观察到候选变化时报告诊断，但不重发数字或补空格，以免重复提交。
 自定义 Rime 方案若重绑定数字键，需要额外适配；
-失败原因可从 `CandidateCommitError` 读取。该适配不访问小狼毫内部对象或进程通信协议。
+失败原因可从统一的 `CandidateError` 读取。该适配不访问小狼毫内部对象或进程通信协议。
 任何提交路径都以 TSF 后续通知决定候选显示，不因为 HRESULT 成功或按键入队就提前清空候选栏。
 
 只有 `SoftKeyboard` 已打开且实际可见时才隐藏输入法的原生候选窗。关闭键盘，或折叠键盘及其
@@ -314,6 +343,125 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 候选接管要求目标仍在作用域内、可编辑并保持键盘焦点，宿主仍在前台。
 禁用键盘、离开目标作用域时释放内嵌候选并尝试恢复原生候选窗。读取、翻页和提交前还会核对
 TSF 当前焦点文档，不能借用其他编辑器的候选。
+
+`CandidateSource` 可替换整套候选来源；默认值 `TsfSoftKeyboardCandidateSource.Default` 继续共享
+Dispatcher 级 TSF 会话。核心统一负责目标校验、单次提交/翻页仲裁、取消、会话版本和过期结果拒绝。
+自定义来源只能通过会过期的 `SoftKeyboardCandidateHost` 发布不可变快照：
+
+```csharp
+public sealed class AppCandidateSource : ISoftKeyboardCandidateSource
+{
+    public ISoftKeyboardCandidateSession CreateSession(SoftKeyboardCandidateHost host)
+    {
+        return new Session(host);
+    }
+
+    private sealed class Session(SoftKeyboardCandidateHost host)
+        : ISoftKeyboardCandidateSession
+    {
+        public Task RefreshAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            host.Publish(new SoftKeyboardCandidateSnapshot(
+                [new SoftKeyboardCandidate(0, "应用候选")],
+                SoftKeyboardCandidatePresentationState.Embedded));
+            return Task.CompletedTask;
+        }
+
+        public Task<SoftKeyboardCandidateOperationResult> CommitAsync(
+            SoftKeyboardCandidate candidate,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(SoftKeyboardCandidateOperationResult.Success);
+        }
+
+        public Task<SoftKeyboardCandidateOperationResult> MovePageAsync(
+            int delta,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(SoftKeyboardCandidateOperationResult.NotHandled);
+        }
+
+        public void ReleasePresentation()
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+}
+
+keyboard.CandidateSource = new AppCandidateSource();
+```
+
+`InputMethodSource` 按控件创建会话，在所属 Dispatcher 上同步提供目录、激活和输入状态读写。
+这些接口必须及时返回；依赖外部数据的来源自行维护缓存，读取缓存快照，不得在接口中等待网络、
+后台任务或输入法未来事件。外部来源使用经过参数校验的 `SoftKeyboardInputMethod` 构造模型：
+
+```csharp
+public sealed class AppInputMethodSource : ISoftKeyboardInputMethodSource
+{
+    public ISoftKeyboardInputMethodSession CreateSession()
+    {
+        return new Session();
+    }
+
+    private sealed class Session : ISoftKeyboardInputMethodSession
+    {
+        private readonly SoftKeyboardInputMethod profile = new(
+            Guid.Empty, Guid.Empty, 0x0409, "Application input", true);
+
+        public SoftKeyboardInputMethodSnapshot GetSnapshot()
+        {
+            return new SoftKeyboardInputMethodSnapshot([profile], profile);
+        }
+
+        public bool TryActivate(SoftKeyboardInputMethod value)
+        {
+            return ReferenceEquals(value, profile);
+        }
+
+        public InputMethodState GetState()
+        {
+            return InputMethodState.On;
+        }
+
+        public bool TrySetState(InputMethodState state)
+        {
+            return true;
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+}
+
+keyboard.InputMethodSource = new AppInputMethodSource();
+bool refreshed = keyboard.RefreshInputMethods();
+```
+
+输入法激活使用 `TryActivateInputMethod(profile)`，把激活、目录确认、启用输入作为一次同步操作；
+任一步骤失败或调用期间发生源、目标、生命周期变化，返回 false。重入操作直接返回 false。
+返回 true 表示原生请求被接受，不保证未来候选或组合输入结果。
+
+`InputMethods` 是只读依赖属性，每次发布完整的 `IReadOnlyList<SoftKeyboardInputMethod>` 快照。
+使用属性绑定观察替换；已持有的旧列表保持不变。替换来源时立即清空旧目录。
+
+候选刷新、自定义异步动作和候选确认仍支持真正的异步等待。新刷新替代旧刷新，新动作替代旧动作；
+候选提交和翻页共享一个输入操作，繁忙期间拒绝第二个请求。取消立即撤销旧操作的结果、错误和刷新
+发布权限，执行者在任务结束后释放自己的资源。关闭、隐藏、禁用、换目标、卸载和失去前台输入所有权
+会使相应操作失效。输入法会话在替换来源或卸载时释放；同步回调内发生替换时，在旧调用退出后释放。
+
+候选元素结束与操作取消是不同事件：元素结束立即禁止继续向旧元素输入，但可以作为已发送操作的
+完成确认。调用者取消则不能再报告成功。扩展、候选和输入法错误分别见 `ExtensionError`、
+`CandidateError`、`InputMethodError`；被取消或过期操作的迟到结果与异常不会覆盖当前状态。
+
+候选提交、翻页和输入法激活可由任意自定义模板通过 `SoftKeyboardCommands.CommitCandidate`、
+`MoveToPreviousCandidatePage`、`MoveToNextCandidatePage`、`ActivateInputMethod` 连接，无需命名模板部件。
+`SoftKeyboardCandidateList` 是可派生的 `ItemsControl`，使用标准 `ItemsSource`、`ItemsPanel`、
+`ItemTemplate` 与 `ItemContainerStyle`；默认横向 `StackPanel` 可换成 `WrapPanel` 或自定义面板。
 
 输入状态通过 WPF 的 StateChanged、焦点和输入语言事件即时同步；控件拥有前台编辑焦点时，
 还每秒复查配置和状态，覆盖同语言输入法切换没有语言变更事件的情况。复查只读取系统状态，
@@ -389,12 +537,21 @@ dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
 & tests/Wpf.Zen.Ui.UnitTests/bin/Debug/net10.0-windows/Wpf.Zen.Ui.UnitTests.exe -class '*SoftKeyboard*'
 ```
 
-自动测试覆盖布局模型、四行布局边界、符号页面、日文变体、系统状态回读、
-适配器失败、固定头部、菜单生命周期、浮层定位与单次提交、候选分页、组合取消以及目标隔离。
+当前 VirtualInput 测试结果为 168 项、0 失败、6 项原生环境测试跳过、2 项显式测试未运行。
+自动测试覆盖核心无扩展、扩展组合和冲突、布局注册链路、异步来源版本隔离、异常降级、动作取消、
+组合修饰键、候选列表扩展点，以及既有布局、菜单、候选、组合取消和目标隔离行为。
 `GeneratedLetterKey_InvokeInsertsThroughWindowsInputStream` 和
 `InstalledMicrosoftPinyin_PublishesCandidatesToEmbeddedSurfaceWhenAvailable` 是显式集成测试，
 需要可激活前台窗口的交互桌面；后者还需要启用微软拼音。可在满足条件的桌面使用
 `-explicit on -method '*测试方法名'` 单独运行，避免无人值守测试向用户桌面注入按键。
+
+核心与扩展包可分别生成；扩展 nuspec 对两个目标框架都依赖同版本核心包，核心 nuspec 不依赖扩展：
+
+```powershell
+dotnet pack src/Wpf.Zen.Ui.VirtualInput/Wpf.Zen.Ui.VirtualInput.csproj -c Debug -o artifacts/packages
+dotnet pack src/Wpf.Zen.Ui.VirtualInput.Extensions/Wpf.Zen.Ui.VirtualInput.Extensions.csproj `
+    -c Debug -o artifacts/packages
+```
 
 ## 动态设置与附加布局
 
@@ -422,6 +579,39 @@ dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
 | `SettingsItems` | 当前只读可观察菜单树，方便应用自定义呈现 |
 | `RefreshSettings()` / `SettingsError` | 刷新外部策略数据；提供器或呈现数据出错时回退默认菜单并保留诊断 |
 | `SelectSupplementalLayout(id)` / `SelectedSupplementalLayout` | 验证、选择并读取当前输入法的附加布局选择 |
+
+附加布局通过 `ISoftKeyboardSupplementalLayoutProvider` 注册。每项把稳定 ID、显示名称、适用条件、
+Automatic 首选规则和实际布局提供器放在同一不可变模型中，因此菜单、校验、记忆和生成不会分叉：
+
+```csharp
+public sealed class AppLayouts : ISoftKeyboardSupplementalLayoutProvider
+{
+    public IEnumerable<SoftKeyboardSupplementalLayout> GetLayouts(
+        SoftKeyboardLayoutContext context)
+    {
+        return
+        [
+            new SoftKeyboardSupplementalLayout(
+                "app:grid",
+                "业务键盘",
+                AppGridLayoutProvider.Default,
+                isAutomaticPreferred: true,
+                isApplicable: value => value.InputScope == InputScopeNameValue.Number)
+        ];
+    }
+}
+
+public sealed class AppExtensions : ISoftKeyboardExtensionProvider
+{
+    public IEnumerable<SoftKeyboardExtension> GetExtensions(
+        SoftKeyboardExtensionContext context)
+    {
+        return [new SoftKeyboardExtension(supplementalLayouts: new AppLayouts())];
+    }
+}
+
+keyboard.ExtensionProvider = new AppExtensions();
+```
 
 开关属性改变、输入法／模式／页面等相关状态改变和菜单打开时刷新设置；相同的原生轮询结果不会重复销毁菜单容器。
 单选组按菜单实例隔离，多个键盘互不干扰。默认动作使用 `SetCurrentValue`，不会移除宿主对开关属性的绑定。
@@ -458,14 +648,16 @@ public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
 
 布局查询使用 `ITfFnGetPreferredTouchKeyboardLayout.GetLayout`，只获取布局类型及标识，不获取系统面板的几何和行为。
 查询失败或输入法不实现接口时，`TouchLayoutPreference` 为 null；未知标识保留给自定义策略，不伪造系统支持。
-现代微软注音在部分桌面环境不导出这项旧接口，因此内置策略另有精确的 ClassId + ProfileId 回退，
+现代微软注音在部分桌面环境不导出这项旧接口，因此注音扩展另有精确的 ClassId + ProfileId 回退，
 不会仅凭 `zh-TW` 或显示名称把仓颉、大易等输入法识别为注音。
 
-- 日语默认维持标准键盘，设置中可选“50音”或“12键”。50音包含五十音网格与功能行；12键为四行三列假名组，加一行功能键。
+- 启用日语扩展后，日语默认维持标准键盘，设置中可选“50音”或“12键”。50音包含五十音网格与功能行；
+  12键为四行三列假名组，加一行功能键。
 - 12键短按输入主音，长按选择同组其他音；同时提供小字、浊音和半浊音。复用现有长按浮层，不实现 Win11 专有的 flick／滑行手势。
 - 日语附加面板输入时明确使用全角平假名／假名按键模式，IME 的此模式在输入后继续保留。
   按键由 Windows 当前 HKL 的假名转换表反查，支持 101／106 键配置差异，组合与候选仍由 IME 负责。
-- 识别为标准台湾注音时，默认选择 41 个注音／声调键，加一行功能键；IME 关闭后显示字母键盘，重新开启恢复注音。
+- 启用注音扩展且识别为标准台湾注音时，默认选择 41 个注音／声调键，加一行功能键；IME 关闭后显示字母键盘，
+  重新开启恢复注音。
 - 注音功能行的 `↓` 是普通方向键，只按输入法当时的状态请求选字／导航，不能保证出现内嵌候选。
   控件只能呈现输入法实际通过 TSF 发布的候选，不能凭空生成候选或靠补方向键模拟系统触摸键盘的候选行为。
   [微软注音说明](https://support.microsoft.com/zh-tw/windows/hardware/input-devices/microsoft-traditional-chinese-ime)

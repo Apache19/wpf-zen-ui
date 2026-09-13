@@ -25,10 +25,6 @@ public partial class SoftKeyboard
 
         switch (button.DataContext)
         {
-            case SoftKeyboardInputMethod inputMethod:
-                ActivateInputMethod(inputMethod);
-                break;
-
             default:
                 if (button.Name == SettingsButtonPartName)
                 {
@@ -37,14 +33,6 @@ public partial class SoftKeyboard
                     CloseFlyouts();
                     RefreshSettings();
                 }
-                else if (button.Name == PreviousCandidatePageButtonPartName)
-                {
-                    MoveCandidatePage(-1);
-                }
-                else if (button.Name == NextCandidatePageButtonPartName)
-                {
-                    MoveCandidatePage(1);
-                } // todo: 用 Tag 来传递数据很不明智。
                 else if (button.Tag is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangePage } navigation)
                 {
                     ShowPage(navigation.Page);
@@ -80,7 +68,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        _ = _platform.Candidates.TryMovePage(this, delta);
+        _ = MoveCandidatePageAsync(delta);
 
         RequestSystemKeyboardHide();
     }
@@ -103,7 +91,10 @@ public partial class SoftKeyboard
 
         _activeKeyControl = keyControl;
 
+        _inputMethodMenuRequestVersion++;
+
         _inputMethodMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+
         SettingsMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (!IsOpen || !IsEnabled || !IsVisible)
@@ -133,9 +124,9 @@ public partial class SoftKeyboard
         {
             if (args.AlternateText is { } text)
             {
-                if (args.Key.Action is ISoftKeyboardAlternateKeyAction alternateAction)
+                if (args.Key.Action is ISoftKeyboardAlternateKeyAction or IAsyncSoftKeyboardAlternateKeyAction)
                 {
-                    ExecuteCustomAction(alternateAction, text);
+                    ExecuteCustomAction(args.Key.Action, text);
                 }
                 else if (TrySendText(text) && ShiftState == SoftKeyboardShiftState.Once)
                 {
@@ -232,56 +223,82 @@ public partial class SoftKeyboard
         RunAfterActiveCompositionCancellation(ToggleImeCore);
     }
 
+    /// <summary>
+    /// Reads and changes native input state within one source and focused-target transaction.
+    /// </summary>
     private void ToggleImeCore()
     {
-        // IME state belongs to the focused TSF document, so target validation and focus restoration
-        // must happen before reading or changing WPF's Dispatcher-scoped InputMethod.Current.
         if (!PrepareTargetForInput())
         {
             return;
         }
 
-        RefreshInputMethods();
-
-        var current = ReadInputState();
-        if (current == InputMethodState.On)
+        RunInputMethodOperation((session, isCurrent) =>
         {
-            if (TryChangeInputState(InputMethodState.Off))
+            if (!PublishInputMethods(session, isCurrent) || !ReadImeState(session, isCurrent))
             {
-                _platform.Candidates.ReleasePresentation(this);
+                return false;
+            }
+
+            if (ImeState == InputMethodState.On)
+            {
+                if (!TrySetInputMethodState(session, isCurrent, InputMethodState.Off))
+                {
+                    return false;
+                }
+
+                ReleaseCandidatePresentation();
+
+                if (!isCurrent())
+                {
+                    return false;
+                }
+
                 ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
             }
-        }
-        else
-        {
-            // ImeState only controls the already active text service. If the process currently uses
-            // an ordinary English keyboard layout, setting it to On is a no-op. Activate an enabled
-            // TIP first, preferring the one most recently observed in this keyboard session.
-            var inputMethod = ActiveInputMethod ?? FindPreferredImeInputMethod();
-            if (inputMethod is not null
-                && (ActiveInputMethod is not null || _platform.InputMethods.TryActivate(inputMethod)))
+            else
             {
-                _preferredImeInputMethod = inputMethod;
+                var inputMethod = ActiveInputMethod ?? FindPreferredImeInputMethod();
+                if (inputMethod is null)
+                {
+                    return false;
+                }
 
-                SetValue(ActiveInputMethodPropertyKey, inputMethod);
+                var succeeded = ActiveInputMethod is null
+                    ? ActivateInputMethodCore(session, isCurrent, inputMethod)
+                    : TrySetInputMethodState(session, isCurrent, InputMethodState.On);
 
-                _ = TryChangeInputState(InputMethodState.On);
+                if (!succeeded)
+                {
+                    return false;
+                }
             }
-        }
 
-        RefreshImeState();
-        QueueInputMethodStateRefresh();
-        RequestSystemKeyboardHide();
+            if (!isCurrent() || !ReadImeState(session, isCurrent))
+            {
+                return false;
+            }
+
+            QueueInputMethodStateRefresh();
+            RequestSystemKeyboardHide();
+
+            return isCurrent();
+        });
     }
 
     private bool TrySendVirtualKey(Key key, bool shift)
+    {
+        return TrySendVirtualKey(key, shift ? ModifierKeys.Shift : ModifierKeys.None);
+    }
+
+    private bool TrySendVirtualKey(Key key, ModifierKeys modifiers)
     {
         if (!PrepareTargetForInput())
         {
             return false;
         }
 
-        var sent = _platform.Input.SendVirtualKey(key, shift);
+        var sent = _platform.Input.SendVirtualKey(key, modifiers);
         if (sent)
         {
             QueueCandidateBridgeRefresh();
@@ -340,7 +357,7 @@ public partial class SoftKeyboard
         // The candidate sink must be advised before the injected key can open a TSF candidate UI.
         // This also retries the normal focus path, where WPF may have created TextServicesHost only
         // after the GotKeyboardFocus preprocessing callback completed.
-        _platform.Candidates.Refresh(this);
+        RequestCandidateRefresh();
 
         // Focus callbacks can disable, hide, or invalidate the editor or keyboard synchronously.
         return IsSystemKeyboardSuppressionRequired;
