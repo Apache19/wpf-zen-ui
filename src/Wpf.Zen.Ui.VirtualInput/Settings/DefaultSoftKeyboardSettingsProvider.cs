@@ -93,40 +93,5 @@ public sealed class DefaultSoftKeyboardSettingsProvider : ISoftKeyboardSettingsP
                 )
             );
         }
-
-        if (context.Layout.InputMethod is not null)
-        {
-            yield return new SoftKeyboardSetting("candidates.separator")
-            {
-                IsSeparator = true
-            };
-
-            yield return new SoftKeyboardSetting(
-                "candidates",
-                "候选显示",
-                children:
-                [
-                    CandidateChoice(SoftKeyboardCandidateMode.Automatic, "自动（兼容性优先）", context),
-                    CandidateChoice(SoftKeyboardCandidateMode.Native, "输入法浮窗", context),
-                    CandidateChoice(SoftKeyboardCandidateMode.Embedded, "键盘内嵌（尝试）", context)
-                ]
-            );
-        }
-    }
-
-    private static SoftKeyboardSetting CandidateChoice(
-        SoftKeyboardCandidateMode mode,
-        string label,
-        SoftKeyboardSettingsContext context)
-    {
-        return new SoftKeyboardSetting(
-            "candidates." + mode,
-            label,
-            k => k.SetCurrentValue(SoftKeyboard.CandidateModeProperty, mode)
-        )
-        {
-            RadioGroup = "candidates",
-            IsChecked  = context.CandidateMode == mode,
-        };
     }
 }

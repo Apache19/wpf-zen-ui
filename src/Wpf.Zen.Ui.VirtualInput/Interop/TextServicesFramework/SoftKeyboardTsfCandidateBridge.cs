@@ -13,8 +13,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 /// </summary>
 /// <remarks>
 /// WPF owns a single Text Services Framework thread manager per dispatcher. Sharing the session keeps
-/// COM sinks, UI-less activation, and candidate presentation aligned with that same lifetime rather
-/// than allowing individual controls to compete for process-global TSF state.
+/// COM sinks and candidate presentation aligned with that same lifetime. Activation remains owned
+/// by WPF so native-only text services can initialize regardless of page navigation order.
 /// </remarks>
 internal static class SoftKeyboardTsfCandidateBridge
 {

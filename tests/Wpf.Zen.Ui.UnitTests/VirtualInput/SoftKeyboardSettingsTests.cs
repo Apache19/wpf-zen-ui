@@ -22,56 +22,6 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 public class SoftKeyboardSettingsTests
 {
-    [Theory]
-    [InlineData(SoftKeyboardCandidateMode.Automatic, false, true)]
-    [InlineData(SoftKeyboardCandidateMode.Native, false, false)]
-    [InlineData(SoftKeyboardCandidateMode.Embedded, true, true)]
-    public void CandidatePolicy_PreservesKnownIncompleteUiUnlessExplicitlyRequested(
-        SoftKeyboardCandidateMode mode, bool weasel, bool other)
-    {
-        WpfTestThread.Run(() =>
-        {
-            var keyboard = new SoftKeyboard
-            {
-                CandidateMode = mode
-            };
-            var host = new SoftKeyboardCandidateHost(keyboard);
-            var weaselContext = new SoftKeyboardTsfCandidateContext(
-                host,
-                WeaselCandidateBehavior.CandidateElementId,
-                [],
-                0,
-                0,
-                null);
-            Assert.Equal(
-                weasel ? SoftKeyboardTsfCandidatePresentation.Embedded : SoftKeyboardTsfCandidatePresentation.Native,
-                ResolvePresentation(mode, WeaselCandidateBehavior.Default.GetPresentation(weaselContext)));
-
-            Assert.Equal(
-                other,
-                ResolvePresentation(mode, SoftKeyboardTsfCandidatePresentation.Default)
-                == SoftKeyboardTsfCandidatePresentation.Embedded);
-
-            var context = Context("zh-CN", null);
-
-            var settings = new SoftKeyboardSettingsContext(
-                context,
-                SoftKeyboardAutoShowMode.Disabled,
-                SoftKeyboardAutoHideMode.Manual,
-                LayoutOptions(context),
-                mode
-            );
-
-            var node = DefaultSoftKeyboardSettingsProvider.Default.CreateSettings(settings)
-                .Single(n => n.Id == "candidates");
-
-            var selected = Assert.Single(node.Children, n => n.IsChecked);
-
-            selected.Apply!(keyboard);
-            Assert.Equal(mode, keyboard.CandidateMode);
-        });
-    }
-
     [Fact]
     public void DefaultSettings_HaveIndependentRadioGroupsAndNoEmptyLayoutMenu()
     {
@@ -138,6 +88,7 @@ public class SoftKeyboardSettingsTests
 
         Assert.Equal(choices > 2, nodes.Any(node => node.Id == "layout"));
         Assert.False(nodes.Last().IsSeparator);
+        Assert.DoesNotContain(nodes, node => node.Id.StartsWith("candidates", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -268,20 +219,6 @@ public class SoftKeyboardSettingsTests
                 Context("ja-JP", null, JapaneseSoftKeyboardLayouts.Fifty, scope: scope)
             )
         );
-    }
-
-    private static SoftKeyboardTsfCandidatePresentation ResolvePresentation(
-        SoftKeyboardCandidateMode mode,
-        SoftKeyboardTsfCandidatePresentation extensionDecision)
-    {
-        if (extensionDecision != SoftKeyboardTsfCandidatePresentation.Default)
-        {
-            return extensionDecision;
-        }
-
-        return mode == SoftKeyboardCandidateMode.Native
-            ? SoftKeyboardTsfCandidatePresentation.Native
-            : SoftKeyboardTsfCandidatePresentation.Embedded;
     }
 
     private static IReadOnlyList<SoftKeyboardLayoutOption> LayoutOptions(SoftKeyboardLayoutContext context)

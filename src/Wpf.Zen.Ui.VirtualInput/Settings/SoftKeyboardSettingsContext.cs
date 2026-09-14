@@ -16,13 +16,11 @@ public sealed class SoftKeyboardSettingsContext
         SoftKeyboardLayoutContext layout,
         SoftKeyboardAutoShowMode autoShowMode,
         SoftKeyboardAutoHideMode autoHideMode,
-        IEnumerable<SoftKeyboardLayoutOption> layouts,
-        SoftKeyboardCandidateMode candidateMode = SoftKeyboardCandidateMode.Automatic)
+        IEnumerable<SoftKeyboardLayoutOption> layouts)
     {
         Layout           = layout;
         AutoShowMode     = autoShowMode;
         AutoHideMode     = autoHideMode;
-        CandidateMode    = candidateMode;
         AvailableLayouts = [with([.. layouts])];
     }
 
@@ -40,11 +38,6 @@ public sealed class SoftKeyboardSettingsContext
     /// Gets the current automatic closing policy.
     /// </summary>
     public SoftKeyboardAutoHideMode AutoHideMode { get; }
-
-    /// <summary>
-    /// Gets the presentation policy for newly started candidate UI.
-    /// </summary>
-    public SoftKeyboardCandidateMode CandidateMode { get; }
 
     /// <summary>
     /// Gets implemented and recognized layouts, including the automatic selection.

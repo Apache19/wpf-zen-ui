@@ -11,7 +11,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Candidates;
 public enum SoftKeyboardTsfCandidatePresentation
 {
     /// <summary>
-    /// Uses the core policy and the keyboard's CandidateMode.
+    /// Uses the core capability and document ownership checks.
     /// </summary>
     Default,
 

@@ -22,10 +22,10 @@ public sealed class SoftKeyboardExtension
     /// <param name="inputStateAdapter">An optional adapter for nonstandard native/direct state.</param>
     /// <param name="candidateBehavior">An optional TSF candidate behavior override.</param>
     public SoftKeyboardExtension(
-        ISoftKeyboardLayoutProvider? layoutProvider = null,
+        ISoftKeyboardLayoutProvider?             layoutProvider = null,
         ISoftKeyboardSupplementalLayoutProvider? supplementalLayouts = null,
-        ISoftKeyboardInputStateAdapter? inputStateAdapter = null,
-        ISoftKeyboardTsfCandidateBehavior? candidateBehavior = null)
+        ISoftKeyboardInputStateAdapter?          inputStateAdapter = null,
+        ISoftKeyboardTsfCandidateBehavior?       candidateBehavior = null)
     {
         LayoutProvider      = layoutProvider;
         SupplementalLayouts = supplementalLayouts;

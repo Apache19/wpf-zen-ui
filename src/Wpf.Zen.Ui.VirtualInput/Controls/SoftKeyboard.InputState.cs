@@ -71,7 +71,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Uses rapid recovery only for failed reads or sources without complete change notifications.
+    /// Uses one-second recovery for custom mode adapters, failed reads, or incomplete notifications.
     /// </summary>
     private void UpdateInputStateRecoveryInterval()
     {
@@ -87,7 +87,10 @@ public partial class SoftKeyboard
             is WindowsSoftKeyboardInputMethodSource
             && _session?.HasReliableInputMethodNotifications == true;
 
-        var interval = InputMethodError is not null
+        // WPF compartment subscriptions do not describe a vendor adapter's notification contract.
+        // Such adapters can observe a language-bar mode whose changes bypass WPF StateChanged.
+        var interval = ResolveInputStateAdapter() is not null
+            || InputMethodError is not null
             || (!sourceHasNotifications && !systemNotificationsHealthy)
                 ? TimeSpan.FromSeconds(1)
                 : TimeSpan.FromSeconds(30);

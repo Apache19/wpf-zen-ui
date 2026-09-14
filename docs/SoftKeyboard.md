@@ -286,20 +286,33 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 半角、罗马字等用户偏好，不会替输入法强制选择字形模式。当前组合状态由只读 `ImeState` 属性公开。符号键盘中的
 `ABC` 键只负责返回字母键面，两者语义不同。
 
-控件在 WPF 首次异步注册 TextStore 前，使用同一 Dispatcher 的 TSF ThreadManager 声明
-`TF_TMAE_UIELEMENTENABLEDONLY`，并为自己的激活严格配对 `Deactivate`；WPF 仍创建和拥有唯一
-的 TextStore、DocumentManager 与 client id。TextStore 已存在时，控件通过缓存且可降级的
-反射读取 WPF 的 `TextServicesHost.ThreadManager`，不会替换或重建 WPF 文本管线。
+TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存且可降级的反射读取
+`TextServicesHost.ThreadManager`；首个编辑器尚未初始化时，等待后续焦点或输入刷新重试。
+候选桥接不设置 `TF_TMAE_UIELEMENTENABLEDONLY`：该标志会限制能激活的输入法，影响没有完整
+UIElement 支持的第三方输入法，与“无法内嵌时使用原生浮窗”的策略冲突。
 仅在键盘打开、候选属于 TSF 当前焦点文档且输入法实现
-`ITfCandidateListUIElementBehavior` 且符合 `CandidateMode` 策略时接管候选；标准提交调用 `SetSelection` 与 `Finalize`。
+`ITfCandidateListUIElementBehavior` 且扩展允许接管时内嵌候选；标准提交调用 `SetSelection` 与 `Finalize`。
 若 TIP 在 sink 订阅前已打开候选，控件还会从同一个 `ITfUIElementMgr` 发现该候选，并仅在候选
 存续期间短时同步其内容。微软拼音支持这组标准 UIElement 接口，可使用内嵌候选栏。
+枚举器仅用于当前同步查询，并在当前 Dispatcher 上及时释放，缩短该快照的原生引用寿命。
 
-`CandidateMode` 默认 `Automatic`，设置菜单的“候选显示”可选择自动、输入法浮窗（`Native`）、
-键盘内嵌尝试（`Embedded`）。策略属于当前控件实例，不会修改输入法配置；已接管的候选元素保持其
-呈现方式直到结束，避免切换设置时丢弃正在输入的内容。完成或取消当前组合后，新策略完整生效。
+`IflytekSoftKeyboardExtensionProvider` 已包含在默认扩展组合中，按 TSF 服务 GUID 识别讯飞。
+讯飞 3.0 的 keyboard-open 原始值 `1` 表示英文、`2` 表示中文，conversion 值却保持为零；
+WPF 的 Boolean 开关和 `Native` 转换标志无法表达该状态。扩展读取原始整数，并通过标准
+`GUID_LBI_INPUTMODE` 语言栏按钮执行切换，让讯飞同时更新引擎和系统状态。
+输入法菜单选择先关闭菜单，并等待焦点恢复后再激活新 profile，避免菜单收尾覆盖新输入法的模式值。
+候选接管统一检查接口能力、候选所属文档与当前焦点，不按输入法服务 GUID 强制回退。
+讯飞 3.0 虽提供候选接口，但文档查询返回 `E_NOTIMPL`，因此通过通用规则保留原生浮窗。
+获取或枚举后未被接管的 UIElement 引用在当前同步查询结束前释放，不留给后续 GC 清理。
+`BeginUIElement` 协商显示，首次 `UpdateUIElement` 才读取候选内容。
+自定义状态适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖厂商模式的 WPF 通知。
+切换 profile 时先按新 profile 选择状态适配器，再发布状态和布局。
+未提供可控制候选接口的输入法继续使用自己的浮窗。
+诊断依据及验证范围见 [讯飞适配记录](SoftKeyboard.Iflytek.md)。
 
-启用 `WeaselSoftKeyboardExtensionProvider` 后，扩展通过候选 GUID 识别小狼毫，并在自动策略下保留
+候选展示由接口能力、文档归属和扩展协商自动决定，不提供手动展示模式设置。
+
+启用 `WeaselSoftKeyboardExtensionProvider` 后，扩展通过候选 GUID 识别小狼毫，并保留
 其原生浮窗。小狼毫关闭 `inline_preedit` 时，拼音预编辑
 保存在它自己的浮窗中，WPF 文档可能只得到占位空格。它的候选接口不提供该字符串，也不实现
 `ITfReadingInformationUIElement`；隐藏浮窗会同时隐藏唯一的拼音预览。WPF `TextStore.OnUpdateComposition`
@@ -307,18 +320,6 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 源码依据：[小狼毫候选实现](https://github.com/rime/weasel/blob/master/WeaselTSF/CandidateList.cpp)、
 [组合文本实现](https://github.com/rime/weasel/blob/master/WeaselTSF/Composition.cpp)。
 
-需要内嵌小狼毫时，用户可自行启用输入法的 `style/inline_preedit: true`，重新部署配置后选择 `Embedded`。
-配置说明见[小狼毫定制文档](https://github.com/rime/weasel/wiki/Weasel-%E5%AE%9A%E5%88%B6%E5%8C%96)。
-控件不会改写用户的 Rime 配置。此显式模式下，小狼毫的标准行为接口只改变 UI 高亮／关闭 UI，
-没有相应的引擎提交操作；其集成接口的 `OnKeyDown` 同样没有实现选词。
-因此对当前页 1–9 项候选，点击第 N 项只发送一次数字键 N，由输入法引擎直接完成选择，
-不经过逐项高亮移动，也不追加 Space。此适配依赖 Rime 的标准数字选词绑定，
-不会把其他输入法的全局候选索引直接当作页内数字，也不会为超过 9 项的页面猜测快捷键。
-数字键发送前核验编辑器和候选所有权，发送后保留候选快照以阻止重复点击；
-新候选列表或 UI 元素结束后允许下一次选择，支持部分转换后的连续选词。
-750ms 未观察到候选变化时报告诊断，但不重发数字或补空格，以免重复提交。
-自定义 Rime 方案若重绑定数字键，需要额外适配；
-失败原因可从统一的 `CandidateError` 读取。该适配不访问小狼毫内部对象或进程通信协议。
 任何提交路径都以 TSF 后续通知决定候选显示，不因为 HRESULT 成功或按键入队就提前清空候选栏。
 
 只有 `SoftKeyboard` 已打开且实际可见时才隐藏输入法的原生候选窗。关闭键盘，或折叠键盘及其

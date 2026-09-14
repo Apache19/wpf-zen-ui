@@ -17,16 +17,12 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 [ClassInterface(ClassInterfaceType.None)]
 internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisposable
 {
-    private const uint UiElementEnabledOnly = 0x00000004;
-
-    private static readonly Guid UIElementSinkId      = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
-    private static readonly Guid ThreadManagerClassId = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
+    private static readonly Guid UIElementSinkId = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
 
     private readonly Dispatcher          _dispatcher;
     private readonly List<WeakReference> _keyboards = [];
     private readonly DispatcherTimer     _candidatePollTimer;
 
-    private object?                            _threadManagerObject;
     private ITfThreadMgr?                      _threadManager;
     private ITfUIElementMgr?                   _elementManager;
     private ITfSource?                         _source;
@@ -40,7 +36,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     private int                                _activeCandidateVersion;
     private CancellationTokenSource?           _activeCandidateCancellation;
     private bool                               _reflectionUnavailable;
-    private bool                               _ownsUiLessActivation;
 
     internal TsfCandidateSession(Dispatcher dispatcher)
     {
@@ -83,6 +78,18 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
     internal void Refresh(SoftKeyboard keyboard)
     {
+        if (keyboard.IsInputMethodOperationActive)
+        {
+            return;
+        }
+
+        // Refresh the active owner before discovering another candidate element.
+        if (ReferenceEquals(_activeKeyboard, keyboard) && _activeBehavior is not null)
+        {
+            UpdateCandidateSnapshot();
+            return;
+        }
+
         if (!CanEmbedCandidates(keyboard))
         {
             ReleasePresentation(keyboard);
@@ -141,20 +148,14 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         {
             var manager = WpfTextServicesAccessor.TryGetThreadManager();
 
+            // WPF activates TSF when its first editor creates a TextStore. Borrow that manager
+            // after initialization; activation flags affect every TIP on the dispatcher, including
+            // native-only candidate windows. Focus and input refreshes retry a missing host.
             if (manager is null)
             {
-                manager = TryCreateUiLessThreadManager();
-                if (manager is null)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                TryActivateUiLessMode(manager);
+                return;
             }
 
-            _threadManagerObject = manager;
             _threadManager       = manager as ITfThreadMgr;
             _elementManager      = manager as ITfUIElementMgr;
             _source              = manager as ITfSource;
@@ -427,10 +428,15 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
     int ISoftKeyboardTsfUIElementSink.BeginUIElement(uint elementId, ref int show)
     {
+        ITfCandidateListUIElement? candidate = null;
+
+        var retained = false;
+
         try
         {
             var keyboard = FindActiveKeyboard();
-            if (keyboard is null || !TryGetCandidate(elementId, out var candidate))
+            if (keyboard is null || keyboard.IsInputMethodOperationActive
+                || !TryGetCandidate(elementId, out candidate))
             {
                 // pbShow is an in/out value. Explicitly opt into the TIP's native UI whenever
                 // no visible keyboard can own this element instead of relying on its input.
@@ -453,20 +459,28 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             _activeBehavior  = behavior;
             _activeElementId = elementId;
 
+            retained = true;
+
 #pragma warning disable IDISP003 // ClearActiveCandidate disposed the previous element cancellation source.
             _activeCandidateCancellation = new CancellationTokenSource();
 #pragma warning restore IDISP003
 
             show = 0;
 
-            _candidatePollTimer.Start();
-
-            UpdateCandidateSnapshot();
+            // Begin negotiates ownership before the TIP has finished initializing its UI.
+            // Read candidate contents only after its first UpdateUIElement notification.
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
             show = 1;
             ClearActiveCandidate();
+        }
+        finally
+        {
+            if (!retained)
+            {
+                ReleaseProbe(candidate);
+            }
         }
 
         return 0;
@@ -474,8 +488,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
     int ISoftKeyboardTsfUIElementSink.UpdateUIElement(uint elementId)
     {
-        if (elementId == _activeElementId)
+        if (_activeBehavior is not null && elementId == _activeElementId)
         {
+            _candidatePollTimer.Start();
             UpdateCandidateSnapshot();
         }
 
@@ -496,14 +511,28 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     {
         candidate = null;
 
-        if (_elementManager is null
-            || _elementManager.GetUIElement(elementId, out var element) < 0)
+        if (_elementManager is null)
         {
             return false;
         }
 
-        candidate = element as ITfCandidateListUIElement;
-        return candidate is not null;
+        object? element = null;
+        try
+        {
+            if (_elementManager.GetUIElement(elementId, out element) >= 0)
+            {
+                candidate = element as ITfCandidateListUIElement;
+            }
+
+            return candidate is not null;
+        }
+        finally
+        {
+            if (candidate is null)
+            {
+                ReleaseProbe(element);
+            }
+        }
     }
 
     private void TryCaptureExistingCandidate()
@@ -520,9 +549,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             return;
         }
 
+        object? enumeratorObject = null;
         try
         {
-            if (_elementManager.EnumUIElements(out var enumeratorObject) < 0
+            if (_elementManager.EnumUIElements(out enumeratorObject) < 0
                 || enumeratorObject is not IEnumTfUIElements enumerator)
             {
                 return;
@@ -530,56 +560,80 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             while (enumerator.Next(1, out var element, out var fetched) >= 0 && fetched == 1)
             {
-                if (element is not ITfCandidateListUIElement candidate
-                    || !MatchesFocusedDocument(candidate))
+                var retained = false;
+
+                try
                 {
-                    continue;
-                }
+                    if (element is not ITfCandidateListUIElement candidate)
+                    {
+                        continue;
+                    }
 
-                if (element is not ITfCandidateListUIElementBehavior behavior
-                    || !ShouldEmbedCandidate(keyboard, behavior))
-                {
-                    keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
-                    continue;
-                }
+                    if (!MatchesFocusedDocument(candidate)
+                        || element is not ITfCandidateListUIElementBehavior behavior
+                        || !ShouldEmbedCandidate(keyboard, behavior))
+                    {
+                        keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
+                        continue;
+                    }
 
-                // A normally activated WPF TSF thread is not guaranteed to receive the
-                // BeginUIElement callback. UIElement-capable TIPs, including Microsoft
-                // Pinyin, still publish their active element through the manager. Discovering
-                // it after the injected key lets the application transition into embedded
-                // presentation without deactivating WPF's ThreadManager or invalidating its
-                // TextStore client id.
-                ClearActiveCandidate();
-
-                _activeKeyboard  = keyboard;
-                _activeBehavior  = behavior;
-                _activeElementId = uint.MaxValue;
-
-#pragma warning disable IDISP003 // ClearActiveCandidate disposed the previous element cancellation source.
-                _activeCandidateCancellation = new CancellationTokenSource();
-#pragma warning restore IDISP003
-
-                if (behavior.Show(0) < 0)
-                {
-                    RestoreNativeCandidate();
+                    // A normally activated WPF TSF thread is not guaranteed to receive the
+                    // BeginUIElement callback. UIElement-capable TIPs, including Microsoft
+                    // Pinyin, still publish their active element through the manager. Discovering
+                    // it after the injected key lets the application transition into embedded
+                    // presentation without deactivating WPF's ThreadManager or invalidating its
+                    // TextStore client id.
                     ClearActiveCandidate();
 
-                    keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
+                    _activeKeyboard  = keyboard;
+                    _activeBehavior  = behavior;
+                    _activeElementId = uint.MaxValue;
+
+                    retained = true;
+
+#pragma warning disable IDISP003 // ClearActiveCandidate disposed the previous element cancellation source.
+                    _activeCandidateCancellation = new CancellationTokenSource();
+#pragma warning restore IDISP003
+
+                    if (behavior.Show(0) < 0)
+                    {
+                        RestoreNativeCandidate();
+                        ClearActiveCandidate();
+
+                        keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
+
+                        return;
+                    }
+
+                    _candidatePollTimer.Start();
+
+                    UpdateCandidateSnapshot();
 
                     return;
                 }
-
-                _candidatePollTimer.Start();
-
-                UpdateCandidateSnapshot();
-
-                return;
+                finally
+                {
+                    if (!retained)
+                    {
+                        ReleaseProbe(element);
+                    }
+                }
             }
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
             // Enumeration is an enhancement for a TIP running in normal WPF TSF mode. Failure
             // leaves its native candidate surface untouched and never affects text composition.
+        }
+        finally
+        {
+            // The enumerator retains native TIP elements. Release this private snapshot on its
+            // owning STA before later input can end a composition or unload the TIP. Deferring
+            // cleanup to the RCW finalizer can retain stale third-party element pointers.
+            if (enumeratorObject is not null && Marshal.IsComObject(enumeratorObject))
+            {
+                Marshal.ReleaseComObject(enumeratorObject);
+            }
         }
     }
 
@@ -592,6 +646,19 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             && candidate.GetDocumentMgr(out var candidateDocument) >= 0
             && _threadManager.GetFocus(out var focusedDocument) >= 0
             && HaveSameComIdentity(candidateDocument, focusedDocument);
+    }
+
+    /// <summary>
+    /// Balances one temporary UI-element acquisition on the TSF dispatcher, including rejected
+    /// interfaces and failed capability checks. These probes must not remain rooted by an RCW
+    /// until a later composition or profile change. Shared WPF managers are not probe acquisitions.
+    /// </summary>
+    private static void ReleaseProbe(object? value)
+    {
+        if (value is not null && Marshal.IsComObject(value))
+        {
+            Marshal.ReleaseComObject(value);
+        }
     }
 
     private void UpdateCandidateSnapshot()
@@ -779,7 +846,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             }
         }
 
-        return ShouldEmbedCandidate(keyboard.CandidateMode);
+        return true;
     }
 
     /// <summary>
@@ -827,11 +894,6 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         );
     }
 
-    internal static bool ShouldEmbedCandidate(SoftKeyboardCandidateMode mode)
-    {
-        return mode != SoftKeyboardCandidateMode.Native;
-    }
-
     /// <summary>
     /// Revalidates both managed target ownership and the TSF document before reading or committing.
     /// Focus and visibility can change without ending a TIP-owned composition.
@@ -839,7 +901,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     private bool ValidateActiveCandidate()
     {
         var version = _activeCandidateVersion;
-        var valid = CanEmbedCandidates(_activeKeyboard)
+        var valid = _activeKeyboard?.CanPresentCandidates == true
             && _activeBehavior is ITfCandidateListUIElement candidate
             && MatchesFocusedDocument(candidate);
 
@@ -975,71 +1037,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         _elementManager = null;
         _threadManager  = null;
 
-        if (_ownsUiLessActivation && _threadManagerObject is ITfThreadMgr ownedActivation)
-        {
-            try
-            {
-                _ = ownedActivation.Deactivate();
-            }
-            catch (Exception exception) when (IsUnavailable(exception))
-            {
-                // Dispatcher shutdown can already be tearing down TSF. The matching call is
-                // still attempted because ActivateEx explicitly requires balanced activation.
-            }
-        }
-
-        _ownsUiLessActivation = false;
-
-        // TSF returns one COM identity for the calling thread. WPF can therefore hold the same
-        // RCW after its TextStore initializes. Never call ReleaseComObject on that shared RCW;
-        // dropping our managed reference lets the runtime release it only after WPF is done.
-        _threadManagerObject = null;
-    }
-
-    private object? TryCreateUiLessThreadManager()
-    {
-        try
-        {
-            var managerType = Type.GetTypeFromCLSID(ThreadManagerClassId, throwOnError: false);
-            var manager     = managerType is null ? null : Activator.CreateInstance(managerType);
-
-            if (manager is null)
-            {
-                return null;
-            }
-
-            if (!TryActivateUiLessMode(manager))
-            {
-                return null;
-            }
-
-            return manager;
-        }
-        catch (Exception exception) when (IsUnavailable(exception))
-        {
-            return null;
-        }
-    }
-
-    private bool TryActivateUiLessMode(object manager)
-    {
-        if (_ownsUiLessActivation)
-        {
-            return true;
-        }
-
-        if (manager is not ITfThreadMgrEx managerEx
-            || managerEx.ActivateEx(out _, UiElementEnabledOnly) < 0)
-        {
-            return false;
-        }
-
-        // WPF later calls ITfThreadMgr.Activate for its own client id. TSF explicitly permits
-        // multiple activation calls on a thread as long as every caller balances its own call.
-        // Taking the first activation here lets UIElement-aware TIPs publish controllable UI
-        // without creating a second WPF TextStore or replacing WPF's document manager.
-        _ownsUiLessActivation = true;
-        return true;
+        // The thread manager is borrowed from WPF. Its activation and COM lifetime remain
+        // owned by WPF's TextServicesHost.
     }
 
     private void OnCandidatePollTimerTick(object? sender, EventArgs eventArgs)

@@ -180,8 +180,7 @@ public partial class SoftKeyboard
                 _settingsLayoutContext,
                 AutoShowMode,
                 AutoHideMode,
-                _availableLayoutOptions,
-                CandidateMode
+                _availableLayoutOptions
             );
 
             SoftKeyboardSetting[] nodes;

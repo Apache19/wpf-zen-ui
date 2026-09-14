@@ -19,8 +19,14 @@ using Wpf.Zen.Ui.VirtualInput.Settings;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
+/// <summary>
+/// Verifies the core/extension boundary and independent selection of language and vendor capabilities.
+/// </summary>
 public class SoftKeyboardExtensionArchitectureTests
 {
+    /// <summary>
+    /// Keeps language and vendor policy in the opt-in extension assembly.
+    /// </summary>
     [Fact]
     public void CoreAssembly_ContainsNoLanguageOrVendorAdapters()
     {
@@ -32,11 +38,47 @@ public class SoftKeyboardExtensionArchitectureTests
         Assert.DoesNotContain(names, name => name.Contains("Japanese", StringComparison.Ordinal));
         Assert.DoesNotContain(names, name => name.Contains("Zhuyin", StringComparison.Ordinal));
         Assert.DoesNotContain(names, name => name.Contains("Weasel", StringComparison.Ordinal));
+        Assert.DoesNotContain(names, name => name.Contains("Iflytek", StringComparison.Ordinal));
         Assert.DoesNotContain(
             WeaselCandidateBehavior.CandidateElementId.ToString("D"),
             image,
             StringComparison.OrdinalIgnoreCase
         );
+    }
+
+    /// <summary>
+    /// iFlytek's two nonzero open values must remain distinguishable for the A/中 key.
+    /// </summary>
+    [Theory]
+    [InlineData(null, InputMethodState.DoNotCare)]
+    [InlineData(0, InputMethodState.Off)]
+    [InlineData(1, InputMethodState.Off)]
+    [InlineData(2, InputMethodState.On)]
+    [InlineData(3, InputMethodState.DoNotCare)]
+    public void IflytekOpenValue_PreservesNativeAndDirectModes(int? value, InputMethodState expected)
+    {
+        Assert.Equal(expected, IflytekSoftKeyboardExtensionProvider.DecodeOpenValue(value));
+    }
+
+    /// <summary>
+    /// Vendor selection depends on the TSF service identity, not a localized display name.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void IflytekExtension_OnlyAppliesToItsService(bool matchesService)
+    {
+        var profile = new SoftKeyboardInputMethod(
+            matchesService ? IflytekSoftKeyboardExtensionProvider.ServiceId : Guid.NewGuid(),
+            Guid.NewGuid(), 0x0804, "讯飞输入法", true
+        );
+        var context = new SoftKeyboardExtensionContext(new SoftKeyboardLayoutContext(
+            CultureInfo.GetCultureInfo("zh-CN"), InputScopeNameValue.Default,
+            SoftKeyboardPages.Letters, SoftKeyboardShiftState.Off, inputMethod: profile
+        ));
+        var adapters = DefaultSoftKeyboardExtensionProvider.Default.GetExtensions(context)
+            .Where(extension => extension.InputStateAdapter is not null).ToArray();
+        Assert.Equal(matchesService ? 1 : 0, adapters.Length);
     }
 
     [Fact]

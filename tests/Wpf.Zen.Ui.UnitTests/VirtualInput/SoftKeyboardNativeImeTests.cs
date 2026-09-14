@@ -18,7 +18,9 @@ using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Input;
+using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Settings;
@@ -26,9 +28,236 @@ using TextBox = System.Windows.Controls.TextBox;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
-/// <summary>Opt-in foreground tests against installed IMEs; never inject keys during the ordinary unit suite.</summary>
+/// <summary>
+/// Runs opt-in foreground tests against installed IMEs, including real key injection and composition.
+/// </summary>
 public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// Keeps Chinese mode active across repeated compositions and checks profile selection through the real menu.
+    /// </summary>
+    [Fact]
+    public void Iflytek_ContinuousChineseInputAfterProfileMenuSelection()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IFLYTEK_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IFLYTEK_TESTS=1 to exercise installed iFlytek in a foreground window.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox { Height = 70, TextWrapping = TextWrapping.Wrap };
+            var keyboard = new SoftKeyboard
+            {
+                IsOpen = true, Target = editor,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
+            };
+            var root = new DockPanel();
+            DockPanel.SetDock(editor, Dock.Top);
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 450 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                editor.Focus();
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+                var iflytek = keyboard.InputMethods.FirstOrDefault(p =>
+                    p.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId);
+                Assert.SkipUnless(iflytek is not null, "iFlytek is not installed.");
+                var other = keyboard.InputMethods.First(p => p.ClassId != iflytek.ClassId);
+                Assert.True(keyboard.TryActivateInputMethod(other));
+                PumpFor(400);
+                Assert.True(backend.TrySetImeState(InputMethodState.On));
+                keyboard.ShowInputMethodMenu();
+                PumpFor(200);
+                var menu = (ContextMenu)typeof(SoftKeyboard).GetField(
+                    "_inputMethodMenu", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(keyboard)!;
+                var item = menu.Items.Cast<MenuItem>().Single(i =>
+                    ((SoftKeyboardInputMethod)i.CommandParameter).ClassId == iflytek.ClassId);
+                item.Focus();
+                PumpFor(100);
+                SoftKeyboardCommands.ActivateInputMethod.Execute(item.CommandParameter, keyboard);
+                menu.IsOpen = false;
+                PumpFor(600);
+                output.WriteLine($"Menu activation: {keyboard.ImeState}, raw={SoftKeyboardTsfInputMode.GetKeyboardOpenValue()}");
+                Assert.Equal(iflytek.ClassId, keyboard.ActiveInputMethod?.ClassId);
+                // The TIP can remember English mode across activations. Verify the reported
+                // mode against actual input before preparing Chinese for the sustained run.
+                var initialMode = keyboard.ImeState;
+                Assert.True(initialMode is InputMethodState.On or InputMethodState.Off);
+                foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O, Key.Space })
+                {
+                    Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
+                    PumpFor(80);
+                }
+
+                var initialText = initialMode == InputMethodState.On ? "你好" : "nihao";
+                Assert.True(PumpUntil(() => editor.Text.Trim() == initialText, 2000),
+                    $"Menu mode {initialMode} disagrees with actual input '{editor.Text}'.");
+                editor.Clear();
+                if (initialMode == InputMethodState.Off)
+                {
+                    Assert.True(SoftKeyboardTsfInputMode.TryToggleInputMode(iflytek.ClassId));
+                    Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.On, 2000));
+                }
+
+                var expected = string.Empty;
+                for (var cycle = 0; cycle < 60; cycle++)
+                {
+                    foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O })
+                    {
+                        Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
+                        PumpFor(60);
+                    }
+
+                    GC.Collect();
+                    PumpFor(150);
+                    Assert.Equal(SoftKeyboardCandidatePresentationState.NativeFallback,
+                        keyboard.CandidatePresentationState);
+                    Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
+                    expected += "你好";
+                    Assert.True(PumpUntil(() => editor.Text == expected, 2000),
+                        $"Cycle {cycle}: expected '{expected}', actual '{editor.Text}'.");
+                    GC.Collect();
+                    PumpFor(300);
+                    Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                }
+            }
+            finally
+            {
+                if (window.IsVisible)
+                {
+                    keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
+                    PumpFor(100);
+                }
+
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                }
+
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Checks real iFlytek mode changes and COM cleanup before and after candidate composition.
+    /// These foreground cases are opt-in; use a fresh process for first-editor initialization.
+    /// </summary>
+    [Fact]
+    public void Iflytek_ModeChangesAndCompositionSurviveGarbageCollection()
+    {
+        Assert.SkipUnless(
+            Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IFLYTEK_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IFLYTEK_TESTS=1 to exercise installed iFlytek in a foreground window."
+        );
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox { Height = 40 };
+            var keyboard = new SoftKeyboard
+            {
+                IsOpen = true,
+                Target = editor,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
+            };
+            var root = new DockPanel();
+            DockPanel.SetDock(editor, Dock.Top);
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 420 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            var originalState = InputMethodState.DoNotCare;
+            ISoftKeyboardInputStateAdapter? adapter = null;
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                editor.Focus();
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+                originalState = keyboard.ImeState;
+                var iflytek = keyboard.InputMethods.FirstOrDefault(p =>
+                    p.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId);
+                output.WriteLine(string.Join("; ", keyboard.InputMethods.Select(p => $"{p.DisplayName}: {p.ClassId}")));
+                output.WriteLine("Observation error: " + keyboard.InputMethodError);
+                Assert.SkipUnless(iflytek is not null, "iFlytek is not installed.");
+                adapter = IflytekSoftKeyboardExtensionProvider.Default.GetExtensions(
+                    new SoftKeyboardExtensionContext(
+                        new SoftKeyboardLayoutContext(
+                            System.Globalization.CultureInfo.GetCultureInfo("zh-CN"),
+                            InputScopeNameValue.Default, SoftKeyboardPages.Letters,
+                            SoftKeyboardShiftState.Off, inputMethod: iflytek
+                        )
+                    )
+                ).Single().InputStateAdapter!;
+                Assert.True(backend.TryActivate(iflytek));
+                PumpFor(400);
+                Assert.True(adapter.TrySetState(iflytek, InputMethodState.On));
+                Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.On, 2000));
+
+                for (var cycle = 0; cycle < 3; cycle++)
+                {
+                    // Exercise the same command as the A/中 key, including adapter resolution.
+                    typeof(SoftKeyboard).GetMethod("ToggleImeCore", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .Invoke(keyboard, null);
+                    Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.Off, 2000));
+                    Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
+                    Assert.True(PumpUntil(() => editor.Text == "a", 1000), "Direct text: " + editor.Text);
+                    editor.Clear();
+
+                    // Change the native mode outside the keyboard command to check observation.
+                    Assert.True(SoftKeyboardTsfInputMode.TryToggleInputMode(iflytek.ClassId));
+                    Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.On, 2000));
+                    foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O })
+                    {
+                        Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
+                        PumpFor(80);
+                    }
+
+                    GC.Collect();
+                    // Pump the STA so RCW cleanup can return to its owning apartment.
+                    PumpFor(250);
+                    Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
+                    Assert.True(PumpUntil(() => editor.Text == "你好", 2000), "Chinese text: " + editor.Text);
+                    GC.Collect();
+                    PumpFor(750);
+                    editor.Clear();
+                }
+            }
+            finally
+            {
+                if (window.IsVisible)
+                {
+                    keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
+                    PumpFor(100);
+                }
+
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                    if (original.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId)
+                    {
+                        adapter?.TrySetState(original, originalState);
+                    }
+                    else
+                    {
+                        backend.TrySetImeState(originalState);
+                    }
+                }
+
+                window.Close();
+            }
+        });
+    }
+
     [Theory]
     [InlineData(0x0411, JapaneseSoftKeyboardLayouts.Fifty, false)]
     [InlineData(0x0411, JapaneseSoftKeyboardLayouts.Twelve, false)]
@@ -279,10 +508,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         });
     }
 
-    [Theory]
-    [InlineData(SoftKeyboardCandidateMode.Automatic)]
-    [InlineData(SoftKeyboardCandidateMode.Embedded)]
-    public void Weasel_PreservesNativePreviewOrCommitsExplicitlyEmbeddedCandidates(SoftKeyboardCandidateMode mode)
+    [Fact]
+    public void Weasel_PreservesNativePreview()
     {
         Assert.SkipUnless(
             Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
@@ -300,7 +527,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 IsOpen = true,
                 Target = editor,
                 AutoHideMode = SoftKeyboardAutoHideMode.Manual,
-                CandidateMode = mode,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
             };
             var root = new DockPanel();
@@ -358,87 +584,24 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         && keyboard.ImeState == InputMethodState.On,
                     2000
                 );
-                foreach (var requested in new[]
+                editor.SelectAll();
+                Assert.True(keyboard.SendActionKey(Key.Back, ModifierKeys.None));
+                PumpFor(80);
+                foreach (var key in new[]
                     {
-                        2, 1, 0, 3, 4
+                        Key.N, Key.I, Key.H, Key.A, Key.O
                     })
                 {
-                    editor.SelectAll();
-                    Assert.True(keyboard.SendActionKey(Key.Back, ModifierKeys.None));
-                    PumpFor(80);
-                    foreach (var key in new[]
-                        {
-                            Key.N, Key.I, Key.H, Key.A, Key.O
-                        })
-                    {
-                        Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
-                        PumpFor(100);
-                    }
-
-                    if (mode == SoftKeyboardCandidateMode.Automatic)
-                    {
-                        Assert.False(keyboard.HasCandidates);
-                        Assert.Equal(
-                            SoftKeyboardCandidatePresentationState.NativeFallback, keyboard.CandidatePresentationState);
-                        Assert.True(IsNativeCandidateShown(), "Weasel must retain its own candidate/reading surface.");
-                        Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
-                        Assert.True(PumpUntil(() => !string.IsNullOrWhiteSpace(editor.Text), 1500));
-                        break;
-                    }
-
-                    Assert.True(
-                        PumpUntil(() => keyboard.Candidates.Count >= 3, 3000),
-                        "Weasel did not expose at least three candidates.");
-
-                    var candidate = keyboard.Candidates[Math.Min(requested, keyboard.Candidates.Count - 1)];
-                    var expected = candidate.Text.TrimEnd('\0');
-                    output.WriteLine($"Click {requested}: {expected}, selected={keyboard.SelectedCandidateIndex}");
-                    var elapsed = Stopwatch.StartNew();
-                    var selections = new List<uint?>();
-                    var descriptor = DependencyPropertyDescriptor.FromProperty(
-                        SoftKeyboard.SelectedCandidateIndexProperty, typeof(SoftKeyboard));
-                    EventHandler selectionChanged = (_, _) => selections.Add(keyboard.SelectedCandidateIndex);
-                    descriptor.AddValueChanged(keyboard, selectionChanged);
-                    InvokeCandidate(keyboard, candidate);
-                    InvokeCandidate(keyboard, candidate); // Duplicate clicks must not queue another number.
-                    PumpFor(120);
-                    descriptor.RemoveValueChanged(keyboard, selectionChanged);
-                    output.WriteLine(
-                        $"Selection updates after click: {string.Join(", ", selections)}; elapsed={elapsed.ElapsedMilliseconds}ms");
-                    if (requested != 4)
-                    {
-                        Assert.DoesNotContain(
-                            selections,
-                            selection => selection.HasValue && selection.Value != candidate.Index);
-                    }
-
-                    if (requested == 4)
-                    {
-                        PumpFor(250);
-                        output.WriteLine(
-                            $"Partial result: text={editor.Text}; candidates={string.Join(" / ", keyboard.Candidates.Select(c => c.Text))}");
-                        Assert.True(
-                            keyboard.HasCandidates,
-                            "The unconverted syllables should still expose candidates.");
-
-                        InvokeCandidate(keyboard, keyboard.Candidates[0]);
-                        Assert.True(PumpUntil(
-                            () => !keyboard.HasCandidates && editor.Text.StartsWith(expected, StringComparison.Ordinal),
-                            1500));
-                        continue;
-                    }
-
-                    Assert.True(
-                        PumpUntil(() => !keyboard.HasCandidates && editor.Text == expected, 1500),
-                        $"Expected '{expected}', actual '{editor.Text}', selected={keyboard.SelectedCandidateIndex}, error={keyboard.CandidateError}");
-
-                    Assert.True(
-                        elapsed.ElapsedMilliseconds < 500,
-                        $"Candidate commit took {elapsed.ElapsedMilliseconds} ms.");
-
-                    PumpFor(120);
-                    Assert.Equal(expected, editor.Text);
+                    Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
+                    PumpFor(100);
                 }
+
+                Assert.False(keyboard.HasCandidates);
+                Assert.Equal(
+                    SoftKeyboardCandidatePresentationState.NativeFallback, keyboard.CandidatePresentationState);
+                Assert.True(IsNativeCandidateShown(), "Weasel must retain its own candidate/reading surface.");
+                Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
+                Assert.True(PumpUntil(() => !string.IsNullOrWhiteSpace(editor.Text), 1500));
             }
             finally
             {

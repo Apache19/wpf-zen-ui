@@ -13,43 +13,6 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
-    #region DP: CandidateMode
-
-    /// <summary>
-    /// Identifies the <see cref="CandidateMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty CandidateModeProperty
-        = DependencyProperty.Register(
-            nameof(CandidateMode),
-            typeof(SoftKeyboardCandidateMode),
-            typeof(SoftKeyboard),
-            new PropertyMetadata(
-                SoftKeyboardCandidateMode.Automatic,
-                (d, _) => ((SoftKeyboard)d).RefreshSettings()
-            ),
-            static value => value is SoftKeyboardCandidateMode.Automatic
-                or SoftKeyboardCandidateMode.Native
-                or SoftKeyboardCandidateMode.Embedded
-        );
-
-    /// <summary>
-    /// Gets or sets the presentation policy for the next candidate UI element.
-    /// </summary>
-    /// <remarks>
-    /// Does not inherit or animate. An already embedded element retains its owner until it ends:
-    /// some IMEs only create their native window when BeginUIElement returns show=true, so changing
-    /// ownership midway cannot reliably restore the preview. Finish or cancel the current input
-    /// normally for a policy change to take full effect. Automatic is a compatibility policy,
-    /// not a claim that TSF offers a universal complete-integration capability flag.
-    /// </remarks>
-    public SoftKeyboardCandidateMode CandidateMode
-    {
-        get => (SoftKeyboardCandidateMode)GetValue(CandidateModeProperty);
-        set => SetValue(CandidateModeProperty, value);
-    }
-
-    #endregion
-
     internal int CandidateInteractionVersion { get; private set; }
 
     internal bool ReplaceCandidates(

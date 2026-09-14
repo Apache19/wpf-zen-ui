@@ -6,7 +6,7 @@
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 
 /// <summary>
-/// Combines the built-in Chinese, Zhuyin, Japanese, and Weasel adapters in stable precedence order.
+/// Combines the built-in language and input-method adapters in stable precedence order.
 /// </summary>
 public sealed class DefaultSoftKeyboardExtensionProvider : ISoftKeyboardExtensionProvider
 {
@@ -14,7 +14,8 @@ public sealed class DefaultSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
         ChineseSoftKeyboardExtensionProvider.Default,
         ZhuyinSoftKeyboardExtensionProvider.Default,
         JapaneseSoftKeyboardExtensionProvider.Default,
-        WeaselSoftKeyboardExtensionProvider.Default
+        WeaselSoftKeyboardExtensionProvider.Default,
+        IflytekSoftKeyboardExtensionProvider.Default
     );
 
     /// <summary>

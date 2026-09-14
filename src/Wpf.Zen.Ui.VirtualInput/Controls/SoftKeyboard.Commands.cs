@@ -126,7 +126,7 @@ public partial class SoftKeyboard
     {
         var keyboard = (SoftKeyboard)sender;
 
-        if (args.Parameter is SoftKeyboardInputMethod inputMethod && keyboard.PrepareTargetForInput())
+        if (args.Parameter is SoftKeyboardInputMethod inputMethod)
         {
             keyboard.CandidateInteractionVersion++;
             keyboard.ActivateInputMethod(inputMethod);

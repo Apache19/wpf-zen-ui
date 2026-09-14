@@ -51,14 +51,6 @@ public sealed class SoftKeyboardTsfCandidateContext
     }
 
     /// <summary>
-    /// Gets the keyboard's candidate-presentation policy.
-    /// </summary>
-    public SoftKeyboardCandidateMode CandidateMode
-    {
-        get => _host.CandidateMode;
-    }
-
-    /// <summary>
     /// Gets the currently displayed candidates.
     /// </summary>
     public IReadOnlyList<SoftKeyboardCandidate> Candidates { get; }

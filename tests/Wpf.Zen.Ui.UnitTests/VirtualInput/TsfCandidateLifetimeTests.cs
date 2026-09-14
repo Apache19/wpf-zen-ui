@@ -26,6 +26,120 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class TsfCandidateLifetimeTests
 {
     /// <summary>
+    /// A TIP may expose its interfaces before initializing strings; Begin negotiates, Update reads.
+    /// </summary>
+    [Fact]
+    public Task Begin_DefersCandidateContentsUntilUpdate()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            var sink = (ISoftKeyboardTsfUIElementSink)native.Session;
+            var show = 1;
+            sink.BeginUIElement(1, ref show);
+            Assert.Equal(0, show);
+            Assert.Equal(0, native.First.ContentReads);
+            Assert.Empty(scope.Keyboard.Candidates);
+            sink.UpdateUIElement(1);
+            Assert.True(native.First.ContentReads > 0);
+            Assert.NotEmpty(scope.Keyboard.Candidates);
+        });
+    }
+
+    /// <summary>
+    /// QueryInterface success alone does not make a candidate usable: an unimplemented document
+    /// method must keep native UI visible for any provider.
+    /// </summary>
+    [Fact]
+    public Task UnimplementedCandidateDocument_UsesNativePresentation()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.First.DocumentResult = unchecked((int)0x80004001);
+            var show = 0;
+            ((ISoftKeyboardTsfUIElementSink)native.Session).BeginUIElement(1, ref show);
+            Assert.Equal(1, show);
+            Assert.Equal(0, native.First.ContentReads);
+            Assert.Equal(SoftKeyboardCandidatePresentationState.NativeFallback,
+                scope.Keyboard.CandidatePresentationState);
+        });
+    }
+
+    /// <summary>
+    /// Rejected native UI elements must release their RCW references before the next composition,
+    /// through both discovery paths. A native IUnknown avoids the CLR unwrapping a managed COM double.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public Task RejectedNativeElement_ReleasesProbeBeforeReturning(bool enumerate, bool candidateInterface)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            using var element = new NativeUnknown(candidateInterface);
+            native.Manager.ElementFactory = element.Acquire;
+            for (var cycle = 0; cycle < 3; cycle++)
+            {
+                if (enumerate)
+                {
+                    native.Session.Refresh(scope.Keyboard);
+                }
+                else
+                {
+                    var show = 0;
+                    ((ISoftKeyboardTsfUIElementSink)native.Session).BeginUIElement(1, ref show);
+                    Assert.Equal(1, show);
+                }
+
+                Assert.Equal(1, element.References);
+            }
+        });
+    }
+
+    /// <summary>
+    /// A keyboard registered before the first editor must leave TSF activation policy to WPF.
+    /// </summary>
+    [Fact]
+    public void ConnectionBeforeFirstEditor_DoesNotActivateAThreadManager()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                Assert.Null(WpfTextServicesAccessor.TryGetThreadManager());
+                using var session = new TsfCandidateSession(Dispatcher.CurrentDispatcher);
+                session.EnsureConnected();
+                Assert.Null(typeof(TsfCandidateSession)
+                    .GetField("_threadManager", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(session));
+                Assert.Null(WpfTextServicesAccessor.TryGetThreadManager());
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+            finally
+            {
+                Dispatcher.CurrentDispatcher.InvokeShutdown();
+            }
+        }) { IsBackground = true };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Assert.True(thread.Join(TimeSpan.FromSeconds(10)), "The isolated TSF dispatcher did not exit.");
+        Assert.Null(failure);
+    }
+
+    /// <summary>
     /// A number-key commit may be acknowledged by element end, while caller cancellation still rejects the operation.
     /// </summary>
     [Theory]
@@ -285,12 +399,14 @@ public class TsfCandidateLifetimeTests
             Session = new TsfCandidateSession(Dispatcher.CurrentDispatcher);
             SetField("_reflectionUnavailable", true);
             SetField("_threadManager", new ThreadManager(document));
-            SetField("_elementManager", new ElementManager(First, Second));
+            Manager = new ElementManager(First, Second);
+            SetField("_elementManager", Manager);
             Session.Register(keyboard);
             _sink = Session;
         }
 
         internal TsfCandidateSession Session { get; }
+        internal ElementManager Manager { get; }
         internal CandidateElement First { get; }
         internal CandidateElement Second { get; }
 
@@ -299,6 +415,7 @@ public class TsfCandidateLifetimeTests
             var show = 1;
             Assert.Equal(0, _sink.BeginUIElement(id, ref show));
             Assert.Equal(0, show);
+            Assert.Equal(0, _sink.UpdateUIElement(id));
         }
 
         internal void End(uint id)
@@ -358,6 +475,10 @@ public class TsfCandidateLifetimeTests
 
     private sealed class ElementManager(CandidateElement first, CandidateElement second) : ITfUIElementMgr
     {
+        internal Func<object?>? ElementFactory { get; set; }
+        internal int Acquisitions { get; private set; }
+        internal int Enumerations { get; private set; }
+
         /// <inheritdoc />
         public int BeginUIElement(object element, ref int show, out uint elementId)
         {
@@ -380,15 +501,121 @@ public class TsfCandidateLifetimeTests
         /// <inheritdoc />
         public int GetUIElement(uint elementId, out object? element)
         {
-            element = elementId == 1 ? first : second;
+            Acquisitions++;
+            element = ElementFactory is { } factory ? factory() : elementId == 1 ? first : second;
             return 0;
         }
 
         /// <inheritdoc />
         public int EnumUIElements(out object? enumerator)
         {
-            enumerator = null;
-            return -1;
+            Enumerations++;
+            enumerator = ElementFactory is { } factory ? new SingleElementEnumerator(factory) : null;
+            return enumerator is null ? -1 : 0;
+        }
+    }
+
+    private sealed class SingleElementEnumerator(Func<object?> factory) : IEnumTfUIElements
+    {
+        private bool _fetched;
+
+        /// <inheritdoc />
+        public int Clone(out IEnumTfUIElements enumerator)
+        {
+            enumerator = new SingleElementEnumerator(factory);
+            return 0;
+        }
+
+        /// <inheritdoc />
+        public int Next(uint count, out object? element, out uint fetched)
+        {
+            element = _fetched ? null : factory();
+            fetched = _fetched ? 0U : 1U;
+            _fetched = true;
+            return fetched == 0 ? 1 : 0;
+        }
+
+        /// <inheritdoc />
+        public int Reset() { _fetched = false; return 0; }
+
+        /// <inheritdoc />
+        public int Skip(uint count) { _fetched = true; return 0; }
+    }
+
+    /// <summary>
+    /// Owns an unmanaged vtable with observable reference balance. Optional candidate interfaces
+    /// return E_NOTIMPL for the document query, exercising rejection after successful QueryInterface.
+    /// The initial reference keeps its storage alive until test teardown.
+    /// </summary>
+    private sealed class NativeUnknown : IDisposable
+    {
+        private static readonly List<NativeUnknown> FailedTestRoots = [];
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int QueryInterfaceCallback(IntPtr self, ref Guid iid, out IntPtr result);
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint ReferenceCallback(IntPtr self);
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int DocumentCallback(IntPtr self, out IntPtr document);
+
+        private readonly QueryInterfaceCallback _query;
+        private readonly ReferenceCallback _addRef;
+        private readonly ReferenceCallback _release;
+        private readonly DocumentCallback _document;
+        private readonly bool _candidateInterface;
+        private readonly IntPtr _vtable = Marshal.AllocCoTaskMem(18 * IntPtr.Size);
+        private readonly IntPtr _instance = Marshal.AllocCoTaskMem(IntPtr.Size);
+        internal int References { get; private set; } = 1;
+
+        internal NativeUnknown(bool candidateInterface)
+        {
+            _candidateInterface = candidateInterface;
+            _query = QueryInterface;
+            _addRef = _ => (uint)++References;
+            _release = _ => (uint)--References;
+            _document = (IntPtr _, out IntPtr document) =>
+            {
+                document = IntPtr.Zero;
+                return unchecked((int)0x80004001);
+            };
+            for (var slot = 0; slot < 18; slot++) Marshal.WriteIntPtr(_vtable, slot * IntPtr.Size, IntPtr.Zero);
+            Marshal.WriteIntPtr(_vtable, 0, Marshal.GetFunctionPointerForDelegate(_query));
+            Marshal.WriteIntPtr(_vtable, IntPtr.Size, Marshal.GetFunctionPointerForDelegate(_addRef));
+            Marshal.WriteIntPtr(_vtable, 2 * IntPtr.Size, Marshal.GetFunctionPointerForDelegate(_release));
+            Marshal.WriteIntPtr(_vtable, 8 * IntPtr.Size, Marshal.GetFunctionPointerForDelegate(_document));
+            Marshal.WriteIntPtr(_instance, _vtable);
+        }
+
+        internal object Acquire() => Marshal.GetObjectForIUnknown(_instance);
+
+        private int QueryInterface(IntPtr self, ref Guid iid, out IntPtr result)
+        {
+            var supported = iid == new Guid("00000000-0000-0000-C000-000000000046")
+                || (_candidateInterface && (iid == typeof(ITfCandidateListUIElement).GUID
+                    || iid == typeof(ITfCandidateListUIElementBehavior).GUID));
+            result = supported ? self : IntPtr.Zero;
+            if (result == IntPtr.Zero) return unchecked((int)0x80004002);
+            References++;
+            return 0;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (References == 1)
+            {
+                Marshal.FreeCoTaskMem(_instance);
+                Marshal.FreeCoTaskMem(_vtable);
+            }
+            else
+            {
+                // A failed balance assertion must not leave callbacks pointing into collected
+                // delegates when the leaked RCW eventually finalizes.
+                FailedTestRoots.Add(this);
+            }
+            GC.KeepAlive(_query);
+            GC.KeepAlive(_addRef);
+            GC.KeepAlive(_release);
+            GC.KeepAlive(_document);
         }
     }
 
@@ -401,6 +628,8 @@ public class TsfCandidateLifetimeTests
         internal int Finalizations { get; private set; }
         internal Action? OnSelect { get; set; }
         internal Action? OnFinalize { get; set; }
+        internal int DocumentResult { get; set; }
+        internal int ContentReads { get; private set; }
 
         /// <inheritdoc />
         public int GetDescription(out string? description)
@@ -439,13 +668,14 @@ public class TsfCandidateLifetimeTests
         /// <inheritdoc />
         public int GetDocumentMgr(out object? documentManager)
         {
-            documentManager = document;
-            return 0;
+            documentManager = DocumentResult < 0 ? null : document;
+            return DocumentResult;
         }
 
         /// <inheritdoc />
         public int GetCount(out uint count)
         {
+            ContentReads++;
             count = 2;
             return 0;
         }

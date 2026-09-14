@@ -13,6 +13,12 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    /// <summary>
+    /// Gets whether a profile command or state publication is currently in progress.
+    /// Candidate discovery resumes after the operation and its layout publication finish.
+    /// </summary>
+    internal bool IsInputMethodOperationActive => _inputMethodOperationActive;
+
 #pragma warning disable IDISP006 // WPF releases the owned session when the control unloads.
     private ISoftKeyboardInputMethodSession? _inputMethodSession;
 #pragma warning restore IDISP006
@@ -374,7 +380,12 @@ public partial class SoftKeyboard
             }
             else
             {
-                var adapter  = ResolveInputStateAdapter();
+                var adapter = ResolveObservedInputStateAdapter(active, culture, target);
+                if (!isCurrent())
+                {
+                    return null;
+                }
+
                 var observed = adapter?.GetState(active) ?? session.GetState();
                 if (observed is not (InputMethodState.On or InputMethodState.Off))
                 {
@@ -390,6 +401,40 @@ public partial class SoftKeyboard
         return isCurrent()
             ? new InputMethodObservation(snapshot, state, culture)
             : null;
+    }
+
+    /// <summary>
+    /// Selects a state adapter for the newly observed profile before that profile is published.
+    /// </summary>
+    private ISoftKeyboardInputStateAdapter? ResolveObservedInputStateAdapter(
+        SoftKeyboardInputMethod? inputMethod,
+        CultureInfo culture,
+        IInputElement? target)
+    {
+        if (InputStateAdapter is not null)
+        {
+            return InputStateAdapter;
+        }
+
+        // Layout extensions still describe the last published profile at this point. Reusing them
+        // would read a newly selected TIP through the previous TIP's state adapter, and a failed
+        // read would prevent publication of the very profile needed to select the correct adapter.
+        var targetAdapter = target is null ? null : GetAdapter(target);
+
+        var scope = target is not null && targetAdapter is not null
+            ? targetAdapter.GetInputScope(target)
+            : InputScopeNameValue.Default;
+
+        var context = new SoftKeyboardLayoutContext(
+            culture, scope, Page, ShiftState, ImeState, inputMethod,
+            supplementalLayout: SelectedSupplementalLayout
+        );
+
+        var extensions = ExtensionProvider.GetExtensions(new SoftKeyboardExtensionContext(context))
+            ?? throw new InvalidOperationException("The extension provider returned a null sequence.");
+
+        return extensions.Select(extension => extension.InputStateAdapter)
+            .FirstOrDefault(adapter => adapter is not null);
     }
 
     /// <summary>
@@ -553,9 +598,34 @@ public partial class SoftKeyboard
         }
     }
 
+    /// <summary>
+    /// Closes the selector's focus scope before activating a profile on the restored editor.
+    /// </summary>
     private void ActivateInputMethod(SoftKeyboardInputMethod inputMethod)
     {
-        RunAfterActiveCompositionCancellation(() => TryActivateInputMethod(inputMethod));
+        CloseFlyouts();
+
+        var operationVersion = _inputOperationVersion;
+        var sessionVersion   = _inputMethodSessionVersion;
+        var requestVersion   = _inputMethodMenuRequestVersion;
+        var target           = ActiveTarget;
+
+        // Menu teardown restores WPF's input-method focus state. Activating a new TIP inside the
+        // menu command would let that restoration overwrite the new TIP's mode compartment with
+        // the old focus scope's value. Wait until focus restoration has completed, then activate.
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+        {
+            if (operationVersion != _inputOperationVersion
+                || sessionVersion != _inputMethodSessionVersion
+                || requestVersion != _inputMethodMenuRequestVersion
+                || !ReferenceEquals(target, ActiveTarget)
+                || !PrepareTargetForInput())
+            {
+                return;
+            }
+
+            RunAfterActiveCompositionCancellation(() => TryActivateInputMethod(inputMethod));
+        }));
     }
 
     /// <summary>

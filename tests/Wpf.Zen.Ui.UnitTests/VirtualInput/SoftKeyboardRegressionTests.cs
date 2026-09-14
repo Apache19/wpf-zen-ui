@@ -15,6 +15,7 @@ using NSubstitute;
 using NSubstitute.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Candidates;
 using Wpf.Zen.Ui.VirtualInput.Controls;
+using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
@@ -27,6 +28,95 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class SoftKeyboardRegressionTests
 {
+    /// <summary>
+    /// Menu activation runs after popup teardown and expires when its source or keyboard lifetime changes.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public Task ProfileMenuSelection_WaitsForCloseAndRejectsStaleRequests(int invalidation)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var keyboard = scope.Keyboard;
+            var source = CreateSource(scope.Method, out var session);
+            keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
+            keyboard.ShowInputMethodMenu();
+            await scope.DrainAsync();
+            var menu = (ContextMenu)typeof(SoftKeyboard).GetField(
+                "_inputMethodMenu", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(keyboard)!;
+            Assert.True(menu.IsOpen);
+            session.TryActivate(scope.Method).Returns(_ =>
+            {
+                Assert.False(menu.IsOpen);
+                Assert.Same(scope.Editor, Keyboard.FocusedElement);
+                return true;
+            });
+
+            SoftKeyboardCommands.ActivateInputMethod.Execute(scope.Method, keyboard);
+            Assert.False(menu.IsOpen);
+            session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
+            if (invalidation == 1)
+            {
+                keyboard.InputMethodSource = CreateSource(scope.Method, out _);
+            }
+            else if (invalidation == 2)
+            {
+                keyboard.IsOpen = false;
+            }
+
+            await scope.DrainAsync();
+            session.Received(invalidation == 0 ? 1 : 0).TryActivate(scope.Method);
+        });
+    }
+
+    /// <summary>
+    /// A profile change must select its state adapter before publishing the new layout.
+    /// </summary>
+    [Fact]
+    public Task ProfileObservation_UsesNewProfileAdapterOnTheFirstRead()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var next = new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Next IME", true);
+            var source = CreateSource(scope.Method, out var session);
+            var active = scope.Method;
+            session.GetSnapshot().Returns(_ => new SoftKeyboardInputMethodSnapshot([scope.Method, next], active));
+            scope.Keyboard.InputMethodSource = source;
+            var firstAdapter = Substitute.For<ISoftKeyboardInputStateAdapter>();
+            var nextAdapter = Substitute.For<ISoftKeyboardInputStateAdapter>();
+            firstAdapter.GetState(scope.Method).Returns(InputMethodState.Off);
+            nextAdapter.GetState(next).Returns(InputMethodState.On);
+            var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
+            provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(call =>
+                new[]
+                {
+                    new SoftKeyboardExtension(inputStateAdapter:
+                        call.Arg<SoftKeyboardExtensionContext>().Layout.InputMethod == next
+                            ? nextAdapter : firstAdapter)
+                });
+            scope.Keyboard.ExtensionProvider = provider;
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+
+            active = next;
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.Same(next, scope.Keyboard.ActiveInputMethod);
+            Assert.Equal(InputMethodState.On, scope.Keyboard.ImeState);
+            firstAdapter.DidNotReceive().GetState(next);
+
+            active = scope.Method;
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+            nextAdapter.DidNotReceive().GetState(scope.Method);
+        });
+    }
+
     /// <summary>
     /// Profile activation writes no mode and coalesces reentrant notifications into one observation.
     /// </summary>

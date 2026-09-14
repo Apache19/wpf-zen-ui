@@ -42,14 +42,6 @@ public sealed class SoftKeyboardCandidateHost
     }
 
     /// <summary>
-    /// Gets the current candidate-presentation policy.
-    /// </summary>
-    public SoftKeyboardCandidateMode CandidateMode
-    {
-        get => GetKeyboard().CandidateMode;
-    }
-
-    /// <summary>
     /// Gets a value indicating whether the keyboard currently owns a visible, editable input target.
     /// </summary>
     public bool CanPresentCandidates

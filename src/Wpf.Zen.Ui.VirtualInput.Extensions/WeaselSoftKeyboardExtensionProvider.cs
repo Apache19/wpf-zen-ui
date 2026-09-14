@@ -54,9 +54,7 @@ public sealed class WeaselCandidateBehavior : ISoftKeyboardTsfCandidateBehavior
             return SoftKeyboardTsfCandidatePresentation.Default;
         }
 
-        return context.CandidateMode == SoftKeyboardCandidateMode.Automatic
-            ? SoftKeyboardTsfCandidatePresentation.Native
-            : SoftKeyboardTsfCandidatePresentation.Default;
+        return SoftKeyboardTsfCandidatePresentation.Native;
     }
 
     /// <inheritdoc />
