@@ -15,7 +15,8 @@ using Separator = System.Windows.Controls.Separator;
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
-/// Coordinates settings snapshots, per-profile layout selections, and their default menu presentation.
+/// Coordinates settings snapshots, per-profile layout selections, and their default menu
+/// presentation.
 /// </summary>
 public partial class SoftKeyboard
 {
@@ -46,7 +47,8 @@ public partial class SoftKeyboard
         );
 
     /// <summary>
-    /// Gets or sets the settings-tree policy. Changes refresh the menu; this property does not inherit or animate.
+    /// Gets or sets the settings-tree policy. Changes refresh the menu; this property does not
+    /// inherit or animate.
     /// </summary>
     public ISoftKeyboardSettingsProvider SettingsProvider
     {
@@ -101,7 +103,8 @@ public partial class SoftKeyboard
     /// Gets the remembered choice; Automatic follows the recognized input-method preference.
     /// </summary>
     /// <remarks>
-    /// Use SelectSupplementalLayout to validate a change and cancel composition before replacing the letter surface.
+    /// Use SelectSupplementalLayout to validate a change and cancel composition before replacing
+    /// the letter surface.
     /// </remarks>
     public string SelectedSupplementalLayout => (string)GetValue(SelectedSupplementalLayoutProperty);
 
@@ -116,9 +119,12 @@ public partial class SoftKeyboard
     /// Gets the default ContextMenu for the template's DropDownButton.Flyout.
     /// </summary>
     /// <remarks>
-    /// Each keyboard owns its menu. Items have the corresponding SoftKeyboardSetting as DataContext,
-    /// allowing ordinary WPF styles and implicit data templates to customize text and icons. A custom
-    /// template may omit PART_SettingsButton; programmatic settings and layout selection remain available.
+    /// Each keyboard owns its menu. Items have the corresponding SoftKeyboardSetting as
+    /// DataContext,
+    /// allowing ordinary WPF styles and implicit data templates to customize text and icons. A
+    /// custom
+    /// template may omit PART_SettingsButton; programmatic settings and layout selection remain
+    /// available.
     /// </remarks>
     public ContextMenu SettingsMenu { get; private set; } = null!;
 
@@ -160,7 +166,8 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Refreshes dynamic policy data on the owning dispatcher. Reentrant policy refreshes are ignored.
+    /// Refreshes dynamic policy data on the owning dispatcher. Reentrant policy refreshes are
+    /// ignored.
     /// </summary>
     public void RefreshSettings()
     {
@@ -241,13 +248,17 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Selects an available supplemental layout and remembers it for this keyboard's active input profile.
+    /// Selects an available supplemental layout and remembers it for this keyboard's active input
+    /// profile.
     /// </summary>
     /// <param name="id">An identifier from the current settings context's AvailableLayouts.</param>
     /// <remarks>
-    /// Selection lasts for the control's lifetime and is independent of symbol/number page navigation.
-    /// Unknown choices throw; a composition that cannot be cancelled leaves the current choice intact.
-    /// Application persistence can restore a choice after the relevant input profile becomes active.
+    /// Selection lasts for the control's lifetime and is independent of symbol/number page
+    /// navigation.
+    /// Unknown choices throw; a composition that cannot be cancelled leaves the current choice
+    /// intact.
+    /// Application persistence can restore a choice after the relevant input profile becomes
+    /// active.
     /// </remarks>
     public void SelectSupplementalLayout(string id)
     {
@@ -367,7 +378,7 @@ public partial class SoftKeyboard
     private string GetSettingsProfileKey()
     {
         return ActiveInputMethod is { } profile
-            ? $"{profile.LanguageId:X4}/{profile.ClassId:D}/{profile.ProfileId:D}"
+            ? $"{profile.LanguageId:X4}/{profile.ClassId:D}/{profile.ProfileId:D}/{profile.KeyboardLayout}"
             : System.Windows.Input.InputLanguageManager.Current.CurrentInputLanguage.Name;
     }
 
@@ -389,6 +400,7 @@ public partial class SoftKeyboard
             || previous.SupplementalLayout != context.SupplementalLayout
             || previous.InputMethod?.ClassId != context.InputMethod?.ClassId
             || previous.InputMethod?.ProfileId != context.InputMethod?.ProfileId
+            || previous.InputMethod?.KeyboardLayout != context.InputMethod?.KeyboardLayout
             || previous.InputMethod?.TouchLayoutPreference != context.InputMethod?.TouchLayoutPreference)
         {
             RefreshSettings();

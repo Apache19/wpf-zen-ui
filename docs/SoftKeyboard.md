@@ -65,6 +65,31 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 管线；普通符号和长按变体使用 Unicode `SendInput`，扩展提供的日语假名使用 IME 按键组合。
 默认不包含搜索或面板。
 
+## TSF-aware 行为契约
+
+控件是应用内的 TSF-aware 输入表面：WPF 持有文本存储、组合事务和线程管理器，软键盘负责
+注入按键、观察状态和按能力协商候选展示。它沿用 WPF 的正常 TSF 激活策略；输入法没有提供
+可控制候选接口时继续显示原生窗口。TSF-aware 不等于强制 UI-less，也不保证所有 TIP 都能内嵌候选。
+
+- 输入法菜单通过 `ITfInputProcessorProfileMgr.EnumProfiles` 同时枚举启用的 TIP 和键盘布局，
+  普通键盘还需存在于 `GetKeyboardLayoutList` 的实际加载列表，排除未加载及被 TIP 替代的布局。
+  枚举失败时不再将语言配置合成为输入法条目。同语言的不同布局以
+  `SoftKeyboardInputMethod.KeyboardLayout` 区分，
+  激活时传递精确 HKL；该句柄只用于当前 Windows 会话，不应持久化。
+- 菜单第一行显示按当前 UI 语言本地化的语言和地区，第二行显示输入法或键盘名称。
+  同语言下的多个 profile 分别呈现，命令参数仍是各自的完整 profile。
+- 候选开始通知提供真实元素 ID；枚举发现的候选没有 ID，读取、翻页、提交和轮询时必须确认其
+  COM 身份仍在 TSF 管理器的活动列表中。文档仍聚焦、COM 对象仍可调用，都不等于候选仍有效。
+- `GetSelection` 返回 `S_FALSE` 时公开 `SelectedCandidateIndex=null`；没有选中项不影响候选展示。
+- 普通符号和长按字面文本先请求 Escape，等待 WPF 组合完成后才注入 Unicode。到本轮
+  `ContextIdle` 仍未结束组合、出现新组合或输入会话发生变化时，放弃本次文字，后续不自动重放。
+- 自定义同步动作的 `TrySendText` 遇到活动组合时只请求取消并返回 false；需要完整等待的扩展应
+  实现 `IAsyncSoftKeyboardKeyAction` 或 `IAsyncSoftKeyboardAlternateKeyAction`，并 await
+  `context.TrySendTextAsync(text)`。动作取消或上下文过期后，待发送文本不会进入后续编辑器。
+
+输入法的专有模式通过扩展适配。兼容性验证以具体 Windows 和输入法版本为范围，记录见
+[TSF 检查记录](SoftKeyboard.Tsf.md)。
+
 ## 目标与自动开关
 
 - 设置 `Target` 可锁定单个编辑器；留空则跟随 `TargetScope` 内最后聚焦的受支持编辑器。

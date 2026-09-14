@@ -113,8 +113,14 @@ public partial class SoftKeyboard
         {
             if (ReferenceEquals(compositionSource, ActiveTarget))
             {
+                if (args.RoutedEvent == TextCompositionManager.PreviewTextInputStartEvent)
+                {
+                    _compositionStartVersion++;
+                }
+
                 _activeTextComposition = composition;
                 _compositionTarget     = compositionSource;
+
                 _compositionCancellationRequested = false;
             }
 

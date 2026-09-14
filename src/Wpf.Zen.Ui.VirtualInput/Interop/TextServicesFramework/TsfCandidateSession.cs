@@ -30,7 +30,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     private SoftKeyboard?                      _activeKeyboard;
     private uint                               _cookie;
     private IntPtr                             _sinkPointer;
-    private uint                               _activeElementId;
+    private uint?                              _activeElementId;
     private uint[]                             _activePageStarts = [];
     private uint                               _activePageNumber;
     private int                                _activeCandidateVersion;
@@ -87,7 +87,11 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         if (ReferenceEquals(_activeKeyboard, keyboard) && _activeBehavior is not null)
         {
             UpdateCandidateSnapshot();
-            return;
+
+            if (_activeBehavior is not null)
+            {
+                return;
+            }
         }
 
         if (!CanEmbedCandidates(keyboard))
@@ -156,9 +160,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 return;
             }
 
-            _threadManager       = manager as ITfThreadMgr;
-            _elementManager      = manager as ITfUIElementMgr;
-            _source              = manager as ITfSource;
+            _threadManager  = manager as ITfThreadMgr;
+            _elementManager = manager as ITfUIElementMgr;
+            _source         = manager as ITfSource;
 
             if (_threadManager is null || _elementManager is null || _source is null)
             {
@@ -453,6 +457,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 return 0;
             }
 
+            RestoreNativeCandidate();
             ClearActiveCandidate();
 
             _activeKeyboard  = keyboard;
@@ -502,6 +507,29 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         if (elementId == _activeElementId)
         {
             ClearActiveCandidate();
+        }
+        else if (_activeBehavior is not null && !_activeElementId.HasValue)
+        {
+            // End can be delivered before the manager removes the element. Reconcile after
+            // the callback unwinds; an unrelated end must not clear the current candidate.
+            var version = _activeCandidateVersion;
+
+            _ = _dispatcher.BeginInvoke(
+                DispatcherPriority.Input,
+                new Action(
+                    () =>
+                    {
+                        if (version == _activeCandidateVersion)
+                        {
+                            UpdateCandidateSnapshot();
+                            if (_activeBehavior is null)
+                            {
+                                TryCaptureExistingCandidate();
+                            }
+                        }
+                    }
+                )
+            );
         }
 
         return 0;
@@ -587,7 +615,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
                     _activeKeyboard  = keyboard;
                     _activeBehavior  = behavior;
-                    _activeElementId = uint.MaxValue;
+                    // Enumeration exposes COM identity but no UI-element id. Such elements are
+                    // validated against a fresh manager enumeration before every read or operation.
+                    _activeElementId = null;
 
                     retained = true;
 
@@ -642,10 +672,21 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     /// </summary>
     private bool MatchesFocusedDocument(ITfCandidateListUIElement candidate)
     {
-        return _threadManager is not null
-            && candidate.GetDocumentMgr(out var candidateDocument) >= 0
-            && _threadManager.GetFocus(out var focusedDocument) >= 0
-            && HaveSameComIdentity(candidateDocument, focusedDocument);
+        object? candidateDocument = null;
+        object? focusedDocument   = null;
+        try
+        {
+            return _threadManager is not null
+                && candidate.GetDocumentMgr(out candidateDocument) >= 0
+                && _threadManager.GetFocus(out focusedDocument) >= 0
+                && HaveSameComIdentity(candidateDocument, focusedDocument);
+        }
+        finally
+        {
+            // Each COM out parameter acquired a reference, even when both project the same RCW.
+            ReleaseProbe(focusedDocument);
+            ReleaseProbe(candidateDocument);
+        }
     }
 
     /// <summary>
@@ -663,20 +704,39 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
     private void UpdateCandidateSnapshot()
     {
-        if (_activeBehavior is null || _activeKeyboard is null)
+        if (_activeBehavior is not { } behavior || _activeKeyboard is not { } keyboard)
         {
             return;
         }
 
+        var version = _activeCandidateVersion;
         try
         {
-            if (!ValidateActiveCandidate())
+            if (!ValidateCandidateOperation(keyboard, behavior, version))
             {
                 return;
             }
 
-            if (_activeBehavior!.GetCount(out var count) < 0
-                || _activeBehavior.GetSelection(out var selection) < 0)
+            var countResult = behavior.GetCount(out var count);
+            if (!IsCandidateOperationCurrent(keyboard, behavior, version))
+            {
+                return;
+            }
+
+            if (countResult < 0)
+            {
+                RestoreNativeCandidate();
+                ClearActiveCandidate();
+                return;
+            }
+
+            var selectionResult = behavior.GetSelection(out var selection);
+            if (!IsCandidateOperationCurrent(keyboard, behavior, version))
+            {
+                return;
+            }
+
+            if (selectionResult < 0)
             {
                 RestoreNativeCandidate();
                 ClearActiveCandidate();
@@ -684,7 +744,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             }
 
             GetCandidatePageRange(
-                _activeBehavior,
+                behavior,
                 count,
                 out var firstIndex,
                 out var endIndex,
@@ -693,38 +753,49 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 out var pageStarts
             );
 
-            _activePageNumber = pageNumber;
-            _activePageStarts = pageStarts;
+            if (!IsCandidateOperationCurrent(keyboard, behavior, version))
+            {
+                return;
+            }
 
             var visibleEnd = firstIndex + Math.Min(endIndex - firstIndex, 256U);
             var candidates = new List<SoftKeyboardCandidate>(checked((int)(visibleEnd - firstIndex)));
 
             for (var index = firstIndex; index < visibleEnd; index++)
             {
-                if (_activeBehavior.GetString(index, out var text) >= 0 && text is not null)
+                var stringResult = behavior.GetString(index, out var text);
+                if (!IsCandidateOperationCurrent(keyboard, behavior, version))
+                {
+                    return;
+                }
+
+                if (stringResult >= 0 && text is not null)
                 {
                     candidates.Add(new SoftKeyboardCandidate(index, text));
                 }
             }
 
-            var host = _activeKeyboard.ActiveCandidateHost;
-            if (host is not null)
-            {
-                host.Publish(
-                    new SoftKeyboardCandidateSnapshot(
-                        candidates,
-                        SoftKeyboardCandidatePresentationState.Embedded,
-                        pageNumber,
-                        pageCount,
-                        selection
-                    )
-                );
-            }
+            _activePageNumber = pageNumber;
+            _activePageStarts = pageStarts;
+
+            var host = keyboard.ActiveCandidateHost;
+            host?.Publish(
+                new SoftKeyboardCandidateSnapshot(
+                    candidates,
+                    SoftKeyboardCandidatePresentationState.Embedded,
+                    pageNumber,
+                    pageCount,
+                    selectionResult == 0 && selection < count ? selection : null
+                )
+            );
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
-            RestoreNativeCandidate();
-            ClearActiveCandidate();
+            if (IsCandidateOperationCurrent(keyboard, behavior, version))
+            {
+                RestoreNativeCandidate();
+                ClearActiveCandidate();
+            }
         }
     }
 
@@ -901,6 +972,30 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     private bool ValidateActiveCandidate()
     {
         var version = _activeCandidateVersion;
+
+        if (!_activeElementId.HasValue && _activeBehavior is { } enumerated)
+        {
+            var membership = IsEnumeratedElementActive(enumerated);
+
+            if (version != _activeCandidateVersion)
+            {
+                return false;
+            }
+
+            if (membership != true)
+            {
+                // An ended element must not receive Show or any other native operation. If the
+                // inventory query failed, restore presentation as a best-effort fallback instead.
+                if (membership is null)
+                {
+                    RestoreNativeCandidate();
+                }
+
+                ClearActiveCandidate();
+                return false;
+            }
+        }
+
         var valid = _activeKeyboard?.CanPresentCandidates == true
             && _activeBehavior is ITfCandidateListUIElement candidate
             && MatchesFocusedDocument(candidate);
@@ -980,7 +1075,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
         _activeBehavior   = null;
         _activeKeyboard   = null;
-        _activeElementId  = 0;
+        _activeElementId  = null;
         _activePageStarts = [];
         _activePageNumber = 0;
 
@@ -1047,6 +1142,62 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         // Poll only while such an element is embedded; the timer stops as soon as the element
         // becomes invalid, the composition is committed, or the keyboard session is released.
         UpdateCandidateSnapshot();
+        if (_activeBehavior is null)
+        {
+            TryCaptureExistingCandidate();
+        }
+    }
+
+    /// <summary>
+    /// Checks manager membership for an element discovered without a BeginUIElement id. A COM
+    /// object can remain callable after EndUIElement, so document identity alone is insufficient.
+    /// Each temporary acquisition is balanced even when it shares the active element's RCW.
+    /// </summary>
+    /// <returns>
+    /// True if active, false if removed, or null when the inventory is unavailable.
+    /// </returns>
+    private bool? IsEnumeratedElementActive(object candidate)
+    {
+        object? enumeratorObject = null;
+        try
+        {
+            if (_elementManager is null
+                || _elementManager.EnumUIElements(out enumeratorObject) < 0
+                || enumeratorObject is not IEnumTfUIElements enumerator)
+            {
+                return null;
+            }
+
+            while (true)
+            {
+                var result = enumerator.Next(1, out var element, out var fetched);
+                try
+                {
+                    if (result < 0)
+                    {
+                        return null;
+                    }
+
+                    if (fetched != 1)
+                    {
+                        return false;
+                    }
+
+                    if (HaveSameComIdentity(candidate, element))
+                    {
+                        return true;
+                    }
+                }
+                finally
+                {
+                    ReleaseProbe(element);
+                }
+            }
+        }
+        finally
+        {
+            ReleaseProbe(enumeratorObject);
+        }
     }
 
     private void OnDispatcherShutdown(object? sender, EventArgs eventArgs)

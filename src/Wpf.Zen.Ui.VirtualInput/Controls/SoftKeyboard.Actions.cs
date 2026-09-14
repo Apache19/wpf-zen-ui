@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
@@ -103,6 +104,52 @@ public partial class SoftKeyboard
         }
 
         return sent;
+    }
+
+    /// <summary>
+    /// Sends literal text after WPF acknowledges composition cancellation. An idle boundary
+    /// bounds the request: ignored Escape, a new composition, or changed ownership rejects it.
+    /// </summary>
+    internal async Task<bool> SendActionTextAsync(
+        string text,
+        CancellationToken cancellationToken = default,
+        Func<bool>? isContextCurrent = null)
+    {
+        VerifyAccess();
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrEmpty(text) || !PrepareTargetForInput())
+        {
+            return false;
+        }
+
+        if (_activeTextComposition is not null)
+        {
+            var version            = _inputOperationVersion;
+            var compositionVersion = _compositionStartVersion;
+            var target             = ActiveTarget;
+
+            if (!TryCancelActiveComposition())
+            {
+                return false;
+            }
+
+            await Dispatcher.InvokeAsync(static () => { }, DispatcherPriority.ContextIdle);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (version != _inputOperationVersion
+                || compositionVersion != _compositionStartVersion
+                || !ReferenceEquals(target, ActiveTarget)
+                || !ReferenceEquals(target, Keyboard.FocusedElement)
+                || _activeTextComposition is not null)
+            {
+                return false;
+            }
+        }
+
+        return (isContextCurrent is null || isContextCurrent()) && SendActionText(text);
     }
 
     internal bool SendActionKey(Key key, ModifierKeys modifiers)

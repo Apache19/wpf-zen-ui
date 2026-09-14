@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Runtime.InteropServices;
+using Windows.Win32.UI.TextServices;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
@@ -45,7 +46,7 @@ internal interface ITfInputProcessorProfileMgr
     );
 
     [PreserveSig]
-    int EnumProfiles(ushort languageId, out IntPtr enumerator);
+    int EnumProfiles(ushort languageId, out IEnumTfInputProcessorProfiles enumerator);
 
     [PreserveSig]
     int ReleaseInputProcessor(in Guid classId, uint flags);

@@ -128,9 +128,9 @@ public partial class SoftKeyboard
                 {
                     ExecuteCustomAction(args.Key.Action, text);
                 }
-                else if (TrySendText(text) && ShiftState == SoftKeyboardShiftState.Once)
+                else
                 {
-                    SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
+                    _ = SendActionTextAsync(text);
                 }
             }
             else
@@ -166,11 +166,7 @@ public partial class SoftKeyboard
                 break;
 
             case SoftKeyboardKeyKind.Text:
-                if (TrySendText(key.Text ?? string.Empty) && ShiftState == SoftKeyboardShiftState.Once)
-                {
-                    SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
-                }
-
+                _ = SendActionTextAsync(key.Text ?? string.Empty);
                 break;
 
             case SoftKeyboardKeyKind.Shift:
@@ -286,6 +282,10 @@ public partial class SoftKeyboard
         return sent;
     }
 
+    /// <summary>
+    /// Sends literal text only when the validated target has no active composition. A pending
+    /// composition requests cancellation and returns false so callers can observe actual delivery.
+    /// </summary>
     private bool TrySendText(string text)
     {
         if (!PrepareTargetForInput())
@@ -293,10 +293,11 @@ public partial class SoftKeyboard
             return false;
         }
 
-        // KEYEVENTF_UNICODE bypasses the active TIP. Escape is queued first so mutable pre-edit
-        // text cannot be interleaved with symbols or long-press alternatives.
-        if (!TryCancelActiveComposition())
+        // A synchronous caller cannot wait for TSF to process Escape. Request cancellation but
+        // report that no text was sent; asynchronous callers use SendActionTextAsync to wait.
+        if (_activeTextComposition is not null)
         {
+            _ = TryCancelActiveComposition();
             return false;
         }
 

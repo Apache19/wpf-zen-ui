@@ -16,8 +16,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// </remarks>
 public sealed class SoftKeyboardActionContext
 {
-    private readonly int _operationVersion;
+    private readonly int               _operationVersion;
     private readonly CancellationToken _cancellationToken;
+
     private SoftKeyboard? _keyboard;
 
     internal SoftKeyboardActionContext(
@@ -25,8 +26,8 @@ public sealed class SoftKeyboardActionContext
         int operationVersion,
         CancellationToken cancellationToken)
     {
-        _keyboard = keyboard;
-        _operationVersion = operationVersion;
+        _keyboard          = keyboard;
+        _operationVersion  = operationVersion;
         _cancellationToken = cancellationToken;
     }
 
@@ -35,7 +36,9 @@ public sealed class SoftKeyboardActionContext
     /// </summary>
     /// <param name="text">Nonempty literal text to send.</param>
     /// <returns>
-    /// Whether Windows accepted the input; failure leaves one-shot Shift unchanged.
+    /// Whether Windows accepted the input; failure leaves one-shot Shift unchanged. During
+    /// composition this requests cancellation and returns false without sending text. Use
+    /// <see cref="TrySendTextAsync"/> to wait for cancellation before sending.
     /// </returns>
     public bool TrySendText(string text)
     {
@@ -45,6 +48,33 @@ public sealed class SoftKeyboardActionContext
         }
 
         return GetKeyboard().SendActionText(text);
+    }
+
+    /// <summary>
+    /// Waits for composition cancellation before sending literal Unicode to the original target.
+    /// </summary>
+    /// <param name="text">Nonempty literal text to send.</param>
+    /// <returns>
+    /// Whether Windows accepted the text. Ignored cancellation or changed input ownership returns
+    /// false; cancellation of this action throws <see cref="OperationCanceledException"/>.
+    /// </returns>
+    /// <remarks>
+    /// Await this method from an asynchronous key action so its context remains valid. Cancellation
+    /// is checked before text injection; it cannot retract input already accepted by Windows.
+    /// </remarks>
+    public Task<bool> TrySendTextAsync(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            throw new ArgumentException("Input text is required.", nameof(text));
+        }
+
+        var keyboard = GetKeyboard();
+        return keyboard.SendActionTextAsync(
+            text,
+            _cancellationToken,
+            () => ReferenceEquals(_keyboard, keyboard) && keyboard.IsActionContextCurrent(_operationVersion)
+        );
     }
 
     /// <summary>

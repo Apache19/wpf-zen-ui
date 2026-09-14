@@ -732,6 +732,7 @@ public partial class SoftKeyboard
         return left?.ProfileId == right?.ProfileId
             && left?.ClassId == right?.ClassId
             && left?.LanguageId == right?.LanguageId
+            && left?.KeyboardLayout == right?.KeyboardLayout
             && left?.TouchLayoutPreference == right?.TouchLayoutPreference
             && left?.SupportsImeToggle == right?.SupportsImeToggle;
     }

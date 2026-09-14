@@ -1,8 +1,13 @@
 GetAncestor
 GetForegroundWindow
 GetKeyboardLayout
+GetKeyboardLayoutList
+SHLoadIndirectString
 MapVirtualKeyEx
 SendInput
 ToUnicodeEx
 TF_INPUTPROCESSORPROFILE
+IEnumTfInputProcessorProfiles
+TF_IPP_FLAG_ENABLED
+TF_IPP_FLAG_SUBSTITUTEDBYINPUTPROCESSOR
 ImmIsIME

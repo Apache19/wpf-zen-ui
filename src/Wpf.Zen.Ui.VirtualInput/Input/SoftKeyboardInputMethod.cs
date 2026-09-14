@@ -13,24 +13,37 @@ public sealed class SoftKeyboardInputMethod
     /// <summary>
     /// Initializes a new instance of the <see cref="SoftKeyboardInputMethod"/> class.
     /// </summary>
-    /// <param name="classId">The TSF text-service class identifier, or empty for a language-only entry.</param>
-    /// <param name="profileId">The TSF language-profile identifier, or empty for a language-only entry.</param>
+    /// <param name="classId">
+    /// The TSF service identifier, or empty for a keyboard layout or language-only entry.
+    /// </param>
+    /// <param name="profileId">
+    /// The TSF profile identifier, or empty for a keyboard layout or language-only entry.
+    /// </param>
     /// <param name="languageId">The nonzero Windows language identifier.</param>
     /// <param name="displayName">The nonempty localized presentation name.</param>
-    /// <param name="isActive">Whether this profile was active when its source was refreshed.</param>
-    /// <param name="touchLayoutPreference">The optional touch-layout capability reported by the profile.</param>
+    /// <param name="isActive">
+    /// Whether this profile was active when its source was refreshed.
+    /// </param>
+    /// <param name="touchLayoutPreference">
+    /// The optional touch-layout capability reported by the profile.
+    /// </param>
     /// <param name="supportsImeToggle">
     /// Whether the source supports native/direct mode changes for this entry. Defaults to true for
     /// TSF profiles and false for language-only entries; sources can override either default.
     /// </param>
+    /// <param name="keyboardLayout">
+    /// The exact Windows keyboard-layout handle, or zero for a TIP or language-only fallback.
+    /// Layout handles distinguish multiple keyboard layouts within the same language.
+    /// </param>
     public SoftKeyboardInputMethod(
-        Guid   classId,
-        Guid   profileId,
+        Guid classId,
+        Guid profileId,
         ushort languageId,
         string displayName,
-        bool   isActive,
+        bool isActive,
         SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null,
-        bool? supportsImeToggle = null)
+        bool? supportsImeToggle = null,
+        IntPtr keyboardLayout = default)
     {
         if (languageId == 0)
         {
@@ -49,11 +62,17 @@ public sealed class SoftKeyboardInputMethod
             );
         }
 
-        ClassId     = classId;
-        ProfileId   = profileId;
-        LanguageId  = languageId;
-        DisplayName = displayName;
-        IsActive    = isActive;
+        if (classId != Guid.Empty && keyboardLayout != IntPtr.Zero)
+        {
+            throw new ArgumentException("A TIP profile cannot also identify a keyboard layout.");
+        }
+
+        ClassId        = classId;
+        ProfileId      = profileId;
+        LanguageId     = languageId;
+        DisplayName    = displayName;
+        IsActive       = isActive;
+        KeyboardLayout = keyboardLayout;
 
         TouchLayoutPreference = touchLayoutPreference;
         SupportsImeToggle     = supportsImeToggle ?? classId != Guid.Empty;
@@ -75,9 +94,35 @@ public sealed class SoftKeyboardInputMethod
     public ushort LanguageId { get; }
 
     /// <summary>
+    /// Gets the exact Windows keyboard-layout handle, or zero for a TIP or language-only entry.
+    /// The handle is valid in the current Windows session and must not be persisted as a
+    /// preference.
+    /// </summary>
+    public IntPtr KeyboardLayout { get; }
+
+    /// <summary>
     /// Gets the localized profile name.
     /// </summary>
     public string DisplayName { get; }
+
+    /// <summary>
+    /// Gets the language and region name localized for the current UI culture. Each profile keeps
+    /// its own identity even when several profiles share this presentation label.
+    /// </summary>
+    public string LanguageDisplayName
+    {
+        get
+        {
+            try
+            {
+                return CultureInfo.GetCultureInfo(LanguageId).DisplayName;
+            }
+            catch (CultureNotFoundException)
+            {
+                return $"0x{LanguageId:X4}";
+            }
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether this profile was active when the list was refreshed.
@@ -95,7 +140,8 @@ public sealed class SoftKeyboardInputMethod
     /// Gets the active TIP's preferred Windows touch layout, or null when querying is unavailable.
     /// </summary>
     /// <remarks>
-    /// Only active profiles are queried. Unknown identifiers remain available to application layout policies.
+    /// Only active profiles are queried. Unknown identifiers remain available to application
+    /// layout policies.
     /// </remarks>
     public SoftKeyboardTouchLayoutPreference? TouchLayoutPreference { get; }
 

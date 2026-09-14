@@ -21,10 +21,116 @@ using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Drives real TSF sink callbacks against managed COM-contract doubles to exercise candidate lifetime races.
+/// Drives real TSF sink callbacks against managed COM-contract doubles to exercise candidate
+/// lifetime races.
 /// </summary>
 public class TsfCandidateLifetimeTests
 {
+    /// <summary>
+    /// A synchronous TIP callback may replace an element while its old snapshot is being read.
+    /// Neither old data nor an old COM failure may overwrite the replacement's presentation.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public Task SnapshotRead_ReentrantReplacementKeepsNewCandidates(bool readString, bool fail)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            Action replace = () =>
+            {
+                native.End(1);
+                native.Begin(2);
+                if (fail)
+                {
+                    throw new COMException("The old element ended.");
+                }
+            };
+            if (readString)
+            {
+                native.First.OnString = replace;
+            }
+            else
+            {
+                native.First.OnCount = replace;
+            }
+
+            native.Begin(1);
+            Assert.Equal("second0", Assert.Single(scope.Keyboard.Candidates).Text);
+            Assert.Equal(SoftKeyboardCandidatePresentationState.Embedded,
+                scope.Keyboard.CandidatePresentationState);
+        });
+    }
+
+    /// <summary>
+    /// S_FALSE leaves the output index undefined and must publish an unselected candidate list.
+    /// </summary>
+    [Fact]
+    public Task CandidateWithoutSelection_DoesNotPublishTheOutputIndex()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.First.SelectionResult = 1;
+            native.Begin(1);
+            Assert.NotEmpty(scope.Keyboard.Candidates);
+            Assert.Null(scope.Keyboard.SelectedCandidateIndex);
+        });
+    }
+
+    /// <summary>
+    /// An enumerated element may remain callable after ending in the same document. Neither
+    /// polling nor an unrelated End notification may confuse COM object lifetime with membership.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task EnumeratedCandidate_RemovalReleasesTheOldSnapshot(bool notifyEnd)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => native.First;
+            native.Session.Refresh(scope.Keyboard);
+            Assert.Equal("first0", Assert.Single(scope.Keyboard.Candidates).Text);
+            native.End(42);
+            await scope.DrainAsync();
+            Assert.Equal("first0", Assert.Single(scope.Keyboard.Candidates).Text);
+
+            var oldCandidate = scope.Keyboard.Candidates[0];
+            native.Manager.ElementFactory = () => native.Second;
+            if (notifyEnd)
+            {
+                native.End(42);
+                await scope.DrainAsync();
+            }
+            else
+            {
+                var result = await native.Session.TryCommitAsync(
+                    scope.Keyboard, oldCandidate, CancellationToken.None);
+                Assert.False(result.Succeeded);
+                native.Session.Refresh(scope.Keyboard);
+            }
+
+            Assert.Empty(native.First.Selections);
+            Assert.Equal(0, native.First.Finalizations);
+            Assert.DoesNotContain(1, native.First.ShowCalls);
+            Assert.Equal("second0", Assert.Single(scope.Keyboard.Candidates).Text);
+            native.Manager.ElementFactory = () => null;
+            native.Session.Refresh(scope.Keyboard);
+            Assert.Empty(scope.Keyboard.Candidates);
+        });
+    }
+
     /// <summary>
     /// A TIP may expose its interfaces before initializing strings; Begin negotiates, Update reads.
     /// </summary>
@@ -72,7 +178,8 @@ public class TsfCandidateLifetimeTests
 
     /// <summary>
     /// Rejected native UI elements must release their RCW references before the next composition,
-    /// through both discovery paths. A native IUnknown avoids the CLR unwrapping a managed COM double.
+    /// through both discovery paths. A native IUnknown avoids the CLR unwrapping a managed COM
+    /// double.
     /// </summary>
     [Theory]
     [InlineData(false, false)]
@@ -140,7 +247,8 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
-    /// A number-key commit may be acknowledged by element end, while caller cancellation still rejects the operation.
+    /// A number-key commit may be acknowledged by element end, while caller cancellation still
+    /// rejects the operation.
     /// </summary>
     [Theory]
     [InlineData(0, false)]
@@ -212,7 +320,8 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
-    /// Late extension completion must neither select a later element nor overwrite its presentation diagnostics.
+    /// Late extension completion must neither select a later element nor overwrite its
+    /// presentation diagnostics.
     /// </summary>
     [Theory]
     [InlineData(false, false, false)]
@@ -291,7 +400,8 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
-    /// Caller cancellation prevents a late extension failure from changing a still-active native element.
+    /// Caller cancellation prevents a late extension failure from changing a still-active native
+    /// element.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -331,7 +441,8 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
-    /// Synchronous sink reentrancy during selection must not finalize even when the same COM object and id are reused.
+    /// Synchronous sink reentrancy during selection must not finalize even when the same COM
+    /// object and id are reused.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -361,7 +472,8 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
-    /// Current elements still allow paging and committing, including normal EndUIElement during finalization.
+    /// Current elements still allow paging and committing, including normal EndUIElement during
+    /// finalization.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -385,7 +497,8 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
-    /// Replaces only the COM transport, leaving registration, sink routing, page parsing, and operation checks intact.
+    /// Replaces only the COM transport, leaving registration, sink routing, page parsing, and
+    /// operation checks intact.
     /// </summary>
     private sealed class CandidateHarness : IDisposable
     {
@@ -544,7 +657,8 @@ public class TsfCandidateLifetimeTests
 
     /// <summary>
     /// Owns an unmanaged vtable with observable reference balance. Optional candidate interfaces
-    /// return E_NOTIMPL for the document query, exercising rejection after successful QueryInterface.
+    /// return E_NOTIMPL for the document query, exercising rejection after successful
+    /// QueryInterface.
     /// The initial reference keeps its storage alive until test teardown.
     /// </summary>
     private sealed class NativeUnknown : IDisposable
@@ -625,10 +739,14 @@ public class TsfCandidateLifetimeTests
         private uint _selection;
 
         internal List<uint> Selections { get; } = [];
+        internal List<int> ShowCalls { get; } = [];
         internal int Finalizations { get; private set; }
         internal Action? OnSelect { get; set; }
         internal Action? OnFinalize { get; set; }
+        internal Action? OnCount { get; set; }
+        internal Action? OnString { get; set; }
         internal int DocumentResult { get; set; }
+        internal int SelectionResult { get; set; }
         internal int ContentReads { get; private set; }
 
         /// <inheritdoc />
@@ -648,6 +766,7 @@ public class TsfCandidateLifetimeTests
         /// <inheritdoc />
         public int Show(int show)
         {
+            ShowCalls.Add(show);
             return 0;
         }
 
@@ -677,6 +796,7 @@ public class TsfCandidateLifetimeTests
         {
             ContentReads++;
             count = 2;
+            OnCount?.Invoke();
             return 0;
         }
 
@@ -684,13 +804,14 @@ public class TsfCandidateLifetimeTests
         public int GetSelection(out uint index)
         {
             index = _selection;
-            return 0;
+            return SelectionResult;
         }
 
         /// <inheritdoc />
         public int GetString(uint index, out string? text)
         {
             text = name + index;
+            OnString?.Invoke();
             return 0;
         }
 

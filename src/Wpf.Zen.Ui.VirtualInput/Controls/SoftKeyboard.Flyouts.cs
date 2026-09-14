@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
@@ -14,14 +15,15 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     private ContextMenu? _inputMethodMenu;
-    private int _inputMethodMenuRequestVersion;
+    private int          _inputMethodMenuRequestVersion;
 
     /// <summary>
     /// Opens the installed input-method menu without replacing or resizing the keyboard.
     /// </summary>
     /// <remarks>
     /// The menu is anchored to the last invoked key.
-    /// The catalog is refreshed before opening. A closed, superseded, or expired request stays closed.
+    /// The catalog is refreshed before opening. A closed, superseded, or expired request
+    /// stays closed.
     /// Selection restores editor focus before activation.
     /// </remarks>
     public void ShowInputMethodMenu()
@@ -45,7 +47,8 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Reads the catalog before constructing the menu and rejects reentrant source or target changes.
+    /// Reads the catalog before constructing the menu and rejects reentrant source or
+    /// target changes.
     /// </summary>
     private void OpenInputMethodMenuCore(UIElement anchor, int requestVersion)
     {
@@ -56,7 +59,7 @@ public partial class SoftKeyboard
         }
 
         var operationVersion = _inputOperationVersion;
-        var sessionVersion = _inputMethodSessionVersion;
+        var sessionVersion   = _inputMethodSessionVersion;
 
         if (!RefreshInputMethods()
             || requestVersion != _inputMethodMenuRequestVersion
@@ -75,15 +78,38 @@ public partial class SoftKeyboard
 
         foreach (var inputMethod in InputMethods)
         {
+            var header = new StackPanel();
+
+            header.Children.Add(
+                new TextBlock
+                {
+                    Text       = inputMethod.LanguageDisplayName,
+                    FontWeight = FontWeights.SemiBold,
+                }
+            );
+
+            header.Children.Add(
+                new TextBlock
+                {
+                    Text    = inputMethod.DisplayName,
+                    Margin  = new Thickness(0, 2, 0, 0),
+                    Opacity = 0.75,
+                }
+            );
+
             var item = new MenuItem
             {
-                Header           = inputMethod.DisplayName,
+                Header           = header,
                 IsCheckable      = true,
                 IsChecked        = inputMethod.IsActive,
                 Command          = SoftKeyboardCommands.ActivateInputMethod,
                 CommandParameter = inputMethod,
                 CommandTarget    = this
             };
+
+            AutomationProperties.SetName(
+                item, $"{inputMethod.LanguageDisplayName}, {inputMethod.DisplayName}"
+            );
 
             menu.Items.Add(item);
         }

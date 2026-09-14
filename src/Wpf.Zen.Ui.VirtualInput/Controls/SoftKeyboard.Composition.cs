@@ -13,6 +13,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    private int _compositionStartVersion;
+
     /// <summary>
     /// Asks the active TIP to discard its mutable pre-edit transaction by sending Escape to the
     /// editor that originated the matching WPF composition.
@@ -33,7 +35,7 @@ public partial class SoftKeyboard
 
         if (_compositionCancellationRequested)
         {
-            // Escape is already ahead of any directly injected text in the Win32 input queue.
+            // A cancellation request is already pending for the observed composition.
             return true;
         }
 
@@ -50,9 +52,9 @@ public partial class SoftKeyboard
             return false;
         }
 
-        // SendInput preserves packet order, so a directly following Unicode packet cannot overtake
-        // Escape. Retain the WPF composition until its final event; if the TIP ignores the request,
-        // reset the guard after input processing so the next semantic boundary can retry safely.
+        // Retain the WPF composition until its final event. Callers that send literal text or
+        // change input-method state must wait for that acknowledgement. If the TIP ignores Escape,
+        // reset the request guard after input processing so the next boundary can retry.
         _compositionCancellationRequested = true;
 
         var requestedComposition = _activeTextComposition;

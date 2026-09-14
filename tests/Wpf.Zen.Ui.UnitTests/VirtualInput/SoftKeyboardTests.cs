@@ -2573,7 +2573,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void DirectUnicodeInput_QueuesCompositionCancellationBeforeText()
+    public void DirectUnicodeInput_WaitsForCompositionCancellationBeforeText()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -2612,8 +2612,13 @@ public class SoftKeyboardTests
                     new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "★", "Star", text: "★")
                 );
 
-                Assert.Equal(["Key:Escape", "Text:★"], input.Operations);
+                Assert.Equal(["Key:Escape"], input.Operations);
                 composition.Complete();
+                var frame = new System.Windows.Threading.DispatcherFrame();
+                _ = keyboard.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                    new Action(() => frame.Continue = false));
+                System.Windows.Threading.Dispatcher.PushFrame(frame);
+                Assert.Equal(["Key:Escape", "Text:★"], input.Operations);
             }
             finally
             {

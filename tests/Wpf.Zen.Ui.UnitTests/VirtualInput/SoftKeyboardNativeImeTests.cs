@@ -29,12 +29,163 @@ using TextBox = System.Windows.Controls.TextBox;
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Runs opt-in foreground tests against installed IMEs, including real key injection and composition.
+/// Runs opt-in foreground tests against installed IMEs, including real key injection and
+/// composition.
 /// </summary>
 public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 {
     /// <summary>
-    /// Keeps Chinese mode active across repeated compositions and checks profile selection through the real menu.
+    /// Exercises modern profile enumeration and exact keyboard-layout activation on Windows.
+    /// </summary>
+    [Fact]
+    public void NativeProfiles_KeyboardLayoutRoundTrip()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Windows profiles.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox();
+            var keyboard = new SoftKeyboard
+            {
+                Target = editor,
+                IsOpen = true,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
+            };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 450 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                editor.Focus();
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+                Assert.NotNull(original);
+                foreach (var profile in keyboard.InputMethods)
+                {
+                    output.WriteLine($"{profile.DisplayName}: {profile.ClassId}, "
+                        + $"HKL={profile.KeyboardLayout}, active={profile.IsActive}");
+                }
+
+                var layouts = keyboard.InputMethods.Where(p => p.KeyboardLayout != IntPtr.Zero).ToArray();
+                Assert.SkipUnless(layouts.Length > 0, "No ordinary keyboard layouts are installed.");
+                foreach (var layout in layouts)
+                {
+                    Assert.True(keyboard.TryActivateInputMethod(layout));
+                    Assert.True(PumpUntil(() => keyboard.ActiveInputMethod?.KeyboardLayout
+                        == layout.KeyboardLayout, 2000));
+                    Assert.Equal(Guid.Empty, keyboard.ActiveInputMethod!.ClassId);
+                }
+
+                Assert.True(keyboard.TryActivateInputMethod(original));
+                Assert.True(PumpUntil(() => keyboard.ActiveInputMethod is { } current
+                    && current.ClassId == original.ClassId && current.ProfileId == original.ProfileId
+                    && current.KeyboardLayout == original.KeyboardLayout, 2000));
+            }
+            finally
+            {
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                }
+
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Real Pinyin composition must end before literal text, then publish a fresh candidate
+    /// session.
+    /// </summary>
+    [Fact]
+    public void Pinyin_LiteralTextCancellationAndNextCandidateSession()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Microsoft Pinyin.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox();
+            var keyboard = new SoftKeyboard
+            {
+                Target = editor,
+                IsOpen = true,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
+            };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 450 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            var pinyinMode = InputMethodState.DoNotCare;
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                editor.Focus();
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+                var pinyin = keyboard.InputMethods.FirstOrDefault(p =>
+                    p.ClassId == new Guid("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E"));
+                Assert.SkipUnless(pinyin is not null, "Microsoft Pinyin is not installed.");
+                Assert.True(keyboard.TryActivateInputMethod(pinyin));
+                PumpFor(300);
+                pinyinMode = backend.GetImeState();
+                Assert.True(backend.TrySetImeState(InputMethodState.On));
+                PumpFor(200);
+                Assert.True(keyboard.SendActionKey(Key.N, ModifierKeys.None));
+                Assert.True(keyboard.SendActionKey(Key.I, ModifierKeys.None));
+                Assert.True(PumpUntil(() => keyboard.HasCandidates, 2000));
+
+                var literal = keyboard.SendActionTextAsync("★");
+                Assert.True(PumpUntil(() => literal.IsCompleted, 2000));
+                Assert.True(literal.GetAwaiter().GetResult());
+                Assert.True(PumpUntil(() => editor.Text == "★" && !keyboard.HasCandidates, 2000));
+
+                Assert.True(keyboard.SendActionKey(Key.N, ModifierKeys.None));
+                Assert.True(keyboard.SendActionKey(Key.I, ModifierKeys.None));
+                Assert.True(PumpUntil(() => keyboard.HasCandidates, 2000));
+                var candidate = keyboard.Candidates[0];
+                var commit = keyboard.CommitCandidateAsync(candidate);
+                Assert.True(PumpUntil(() => commit.IsCompleted, 2000));
+                Assert.True(commit.GetAwaiter().GetResult());
+                Assert.True(PumpUntil(() => editor.Text == "★" + candidate.Text
+                    && !keyboard.HasCandidates, 2000));
+            }
+            finally
+            {
+                if (window.IsVisible)
+                {
+                    keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
+                    PumpFor(100);
+                    if (pinyinMode != InputMethodState.DoNotCare)
+                    {
+                        backend.TrySetImeState(pinyinMode);
+                    }
+                }
+
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                }
+
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Keeps Chinese mode active across repeated compositions and checks profile selection through
+    /// the real menu.
     /// </summary>
     [Fact]
     public void Iflytek_ContinuousChineseInputAfterProfileMenuSelection()
