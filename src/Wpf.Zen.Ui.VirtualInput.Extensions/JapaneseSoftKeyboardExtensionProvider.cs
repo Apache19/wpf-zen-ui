@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Input;
+using static Wpf.Zen.Ui.VirtualInput.Extensions.Internal.KeyboardLayoutParts;
 
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 
@@ -286,11 +287,23 @@ internal static class JapaneseLayoutHelpers
         [
             SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "数字和符号"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "あ", "切换输入模式"),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, "🌐", "输入法"),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "空格", "转换或空格", key: Key.Space),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "←", "左移", key: Key.Left),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "⌫", "退格", key: Key.Back),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "↵", "确认", key: Key.Enter)
+            new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "输入法"),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "转换或空格", key: Key.Space),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey,
+                MoveLeftIcon,
+                "左移",
+                key: Key.Left,
+                isRepeatEnabled: true
+            ),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey,
+                BackspaceIcon,
+                "退格",
+                key: Key.Back,
+                isRepeatEnabled: true
+            ),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "确认", key: Key.Enter)
         ];
     }
 }

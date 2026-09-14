@@ -5,6 +5,7 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:keyboard="http://schemas.thezendev.com/wpf/2027/virtual-input"
+    xmlns:keyboardExt="clr-namespace:Wpf.Zen.Ui.VirtualInput.Extensions;assembly=Wpf.Zen.Ui.VirtualInput.Extensions"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text"
@@ -89,6 +90,7 @@
                     Grid.Row="6"
                     AutoHideMode="Manual"
                     AutoShowMode="TouchAndPen"
+                    ExtensionProvider="{x:Static keyboardExt:DefaultSoftKeyboardExtensionProvider.Default}"
                     IsOpen="True"
                     TargetScope="{Binding ElementName=FormScope}" />
             </Grid>

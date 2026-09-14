@@ -167,6 +167,20 @@ public class SoftKeyboardSettingsTests
         Assert.DoesNotContain(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.Text);
     }
 
+    [Theory]
+    [InlineData(JapaneseSoftKeyboardLayouts.Fifty)]
+    [InlineData(JapaneseSoftKeyboardLayouts.Twelve)]
+    public void JapanesePanels_RepeatCursorAndEditingKeys(string id)
+    {
+        var context = Context("ja-JP", null, id);
+        var layout = id == JapaneseSoftKeyboardLayouts.Fifty
+            ? JapaneseFiftyLayoutProvider.Default.CreateLayout(context)!
+            : JapaneseTwelveLayoutProvider.Default.CreateLayout(context)!;
+
+        Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Left).IsRepeatEnabled);
+        Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Back).IsRepeatEnabled);
+    }
+
     [Fact]
     public void ZhuyinPreference_Chooses41PhoneticKeysOnlyInNativeLetterMode()
     {
@@ -185,6 +199,7 @@ public class SoftKeyboardSettingsTests
 
         Assert.Equal(Key.Down, choose.Key);
         Assert.Equal(SoftKeyboardKeyKind.VirtualKey, choose.Kind);
+        Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Back).IsRepeatEnabled);
 
         foreach (var mode in (InputMethodState[])[InputMethodState.Off, InputMethodState.DoNotCare])
         {

@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Input;
+using static Wpf.Zen.Ui.VirtualInput.Extensions.Internal.KeyboardLayoutParts;
 
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 
@@ -155,11 +156,17 @@ public sealed class ZhuyinSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
         [
             SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "数字和符号"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "中", "切换输入模式"),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, "🌐", "输入法"),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "空格", "空格或候选翻页", key: Key.Space),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "↓", "下移或输入法选字", key: Key.Down),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "⌫", "退格", key: Key.Back),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "↵", "确认", key: Key.Enter)
+            new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "输入法"),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "空格或候选翻页", key: Key.Space),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveDownIcon, "下移或输入法选字", key: Key.Down),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey,
+                BackspaceIcon,
+                "退格",
+                key: Key.Back,
+                isRepeatEnabled: true
+            ),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "确认", key: Key.Enter)
         ];
     }
 
