@@ -134,6 +134,12 @@ internal static class SoftKeyboardInputInjector
 
     private static INPUT CreateVirtualKeyInput(int virtualKey, bool isKeyUp, bool isExtended)
     {
+        var scanCode = PInvoke.MapVirtualKeyEx(
+            (uint)virtualKey,
+            MAP_VIRTUAL_KEY_TYPE.MAPVK_VK_TO_VSC,
+            PInvoke.GetKeyboardLayout(0)
+        );
+
         return new INPUT
         {
             type = INPUT_TYPE.INPUT_KEYBOARD,
@@ -142,7 +148,12 @@ internal static class SoftKeyboardInputInjector
                 ki = new KEYBDINPUT
                 {
                     wVk = (VIRTUAL_KEY)virtualKey,
-                    dwFlags = (isKeyUp ? KEYBD_EVENT_FLAGS.KEYEVENTF_KEYUP : 0)
+                    wScan = unchecked((ushort)scanCode),
+                    // A mapped scan code makes ordinary keys follow the same path as physical
+                    // keyboard input. Retain the virtual-key fallback for keys that have no
+                    // representation in the active keyboard layout.
+                    dwFlags = (scanCode != 0 ? KEYBD_EVENT_FLAGS.KEYEVENTF_SCANCODE : 0)
+                              | (isKeyUp ? KEYBD_EVENT_FLAGS.KEYEVENTF_KEYUP : 0)
                               | (isExtended ? KEYBD_EVENT_FLAGS.KEYEVENTF_EXTENDEDKEY : 0),
                 },
             },
@@ -168,7 +179,8 @@ internal static class SoftKeyboardInputInjector
 
     private static bool IsExtendedKey(Key key)
     {
-        return key is Key.Left or Key.Right or Key.Up or Key.Down or Key.Delete or Key.Insert
-            or Key.Home or Key.End or Key.PageUp or Key.PageDown;
+        return key is Key.RightAlt or Key.RightCtrl or Key.NumLock or Key.Insert or Key.Delete
+            or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.Up or Key.Down
+            or Key.Left or Key.Right or Key.Apps or Key.LWin or Key.RWin;
     }
 }
