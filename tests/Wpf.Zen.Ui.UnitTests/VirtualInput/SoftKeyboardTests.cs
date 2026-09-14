@@ -2154,6 +2154,7 @@ public class SoftKeyboardTests
 
                 Assert.True(menu.IsOpen);
                 Assert.Single(menu.Items);
+                Assert.False(Assert.IsType<MenuItem>(menu.Items[0]).IsEnabled);
                 Assert.Same(layout, keyboard.CurrentLayout);
                 Assert.Equal(height, keyboard.ActualHeight);
 

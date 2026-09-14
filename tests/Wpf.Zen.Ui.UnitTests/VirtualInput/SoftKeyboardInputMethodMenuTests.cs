@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using NSubstitute;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Input;
@@ -45,11 +46,18 @@ public class SoftKeyboardInputMethodMenuTests
                 .GetField("_inputMethodMenu", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(scope.Keyboard)!;
             Assert.True(menu.IsOpen);
+            Assert.False(menu.Focusable);
+            Assert.Same(scope.Editor, Keyboard.FocusedElement);
             Assert.Equal(2, menu.Items.Count);
             foreach (var item in menu.Items.Cast<MenuItem>())
             {
                 var method = Assert.IsType<SoftKeyboardInputMethod>(item.CommandParameter);
                 var header = Assert.IsType<StackPanel>(item.Header);
+                Assert.False(item.Focusable);
+                Assert.True(SoftKeyboardCommands.ActivateInputMethod.CanExecute(
+                    method,
+                    scope.Keyboard));
+                Assert.True(item.IsEnabled);
                 Assert.Equal(2, header.Children.Count);
                 Assert.Equal(method.LanguageDisplayName, Assert.IsType<TextBlock>(header.Children[0]).Text);
                 Assert.Equal(method.DisplayName, Assert.IsType<TextBlock>(header.Children[1]).Text);

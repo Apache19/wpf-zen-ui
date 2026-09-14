@@ -201,10 +201,10 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// A menu's temporary IME state is ignored and closing it schedules an editor-state refresh.
+    /// The focusless input-method menu keeps observing the editor's current input state.
     /// </summary>
     [Fact]
-    public Task InputMethodMenu_PreservesEditorStateUntilFocusReturns()
+    public Task InputMethodMenu_RemainsFocuslessWhileEditorStateRefreshes()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -215,15 +215,42 @@ public class SoftKeyboardRegressionTests
             Assert.True(scope.Keyboard.RefreshInputMethods());
             scope.Keyboard.ShowInputMethodMenu();
             var menu = Assert.IsType<ContextMenu>(GetMenu(scope.Keyboard));
-            Assert.True(menu.Focus());
+            Assert.False(menu.Focus());
+            Assert.Same(scope.Editor, Keyboard.FocusedElement);
             session.GetState().Returns(InputMethodState.Off);
             Assert.True(scope.Keyboard.RefreshInputMethods());
-            Assert.Equal(InputMethodState.On, scope.Keyboard.ImeState);
+            Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
 
             menu.IsOpen = false;
-            Assert.True(scope.Editor.Focus());
             await scope.DrainAsync();
             Assert.Equal(InputMethodState.Off, scope.Keyboard.ImeState);
+            Assert.Same(scope.Editor, Keyboard.FocusedElement);
+        });
+    }
+
+    /// <summary>
+    /// A remembered editor leaves the focusless menu visible but cannot enable its commands.
+    /// </summary>
+    [Fact]
+    public Task InputMethodMenu_OutsideScopeOpensDisabledWithoutRestoringRememberedTarget()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            scope.Keyboard.AutoHideMode = SoftKeyboardAutoHideMode.Manual;
+            scope.Keyboard.TargetScope = scope.Editor;
+
+            Assert.True(scope.OtherEditor.Focus());
+            Assert.Same(scope.Editor, scope.Keyboard.ActiveTarget);
+
+            scope.Keyboard.ShowInputMethodMenu();
+            await scope.DrainAsync();
+
+            var menu = Assert.IsType<ContextMenu>(GetMenu(scope.Keyboard));
+            Assert.True(menu.IsOpen);
+            Assert.All(menu.Items.Cast<MenuItem>(), static item => Assert.False(item.IsEnabled));
+            Assert.Same(scope.OtherEditor, Keyboard.FocusedElement);
         });
     }
 

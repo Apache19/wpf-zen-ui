@@ -6,6 +6,7 @@
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
@@ -15,16 +16,16 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     private ContextMenu? _inputMethodMenu;
+    private int          _inputMethodMenuCatalogRefreshDepth;
     private int          _inputMethodMenuRequestVersion;
 
     /// <summary>
     /// Opens the installed input-method menu without replacing or resizing the keyboard.
     /// </summary>
     /// <remarks>
-    /// The menu is anchored to the last invoked key.
-    /// The catalog is refreshed before opening. A closed, superseded, or expired request
-    /// stays closed.
-    /// Selection restores editor focus before activation.
+    /// The menu is anchored to the last invoked key and never takes keyboard focus from the
+    /// editor. The catalog is refreshed before opening. Items remain disabled unless a valid
+    /// editor currently owns keyboard focus. A closed, superseded, or expired request stays closed.
     /// </remarks>
     public void ShowInputMethodMenu()
     {
@@ -41,9 +42,7 @@ public partial class SoftKeyboard
 
         var requestVersion = _inputMethodMenuRequestVersion;
 
-        RunAfterActiveCompositionCancellation(
-            () => OpenInputMethodMenuCore(anchor, requestVersion)
-        );
+        OpenInputMethodMenuCore(anchor, requestVersion);
     }
 
     /// <summary>
@@ -61,8 +60,19 @@ public partial class SoftKeyboard
         var operationVersion = _inputOperationVersion;
         var sessionVersion   = _inputMethodSessionVersion;
 
-        if (!RefreshInputMethods()
-            || requestVersion != _inputMethodMenuRequestVersion
+        bool refreshed;
+
+        try
+        {
+            _inputMethodMenuCatalogRefreshDepth++;
+            refreshed = RefreshInputMethods();
+        }
+        finally
+        {
+            _inputMethodMenuCatalogRefreshDepth--;
+        }
+
+        if (!refreshed || requestVersion != _inputMethodMenuRequestVersion
             || operationVersion != _inputOperationVersion
             || sessionVersion != _inputMethodSessionVersion
             || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
@@ -73,7 +83,8 @@ public partial class SoftKeyboard
         var menu = new ContextMenu
         {
             PlacementTarget = anchor,
-            Placement       = PlacementMode.Top
+            Placement       = PlacementMode.Top,
+            Focusable       = false
         };
 
         foreach (var inputMethod in InputMethods)
@@ -102,9 +113,10 @@ public partial class SoftKeyboard
                 Header           = header,
                 IsCheckable      = true,
                 IsChecked        = inputMethod.IsActive,
-                Command          = SoftKeyboardCommands.ActivateInputMethod,
                 CommandParameter = inputMethod,
-                CommandTarget    = this
+                CommandTarget    = this,
+                Focusable        = false,
+                Command          = SoftKeyboardCommands.ActivateInputMethod
             };
 
             AutomationProperties.SetName(
@@ -119,5 +131,30 @@ public partial class SoftKeyboard
         menu.Closed += (_, _) => QueueInputMethodStateRefresh();
 
         menu.IsOpen = menu.Items.Count > 0;
+    }
+
+    /// <summary>
+    /// Gets whether the current focused editor can own a focusless input-method menu operation.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ActiveTarget"/> remembers the last supported editor by design. Menu availability
+    /// additionally requires that editor to own keyboard focus now, so a pointer action elsewhere
+    /// cannot reactivate a remembered target or change its input method.
+    /// </remarks>
+    private bool IsInputMethodMenuAvailable
+    {
+        get
+        {
+            var target  = ActiveTarget;
+            var adapter = target is null ? null : GetAdapter(target);
+
+            return IsLoaded && IsOpen && IsEnabled && IsVisible
+                && target is DependencyObject targetObject
+                && ReferenceEquals(Keyboard.FocusedElement, target)
+                && adapter is not null
+                && IsWithinEffectiveScope(targetObject)
+                && adapter.CanReceiveInput(target)
+                && IsWindowForeground();
+        }
     }
 }

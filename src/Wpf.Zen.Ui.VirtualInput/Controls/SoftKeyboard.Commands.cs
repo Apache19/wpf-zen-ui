@@ -116,7 +116,7 @@ public partial class SoftKeyboard
         var keyboard = (SoftKeyboard)sender;
 
         args.CanExecute = args.Parameter is SoftKeyboardInputMethod inputMethod
-            && keyboard.IsInputSurfaceAvailable
+            && keyboard.IsInputMethodMenuAvailable
             && keyboard.InputMethods.Any(item => HaveSameInputMethod(item, inputMethod));
 
         args.Handled = true;

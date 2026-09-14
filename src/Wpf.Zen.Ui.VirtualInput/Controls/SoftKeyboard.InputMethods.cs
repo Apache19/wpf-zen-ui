@@ -368,10 +368,15 @@ public partial class SoftKeyboard
         );
 
         var state = ImeState;
-        var menuOwnsFocus = (_inputMethodMenu?.IsOpen == true || SettingsMenu?.IsOpen == true)
+        var menuLacksFocusedTarget = (_inputMethodMenuCatalogRefreshDepth > 0
+                || _inputMethodMenu?.IsOpen == true
+                || SettingsMenu?.IsOpen == true)
             && !ReferenceEquals(Keyboard.FocusedElement, target);
 
-        if (!menuOwnsFocus)
+        // A disabled focusless menu may still refresh the catalog while focus is outside the
+        // remembered editor. Preserve that editor's last mode instead of reading another TSF
+        // document and publishing the result against the remembered target.
+        if (!menuLacksFocusedTarget)
         {
             var active = snapshot.ActiveInputMethod;
             if (active?.SupportsImeToggle != true)
@@ -599,10 +604,15 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Closes the selector's focus scope before activating a profile on the restored editor.
+    /// Closes the focusless selector and activates a profile only for its still-focused editor.
     /// </summary>
     private void ActivateInputMethod(SoftKeyboardInputMethod inputMethod)
     {
+        if (!IsInputMethodMenuAvailable)
+        {
+            return;
+        }
+
         CloseFlyouts();
 
         var operationVersion = _inputOperationVersion;
@@ -610,16 +620,16 @@ public partial class SoftKeyboard
         var requestVersion   = _inputMethodMenuRequestVersion;
         var target           = ActiveTarget;
 
-        // Menu teardown restores WPF's input-method focus state. Activating a new TIP inside the
-        // menu command would let that restoration overwrite the new TIP's mode compartment with
-        // the old focus scope's value. Wait until focus restoration has completed, then activate.
+        // Let the popup click and teardown finish before entering native profile code. The menu
+        // never changes keyboard focus, so a different focus owner means the request has expired;
+        // it must not be corrected by focusing the remembered target.
         _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
         {
             if (operationVersion != _inputOperationVersion
                 || sessionVersion != _inputMethodSessionVersion
                 || requestVersion != _inputMethodMenuRequestVersion
                 || !ReferenceEquals(target, ActiveTarget)
-                || !PrepareTargetForInput())
+                || !IsInputMethodMenuAvailable)
             {
                 return;
             }
