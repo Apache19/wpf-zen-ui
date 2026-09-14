@@ -19,6 +19,8 @@
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Stylus.IsPressAndHoldEnabled" Value="False" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboardCandidateItem}">
@@ -120,6 +122,8 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="controls:IconPresenter.IconSize" Value="20" />
         <Setter Property="Content" Value="{Binding Key.Content, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Stylus.IsPressAndHoldEnabled" Value="False" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboardKeyControl}">
@@ -213,6 +217,8 @@
         <Setter Property="FontSize" Value="16" />
         <Setter Property="Appearance" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Stylus.IsPressAndHoldEnabled" Value="False" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
     </Style>
 
     <Style TargetType="{x:Type keyboard:SoftKeyboard}">
@@ -362,16 +368,16 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation
+                                            FillBehavior="Stop"
                                             Storyboard.TargetName="KeyboardRoot"
                                             Storyboard.TargetProperty="Opacity"
-                                            FillBehavior="Stop"
                                             From="0"
                                             To="1"
                                             Duration="0:0:0.12" />
                                         <DoubleAnimation
+                                            FillBehavior="Stop"
                                             Storyboard.TargetName="KeyboardRoot"
                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                            FillBehavior="Stop"
                                             From="10"
                                             To="0"
                                             Duration="0:0:0.12" />
