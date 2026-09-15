@@ -11,6 +11,8 @@ using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.VirtualInput.Controls;
@@ -22,6 +24,26 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 public class SoftKeyboardKeyControlTests
 {
+    [Fact]
+    public void BitmapSourceContent_IsPresentedAsAnImage()
+    {
+        WithCap((cap, _, _) =>
+        {
+            var source = new WriteableBitmap(1, 1, 96, 96, PixelFormats.Bgra32, null);
+            cap.Key = new SoftKeyboardKey(
+                SoftKeyboardKeyKind.SwitchInputMode,
+                source,
+                "Switch input mode"
+            );
+            cap.UpdateLayout();
+
+            var image = Assert.Single(
+                FindVisualDescendants<System.Windows.Controls.Image>(cap)
+            );
+            Assert.Same(source, image.Source);
+        });
+    }
+
     [Fact]
     public void AlternateHint_IsPresentedSeparatelyAndDoesNotChangeSubmittedText()
     {
@@ -292,5 +314,26 @@ public class SoftKeyboardKeyControlTests
         });
     }
 
-    private static void DrainDispatcher() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T result)
+            {
+                yield return result;
+            }
+
+            foreach (var descendant in FindVisualDescendants<T>(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
+    private static void DrainDispatcher()
+    {
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+    }
 }

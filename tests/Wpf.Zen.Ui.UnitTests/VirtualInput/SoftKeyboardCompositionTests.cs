@@ -116,7 +116,7 @@ public class SoftKeyboardCompositionTests
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("direct", "A", "Direct input", false, true)
+                new SoftKeyboardInputMode("direct", false, true)
             )
         )!;
 
@@ -193,7 +193,7 @@ public class SoftKeyboardCompositionTests
             InputScopeNameValue.Default,
             page,
             SoftKeyboardShiftState.Off,
-            new SoftKeyboardInputMode("native", "中", "Native input", true, true)
+            new SoftKeyboardInputMode("native", true, true)
         );
     }
 

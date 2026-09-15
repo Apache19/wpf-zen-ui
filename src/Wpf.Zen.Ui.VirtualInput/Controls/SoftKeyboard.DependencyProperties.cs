@@ -90,11 +90,12 @@ public partial class SoftKeyboard
         );
 
     /// <summary>
-    /// Gets or sets the requested gutter between adjacent logical key columns. The default is 4 DIP.
+    /// Gets or sets the requested gutter between adjacent logical key columns. The default is
+    /// 4 DIP.
     /// </summary>
     /// <remarks>
-    /// The default template forwards this value to its <see cref="SoftKeyboardPanel"/>. Adjacent key
-    /// caps remain separated by one gutter, while a key spanning several columns also covers their
+    /// The default template forwards this value to its <see cref="SoftKeyboardPanel"/>. Adjacent
+    /// key caps remain separated by one gutter. A key spanning several columns also covers the
     /// intervening gutters. The panel may reduce the effective gutter under an exceptionally small
     /// finite width so the final key slot remains inside the keyboard's assigned bounds.
     /// </remarks>
@@ -126,7 +127,8 @@ public partial class SoftKeyboard
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether the keyboard surface is open and participates in layout.
+    /// Gets or sets a value indicating whether the keyboard surface is open and participates in
+    /// layout.
     /// </summary>
     /// <remarks>
     /// The default is <see langword="false"/>. The closed default template measures to zero.
@@ -159,7 +161,8 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// When this value is <see langword="null"/>, the keyboard follows the last supported editor
-    /// focused inside <see cref="TargetScope"/>. An explicit target must still be enabled and editable.
+    /// focused inside <see cref="TargetScope"/>. An explicit target must still be enabled and
+    /// editable.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
@@ -311,8 +314,8 @@ public partial class SoftKeyboard
         );
 
     /// <summary>
-    /// Gets or sets an optional adapter for a custom editor. Built-in WPF text editors remain supported
-    /// when this adapter does not recognize the active element.
+    /// Gets or sets an optional adapter for a custom editor. Built-in WPF text editors remain
+    /// supported when this adapter does not recognize the active element.
     /// </summary>
     [Bindable(true)]
     [Category("Behavior")]
@@ -486,13 +489,44 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// This is distinct from <see cref="ActiveInputMethod"/>: a profile can remain active while its
-    /// internal mode changes among direct, native, Hiragana, Katakana, full-width, or vendor-defined
-    /// states. The value is supplied by an input-mode adapter and is never inferred from
-    /// <see cref="SoftKeyboardInputMethod.IsActive"/>.
+    /// internal mode changes among direct, native, Hiragana, Katakana, full-width, or
+    /// vendor-defined states. The value is supplied by an input-mode adapter and is never inferred
+    /// from <see cref="SoftKeyboardInputMethod.IsActive"/>.
     /// </remarks>
     public SoftKeyboardInputMode? InputMode
     {
         get => (SoftKeyboardInputMode?)GetValue(InputModeProperty);
+    }
+
+    #endregion
+
+    #region Read-Only DP: InputModeButton
+
+    private static readonly DependencyPropertyKey InputModeButtonPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(InputModeButton),
+            typeof(SoftKeyboardInputModeButton),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null, OnLayoutContextChanged)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="InputModeButton"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty InputModeButtonProperty
+        = InputModeButtonPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the active input method's mode-command presentation, or null when unavailable.
+    /// </summary>
+    /// <remarks>
+    /// This property describes a platform command or extension-defined cap. It does not publish a
+    /// service-specific conversion mode; interpreted state remains available through
+    /// <see cref="InputMode"/>.
+    /// </remarks>
+    public SoftKeyboardInputModeButton? InputModeButton
+    {
+        get => (SoftKeyboardInputModeButton?)GetValue(InputModeButtonProperty);
     }
 
     #endregion
@@ -596,7 +630,8 @@ public partial class SoftKeyboard
         = CandidatePageNumberPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets the one-based page number reported by the active candidate UI, or zero when no page is active.
+    /// Gets the one-based page number reported by the active candidate UI, or zero when no page is
+    /// active.
     /// </summary>
     public uint CandidatePageNumber
     {
@@ -709,7 +744,8 @@ public partial class SoftKeyboard
     /// Gets the input method's current candidate index, or null when none is current.
     /// </summary>
     /// <remarks>
-    /// This is a backend index, not a position within the visible page. Changes update presentation only.
+    /// This is a backend index, not a position within the visible page. Changes update presentation
+    /// only.
     /// </remarks>
     public uint? SelectedCandidateIndex => (uint?)GetValue(SelectedCandidateIndexProperty);
 

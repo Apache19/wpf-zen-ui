@@ -450,7 +450,7 @@ public class SoftKeyboardAsyncSourceTests
 
         public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return new SoftKeyboardInputMode("native", "中", "Native input", true, true);
+            return new SoftKeyboardInputMode("native", true, true);
         }
 
         public bool TrySwitchInputMode(

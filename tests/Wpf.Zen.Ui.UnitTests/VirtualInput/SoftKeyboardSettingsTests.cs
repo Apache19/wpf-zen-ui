@@ -276,10 +276,13 @@ public class SoftKeyboardSettingsTests
     {
         return new SoftKeyboardInputMode(
             native ? "native" : "direct",
-            native ? "中" : "A",
-            native ? "Native input" : "Direct input",
             native,
-            true
+            true,
+            new SoftKeyboardInputModeButton(
+                native ? "native" : "direct",
+                native ? "中" : "A",
+                native ? "Native input" : "Direct input"
+            )
         );
     }
 

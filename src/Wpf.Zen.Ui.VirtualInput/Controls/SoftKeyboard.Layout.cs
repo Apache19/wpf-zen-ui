@@ -100,7 +100,8 @@ public partial class SoftKeyboard
                 ShiftState,
                 InputMode,
                 ActiveInputMethod,
-                supplementalLayout: supplementalSelection
+                supplementalLayout: supplementalSelection,
+                inputModeButton: InputModeButton
             );
 
             ResolveExtensions(settingsContext);
@@ -113,7 +114,8 @@ public partial class SoftKeyboard
                 ShiftState,
                 InputMode,
                 ActiveInputMethod,
-                supplementalLayout: supplementalLayout.Id
+                supplementalLayout: supplementalLayout.Id,
+                inputModeButton: InputModeButton
             );
 
             SoftKeyboardLayout? layout = null;
@@ -177,7 +179,8 @@ public partial class SoftKeyboard
                     ShiftState,
                     InputMode,
                     ActiveInputMethod,
-                    supplementalLayout: SoftKeyboardSupplementalLayouts.Standard
+                    supplementalLayout: SoftKeyboardSupplementalLayouts.Standard,
+                    inputModeButton: InputModeButton
                 );
 
                 layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context)!;

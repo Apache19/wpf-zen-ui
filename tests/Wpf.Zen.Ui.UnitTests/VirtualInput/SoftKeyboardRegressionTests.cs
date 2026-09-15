@@ -24,18 +24,30 @@ using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Exercises asynchronous source transitions, alternate routing, resource cleanup, and template animation behavior.
+/// Exercises asynchronous source transitions, alternate routing, resource cleanup, and template
+/// animation behavior.
 /// </summary>
 public class SoftKeyboardRegressionTests
 {
     private static readonly SoftKeyboardInputMode NativeMode =
-        new("native", "中", "Native input", true, true);
+        new(
+            "native",
+            true,
+            true,
+            new SoftKeyboardInputModeButton("native", "中", "Native input")
+        );
 
     private static readonly SoftKeyboardInputMode DirectMode =
-        new("direct", "A", "Direct input", false, true);
+        new(
+            "direct",
+            false,
+            true,
+            new SoftKeyboardInputModeButton("direct", "A", "Direct input")
+        );
 
     /// <summary>
-    /// Menu activation runs after popup teardown and expires when its source or keyboard lifetime changes.
+    /// Menu activation runs after popup teardown and expires when its source or keyboard lifetime
+    /// changes.
     /// </summary>
     [Theory]
     [InlineData(0)]
@@ -176,7 +188,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Profile activation writes no mode and coalesces reentrant notifications into one observation.
+    /// Profile activation writes no mode and coalesces reentrant notifications into one
+    /// observation.
     /// </summary>
     [Fact]
     public Task InputMethodActivation_OnlySelectsProfileAndPublishesOneObservation()
@@ -362,7 +375,7 @@ public class SoftKeyboardRegressionTests
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode).Content);
 
             session.GetInputMode(method).Returns(
-                new SoftKeyboardInputMode("direct", "A", "Direct input", false, false)
+                new SoftKeyboardInputMode("direct", false, false)
             );
             Assert.True(scope.Keyboard.RefreshInputMethods());
             Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
@@ -380,7 +393,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Reentrant source and target transitions invalidate the whole synchronous activation transaction.
+    /// Reentrant source and target transitions invalidate the whole synchronous activation
+    /// transaction.
     /// </summary>
     [Theory]
     [InlineData("source")]
@@ -436,7 +450,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Reentrant activation is rejected without interrupting the operation already owning native state.
+    /// Reentrant activation is rejected without interrupting the operation already owning native
+    /// state.
     /// </summary>
     [Fact]
     public Task Activation_RejectsNestedMutation()
@@ -518,7 +533,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Switching invokes exactly one adapter transition and leaves publication to the queued observation.
+    /// Switching invokes exactly one adapter transition and leaves publication to the queued
+    /// observation.
     /// </summary>
     [Fact]
     public Task InputModeSwitch_InvokesTransitionWithoutReadingOrActivatingProfile()
@@ -545,6 +561,141 @@ public class SoftKeyboardRegressionTests
             session.GetInputMode(scope.Method).Returns(DirectMode);
             await scope.DrainAsync();
             Assert.Same(DirectMode, scope.Keyboard.InputMode);
+        });
+    }
+
+    /// <summary>
+    /// A native command can publish an icon and handle clicks without fabricating semantic state.
+    /// </summary>
+    [Fact]
+    public Task NativeInputModeButton_IsIndependentFromInterpretedState()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+
+            var source = Substitute.For<ISoftKeyboardInputMethodSource>();
+            var session = Substitute.For<
+                ISoftKeyboardInputMethodSession,
+                ISoftKeyboardInputModeButtonSession
+            >();
+            var buttonSession = (ISoftKeyboardInputModeButtonSession)session;
+            var presentation = new SoftKeyboardInputModeButton(
+                "native-command",
+                "icon",
+                "Input mode"
+            );
+
+#pragma warning disable IDISP004 // The keyboard owns and disposes the configured session.
+            source.CreateSession().Returns(session);
+#pragma warning restore IDISP004
+            session.GetSnapshot().Returns(
+                new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
+            );
+            session.GetInputMode(scope.Method).Returns((SoftKeyboardInputMode?)null);
+            buttonSession.GetInputModeButton(scope.Method).Returns(presentation);
+            buttonSession.TryInvokeInputModeButton(scope.Method).Returns(true);
+
+            scope.Keyboard.InputMethodSource = source;
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+
+            Assert.Null(scope.Keyboard.InputMode);
+            Assert.Equal(presentation, scope.Keyboard.InputModeButton);
+            Assert.Equal(
+                "icon",
+                Assert.Single(
+                    scope.Keyboard.CurrentLayout.Keys,
+                    key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode
+                ).Content
+            );
+
+            session.ClearReceivedCalls();
+            typeof(SoftKeyboard).GetMethod(
+                "SwitchInputModeCore",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!.Invoke(scope.Keyboard, null);
+
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method);
+            session.DidNotReceive().TrySwitchInputMode(
+                Arg.Any<SoftKeyboardInputMethod>(),
+                Arg.Any<SoftKeyboardInputMode>()
+            );
+        });
+    }
+
+    /// <summary>
+    /// Interpreting service-specific state does not replace the independently discovered button.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "platform-icon")]
+    [InlineData(true, "extension-icon")]
+    public Task InputModeAdapter_ReplacesPlatformButtonOnlyWhenExplicit(
+        bool replaceButton,
+        string expectedContent)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+
+            var source = Substitute.For<ISoftKeyboardInputMethodSource>();
+            var session = Substitute.For<
+                ISoftKeyboardInputMethodSession,
+                ISoftKeyboardInputModeButtonSession
+            >();
+            var buttonSession = (ISoftKeyboardInputModeButtonSession)session;
+            var adapter = Substitute.For<ISoftKeyboardInputModeAdapter>();
+            var replacement = new SoftKeyboardInputModeButton(
+                "extension-command",
+                "extension-icon",
+                "Extension input mode"
+            );
+            var mode = new SoftKeyboardInputMode(
+                "vendor-native",
+                true,
+                true,
+                replaceButton ? replacement : null
+            );
+            var presentation = new SoftKeyboardInputModeButton(
+                "native-command",
+                "platform-icon",
+                "Input mode"
+            );
+
+#pragma warning disable IDISP004 // The keyboard owns and disposes the configured session.
+            source.CreateSession().Returns(session);
+#pragma warning restore IDISP004
+            session.GetSnapshot().Returns(
+                new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
+            );
+            buttonSession.GetInputModeButton(scope.Method).Returns(presentation);
+            adapter.GetMode(scope.Method).Returns(mode);
+            adapter.TrySwitchMode(scope.Method, mode).Returns(true);
+
+            scope.Keyboard.InputModeAdapter = adapter;
+            scope.Keyboard.InputMethodSource = source;
+            Assert.True(scope.Keyboard.RefreshInputMethods());
+
+            Assert.Same(mode, scope.Keyboard.InputMode);
+            Assert.Equal(replaceButton ? replacement : presentation, scope.Keyboard.InputModeButton);
+            Assert.Equal(
+                expectedContent,
+                Assert.Single(
+                    scope.Keyboard.CurrentLayout.Keys,
+                    key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode
+                ).Content
+            );
+
+            session.ClearReceivedCalls();
+            adapter.ClearReceivedCalls();
+            typeof(SoftKeyboard).GetMethod(
+                "SwitchInputModeCore",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!.Invoke(scope.Keyboard, null);
+
+            adapter.Received(1).TrySwitchMode(scope.Method, mode);
+            buttonSession.DidNotReceive().TryInvokeInputModeButton(scope.Method);
         });
     }
 
@@ -744,7 +895,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Reentrant candidate registration releases the detached source and permits fresh registration.
+    /// Reentrant candidate registration releases the detached source and permits fresh
+    /// registration.
     /// </summary>
     [Fact]
     public Task CandidateCreation_RejectsReentrantReplacement()
@@ -832,7 +984,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Cleanup must dispose once even when presentation release fails, preserving both failures when necessary.
+    /// Cleanup must dispose once even when presentation release fails, preserving both failures
+    /// when necessary.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -991,7 +1144,8 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Opening animation relinquishes opacity so disabling works regardless of transition order or reopening.
+    /// Opening animation relinquishes opacity so disabling works regardless of transition order or
+    /// reopening.
     /// </summary>
     [Theory]
     [InlineData(false)]

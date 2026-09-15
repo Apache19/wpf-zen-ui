@@ -20,12 +20,17 @@ public sealed class SoftKeyboardLayoutContext
     /// <param name="page">The surface requested by the keyboard.</param>
     /// <param name="shiftState">The current virtual Shift state.</param>
     /// <param name="inputMode">The interpreted input-method mode, or null when unavailable.</param>
-    /// <param name="inputMethod">The active profile, allowing language- and vendor-specific layouts.</param>
+    /// <param name="inputMethod">
+    /// The active profile, allowing language- and vendor-specific layouts.
+    /// </param>
     /// <param name="keyboardLayoutHandle">
     /// Borrowed Windows HKL used for key labels; zero captures the current thread's layout.
     /// </param>
     /// <param name="supplementalLayout">
     /// The user's supplemental letter surface, independent of the requested page.
+    /// </param>
+    /// <param name="inputModeButton">
+    /// The independently discovered mode-command presentation, or null when unavailable.
     /// </param>
     public SoftKeyboardLayoutContext(
         CultureInfo culture,
@@ -35,7 +40,8 @@ public sealed class SoftKeyboardLayoutContext
         SoftKeyboardInputMode? inputMode = null,
         SoftKeyboardInputMethod? inputMethod = null,
         IntPtr keyboardLayoutHandle = default,
-        string supplementalLayout = SoftKeyboardSupplementalLayouts.Automatic
+        string supplementalLayout = SoftKeyboardSupplementalLayouts.Automatic,
+        SoftKeyboardInputModeButton? inputModeButton = null
     )
     {
         if (culture is null)
@@ -59,6 +65,7 @@ public sealed class SoftKeyboardLayoutContext
         InputMode          = inputMode;
         InputMethod        = inputMethod;
         SupplementalLayout = supplementalLayout;
+        InputModeButton    = inputMode?.Button ?? inputModeButton;
     }
 
     /// <summary>
@@ -70,7 +77,8 @@ public sealed class SoftKeyboardLayoutContext
     /// Gets the borrowed Windows HKL captured for this snapshot; providers must not unload it.
     /// </summary>
     /// <remarks>
-    /// Key labels and scan-code mapping must use this handle rather than re-reading ambient thread state per key.
+    /// Key labels and scan-code mapping must use this handle rather than re-reading ambient thread
+    /// state per key.
     /// </remarks>
     public IntPtr KeyboardLayoutHandle { get; }
 
@@ -95,9 +103,14 @@ public sealed class SoftKeyboardLayoutContext
     public SoftKeyboardInputMode? InputMode { get; }
 
     /// <summary>
-    /// Gets whether the observed mode publishes an enabled transition command.
+    /// Gets whether a reliable mode command is available for the active input method.
     /// </summary>
-    public bool CanSwitchInputMode => InputMethod is not null && InputMode?.CanSwitch == true;
+    public bool CanSwitchInputMode => InputMethod is not null && InputModeButton is not null;
+
+    /// <summary>
+    /// Gets the mode-command presentation independently from the interpreted mode state.
+    /// </summary>
+    public SoftKeyboardInputModeButton? InputModeButton { get; }
 
     /// <summary>
     /// Gets the active profile identity, or null when Windows exposes none.

@@ -130,8 +130,9 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 `LayoutError`；扩展布局异常写入 `ExtensionError`，随后继续安全降级。
 `SoftKeyboardLayoutRule` 将匹配条件与构建函数组合成一个小提供器，适合只扩展一个页面或一种输入法。
 
-上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`InputMode`、`InputMethod`
-及一次性捕获的借用 `KeyboardLayoutHandle`、独立于 Page 的 `SupplementalLayout`。
+上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`InputMode`、`InputMethod`、
+独立的 `InputModeButton`，以及一次性捕获的借用 `KeyboardLayoutHandle` 和独立于 Page 的
+`SupplementalLayout`。
 `InputMethod` 提供 ClassId、ProfileId、LanguageId 和可空的 `TouchLayoutPreference`，
 可精确匹配输入法厂商与 profile。默认键帽按这个 HKL 解码，不应把显示文字当成输入法组合文本。
 提供器不得在构建中更改焦点、输入语言或控件状态，也不要缓存编辑器；应用自己的数据变化后调用 `RefreshLayout()`。
@@ -263,18 +264,25 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 `RowSpacing` / `ColumnSpacing` 默认均为 4 DIP。布局提供器应避免重叠并保持各状态的行数一致。
 极小容器下间距和键位会缩小；触摸使用应为键盘提供足够空间。
 
-输入法模式不是统一的开启/关闭布尔值。`SoftKeyboardInputMode` 公开适配器定义的稳定 `Id`、键帽、
-显示名称、是否采用本族文字转换的 `IsNativeInput`，以及当前是否有可用切换命令的 `CanSwitch`。
-对于有专有 compartment 取值或多种模式的输入法，可设置 `InputModeAdapter`
-（`ISoftKeyboardInputModeAdapter`），解释当前模式并请求一次由输入法定义的模式转换。
-`SoftKeyboardTsfInputMode.GetState` 保留 open 和 conversion compartment 的原始整数；适配器负责解释，
-核心不会把任意非零 open 值压缩成“开启”。控件继续负责取消组合、恢复焦点、选择 profile、回读和
-定期复查。转换失败不会伪造新模式，读取异常会保留最后一次有效模式，也不会改用另一套机制猜测。
+基础库不解释输入法的转换模式。默认 Windows 来源优先从当前服务的 `GUID_LBI_INPUTMODE`
+`ITfLangBarItemButton` 复制图标，并把 `OnClick` 作为切换行为。服务没有提供可用按钮时，
+中文、日文和韩文输入法回退到 `GUID_COMPARTMENT_KEYBOARD_OPENCLOSE`：关闭显示 `A`，
+开启分别显示 `中`、`日`、`한`，点击只切换 keyboard-open 状态。其他语言默认不显示回退按钮。
+`InputModeButton` 公开实际使用的按钮呈现；基础库不读取 conversion compartment 决定其内容。
+
+输入法模式不是统一的开启/关闭布尔值。只有应用或扩展明确设置 `InputModeAdapter`
+（`ISoftKeyboardInputModeAdapter`）时，`InputMode` 才公开适配器定义的 `Id`、`IsNativeInput`
+和 `CanSwitch`。解释模式不会改变按钮内容；默认仍采用基础库取得的按钮图标，点击时使用适配器行为。
+确实需要接管呈现的特殊适配器可通过 `SoftKeyboardInputMode.Button` 显式提供完整按钮描述。
+`SoftKeyboardTsfInputMode.GetState` 仍公开 open 和 conversion compartment 的原始整数，供已知服务的
+适配器自行解释；核心只在上述二态回退中把 open 的零／非零显示为关闭／开启，始终不解释
+conversion。读取异常保留最后一次有效观察，转换失败不会伪造新模式。
 
 ## 常驻头部与长按浮层
 
 头部左侧的设置 `DropDownButton` 常驻并保留头部高度，右侧显示候选和分页按钮。
-无候选、输入法关闭或原生候选回退时，候选区域隐藏，不会把整个头部折叠。
+无候选或原生候选回退时，候选区域隐藏并仅显示当前输入法名称，不显示推断出的输入法模式；
+整个头部不会折叠。
 
 键帽由独立的 `SoftKeyboardKeyControl` 呈现，通过 `Key` 接收不可变的 `SoftKeyboardKey`。
 布局提供器负责键帽内容、动作、`Alternates` 和 `IsRepeatEnabled`；键帽负责按下状态、
@@ -306,16 +314,16 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 
 ## IME 候选与输入法
 
-布局内标为 `A` / `中` / `あ` / `カ` / `한` 等文字的键是输入模式转换键。它不是通用的
-On/Off 开关：微软拼音扩展区分中、英；日语扩展区分直接输入、半角/全角字母数字、平假名、
-全角/半角片假名；厂商扩展还可以定义自己的状态集合。点击时调用当前输入法公布的标准
-`GUID_LBI_INPUTMODE` 语言栏命令，再从 TSF 回读实际结果，不直接写 WPF 的 Boolean `ImeState`。
-当前解释结果由只读 `InputMode` 属性公开；`ActiveInputMethod.IsActive` 只表示该 profile 被选中，
-不表示它处于本族文字模式。符号键盘中的 `ABC` 键只负责返回字母键面，两者语义不同。
+输入模式转换键优先显示当前输入法在 `GUID_LBI_INPUTMODE` 语言栏按钮上提供的图标，点击时调用同一
+`ITfLangBarItemButton.OnClick`。没有可用按钮时，已知支持二态开关的中、日、韩输入法通过 WPF 的
+`ImeState` 读写 `GUID_COMPARTMENT_KEYBOARD_OPENCLOSE`，但不读取或改写 conversion compartment。
+只读 `InputModeButton` 公开实际按钮呈现；
+只读 `InputMode` 仅公开应用或扩展明确解释的状态。`ActiveInputMethod.IsActive` 只表示 profile 被选中。
+符号键盘中的 `ABC` 键只负责返回字母键面，两者语义不同。
 
-旧的 `SupportsImeToggle` 推断已删除。输入法目录中的 TIP 身份或 `ImmIsIME` 只能说明它是什么，
-不能证明它提供模式切换。`InputMode.CanSwitch` 来自当前线程的 `ITfLangBarItemMgr`：只有活动服务拥有、
-启用并发布 `GUID_LBI_INPUTMODE` 时，键盘才呈现转换键。
+TIP 身份或 `ImmIsIME` 不能证明任意语言都具有二态输入法开关。基础库只为已知的中文、日文和韩文
+启用 open/close 回退；未知语言保持隐藏。扩展适配器仍拥有最高优先级，可以改用文字或其他内容并
+自行决定显隐与点击逻辑，例如讯飞适配器根据厂商值显示 `中` / `英`。
 
 TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存且可降级的反射读取
 `TextServicesHost.ThreadManager`；首个编辑器尚未初始化时，等待后续焦点或输入刷新重试。
@@ -336,9 +344,10 @@ WPF 的 Boolean 开关和 `Native` 转换标志无法表达该状态。扩展读
 讯飞 3.0 虽提供候选接口，但文档查询返回 `E_NOTIMPL`，因此通过通用规则保留原生浮窗。
 获取或枚举后未被接管的 UIElement 引用在当前同步查询结束前释放，不留给后续 GC 清理。
 `BeginUIElement` 协商显示，首次 `UpdateUIElement` 才读取候选内容。
-自定义模式适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖厂商模式的 WPF 通知。
-切换 profile 时先按新 profile 选择模式适配器，再发布模式和布局；读取前后 profile 不一致的观察会被
-丢弃并重试，避免把旧输入法模式发布到新输入法键帽。
+模式按钮或自定义模式适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖全部语言栏
+图标和厂商模式的 WPF 通知。
+切换 profile 时先按新 profile 选择模式适配器，再发布模式、按钮和布局；读取前后 profile 不一致的
+观察会被丢弃并重试，避免把旧输入法的状态或按钮发布到新 profile。
 未提供可控制候选接口的输入法继续使用自己的浮窗。
 诊断依据及验证范围见 [讯飞适配记录](SoftKeyboard.Iflytek.md)。
 

@@ -16,7 +16,8 @@ using Wpf.Zen.Ui.VirtualInput.Input;
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Hosts actual WPF controls while replacing native input, profiles, pane requests, and candidate registration.
+/// Hosts actual WPF controls while replacing native input, profiles, pane requests, and candidate
+/// registration.
 /// </summary>
 internal sealed class SoftKeyboardRegressionScope : IDisposable
 {
@@ -50,7 +51,8 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
     internal Window Window { get; }
 
     /// <summary>
-    /// Processes pending input/layout callbacks before a test starts or observes an asynchronous transition.
+    /// Processes pending input/layout callbacks before a test starts or observes an asynchronous
+    /// transition.
     /// </summary>
     internal async Task DrainAsync()
     {
@@ -102,7 +104,9 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         }
     }
 
-    private sealed class InputMethods(SoftKeyboardInputMethod method) : ISoftKeyboardInputMethodBackend
+    private sealed class InputMethods(SoftKeyboardInputMethod method) :
+        ISoftKeyboardInputMethodBackend,
+        ISoftKeyboardInputModeButtonBackend
     {
         /// <inheritdoc />
         public void Refresh(ObservableCollection<SoftKeyboardInputMethod> destination, out SoftKeyboardInputMethod? active)
@@ -121,13 +125,26 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         /// <inheritdoc />
         public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return new SoftKeyboardInputMode("native", "中", "Native input", true, true);
+            return new SoftKeyboardInputMode("native", true, true);
         }
 
         /// <inheritdoc />
         public bool TrySwitchInputMode(
             SoftKeyboardInputMethod inputMethod,
             SoftKeyboardInputMode currentMode)
+        {
+            return true;
+        }
+
+        /// <inheritdoc />
+        public SoftKeyboardInputModeButton GetInputModeButton(
+            SoftKeyboardInputMethod inputMethod)
+        {
+            return new SoftKeyboardInputModeButton("native", "中", "Native input");
+        }
+
+        /// <inheritdoc />
+        public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
         {
             return true;
         }

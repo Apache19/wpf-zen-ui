@@ -21,4 +21,21 @@ internal static class KeyboardLayoutParts
     internal static readonly FluentIconSource MoveDownIcon     = new(SymbolRegular.ArrowDown24);
     internal static readonly FluentIconSource BackspaceIcon    = new(SymbolRegular.Backspace24);
     internal static readonly FluentIconSource EnterIcon        = new(SymbolRegular.ArrowEnterLeft24);
+
+    /// <summary>
+    /// Creates a mode-switch key from the button resolved by the keyboard core.
+    /// </summary>
+    internal static SoftKeyboardKey CreateInputModeKey(SoftKeyboardLayoutContext context)
+    {
+        var button = context.InputModeButton
+            ?? throw new InvalidOperationException(
+                "A mode-switch key requires an available command presentation."
+            );
+
+        return new SoftKeyboardKey(
+            SoftKeyboardKeyKind.SwitchInputMode,
+            button.Content,
+            button.AutomationName
+        );
+    }
 }

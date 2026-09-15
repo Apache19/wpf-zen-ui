@@ -8,6 +8,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.VirtualInput.Controls"
+    xmlns:imaging="clr-namespace:System.Windows.Media.Imaging;assembly=PresentationCore"
     xmlns:layouts="clr-namespace:Wpf.Zen.Ui.VirtualInput.Layouts"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027">
 
@@ -111,6 +112,21 @@
 
     <!--  todo: 键帽不同于普通按钮控件，周围的空白应该能够交互，所以需要把面板的间隙去掉，让键帽自己包一圈可交互的空白区域  -->
     <Style TargetType="{x:Type controls:SoftKeyboardKeyControl}">
+        <Style.Resources>
+            <!--
+                Theme dictionaries do not participate in implicit data-template lookup as an
+                ordinary application resource scope. Keep the native TSF icon template on the
+                key control so its content presenter resolves derived BitmapSource instances,
+                including InteropBitmap, before falling back to their string representation.
+            -->
+            <DataTemplate DataType="{x:Type imaging:BitmapSource}">
+                <Image
+                    Width="20"
+                    Height="20"
+                    Source="{Binding}"
+                    Stretch="Uniform" />
+            </DataTemplate>
+        </Style.Resources>
         <Setter Property="MinHeight" Value="52" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -268,7 +284,7 @@
                                     IsDropDownArrowVisible="False" />
 
                                 <Grid MinHeight="40">
-                                    <!--  占位文本，候选栏不显示的时候，显示输入法名称和状态  -->
+                                    <!--  候选栏不显示时，仅显示当前输入法名称。  -->
                                     <StackPanel
                                         x:Name="CandidateBarPlaceholder"
                                         Orientation="Horizontal"
@@ -278,11 +294,6 @@
                                             VerticalAlignment="Center"
                                             Foreground="{ui:DynamicBrush TextPlaceholder}"
                                             Text="{Binding ActiveInputMethod.DisplayName, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=''}" />
-                                        <TextBlock
-                                            Margin="4,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Foreground="{ui:DynamicBrush TextPlaceholder}"
-                                            Text="{Binding InputMode.DisplayName, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=''}" />
                                     </StackPanel>
 
                                     <!--  候选栏 填充剩余空间  -->

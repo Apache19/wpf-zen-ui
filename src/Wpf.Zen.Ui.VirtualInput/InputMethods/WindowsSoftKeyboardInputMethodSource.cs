@@ -37,7 +37,9 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
         return new Session(_backend);
     }
 
-    private sealed class Session(ISoftKeyboardInputMethodBackend backend) : ISoftKeyboardInputMethodSession
+    private sealed class Session(ISoftKeyboardInputMethodBackend backend) :
+        ISoftKeyboardInputMethodSession,
+        ISoftKeyboardInputModeButtonSession
     {
         private bool _disposed;
 
@@ -92,6 +94,34 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
             }
 
             return backend.TrySwitchInputMode(inputMethod, currentMode);
+        }
+
+        public SoftKeyboardInputModeButton? GetInputModeButton(
+            SoftKeyboardInputMethod inputMethod)
+        {
+            ThrowIfDisposed();
+
+            if (inputMethod is null)
+            {
+                throw new ArgumentNullException(nameof(inputMethod));
+            }
+
+            return backend is ISoftKeyboardInputModeButtonBackend buttonBackend
+                ? buttonBackend.GetInputModeButton(inputMethod)
+                : null;
+        }
+
+        public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+        {
+            ThrowIfDisposed();
+
+            if (inputMethod is null)
+            {
+                throw new ArgumentNullException(nameof(inputMethod));
+            }
+
+            return backend is ISoftKeyboardInputModeButtonBackend buttonBackend
+                && buttonBackend.TryInvokeInputModeButton(inputMethod);
         }
 
         public void Dispose()

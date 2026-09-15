@@ -72,8 +72,6 @@ public sealed class IflytekSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
                 ? null
                 : new SoftKeyboardInputMode(
                     native.Value ? "chinese" : "english",
-                    native.Value ? "中" : "英",
-                    native.Value ? "中文输入" : "英文输入",
                     native.Value,
                     state!.CanSwitch
                 );

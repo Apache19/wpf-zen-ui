@@ -29,6 +29,18 @@ internal interface ITfLangBarItemButton
 
     [PreserveSig]
     int OnClick(uint click, TfInputModePoint point, in TfInputModeRectangle rectangle);
+
+    [PreserveSig]
+    int InitMenu(IntPtr menu);
+
+    [PreserveSig]
+    int OnMenuSelect(uint menuItemId);
+
+    [PreserveSig]
+    int GetIcon(out IntPtr icon);
+
+    [PreserveSig]
+    int GetText([MarshalAs(UnmanagedType.BStr)] out string? text);
 }
 
 /// <summary>

@@ -24,20 +24,24 @@ public class DefaultSoftKeyboardLayoutProviderTests
     [Theory]
     [InlineData(false, false, false, false)]
     [InlineData(false, true, true, false)]
-    [InlineData(true, false, true, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(true, false, true, true)]
     [InlineData(true, true, false, false)]
     [InlineData(true, true, true, true)]
     public void ModeSwitch_RequiresActiveProfileAndPublishedCommand(
         bool selected,
         bool hasMode,
-        bool canSwitch,
+        bool hasButton,
         bool visible)
     {
         var method = selected
             ? new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test", true)
             : null;
         var inputMode = hasMode
-            ? new SoftKeyboardInputMode("test", "A", "Test mode", false, canSwitch)
+            ? new SoftKeyboardInputMode("test", false, true)
+            : null;
+        var inputModeButton = hasButton
+            ? new SoftKeyboardInputModeButton("test", "A", "Test mode")
             : null;
 
         foreach (var scope in new[]
@@ -46,7 +50,8 @@ public class DefaultSoftKeyboardLayoutProviderTests
             foreach (var page in SoftKeyboardPages.BuiltInPages)
             {
                 var context = new SoftKeyboardLayoutContext(CultureInfo.GetCultureInfo("en-US"),
-                    scope, page, SoftKeyboardShiftState.Off, inputMode, method);
+                    scope, page, SoftKeyboardShiftState.Off, inputMode, method,
+                    inputModeButton: inputModeButton);
                 var layout = Assert.IsType<SoftKeyboardLayout>(
                     DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context));
 
@@ -312,10 +317,13 @@ public class DefaultSoftKeyboardLayoutProviderTests
     {
         return new SoftKeyboardInputMode(
             native ? "native" : "direct",
-            label ?? (native ? "中" : "A"),
-            native ? "Native input" : "Direct input",
             native,
-            true
+            true,
+            new SoftKeyboardInputModeButton(
+                native ? "native" : "direct",
+                label ?? (native ? "中" : "A"),
+                native ? "Native input" : "Direct input"
+            )
         );
     }
 }

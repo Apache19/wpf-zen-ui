@@ -287,11 +287,7 @@ internal static class JapaneseLayoutHelpers
         return
         [
             SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "数字和符号"),
-            new SoftKeyboardKey(
-                SoftKeyboardKeyKind.SwitchInputMode,
-                context.InputMode!.KeyLabel,
-                context.InputMode.DisplayName
-            ),
+            CreateInputModeKey(context),
             new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "输入法"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "转换或空格", key: Key.Space),
             new SoftKeyboardKey(

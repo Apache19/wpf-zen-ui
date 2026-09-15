@@ -40,7 +40,9 @@ public sealed class ZhuyinSoftKeyboardExtensionProvider : ISoftKeyboardExtension
     /// Determines whether a layout context declares the standard Taiwan phonetic key arrangement.
     /// </summary>
     /// <param name="context">The profile and touch-layout context to inspect.</param>
-    /// <returns>True only for the documented touch layout or exact Microsoft Bopomofo profile.</returns>
+    /// <returns>
+    /// True only for the documented touch layout or exact Microsoft Bopomofo profile.
+    /// </returns>
     public static bool IsZhuyin(SoftKeyboardLayoutContext context)
     {
         if (context is null)
@@ -155,11 +157,7 @@ public sealed class ZhuyinSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
         return
         [
             SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "数字和符号"),
-            new SoftKeyboardKey(
-                SoftKeyboardKeyKind.SwitchInputMode,
-                context.InputMode!.KeyLabel,
-                context.InputMode.DisplayName
-            ),
+            CreateInputModeKey(context),
             new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "输入法"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "空格或候选翻页", key: Key.Space),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveDownIcon, "下移或输入法选字", key: Key.Down),

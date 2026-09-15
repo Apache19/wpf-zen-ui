@@ -5,6 +5,7 @@
 
 using Windows.Win32.UI.TextServices;
 using Wpf.Zen.Ui.VirtualInput.Input;
+using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
@@ -15,6 +16,124 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class TsfInputProfileTests
 {
+    /// <summary>
+    /// The platform profile source does not interpret service-defined compartment values.
+    /// </summary>
+    [Fact]
+    public void WindowsBackend_PublishesNoGenericInputMode()
+    {
+        var service = new TsfInputMethodService();
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0804,
+            "Test IME",
+            true
+        );
+
+        Assert.Null(service.GetInputMode(inputMethod));
+        Assert.False(
+            service.TrySwitchInputMode(
+                inputMethod,
+                new SoftKeyboardInputMode("native", true, true)
+            )
+        );
+    }
+
+    /// <summary>
+    /// Regional Chinese identifiers share one open-state cap and use A while closed.
+    /// </summary>
+    [Theory]
+    [InlineData(0x0804, 0, "A")]
+    [InlineData(0x0804, 1, "中")]
+    [InlineData(0x0404, 1, "中")]
+    public void KeyboardOpenFallback_UsesChineseStateCap(int languageId, int open, string expected)
+    {
+        var button = SoftKeyboardTsfInputMode.CreateKeyboardOpenButton(
+            (ushort)languageId,
+            open
+        );
+
+        Assert.NotNull(button);
+        Assert.Equal(expected, button.Content);
+    }
+
+    /// <summary>
+    /// Japanese and Korean input-method languages receive their language-specific open cap.
+    /// </summary>
+    [Theory]
+    [InlineData(0x0411, "日")]
+    [InlineData(0x0412, "한")]
+    public void KeyboardOpenFallback_UsesKnownLanguageCap(int languageId, string expected)
+    {
+        var button = SoftKeyboardTsfInputMode.CreateKeyboardOpenButton(
+            (ushort)languageId,
+            1
+        );
+
+        Assert.NotNull(button);
+        Assert.Equal(expected, button.Content);
+    }
+
+    /// <summary>
+    /// Missing state and languages without a known binary IME contract do not fabricate a button.
+    /// </summary>
+    [Theory]
+    [InlineData(0x0409, 0)]
+    [InlineData(0x0409, 1)]
+    [InlineData(0x0404, null)]
+    public void KeyboardOpenFallback_HidesUnsupportedOrUnknownState(int languageId, int? open)
+    {
+        Assert.Null(
+            SoftKeyboardTsfInputMode.CreateKeyboardOpenButton((ushort)languageId, open)
+        );
+    }
+
+    /// <summary>
+    /// The fallback policy requires both a TIP identity and a covered East Asian language.
+    /// </summary>
+    [Theory]
+    [InlineData(0x0804, true)]
+    [InlineData(0x0411, true)]
+    [InlineData(0x0412, true)]
+    [InlineData(0x0409, false)]
+    public void KeyboardOpenFallback_UsesConservativeLanguagePolicy(
+        int languageId,
+        bool expected)
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            (ushort)languageId,
+            "Test IME",
+            true
+        );
+
+        Assert.Equal(
+            expected,
+            SoftKeyboardTsfInputMode.SupportsKeyboardOpenFallback(inputMethod)
+        );
+    }
+
+    /// <summary>
+    /// A keyboard layout does not become an open/close IME merely because it uses Chinese.
+    /// </summary>
+    [Fact]
+    public void KeyboardOpenFallback_RequiresTipIdentity()
+    {
+        var layout = new SoftKeyboardInputMethod(
+            Guid.Empty,
+            Guid.Empty,
+            0x0804,
+            "Chinese keyboard",
+            true,
+            keyboardLayout: new IntPtr(0x08040804)
+        );
+
+        Assert.False(SoftKeyboardTsfInputMode.SupportsKeyboardOpenFallback(layout));
+        Assert.False(SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(layout));
+    }
+
     /// <summary>
     /// An enabled TSF registration cannot promote an unloaded layout into the switcher.
     /// Loading one layout must not admit another layout of the same language.

@@ -32,17 +32,19 @@ internal static class KeyboardLayoutParts
     internal static readonly FluentIconSource EnterIcon        = new(SymbolRegular.ArrowEnterLeft24);
 
     /// <summary>
-    /// Creates a mode-switch key whose cap and accessible name come from the interpreted mode.
+    /// Creates a mode-switch key from the independently resolved command presentation.
     /// </summary>
     internal static SoftKeyboardKey CreateInputModeKey(SoftKeyboardLayoutContext context)
     {
-        var mode = context.InputMode
-            ?? throw new InvalidOperationException("A mode-switch key requires an observed input mode.");
+        var button = context.InputModeButton
+            ?? throw new InvalidOperationException(
+                "A mode-switch key requires an available command presentation."
+            );
 
         return new SoftKeyboardKey(
             kind: SoftKeyboardKeyKind.SwitchInputMode,
-            content: mode.KeyLabel,
-            automationName: mode.DisplayName
+            content: button.Content,
+            automationName: button.AutomationName
         );
     }
 

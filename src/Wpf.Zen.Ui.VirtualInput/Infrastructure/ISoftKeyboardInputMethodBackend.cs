@@ -19,3 +19,13 @@ internal interface ISoftKeyboardInputMethodBackend
 
     bool TrySwitchInputMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode);
 }
+
+/// <summary>
+/// Separates a platform mode command from backends that expose interpreted mode state.
+/// </summary>
+internal interface ISoftKeyboardInputModeButtonBackend
+{
+    SoftKeyboardInputModeButton? GetInputModeButton(SoftKeyboardInputMethod inputMethod);
+
+    bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod);
+}

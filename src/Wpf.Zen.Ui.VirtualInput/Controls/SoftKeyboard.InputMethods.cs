@@ -367,7 +367,9 @@ public partial class SoftKeyboard
             (CultureInfo)InputLanguageManager.Current.CurrentInputLanguage.Clone()
         );
 
-        var mode = InputMode;
+        var mode   = InputMode;
+        var button = InputModeButton;
+
         var menuLacksFocusedTarget = (_inputMethodMenuCatalogRefreshDepth > 0
                 || _inputMethodMenu?.IsOpen == true
                 || SettingsMenu?.IsOpen == true)
@@ -381,7 +383,8 @@ public partial class SoftKeyboard
             var active = snapshot.ActiveInputMethod;
             if (active is null)
             {
-                mode = null;
+                mode   = null;
+                button = null;
             }
             else
             {
@@ -394,6 +397,14 @@ public partial class SoftKeyboard
                 mode = adapter is null
                     ? session.GetInputMode(active)
                     : adapter.GetMode(active);
+
+                // Mode interpretation and button discovery are independent. The platform command
+                // supplies the default presentation even when an extension interprets additional
+                // state; an adapter replaces it only by publishing an explicit button descriptor.
+                var platformButton = session is ISoftKeyboardInputModeButtonSession buttonSession
+                    ? buttonSession.GetInputModeButton(active)
+                    : null;
+                button = mode?.Button ?? platformButton;
 
                 // Profile activation and compartment publication are independent TSF callbacks.
                 // Verify the identity again so a mode read from the old service is never published
@@ -408,7 +419,7 @@ public partial class SoftKeyboard
         }
 
         return isCurrent()
-            ? new InputMethodObservation(snapshot, mode, culture)
+            ? new InputMethodObservation(snapshot, mode, button, culture)
             : null;
     }
 
@@ -436,7 +447,8 @@ public partial class SoftKeyboard
 
         var context = new SoftKeyboardLayoutContext(
             culture, scope, Page, ShiftState, InputMode, inputMethod,
-            supplementalLayout: SelectedSupplementalLayout
+            supplementalLayout: SelectedSupplementalLayout,
+            inputModeButton: InputModeButton
         );
 
         var extensions = ExtensionProvider.GetExtensions(new SoftKeyboardExtensionContext(context))
@@ -462,6 +474,7 @@ public partial class SoftKeyboard
         );
 
         var modeChanged    = !Equals(InputMode, observation.Mode);
+        var buttonChanged  = !Equals(InputModeButton, observation.Button);
         var cultureChanged = _observedInputCulture?.Name != observation.Culture.Name;
 
         if (catalogChanged)
@@ -489,8 +502,14 @@ public partial class SoftKeyboard
             SetValue(InputModePropertyKey, observation.Mode);
         }
 
+        if (buttonChanged)
+        {
+            SetValue(InputModeButtonPropertyKey, observation.Button);
+        }
+
         _observedInputCulture     =  observation.Culture;
-        _inputMethodLayoutPending |= profileChanged || modeChanged || cultureChanged;
+        _inputMethodLayoutPending |= profileChanged || modeChanged || buttonChanged
+            || cultureChanged;
 
         if (!isCurrent())
         {
@@ -552,6 +571,11 @@ public partial class SoftKeyboard
             if (version == _inputMethodSessionVersion && InputMode is not null)
             {
                 SetValue(InputModePropertyKey, null);
+            }
+
+            if (version == _inputMethodSessionVersion && InputModeButton is not null)
+            {
+                SetValue(InputModeButtonPropertyKey, null);
             }
 
             _observedInputCulture     = null;
@@ -756,6 +780,7 @@ public partial class SoftKeyboard
     private sealed record InputMethodObservation(
         SoftKeyboardInputMethodSnapshot Snapshot,
         SoftKeyboardInputMode? Mode,
+        SoftKeyboardInputModeButton? Button,
         CultureInfo Culture
     );
 }

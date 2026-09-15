@@ -23,7 +23,15 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
         }
 
         var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-        return state is null ? null : Decode(state.OpenValue, state.ConversionValue, state.CanSwitch);
+        return state is null
+            ? null
+            : Decode(
+                state.OpenValue,
+                state.ConversionValue,
+                state.CanSwitch
+                    || (state.OpenValue is not null
+                        && SoftKeyboardTsfInputMode.SupportsKeyboardOpenFallback(inputMethod))
+            );
     }
 
     /// <summary>
@@ -39,8 +47,6 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
         var native = open == 1 && (conversionValue & TsfConversionMode.Native) != 0;
         return new SoftKeyboardInputMode(
             native ? "chinese" : "alphanumeric",
-            native ? "中" : "英",
-            native ? "中文输入" : "英文输入",
             native,
             canSwitch
         );
@@ -50,7 +56,8 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
     public bool TrySwitchMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode)
     {
         return currentMode.CanSwitch
-            && SoftKeyboardTsfInputMode.TrySwitchInputMode(inputMethod.ClassId);
+            && (SoftKeyboardTsfInputMode.TrySwitchInputMode(inputMethod.ClassId)
+                || SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(inputMethod));
     }
 }
 
@@ -70,7 +77,15 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
         }
 
         var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-        return state is null ? null : Decode(state.OpenValue, state.ConversionValue, state.CanSwitch);
+        return state is null
+            ? null
+            : Decode(
+                state.OpenValue,
+                state.ConversionValue,
+                state.CanSwitch
+                    || (state.OpenValue is not null
+                        && SoftKeyboardTsfInputMode.SupportsKeyboardOpenFallback(inputMethod))
+            );
     }
 
     /// <summary>
@@ -85,7 +100,7 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
 
         if (open == 0)
         {
-            return Mode("direct", "A", "直接输入", false, canSwitch);
+            return Mode("direct", false, canSwitch);
         }
 
         var native    = (conversionValue & TsfConversionMode.Native) != 0;
@@ -95,35 +110,34 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
         if (!native)
         {
             return fullShape
-                ? Mode("full-width-alphanumeric", "Ａ", "全角字母数字", false, canSwitch)
-                : Mode("half-width-alphanumeric", "A", "半角字母数字", false, canSwitch);
+                ? Mode("full-width-alphanumeric", false, canSwitch)
+                : Mode("half-width-alphanumeric", false, canSwitch);
         }
 
         if (!katakana)
         {
-            return Mode("hiragana", "あ", "平假名", true, canSwitch);
+            return Mode("hiragana", true, canSwitch);
         }
 
         return fullShape
-            ? Mode("full-width-katakana", "カ", "全角片假名", true, canSwitch)
-            : Mode("half-width-katakana", "ｶ", "半角片假名", true, canSwitch);
+            ? Mode("full-width-katakana", true, canSwitch)
+            : Mode("half-width-katakana", true, canSwitch);
     }
 
     /// <inheritdoc />
     public bool TrySwitchMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode)
     {
         return currentMode.CanSwitch
-            && SoftKeyboardTsfInputMode.TrySwitchInputMode(inputMethod.ClassId);
+            && (SoftKeyboardTsfInputMode.TrySwitchInputMode(inputMethod.ClassId)
+                || SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(inputMethod));
     }
 
     private static SoftKeyboardInputMode Mode(
         string id,
-        string keyLabel,
-        string displayName,
         bool native,
         bool canSwitch)
     {
-        return new SoftKeyboardInputMode(id, keyLabel, displayName, native, canSwitch);
+        return new SoftKeyboardInputMode(id, native, canSwitch);
     }
 }
 

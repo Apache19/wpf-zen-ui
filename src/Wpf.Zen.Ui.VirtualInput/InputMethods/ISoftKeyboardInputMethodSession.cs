@@ -10,8 +10,9 @@ namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 /// </summary>
 /// <remarks>
 /// All members run on the owning dispatcher and must return promptly. Sources with external data
-/// must maintain their own cache and return a snapshot; they must not block waiting for background work.
-/// Activation reports whether the native request was accepted, not whether future composition will succeed.
+/// must maintain their own cache and return a snapshot; they must not block waiting for background
+/// work. Activation reports whether the native request was accepted, not whether future composition
+/// will succeed.
 /// </remarks>
 public interface ISoftKeyboardInputMethodSession : IDisposable
 {
@@ -32,7 +33,13 @@ public interface ISoftKeyboardInputMethodSession : IDisposable
     /// Reads the active profile's current input mode from the focused document.
     /// </summary>
     /// <param name="inputMethod">The active profile obtained from the current snapshot.</param>
-    /// <returns>The interpreted mode, or null when the state or switch contract is unavailable.</returns>
+    /// <returns>
+    /// The interpreted mode, or null when the state or switch contract is unavailable.
+    /// </returns>
+    /// <remarks>
+    /// The default Windows session returns null because TSF compartment values do not define a
+    /// service-independent mode. Implementations should publish a value only for a known contract.
+    /// </remarks>
     SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod);
 
     /// <summary>

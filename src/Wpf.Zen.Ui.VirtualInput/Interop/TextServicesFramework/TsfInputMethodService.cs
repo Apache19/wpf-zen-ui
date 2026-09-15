@@ -18,7 +18,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 /// Modern enumeration includes enabled TIPs and loaded keyboard layouts. Language settings alone
 /// do not constitute an input method; unavailable discovery leaves the catalog empty.
 /// </remarks>
-internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
+internal sealed class TsfInputMethodService :
+    ISoftKeyboardInputMethodBackend,
+    ISoftKeyboardInputModeButtonBackend
 {
     private const uint ProfileTypeInputProcessor = 0x0001;
     private const uint ProfileTypeKeyboardLayout = 0x0002;
@@ -134,31 +136,10 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     /// <inheritdoc />
     public SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod)
     {
-        if (inputMethod.ClassId == Guid.Empty)
-        {
-            return null;
-        }
-
-        var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-
-        // The generic interpreter deliberately recognizes only the canonical open values 0 and 1.
-        // Other nonzero values can carry vendor-specific semantics even though WPF reduces all of
-        // them to On. The conversion compartment remains a bit field rather than an enum value.
-        if (state is not { OpenValue: 0 or 1, ConversionValue: int conversion })
-        {
-            return null;
-        }
-
-        var isNative = state.OpenValue == 1 && (conversion & 0x0001) != 0;
-        var culture  = CultureInfo.GetCultureInfo(inputMethod.LanguageId);
-
-        return new SoftKeyboardInputMode(
-            isNative ? "native" : "direct",
-            isNative ? GetNativeInputLabel(culture) : "A",
-            isNative ? "Native input" : "Direct input",
-            isNative,
-            state.CanSwitch
-        );
+        // TSF compartment values have service-defined semantics. The Windows source deliberately
+        // publishes no interpreted state; an application or extension adapter may opt into a
+        // contract for a known input method.
+        return null;
     }
 
     /// <inheritdoc />
@@ -166,64 +147,22 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         SoftKeyboardInputMethod inputMethod,
         SoftKeyboardInputMode currentMode)
     {
-        return currentMode.CanSwitch
-            && inputMethod.ClassId != Guid.Empty
-            && SoftKeyboardTsfInputMode.TrySwitchInputMode(inputMethod.ClassId);
+        // This path remains available to custom sessions that publish an interpreted mode. The
+        // Windows source invokes its independent platform command through the button session.
+        return false;
     }
 
-    /// <summary>
-    /// Selects a compact fallback label for a standard native conversion mode.
-    /// </summary>
-    /// <remarks>
-    /// Language extensions can replace this generic presentation with precise service modes such
-    /// as Hiragana, full-width Katakana, or a vendor-defined Chinese/English state.
-    /// </remarks>
-    private static string GetNativeInputLabel(CultureInfo culture)
+    /// <inheritdoc />
+    public SoftKeyboardInputModeButton? GetInputModeButton(
+        SoftKeyboardInputMethod inputMethod)
     {
-        var language = culture.TwoLetterISOLanguageName;
-        foreach (var subtag in culture.Name.Split('-'))
-        {
-            if (string.Equals(subtag, "Latn", StringComparison.OrdinalIgnoreCase))
-            {
-                return language.ToUpperInvariant();
-            }
-        }
+        return SoftKeyboardTsfInputMode.GetInputModeButton(inputMethod);
+    }
 
-        return language switch
-        {
-            "zh" => "中",
-            "ja" => "あ",
-            "ko" => "한",
-
-            "hi" or "mr" or "ne" or "sa" => "अ",
-            "bn" or "as" => "অ",
-            "gu" => "અ",
-            "or" => "ଅ",
-            "ta" => "அ",
-            "te" => "అ",
-            "kn" => "ಅ",
-            "ml" => "അ",
-            "si" => "අ",
-            "th" => "ก",
-            "lo" => "ກ",
-            "km" => "ក",
-            "my" => "က",
-            "bo" or "dz" => "ཀ",
-
-            "ar" => "ع",
-            "fa" => "ف",
-            "ur" => "ا",
-            "ps" => "پ",
-            "he" or "yi" => "א",
-            "am" or "ti" => "አ",
-            "hy" => "Ա",
-            "ka" => "ა",
-            "el" => "α",
-            "ru" or "uk" or "bg" or "be" or "mk" => "Ж",
-
-            "" or "iv" or "und" => "IME",
-            _ => language.ToUpperInvariant(),
-        };
+    /// <inheritdoc />
+    public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+    {
+        return SoftKeyboardTsfInputMode.TryInvokeInputModeButton(inputMethod);
     }
 
     private static List<SoftKeyboardInputMethod> TryEnumerateProfiles()

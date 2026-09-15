@@ -20,7 +20,8 @@ using Wpf.Zen.Ui.VirtualInput.Settings;
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Verifies the core/extension boundary and independent selection of language and vendor capabilities.
+/// Verifies the core/extension boundary and independent selection of language and vendor
+/// capabilities.
 /// </summary>
 public class SoftKeyboardExtensionArchitectureTests
 {
@@ -47,7 +48,7 @@ public class SoftKeyboardExtensionArchitectureTests
     }
 
     /// <summary>
-    /// iFlytek's two nonzero open values must remain distinguishable for the A/中 key.
+    /// iFlytek's two nonzero open values remain distinguishable for native-layout selection.
     /// </summary>
     [Theory]
     [InlineData(null, null)]
@@ -64,17 +65,16 @@ public class SoftKeyboardExtensionArchitectureTests
     /// Japanese open and conversion compartments remain distinct instead of becoming one Boolean.
     /// </summary>
     [Theory]
-    [InlineData(0, 0x00, "direct", "A", false)]
-    [InlineData(1, 0x00, "half-width-alphanumeric", "A", false)]
-    [InlineData(1, 0x08, "full-width-alphanumeric", "Ａ", false)]
-    [InlineData(1, 0x09, "hiragana", "あ", true)]
-    [InlineData(1, 0x0B, "full-width-katakana", "カ", true)]
-    [InlineData(1, 0x03, "half-width-katakana", "ｶ", true)]
-    public void JapaneseMode_PreservesEveryStandardPresentation(
+    [InlineData(0, 0x00, "direct", false)]
+    [InlineData(1, 0x00, "half-width-alphanumeric", false)]
+    [InlineData(1, 0x08, "full-width-alphanumeric", false)]
+    [InlineData(1, 0x09, "hiragana", true)]
+    [InlineData(1, 0x0B, "full-width-katakana", true)]
+    [InlineData(1, 0x03, "half-width-katakana", true)]
+    public void JapaneseMode_PreservesEveryStandardState(
         int open,
         int conversion,
         string id,
-        string label,
         bool native)
     {
         var mode = Assert.IsType<SoftKeyboardInputMode>(
@@ -82,30 +82,29 @@ public class SoftKeyboardExtensionArchitectureTests
         );
 
         Assert.Equal(id, mode.Id);
-        Assert.Equal(label, mode.KeyLabel);
         Assert.Equal(native, mode.IsNativeInput);
         Assert.True(mode.CanSwitch);
+        Assert.Null(mode.Button);
     }
 
     /// <summary>
-    /// Chinese presentation requires both the standard open value and the Native conversion bit.
+    /// Chinese native-layout state requires both open and Native conversion values.
     /// </summary>
     [Theory]
-    [InlineData(0, 0x01, "英", false)]
-    [InlineData(1, 0x00, "英", false)]
-    [InlineData(1, 0x01, "中", true)]
+    [InlineData(0, 0x01, false)]
+    [InlineData(1, 0x00, false)]
+    [InlineData(1, 0x01, true)]
     public void ChineseMode_UsesBothStandardCompartments(
         int open,
         int conversion,
-        string label,
         bool native)
     {
         var mode = Assert.IsType<SoftKeyboardInputMode>(
             ChineseInputModeAdapter.Decode(open, conversion, canSwitch: true)
         );
 
-        Assert.Equal(label, mode.KeyLabel);
         Assert.Equal(native, mode.IsNativeInput);
+        Assert.Null(mode.Button);
     }
 
     /// <summary>
@@ -171,7 +170,7 @@ public class SoftKeyboardExtensionArchitectureTests
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("chinese", "中", "中文输入", true, true),
+                new SoftKeyboardInputMode("chinese", true, true),
                 inputMethod
             )
         );
