@@ -19,17 +19,17 @@ public sealed class SoftKeyboardExtension
     /// </summary>
     /// <param name="layoutProvider">An optional provider for ordinary keyboard pages.</param>
     /// <param name="supplementalLayouts">An optional provider for selectable supplemental layouts.</param>
-    /// <param name="inputStateAdapter">An optional adapter for nonstandard native/direct state.</param>
+    /// <param name="inputModeAdapter">An optional adapter for service-specific input modes.</param>
     /// <param name="candidateBehavior">An optional TSF candidate behavior override.</param>
     public SoftKeyboardExtension(
         ISoftKeyboardLayoutProvider?             layoutProvider = null,
         ISoftKeyboardSupplementalLayoutProvider? supplementalLayouts = null,
-        ISoftKeyboardInputStateAdapter?          inputStateAdapter = null,
+        ISoftKeyboardInputModeAdapter?           inputModeAdapter = null,
         ISoftKeyboardTsfCandidateBehavior?       candidateBehavior = null)
     {
         LayoutProvider      = layoutProvider;
         SupplementalLayouts = supplementalLayouts;
-        InputStateAdapter   = inputStateAdapter;
+        InputModeAdapter    = inputModeAdapter;
         CandidateBehavior   = candidateBehavior;
     }
 
@@ -44,9 +44,9 @@ public sealed class SoftKeyboardExtension
     public ISoftKeyboardSupplementalLayoutProvider? SupplementalLayouts { get; }
 
     /// <summary>
-    /// Gets the optional input-state adapter.
+    /// Gets the optional input-mode adapter.
     /// </summary>
-    public ISoftKeyboardInputStateAdapter? InputStateAdapter { get; }
+    public ISoftKeyboardInputModeAdapter? InputModeAdapter { get; }
 
     /// <summary>
     /// Gets the optional candidate behavior override used by the core TSF source.

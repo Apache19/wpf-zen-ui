@@ -19,7 +19,7 @@ public sealed class SoftKeyboardLayoutContext
     /// <param name="inputScope">The semantic input scope requested by the active editor.</param>
     /// <param name="page">The surface requested by the keyboard.</param>
     /// <param name="shiftState">The current virtual Shift state.</param>
-    /// <param name="imeState">The observed native/direct input state; unknown by default.</param>
+    /// <param name="inputMode">The interpreted input-method mode, or null when unavailable.</param>
     /// <param name="inputMethod">The active profile, allowing language- and vendor-specific layouts.</param>
     /// <param name="keyboardLayoutHandle">
     /// Borrowed Windows HKL used for key labels; zero captures the current thread's layout.
@@ -32,7 +32,7 @@ public sealed class SoftKeyboardLayoutContext
         InputScopeNameValue inputScope,
         string page,
         SoftKeyboardShiftState shiftState,
-        InputMethodState imeState = InputMethodState.DoNotCare,
+        SoftKeyboardInputMode? inputMode = null,
         SoftKeyboardInputMethod? inputMethod = null,
         IntPtr keyboardLayoutHandle = default,
         string supplementalLayout = SoftKeyboardSupplementalLayouts.Automatic
@@ -56,7 +56,7 @@ public sealed class SoftKeyboardLayoutContext
             : throw new ArgumentException("A page identifier is required.", nameof(page));
 
         ShiftState         = shiftState;
-        ImeState           = imeState;
+        InputMode          = inputMode;
         InputMethod        = inputMethod;
         SupplementalLayout = supplementalLayout;
     }
@@ -90,16 +90,14 @@ public sealed class SoftKeyboardLayoutContext
     public SoftKeyboardShiftState ShiftState { get; }
 
     /// <summary>
-    /// Gets the observed native/direct input state, never an optimistic toggle request.
+    /// Gets the interpreted input-method mode, never an optimistic transition request.
     /// </summary>
-    public InputMethodState ImeState { get; }
+    public SoftKeyboardInputMode? InputMode { get; }
 
     /// <summary>
-    /// Gets whether the active profile supports mode switching and has a known observed state.
-    /// False when no profile is selected, the entry is a plain keyboard, or state is unavailable.
+    /// Gets whether the observed mode publishes an enabled transition command.
     /// </summary>
-    public bool CanToggleIme => InputMethod?.SupportsImeToggle == true
-        && ImeState is InputMethodState.On or InputMethodState.Off;
+    public bool CanSwitchInputMode => InputMethod is not null && InputMode?.CanSwitch == true;
 
     /// <summary>
     /// Gets the active profile identity, or null when Windows exposes none.

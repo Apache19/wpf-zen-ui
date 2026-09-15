@@ -74,7 +74,7 @@ public partial class SoftKeyboard
         = InputMethodErrorPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets the most recent input-method source or state-adapter failure, or null after success.
+    /// Gets the most recent input-method source or mode-adapter failure, or null after success.
     /// </summary>
     public Exception? InputMethodError => (Exception?)GetValue(InputMethodErrorProperty);
 
@@ -245,7 +245,7 @@ public partial class SoftKeyboard
     /// <summary>
     /// Queues a complete observation after an adapter, focus, or extension policy change.
     /// </summary>
-    private void RefreshImeState()
+    private void RefreshInputMode()
     {
         QueueInputMethodStateRefresh();
     }
@@ -367,7 +367,7 @@ public partial class SoftKeyboard
             (CultureInfo)InputLanguageManager.Current.CurrentInputLanguage.Clone()
         );
 
-        var state = ImeState;
+        var mode = InputMode;
         var menuLacksFocusedTarget = (_inputMethodMenuCatalogRefreshDepth > 0
                 || _inputMethodMenu?.IsOpen == true
                 || SettingsMenu?.IsOpen == true)
@@ -379,50 +379,54 @@ public partial class SoftKeyboard
         if (!menuLacksFocusedTarget)
         {
             var active = snapshot.ActiveInputMethod;
-            if (active?.SupportsImeToggle != true)
+            if (active is null)
             {
-                state = InputMethodState.DoNotCare;
+                mode = null;
             }
             else
             {
-                var adapter = ResolveObservedInputStateAdapter(active, culture, target);
+                var adapter = ResolveObservedInputModeAdapter(active, culture, target);
                 if (!isCurrent())
                 {
                     return null;
                 }
 
-                var observed = adapter?.GetState(active) ?? session.GetState();
-                if (observed is not (InputMethodState.On or InputMethodState.Off))
-                {
-                    throw new InvalidOperationException(
-                        "The active input method did not return a readable input state."
-                    );
-                }
+                mode = adapter is null
+                    ? session.GetInputMode(active)
+                    : adapter.GetMode(active);
 
-                state = observed;
+                // Profile activation and compartment publication are independent TSF callbacks.
+                // Verify the identity again so a mode read from the old service is never published
+                // beside the newly selected profile.
+                var verification = session.GetSnapshot();
+                if (!HaveSameInputMethod(active, verification.ActiveInputMethod))
+                {
+                    QueueInputMethodStateRefresh();
+                    return null;
+                }
             }
         }
 
         return isCurrent()
-            ? new InputMethodObservation(snapshot, state, culture)
+            ? new InputMethodObservation(snapshot, mode, culture)
             : null;
     }
 
     /// <summary>
-    /// Selects a state adapter for the newly observed profile before that profile is published.
+    /// Selects a mode adapter for the newly observed profile before that profile is published.
     /// </summary>
-    private ISoftKeyboardInputStateAdapter? ResolveObservedInputStateAdapter(
+    private ISoftKeyboardInputModeAdapter? ResolveObservedInputModeAdapter(
         SoftKeyboardInputMethod? inputMethod,
         CultureInfo culture,
         IInputElement? target)
     {
-        if (InputStateAdapter is not null)
+        if (InputModeAdapter is not null)
         {
-            return InputStateAdapter;
+            return InputModeAdapter;
         }
 
         // Layout extensions still describe the last published profile at this point. Reusing them
-        // would read a newly selected TIP through the previous TIP's state adapter, and a failed
+        // would read a newly selected TIP through the previous TIP's mode adapter, and a failed
         // read would prevent publication of the very profile needed to select the correct adapter.
         var targetAdapter = target is null ? null : GetAdapter(target);
 
@@ -431,14 +435,14 @@ public partial class SoftKeyboard
             : InputScopeNameValue.Default;
 
         var context = new SoftKeyboardLayoutContext(
-            culture, scope, Page, ShiftState, ImeState, inputMethod,
+            culture, scope, Page, ShiftState, InputMode, inputMethod,
             supplementalLayout: SelectedSupplementalLayout
         );
 
         var extensions = ExtensionProvider.GetExtensions(new SoftKeyboardExtensionContext(context))
             ?? throw new InvalidOperationException("The extension provider returned a null sequence.");
 
-        return extensions.Select(extension => extension.InputStateAdapter)
+        return extensions.Select(extension => extension.InputModeAdapter)
             .FirstOrDefault(adapter => adapter is not null);
     }
 
@@ -457,7 +461,7 @@ public partial class SoftKeyboard
             snapshot.ActiveInputMethod
         );
 
-        var stateChanged   = ImeState != observation.State;
+        var modeChanged    = !Equals(InputMode, observation.Mode);
         var cultureChanged = _observedInputCulture?.Name != observation.Culture.Name;
 
         if (catalogChanged)
@@ -480,13 +484,13 @@ public partial class SoftKeyboard
             return false;
         }
 
-        if (stateChanged)
+        if (modeChanged)
         {
-            SetValue(ImeStatePropertyKey, observation.State);
+            SetValue(InputModePropertyKey, observation.Mode);
         }
 
         _observedInputCulture     =  observation.Culture;
-        _inputMethodLayoutPending |= profileChanged || stateChanged || cultureChanged;
+        _inputMethodLayoutPending |= profileChanged || modeChanged || cultureChanged;
 
         if (!isCurrent())
         {
@@ -499,7 +503,7 @@ public partial class SoftKeyboard
             ReleaseCandidatePresentation();
             RequestCandidateRefresh();
         }
-        else if (stateChanged && IsLoaded && !CanPresentCandidates)
+        else if (modeChanged && IsLoaded && !CanPresentCandidates)
         {
             ReleaseCandidatePresentation();
         }
@@ -545,9 +549,9 @@ public partial class SoftKeyboard
                 SetValue(ActiveInputMethodPropertyKey, null);
             }
 
-            if (version == _inputMethodSessionVersion && ImeState != InputMethodState.DoNotCare)
+            if (version == _inputMethodSessionVersion && InputMode is not null)
             {
-                SetValue(ImeStatePropertyKey, InputMethodState.DoNotCare);
+                SetValue(InputModePropertyKey, null);
             }
 
             _observedInputCulture     = null;
@@ -743,8 +747,7 @@ public partial class SoftKeyboard
             && left?.ClassId == right?.ClassId
             && left?.LanguageId == right?.LanguageId
             && left?.KeyboardLayout == right?.KeyboardLayout
-            && left?.TouchLayoutPreference == right?.TouchLayoutPreference
-            && left?.SupportsImeToggle == right?.SupportsImeToggle;
+            && left?.TouchLayoutPreference == right?.TouchLayoutPreference;
     }
 
     /// <summary>
@@ -752,7 +755,7 @@ public partial class SoftKeyboard
     /// </summary>
     private sealed record InputMethodObservation(
         SoftKeyboardInputMethodSnapshot Snapshot,
-        InputMethodState State,
+        SoftKeyboardInputMode? Mode,
         CultureInfo Culture
     );
 }

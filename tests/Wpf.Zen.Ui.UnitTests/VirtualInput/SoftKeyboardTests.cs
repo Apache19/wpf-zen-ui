@@ -85,7 +85,7 @@ public class SoftKeyboardTests
     [InlineData("closeRoundTrip")]
     [InlineData("disableRoundTrip")]
     [InlineData("hideRoundTrip")]
-    public void DeferredImeToggle_IsDiscardedWhenItsInputSessionEnds(string change)
+    public void DeferredInputModeSwitch_IsDiscardedWhenItsInputSessionEnds(string change)
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -119,7 +119,10 @@ public class SoftKeyboardTests
 
                 _ = TextCompositionManager.StartComposition(composition);
 
-                InvokeKey(keyboard, new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "IME", "Toggle IME"));
+                InvokeKey(
+                    keyboard,
+                    new SoftKeyboardKey(SoftKeyboardKeyKind.SwitchInputMode, "IME", "Switch input mode")
+                );
 
                 composition.Complete();
 
@@ -151,7 +154,7 @@ public class SoftKeyboardTests
                 }
 
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                Assert.True(keyboard.InputMode?.IsNativeInput);
             }
             finally
             {
@@ -753,7 +756,7 @@ public class SoftKeyboardTests
 
             Assert.Contains(phone.Keys, key => key.Text == "+");
             Assert.Contains(phone.Keys, key => key.Text == "0");
-            Assert.DoesNotContain(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+            Assert.DoesNotContain(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
             Assert.Contains(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
             Assert.Contains(symbols.Keys, key => key.Text == "$");
         });
@@ -1040,9 +1043,9 @@ public class SoftKeyboardTests
                 .GetMethod("ActivateInputMethod", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(keyboard, [pinyin]);
             PumpDispatcher();
-            if (keyboard.ImeState == InputMethodState.Off)
+            if (keyboard.InputMode?.IsNativeInput == false)
             {
-                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
             }
 
@@ -1061,7 +1064,7 @@ public class SoftKeyboardTests
             Assert.True(
                 keyboard.CandidatePresentationState == SoftKeyboardCandidatePresentationState.Embedded,
                 $"Candidate state was {keyboard.CandidatePresentationState}; text was '{editor.Text}'; "
-                + $"IME state was {keyboard.ImeState}; conversion was {InputMethod.Current.ImeConversionMode}; "
+                + $"Input mode was {keyboard.InputMode}; conversion was {InputMethod.Current.ImeConversionMode}; "
                 + $"language was {InputLanguageManager.Current.CurrentInputLanguage.Name}; "
                 + $"active profile was {keyboard.ActiveInputMethod?.DisplayName ?? "<none>"}; "
                 + $"WPF TextStore was {(textStore is null ? "missing" : "attached")}."
@@ -1130,7 +1133,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void ImeKey_TogglesImeStateWithoutTakingEditorFocus()
+    public void InputModeKey_SwitchesModeWithoutTakingEditorFocus()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -1155,63 +1158,24 @@ public class SoftKeyboardTests
             window.Show();
             window.UpdateLayout();
             Assert.True(editor.Focus());
-            Assert.Equal(InputMethodState.On, keyboard.ImeState);
+            Assert.True(keyboard.InputMode?.IsNativeInput);
 
             SoftKeyboardKeyControl button = Assert.Single(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
-                item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
+                item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.SwitchInputMode }
             );
             button.Invoke();
             PumpDispatcher();
 
-            Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+            Assert.False(keyboard.InputMode?.IsNativeInput);
             Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
             Assert.Same(editor, Keyboard.FocusedElement);
 
-            InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+            InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
             PumpDispatcher();
-            Assert.Equal(InputMethodState.On, keyboard.ImeState);
+            Assert.True(keyboard.InputMode?.IsNativeInput);
             window.Close();
         });
-    }
-
-    [Fact]
-    public void ImeConversionTransition_PreservesShapePreferenceWithoutForcingFullShape()
-    {
-        ImeConversionModeValues halfShapeNative = TsfInputMethodService.GetConversionModeForImeState(
-            ImeConversionModeValues.Alphanumeric | ImeConversionModeValues.Roman,
-            InputMethodState.On
-        );
-        ImeConversionModeValues fullShapeNative = TsfInputMethodService.GetConversionModeForImeState(
-            ImeConversionModeValues.Alphanumeric
-            | ImeConversionModeValues.FullShape
-            | ImeConversionModeValues.Symbol,
-            InputMethodState.On
-        );
-        ImeConversionModeValues fullShapeLetters = TsfInputMethodService.GetConversionModeForImeState(
-            ImeConversionModeValues.Native
-            | ImeConversionModeValues.FullShape
-            | ImeConversionModeValues.Roman,
-            InputMethodState.Off
-        );
-
-        Assert.Equal(
-            ImeConversionModeValues.Native | ImeConversionModeValues.Roman,
-            halfShapeNative
-        );
-        Assert.False((halfShapeNative & ImeConversionModeValues.FullShape) != 0);
-        Assert.Equal(
-            ImeConversionModeValues.Native
-            | ImeConversionModeValues.FullShape
-            | ImeConversionModeValues.Symbol,
-            fullShapeNative
-        );
-        Assert.Equal(
-            ImeConversionModeValues.Alphanumeric
-            | ImeConversionModeValues.FullShape
-            | ImeConversionModeValues.Roman,
-            fullShapeLetters
-        );
     }
 
     [Fact]
@@ -1244,12 +1208,15 @@ public class SoftKeyboardTests
 
             Assert.DoesNotContain(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
-                item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
+                item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.SwitchInputMode }
             );
-            InvokeKey(keyboard, new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "A", "Toggle IME"));
+            InvokeKey(
+                keyboard,
+                new SoftKeyboardKey(SoftKeyboardKeyKind.SwitchInputMode, "A", "Switch input mode")
+            );
 
             Assert.Equal(0, inputMethods.ActivationCount);
-            Assert.Equal(InputMethodState.DoNotCare, keyboard.ImeState);
+            Assert.Null(keyboard.InputMode);
             Assert.Null(keyboard.ActiveInputMethod);
             Assert.Same(editor, Keyboard.FocusedElement);
             window.Close();
@@ -1470,7 +1437,7 @@ public class SoftKeyboardTests
 
             SoftKeyboardKeyControl imeToggle = Assert.Single(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
-                button => button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
+                button => button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.SwitchInputMode }
             );
             imeToggle.Invoke();
             window.UpdateLayout();
@@ -2021,7 +1988,7 @@ public class SoftKeyboardTests
                             context.InputScope,
                             context.Page,
                             context.ShiftState,
-                            context.ImeState,
+                            context.InputMode,
                             context.InputMethod,
                             context.KeyboardLayoutHandle
                         )
@@ -2042,8 +2009,8 @@ public class SoftKeyboardTests
                 window.UpdateLayout();
                 double height = keyboard.ActualHeight;
                 Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "【");
-                methods.TrySetImeState(InputMethodState.Off);
-                typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!
+                methods.SetNativeInput(false);
+                typeof(SoftKeyboard).GetMethod("RefreshInputMode", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, null);
                 PumpDispatcher();
                 window.UpdateLayout();
@@ -2279,7 +2246,7 @@ public class SoftKeyboardTests
                 Assert.True(keyboard.CanPresentCandidates);
                 Assert.True(keyboard.HasCandidates);
                 Assert.Equal(released, candidates.ReleasePresentationCount);
-                InputMethodState imeState = keyboard.ImeState;
+                SoftKeyboardInputMode? inputMode = keyboard.InputMode;
                 int activations = inputMethods.ActivationCount;
                 var back = Assert.Single(
                     Descendants<SoftKeyboardKeyControl>(keyboard),
@@ -2289,7 +2256,7 @@ public class SoftKeyboardTests
                     });
                 back.Invoke();
                 Assert.Equal(SoftKeyboardPages.Letters, keyboard.Page);
-                Assert.Equal(imeState, keyboard.ImeState);
+                Assert.Equal(inputMode, keyboard.InputMode);
                 Assert.Equal(activations, inputMethods.ActivationCount);
                 Assert.Same(editor, Keyboard.FocusedElement);
 
@@ -2675,7 +2642,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void ImeToggle_WaitsForCompositionCancellationToComplete()
+    public void InputModeSwitch_WaitsForCompositionCancellationToComplete()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -2699,7 +2666,7 @@ public class SoftKeyboardTests
             {
                 window.Show();
                 Assert.True(editor.Focus());
-                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                Assert.True(keyboard.InputMode?.IsNativeInput);
                 var composition = new TextComposition(
                     InputManager.Current,
                     editor,
@@ -2708,13 +2675,16 @@ public class SoftKeyboardTests
                 );
                 _ = TextCompositionManager.StartComposition(composition);
 
-                InvokeKey(keyboard, new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "ABC", "Toggle IME"));
+                InvokeKey(
+                    keyboard,
+                    new SoftKeyboardKey(SoftKeyboardKeyKind.SwitchInputMode, "中", "Switch input mode")
+                );
 
                 Assert.Contains((Key.Escape, false), input.VirtualKeys);
-                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                Assert.True(keyboard.InputMode?.IsNativeInput);
                 composition.Complete();
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.False(keyboard.InputMode?.IsNativeInput);
             }
             finally
             {
@@ -2728,7 +2698,9 @@ public class SoftKeyboardTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public void ImeToggle_CompletesWhenTextStoreUsesDifferentCompositionObjects(bool richText, bool unrelatedCompletion)
+    public void InputModeSwitch_CompletesWhenTextStoreUsesDifferentCompositionObjects(
+        bool richText,
+        bool unrelatedCompletion)
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -2777,30 +2749,30 @@ public class SoftKeyboardTests
                 Assert.True(editor.Focus());
                 Observe(TextCompositionManager.PreviewTextInputStartEvent, editor);
                 Observe(TextCompositionManager.PreviewTextInputUpdateEvent, editor);
-                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 Assert.Contains((Key.Escape, false), input.VirtualKeys);
-                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                Assert.True(keyboard.InputMode?.IsNativeInput);
 
                 if (unrelatedCompletion)
                 {
                     // A final event from another editor must not release the pending cancellation.
                     Observe(TextCompositionManager.PreviewTextInputEvent, new System.Windows.Controls.RichTextBox());
                     PumpDispatcher();
-                    Assert.Equal(InputMethodState.On, keyboard.ImeState);
-                    InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                    Assert.True(keyboard.InputMode?.IsNativeInput);
+                    InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 }
 
                 Observe(TextCompositionManager.PreviewTextInputEvent, editor);
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.False(keyboard.InputMode?.IsNativeInput);
                 Assert.Same(editor, Keyboard.FocusedElement);
 
-                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.On, keyboard.ImeState);
-                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                Assert.True(keyboard.InputMode?.IsNativeInput);
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.False(keyboard.InputMode?.IsNativeInput);
             }
             finally
             {
@@ -3013,15 +2985,15 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void CustomInputStateAdapter_RejectsWritesAndPreservesStateOnReadFailure()
+    public void CustomInputModeAdapter_RejectsTransitionsAndPreservesModeOnReadFailure()
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var adapter = new TestInputStateAdapter();
+            var adapter = new TestInputModeAdapter();
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
                 IsOpen = true,
-                InputStateAdapter = adapter,
+                InputModeAdapter = adapter,
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -3038,19 +3010,19 @@ public class SoftKeyboardTests
                 window.Show();
                 editor.Focus();
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
-                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
-                Assert.Equal(InputMethodState.On, adapter.LastRequest);
-                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.Equal("direct", keyboard.InputMode?.Id);
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
+                Assert.True(adapter.SwitchRequested);
+                Assert.Equal("direct", keyboard.InputMode?.Id);
                 adapter.ThrowOnRead = true;
-                typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!
+                typeof(SoftKeyboard).GetMethod("RefreshInputMode", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, null);
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.Equal("direct", keyboard.InputMode?.Id);
                 Assert.IsType<InvalidOperationException>(keyboard.InputMethodError);
-                keyboard.InputStateAdapter = null;
+                keyboard.InputModeAdapter = null;
                 PumpDispatcher();
-                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                Assert.True(keyboard.InputMode?.IsNativeInput);
             }
             finally
             {
@@ -3059,18 +3031,22 @@ public class SoftKeyboardTests
         });
     }
 
-    private sealed class TestInputStateAdapter : ISoftKeyboardInputStateAdapter
+    private sealed class TestInputModeAdapter : ISoftKeyboardInputModeAdapter
     {
         internal bool ThrowOnRead { get; set; }
 
-        internal InputMethodState LastRequest { get; private set; }
+        internal bool SwitchRequested { get; private set; }
 
-        public InputMethodState GetState(SoftKeyboardInputMethod? inputMethod) =>
-            ThrowOnRead ? throw new InvalidOperationException("Unavailable") : InputMethodState.Off;
+        public SoftKeyboardInputMode GetMode(SoftKeyboardInputMethod inputMethod) =>
+            ThrowOnRead
+                ? throw new InvalidOperationException("Unavailable")
+                : new SoftKeyboardInputMode("direct", "A", "Direct input", false, true);
 
-        public bool TrySetState(SoftKeyboardInputMethod? inputMethod, InputMethodState state)
+        public bool TrySwitchMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
-            LastRequest = state;
+            SwitchRequested = true;
             return false;
         }
     }
@@ -3079,7 +3055,8 @@ public class SoftKeyboardTests
     {
         private static readonly Guid FakeClassId = new("D9400B6B-9E48-4D79-90A6-62A3C085B3C2");
         private static readonly Guid FakeProfileId = new("451C2C15-CE41-49D1-A05E-D6474366F501");
-        private InputMethodState _imeState = InputMethodState.On;
+        private SoftKeyboardInputMode _inputMode =
+            new("native", "中", "Native input", true, true);
         private bool _profileActive = true;
 
         internal int ActivationCount { get; private set; }
@@ -3102,17 +3079,28 @@ public class SoftKeyboardTests
             return true;
         }
 
-        public InputMethodState GetImeState() => _imeState;
+        public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod) => _inputMode;
 
-        public bool TrySetImeState(InputMethodState state)
+        public bool TrySwitchInputMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
-            _imeState = state;
+            _inputMode = currentMode.IsNativeInput
+                ? new SoftKeyboardInputMode("direct", "A", "Direct input", false, true)
+                : new SoftKeyboardInputMode("native", "中", "Native input", true, true);
             return true;
+        }
+
+        internal void SetNativeInput(bool native)
+        {
+            _inputMode = native
+                ? new SoftKeyboardInputMode("native", "中", "Native input", true, true)
+                : new SoftKeyboardInputMode("direct", "A", "Direct input", false, true);
         }
 
         internal void UseDirectKeyboardLayout()
         {
-            _imeState = InputMethodState.Off;
+            _inputMode = new SoftKeyboardInputMode("direct", "A", "Direct input", false, true);
             _profileActive = false;
         }
     }

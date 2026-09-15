@@ -33,7 +33,9 @@ internal static class LetterKeyboardLayout
             new(SoftKeyboardKeyKind.ChangePage, "123", "Numbers and symbols", page: SoftKeyboardPages.Symbols),
             .. 
             // 输入法开关
-            context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
+            context.CanSwitchInputMode
+                ? new[] { CreateInputModeKey(context) }
+                : Array.Empty<SoftKeyboardKey>(),
 
             CreateTextKey(repertoire.Comma),
 
@@ -67,7 +69,7 @@ internal static class LetterKeyboardLayout
 
         builder.AddRow(2, thirdRow, columnSpans: [2, 2, 2, 2, 2, 2, 2, 2, 4]);
 
-        builder.AddRow(3, bottom, columnSpans: context.CanToggleIme
+        builder.AddRow(3, bottom, columnSpans: context.CanSwitchInputMode
             ? [2, 2, 2, 2, 4, 2, 2, 2, 2]
             : [2, 2, 2, 6, 2, 2, 2, 2]);
 

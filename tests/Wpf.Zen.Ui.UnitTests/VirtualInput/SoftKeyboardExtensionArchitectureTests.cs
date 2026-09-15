@@ -50,14 +50,74 @@ public class SoftKeyboardExtensionArchitectureTests
     /// iFlytek's two nonzero open values must remain distinguishable for the A/中 key.
     /// </summary>
     [Theory]
-    [InlineData(null, InputMethodState.DoNotCare)]
-    [InlineData(0, InputMethodState.Off)]
-    [InlineData(1, InputMethodState.Off)]
-    [InlineData(2, InputMethodState.On)]
-    [InlineData(3, InputMethodState.DoNotCare)]
-    public void IflytekOpenValue_PreservesNativeAndDirectModes(int? value, InputMethodState expected)
+    [InlineData(null, null)]
+    [InlineData(0, false)]
+    [InlineData(1, false)]
+    [InlineData(2, true)]
+    [InlineData(3, null)]
+    public void IflytekOpenValue_PreservesNativeAndDirectModes(int? value, bool? expected)
     {
         Assert.Equal(expected, IflytekSoftKeyboardExtensionProvider.DecodeOpenValue(value));
+    }
+
+    /// <summary>
+    /// Japanese open and conversion compartments remain distinct instead of becoming one Boolean.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0x00, "direct", "A", false)]
+    [InlineData(1, 0x00, "half-width-alphanumeric", "A", false)]
+    [InlineData(1, 0x08, "full-width-alphanumeric", "Ａ", false)]
+    [InlineData(1, 0x09, "hiragana", "あ", true)]
+    [InlineData(1, 0x0B, "full-width-katakana", "カ", true)]
+    [InlineData(1, 0x03, "half-width-katakana", "ｶ", true)]
+    public void JapaneseMode_PreservesEveryStandardPresentation(
+        int open,
+        int conversion,
+        string id,
+        string label,
+        bool native)
+    {
+        var mode = Assert.IsType<SoftKeyboardInputMode>(
+            JapaneseInputModeAdapter.Decode(open, conversion, canSwitch: true)
+        );
+
+        Assert.Equal(id, mode.Id);
+        Assert.Equal(label, mode.KeyLabel);
+        Assert.Equal(native, mode.IsNativeInput);
+        Assert.True(mode.CanSwitch);
+    }
+
+    /// <summary>
+    /// Chinese presentation requires both the standard open value and the Native conversion bit.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0x01, "英", false)]
+    [InlineData(1, 0x00, "英", false)]
+    [InlineData(1, 0x01, "中", true)]
+    public void ChineseMode_UsesBothStandardCompartments(
+        int open,
+        int conversion,
+        string label,
+        bool native)
+    {
+        var mode = Assert.IsType<SoftKeyboardInputMode>(
+            ChineseInputModeAdapter.Decode(open, conversion, canSwitch: true)
+        );
+
+        Assert.Equal(label, mode.KeyLabel);
+        Assert.Equal(native, mode.IsNativeInput);
+    }
+
+    /// <summary>
+    /// Unexpected open values are left to vendor adapters instead of being treated as true.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(2)]
+    public void StandardModeAdapters_RejectVendorOpenValues(int? open)
+    {
+        Assert.Null(ChineseInputModeAdapter.Decode(open, 1, canSwitch: true));
+        Assert.Null(JapaneseInputModeAdapter.Decode(open, 1, canSwitch: true));
     }
 
     /// <summary>
@@ -76,8 +136,8 @@ public class SoftKeyboardExtensionArchitectureTests
             CultureInfo.GetCultureInfo("zh-CN"), InputScopeNameValue.Default,
             SoftKeyboardPages.Letters, SoftKeyboardShiftState.Off, inputMethod: profile
         ));
-        var adapters = DefaultSoftKeyboardExtensionProvider.Default.GetExtensions(context)
-            .Where(extension => extension.InputStateAdapter is not null).ToArray();
+        var adapters = IflytekSoftKeyboardExtensionProvider.Default.GetExtensions(context)
+            .Where(extension => extension.InputModeAdapter is not null).ToArray();
         Assert.Equal(matchesService ? 1 : 0, adapters.Length);
     }
 
@@ -111,7 +171,7 @@ public class SoftKeyboardExtensionArchitectureTests
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                InputMethodState.On,
+                new SoftKeyboardInputMode("chinese", "中", "中文输入", true, true),
                 inputMethod
             )
         );

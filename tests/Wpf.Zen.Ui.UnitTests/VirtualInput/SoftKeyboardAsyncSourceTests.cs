@@ -448,12 +448,14 @@ public class SoftKeyboardAsyncSourceTests
             return false;
         }
 
-        public InputMethodState GetImeState()
+        public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return InputMethodState.On;
+            return new SoftKeyboardInputMode("native", "中", "Native input", true, true);
         }
 
-        public bool TrySetImeState(InputMethodState state)
+        public bool TrySwitchInputMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
             return false;
         }

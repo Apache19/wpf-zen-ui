@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
@@ -29,7 +28,7 @@ public sealed class IflytekSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
     public static IflytekSoftKeyboardExtensionProvider Default { get; } = new();
 
     private static readonly SoftKeyboardExtension Extension = new(
-        inputStateAdapter: new InputStateAdapter()
+        inputModeAdapter: new InputModeAdapter()
     );
 
     /// <inheritdoc />
@@ -46,37 +45,48 @@ public sealed class IflytekSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
     /// <summary>
     /// Decodes iFlytek's native mode without collapsing its two open states to a Boolean.
     /// </summary>
-    internal static InputMethodState DecodeOpenValue(int? value)
+    internal static bool? DecodeOpenValue(int? value)
     {
         return value switch
         {
-            2      => InputMethodState.On,
-            0 or 1 => InputMethodState.Off,
-            _      => InputMethodState.DoNotCare,
+            2      => true,
+            0 or 1 => false,
+            _      => null,
         };
     }
 
-    private sealed class InputStateAdapter : ISoftKeyboardInputStateAdapter
+    private sealed class InputModeAdapter : ISoftKeyboardInputModeAdapter
     {
         /// <inheritdoc />
-        public InputMethodState GetState(SoftKeyboardInputMethod? inputMethod)
+        public SoftKeyboardInputMode? GetMode(SoftKeyboardInputMethod inputMethod)
         {
-            return inputMethod?.ClassId == ServiceId
-                ? DecodeOpenValue(SoftKeyboardTsfInputMode.GetKeyboardOpenValue())
-                : InputMethodState.DoNotCare;
+            if (inputMethod.ClassId != ServiceId)
+            {
+                return null;
+            }
+
+            var state  = SoftKeyboardTsfInputMode.GetState(ServiceId);
+            var native = DecodeOpenValue(state?.OpenValue);
+
+            return native is null
+                ? null
+                : new SoftKeyboardInputMode(
+                    native.Value ? "chinese" : "english",
+                    native.Value ? "中" : "英",
+                    native.Value ? "中文输入" : "英文输入",
+                    native.Value,
+                    state!.CanSwitch
+                );
         }
 
         /// <inheritdoc />
-        public bool TrySetState(SoftKeyboardInputMethod? inputMethod, InputMethodState state)
+        public bool TrySwitchMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
-            if (state is not (InputMethodState.On or InputMethodState.Off))
-            {
-                return false;
-            }
-
-            var current = GetState(inputMethod);
-            return current is InputMethodState.On or InputMethodState.Off
-                   && (current == state || SoftKeyboardTsfInputMode.TryToggleInputMode(ServiceId));
+            return inputMethod.ClassId == ServiceId
+                && currentMode.CanSwitch
+                && SoftKeyboardTsfInputMode.TrySwitchInputMode(ServiceId);
         }
     }
 }

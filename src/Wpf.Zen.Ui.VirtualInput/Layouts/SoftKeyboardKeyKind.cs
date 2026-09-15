@@ -36,9 +36,9 @@ public enum SoftKeyboardKeyKind
     InputMethods,
 
     /// <summary>
-    /// Toggles the active input method between native composition and direct alphanumeric input.
+    /// Invokes the active input method's mode-switch command.
     /// </summary>
-    ToggleIme,
+    SwitchInputMode,
 
     /// <summary>
     /// Closes the keyboard.

@@ -51,7 +51,9 @@ internal static class SymbolKeyboardLayout
 
             ..
 
-            context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
+            context.CanSwitchInputMode
+                ? new[] { CreateInputModeKey(context) }
+                : Array.Empty<SoftKeyboardKey>(),
 
             CreateTextKey(value: repertoire.Comma),
 
@@ -109,7 +111,9 @@ internal static class SymbolKeyboardLayout
             keys: bottom,
             row: 3,
             startColumn: 0,
-            columnSpans: context.CanToggleIme ? [2, 2, 2, 6, 2, 2, 2, 2] : [2, 2, 8, 2, 2, 2, 2]
+            columnSpans: context.CanSwitchInputMode
+                ? [2, 2, 2, 6, 2, 2, 2, 2]
+                : [2, 2, 8, 2, 2, 2, 2]
         );
 
         return builder.Build();

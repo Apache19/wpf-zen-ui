@@ -119,13 +119,15 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         }
 
         /// <inheritdoc />
-        public InputMethodState GetImeState()
+        public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return InputMethodState.On;
+            return new SoftKeyboardInputMode("native", "中", "Native input", true, true);
         }
 
         /// <inheritdoc />
-        public bool TrySetImeState(InputMethodState state)
+        public bool TrySwitchInputMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
             return true;
         }

@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Input;
-
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 
 /// <summary>
@@ -42,7 +40,13 @@ public sealed class ChineseSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
         }
 
         return context.Layout.Culture.TwoLetterISOLanguageName == "zh"
-            ? [new SoftKeyboardExtension(layoutProvider: LayoutProvider)]
+            ?
+            [
+                new SoftKeyboardExtension(
+                    layoutProvider: LayoutProvider,
+                    inputModeAdapter: ChineseInputModeAdapter.Default
+                )
+            ]
             : [];
     }
 
@@ -67,7 +71,7 @@ public sealed class ChineseSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
             return UrlSoftKeyboardLayoutProvider.Default.CreateLayout(context)
                 ?? EmailSoftKeyboardLayoutProvider.Default.CreateLayout(context)
                 ?? NumberSoftKeyboardLayoutProvider.Default.CreateLayout(context)
-                ?? (context.ImeState == InputMethodState.On ? _compact.CreateLayout(context) : null);
+                ?? (context.InputMode?.IsNativeInput == true ? _compact.CreateLayout(context) : null);
         }
     }
 }

@@ -105,9 +105,9 @@ public sealed class SoftKeyboardActionContext
     public SoftKeyboardInputMethod? InputMethod => GetKeyboard().ActiveInputMethod;
 
     /// <summary>
-    /// Gets the current native/direct input state.
+    /// Gets the active input method's interpreted mode.
     /// </summary>
-    public InputMethodState ImeState => GetKeyboard().ImeState;
+    public SoftKeyboardInputMode? InputMode => GetKeyboard().InputMode;
 
     /// <summary>
     /// Gets the current Windows keyboard-layout handle.

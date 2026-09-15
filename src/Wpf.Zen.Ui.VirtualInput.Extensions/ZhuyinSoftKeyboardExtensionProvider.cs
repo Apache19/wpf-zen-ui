@@ -101,7 +101,7 @@ public sealed class ZhuyinSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
     public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
     {
         if (!ZhuyinSoftKeyboardExtensionProvider.IsZhuyin(context)
-            || !context.CanToggleIme || context.ImeState != InputMethodState.On
+            || !context.CanSwitchInputMode || context.InputMode?.IsNativeInput != true
             || context.SupplementalLayout != ZhuyinSoftKeyboardLayouts.Standard
             || context.Page is not (SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters)
             || UrlSoftKeyboardLayoutProvider.Default.CreateLayout(context) is not null
@@ -146,16 +146,20 @@ public sealed class ZhuyinSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
             }
         }
 
-        builder.AddRow(4, Commands(), [2, 2, 3, 8, 2, 2, 3]);
+        builder.AddRow(4, Commands(context), [2, 2, 3, 8, 2, 2, 3]);
         return builder.Build();
     }
 
-    private static IEnumerable<SoftKeyboardKey> Commands()
+    private static IEnumerable<SoftKeyboardKey> Commands(SoftKeyboardLayoutContext context)
     {
         return
         [
             SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "数字和符号"),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "中", "切换输入模式"),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.SwitchInputMode,
+                context.InputMode!.KeyLabel,
+                context.InputMode.DisplayName
+            ),
             new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "输入法"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "空格或候选翻页", key: Key.Space),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveDownIcon, "下移或输入法选字", key: Key.Down),

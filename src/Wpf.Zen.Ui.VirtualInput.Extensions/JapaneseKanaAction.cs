@@ -39,7 +39,7 @@ public sealed class JapaneseKanaAction : ISoftKeyboardAlternateKeyAction
 
     private static void Send(SoftKeyboardActionContext context, string kana)
     {
-        if (context.ImeState != InputMethodState.On
+        if (context.InputMode?.IsNativeInput != true
             || context.InputMethod is not { LanguageId: 0x0411 }
             || !JapaneseImeInput.TryEnableKanaMode(context.HostWindowHandle))
         {

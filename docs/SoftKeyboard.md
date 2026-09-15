@@ -56,8 +56,8 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 );
 ```
 
-扩展能力按布局、附加布局、输入状态和 TSF 候选行为分别解析。显式 `LayoutProvider` 和
-`InputStateAdapter` 始终优先；候选行为采用第一个返回已处理结果的策略；附加布局聚合全部匹配项，
+扩展能力按布局、附加布局、输入模式和 TSF 候选行为分别解析。显式 `LayoutProvider` 和
+`InputModeAdapter` 始终优先；候选行为采用第一个返回已处理结果的策略；附加布局聚合全部匹配项，
 重复 ID 保留首项并写入 `ExtensionError`。扩展异常会被隔离并安全降级。
 
 键盘及默认键帽均不可获得键盘焦点。每次输入前都会重新验证目标、作用域、前台 HWND、
@@ -105,7 +105,7 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 ## 布局生成与扩展
 
 标准布局使用四行；附加语言面板可以采用自己的行列结构。标准字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
-底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
+底行包含符号切换、输入模式、逗号、左右方向、空格、句号、输入法菜单和 Enter。
 符号面提供 `Symbols` / `MoreSymbols` 两页。核心只提供通用符号；中文和日文符号规则由对应扩展
 按语言及 IME 状态贡献，韩文及未知语言不会套用中文标点。
 数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー` 键，键帽提示并可长按选择 `・`。
@@ -121,7 +121,7 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 地址快捷键始终输入半角字面文本，不随 Shift 或 IME 模式改为全角标点。
 显式 `Letters` 仍按网址/邮箱作用域提供快捷键，因此从符号页返回时保留专用布局；
 显式 `Numbers`、`Symbols`、`MoreSymbols` 优先于输入作用域。更换编辑器时恢复 `Automatic`。
-切换输入状态保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
+切换输入模式保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
 默认模板没有额外工具栏、输入法选择页或关闭按钮。
 
 `ISoftKeyboardLayoutProvider.CreateLayout` 只需处理自己负责的上下文，不负责时返回 `null`。
@@ -130,7 +130,7 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 `LayoutError`；扩展布局异常写入 `ExtensionError`，随后继续安全降级。
 `SoftKeyboardLayoutRule` 将匹配条件与构建函数组合成一个小提供器，适合只扩展一个页面或一种输入法。
 
-上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`ImeState`、`InputMethod`
+上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`InputMode`、`InputMethod`
 及一次性捕获的借用 `KeyboardLayoutHandle`、独立于 Page 的 `SupplementalLayout`。
 `InputMethod` 提供 ClassId、ProfileId、LanguageId 和可空的 `TouchLayoutPreference`，
 可精确匹配输入法厂商与 profile。默认键帽按这个 HKL 解码，不应把显示文字当成输入法组合文本。
@@ -138,7 +138,7 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 
 `SoftKeyboardPages` 提供内置页面常量，页面集合不是封闭枚举。自定义页面使用如 `sample:kaomoji` 的
 有命名空间的字符串，通过 `ShowPage()` 或 `SoftKeyboardKey.Navigate()` 导航。自定义页面同样遵守
-组合取消和切换编辑器时恢复 `Automatic` 的规则；切换 Shift、输入状态或 profile 会重新解析当前页面。
+组合取消和切换编辑器时恢复 `Automatic` 的规则；切换 Shift、输入模式或 profile 会重新解析当前页面。
 
 ```csharp
 keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
@@ -255,7 +255,7 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 `SoftKeyboardActionContext`，可用 `TrySendKey()`、`TrySendText()`、`ShowPage()` 和 `RefreshLayout()`。
 `TrySendKey` 接受 Shift、Ctrl、Alt 和 Windows 的 `ModifierKeys` 组合；输入层在部分失败时补发释放键。
 异步上下文在任务完成前有效；新动作或输入会话失效会取消令牌并使旧上下文不能继续输入。
-动作异常写入 `ExtensionError`，输入法状态读写仍由 `InputStateAdapter` 负责。
+动作异常写入 `ExtensionError`，输入法模式解释与切换仍由 `InputModeAdapter` 负责。
 
 运行时 `SoftKeyboardLayout.Keys` 是不可变的扁平集合，每键显式指定 `Row`、`Column`、
 `ColumnSpan`。所有行共享 `ColumnCount`，短行不会被拉伸；跳过的 Row 编号不预留空行。
@@ -263,10 +263,13 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 `RowSpacing` / `ColumnSpacing` 默认均为 4 DIP。布局提供器应避免重叠并保持各状态的行数一致。
 极小容器下间距和键位会缩小；触摸使用应为键盘提供足够空间。
 
-对于没有遵循 WPF open/conversion compartment 约定的输入法，可设置
-`InputStateAdapter`（`ISoftKeyboardInputStateAdapter`），实现状态读取和模式写入。
-控件继续负责取消组合、恢复焦点、选择 profile 和定期复查；适配器只处理模式语义。
-写入失败不会伪造开启状态，读取异常会显示未知状态，且不会再通过另一套 API 重复写入。
+输入法模式不是统一的开启/关闭布尔值。`SoftKeyboardInputMode` 公开适配器定义的稳定 `Id`、键帽、
+显示名称、是否采用本族文字转换的 `IsNativeInput`，以及当前是否有可用切换命令的 `CanSwitch`。
+对于有专有 compartment 取值或多种模式的输入法，可设置 `InputModeAdapter`
+（`ISoftKeyboardInputModeAdapter`），解释当前模式并请求一次由输入法定义的模式转换。
+`SoftKeyboardTsfInputMode.GetState` 保留 open 和 conversion compartment 的原始整数；适配器负责解释，
+核心不会把任意非零 open 值压缩成“开启”。控件继续负责取消组合、恢复焦点、选择 profile、回读和
+定期复查。转换失败不会伪造新模式，读取异常会保留最后一次有效模式，也不会改用另一套机制猜测。
 
 ## 常驻头部与长按浮层
 
@@ -303,13 +306,16 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 
 ## IME 候选与输入法
 
-布局内标为 `A` / `中` / `日` / `한` 的键是输入模式开关：输入法打开时点击会切到直接字母输入，再次点击会恢复
-当前输入法；切换不会把键盘焦点移出编辑器。如果当前是普通英文键盘布局，控件会先激活本次
-会话上次使用的 TIP；首次使用则优先选择与应用 UI 区域设置匹配的已启用 TIP。微软拼音的
-“中/英”状态同时受 TSF open 和 conversion compartment 控制，控件会一起更新，避免出现属性
-显示已开启但仍直接输入字母的情况。切换只改变本地语言/直接字母标志，保留输入法当前的全角、
-半角、罗马字等用户偏好，不会替输入法强制选择字形模式。当前组合状态由只读 `ImeState` 属性公开。符号键盘中的
-`ABC` 键只负责返回字母键面，两者语义不同。
+布局内标为 `A` / `中` / `あ` / `カ` / `한` 等文字的键是输入模式转换键。它不是通用的
+On/Off 开关：微软拼音扩展区分中、英；日语扩展区分直接输入、半角/全角字母数字、平假名、
+全角/半角片假名；厂商扩展还可以定义自己的状态集合。点击时调用当前输入法公布的标准
+`GUID_LBI_INPUTMODE` 语言栏命令，再从 TSF 回读实际结果，不直接写 WPF 的 Boolean `ImeState`。
+当前解释结果由只读 `InputMode` 属性公开；`ActiveInputMethod.IsActive` 只表示该 profile 被选中，
+不表示它处于本族文字模式。符号键盘中的 `ABC` 键只负责返回字母键面，两者语义不同。
+
+旧的 `SupportsImeToggle` 推断已删除。输入法目录中的 TIP 身份或 `ImmIsIME` 只能说明它是什么，
+不能证明它提供模式切换。`InputMode.CanSwitch` 来自当前线程的 `ITfLangBarItemMgr`：只有活动服务拥有、
+启用并发布 `GUID_LBI_INPUTMODE` 时，键盘才呈现转换键。
 
 TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存且可降级的反射读取
 `TextServicesHost.ThreadManager`；首个编辑器尚未初始化时，等待后续焦点或输入刷新重试。
@@ -330,8 +336,9 @@ WPF 的 Boolean 开关和 `Native` 转换标志无法表达该状态。扩展读
 讯飞 3.0 虽提供候选接口，但文档查询返回 `E_NOTIMPL`，因此通过通用规则保留原生浮窗。
 获取或枚举后未被接管的 UIElement 引用在当前同步查询结束前释放，不留给后续 GC 清理。
 `BeginUIElement` 协商显示，首次 `UpdateUIElement` 才读取候选内容。
-自定义状态适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖厂商模式的 WPF 通知。
-切换 profile 时先按新 profile 选择状态适配器，再发布状态和布局。
+自定义模式适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖厂商模式的 WPF 通知。
+切换 profile 时先按新 profile 选择模式适配器，再发布模式和布局；读取前后 profile 不一致的观察会被
+丢弃并重试，避免把旧输入法模式发布到新输入法键帽。
 未提供可控制候选接口的输入法继续使用自己的浮窗。
 诊断依据及验证范围见 [讯飞适配记录](SoftKeyboard.Iflytek.md)。
 
@@ -421,7 +428,7 @@ public sealed class AppCandidateSource : ISoftKeyboardCandidateSource
 keyboard.CandidateSource = new AppCandidateSource();
 ```
 
-`InputMethodSource` 按控件创建会话，在所属 Dispatcher 上同步提供目录、激活和输入状态读写。
+`InputMethodSource` 按控件创建会话，在所属 Dispatcher 上同步提供目录、激活和输入模式操作。
 这些接口必须及时返回；依赖外部数据的来源自行维护缓存，读取缓存快照，不得在接口中等待网络、
 后台任务或输入法未来事件。外部来源使用经过参数校验的 `SoftKeyboardInputMethod` 构造模型：
 
@@ -448,12 +455,14 @@ public sealed class AppInputMethodSource : ISoftKeyboardInputMethodSource
             return ReferenceEquals(value, profile);
         }
 
-        public InputMethodState GetState()
+        public SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return InputMethodState.On;
+            return new SoftKeyboardInputMode("latin", "A", "Latin input", false, true);
         }
 
-        public bool TrySetState(InputMethodState state)
+        public bool TrySwitchInputMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
             return true;
         }
@@ -489,8 +498,8 @@ bool refreshed = keyboard.RefreshInputMethods();
 `SoftKeyboardCandidateList` 是可派生的 `ItemsControl`，使用标准 `ItemsSource`、`ItemsPanel`、
 `ItemTemplate` 与 `ItemContainerStyle`；默认横向 `StackPanel` 可换成 `WrapPanel` 或自定义面板。
 
-输入状态通过 WPF 的 StateChanged、焦点和输入语言事件即时同步；控件拥有前台编辑焦点时，
-还每秒复查配置和状态，覆盖同语言输入法切换没有语言变更事件的情况。复查只读取系统状态，
+输入模式通过 WPF 的 StateChanged、焦点和输入语言事件即时同步；控件拥有前台编辑焦点时，
+还会按通知健康状况复查 profile 与模式，覆盖同语言输入法切换没有语言变更事件的情况。复查只读取系统状态，
 不会主动切换用户输入法。输入法菜单和菜单项不参与键盘焦点；没有有效编辑器持有焦点时仍
 展示输入法列表，但禁用所有选择项。焦点离开原编辑器会使尚未执行的选择失效，不会重新聚焦
 记忆中的目标。

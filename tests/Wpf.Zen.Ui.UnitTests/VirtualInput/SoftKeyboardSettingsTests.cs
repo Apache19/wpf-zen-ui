@@ -152,11 +152,11 @@ public class SoftKeyboardSettingsTests
         Assert.Equal(SoftKeyboardKeyKind.VirtualKey, choose.Kind);
         Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Back).IsRepeatEnabled);
 
-        foreach (var mode in (InputMethodState[])[InputMethodState.Off, InputMethodState.DoNotCare])
+        foreach (bool? native in new bool?[] { false, null })
         {
             Assert.Null(
                 ZhuyinSoftKeyboardLayoutProvider.Default.CreateLayout(
-                    Context("zh-TW", 0x0404, ZhuyinSoftKeyboardLayouts.Standard, ime: mode)
+                    Context("zh-TW", 0x0404, ZhuyinSoftKeyboardLayouts.Standard, native: native)
                 )
             );
         }
@@ -190,7 +190,7 @@ public class SoftKeyboardSettingsTests
             InputScopeNameValue.Default,
             SoftKeyboardPages.Automatic,
             SoftKeyboardShiftState.Off,
-            InputMethodState.On,
+            NativeMode(),
             profile
         );
 
@@ -243,7 +243,7 @@ public class SoftKeyboardSettingsTests
         string culture,
         int? preference,
         string layout = SoftKeyboardSupplementalLayouts.Automatic,
-        InputMethodState ime = InputMethodState.On,
+        bool? native = true,
         InputScopeNameValue scope = InputScopeNameValue.Default)
     {
         var language = CultureInfo.GetCultureInfo(culture);
@@ -266,9 +266,20 @@ public class SoftKeyboardSettingsTests
             scope,
             SoftKeyboardPages.Automatic,
             SoftKeyboardShiftState.Off,
-            ime,
+            native is null ? null : NativeMode(native.Value),
             profile,
             supplementalLayout: layout
+        );
+    }
+
+    private static SoftKeyboardInputMode NativeMode(bool native = true)
+    {
+        return new SoftKeyboardInputMode(
+            native ? "native" : "direct",
+            native ? "中" : "A",
+            native ? "Native input" : "Direct input",
+            native,
+            true
         );
     }
 

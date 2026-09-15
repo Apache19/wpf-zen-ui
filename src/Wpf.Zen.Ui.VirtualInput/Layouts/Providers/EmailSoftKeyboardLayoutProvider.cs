@@ -77,7 +77,9 @@ public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvide
 
                     ..
                     
-                    context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
+                    context.CanSwitchInputMode
+                        ? new[] { CreateInputModeKey(context) }
+                        : Array.Empty<SoftKeyboardKey>(),
 
                     SoftKeyboardKey.FromText("@"),
 
@@ -104,7 +106,9 @@ public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvide
                         Key.Enter
                     ),
                 ],
-                context.CanToggleIme ? [2, 2, 2, 4, 2, 2, 2, 2, 2] : [2, 2, 6, 2, 2, 2, 2, 2]
+                context.CanSwitchInputMode
+                    ? [2, 2, 2, 4, 2, 2, 2, 2, 2]
+                    : [2, 2, 6, 2, 2, 2, 2, 2]
             )
             .Build();
     }

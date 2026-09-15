@@ -465,38 +465,34 @@ public partial class SoftKeyboard
 
     #endregion
 
-    #region Read-Only DP: ImeState
+    #region Read-Only DP: InputMode
 
-    private static readonly DependencyPropertyKey ImeStatePropertyKey
+    private static readonly DependencyPropertyKey InputModePropertyKey
         = DependencyProperty.RegisterReadOnly(
-            nameof(ImeState),
-            typeof(InputMethodState),
+            nameof(InputMode),
+            typeof(SoftKeyboardInputMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(
-                InputMethodState.DoNotCare,
-                OnLayoutContextChanged
-            )
+            new PropertyMetadata(null, OnLayoutContextChanged)
         );
 
     /// <summary>
-    /// Identifies the <see cref="ImeState"/> dependency property.
+    /// Identifies the <see cref="InputMode"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty ImeStateProperty
-        = ImeStatePropertyKey.DependencyProperty;
+    public static readonly DependencyProperty InputModeProperty
+        = InputModePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets whether the active Windows input method is composing native text or passing through
-    /// direct alphanumeric input.
+    /// Gets the active input method's interpreted mode, or null when no coherent mode is available.
     /// </summary>
     /// <remarks>
-    /// <see cref="InputMethodState.DoNotCare"/> indicates that the active text service does not
-    /// expose a controllable open state, or that no valid state has been observed yet. Built-in
-    /// layouts omit the mode switch in this state. A transient read failure preserves the last valid
-    /// mode. A supported IME in direct mode retains its A key to enable native input.
+    /// This is distinct from <see cref="ActiveInputMethod"/>: a profile can remain active while its
+    /// internal mode changes among direct, native, Hiragana, Katakana, full-width, or vendor-defined
+    /// states. The value is supplied by an input-mode adapter and is never inferred from
+    /// <see cref="SoftKeyboardInputMethod.IsActive"/>.
     /// </remarks>
-    public InputMethodState ImeState
+    public SoftKeyboardInputMode? InputMode
     {
-        get => (InputMethodState)GetValue(ImeStateProperty);
+        get => (SoftKeyboardInputMode?)GetValue(InputModeProperty);
     }
 
     #endregion
@@ -736,7 +732,7 @@ public partial class SoftKeyboard
             keyboard.ResolveTarget();
             keyboard.RebuildLayout();
             keyboard.RefreshInputMethods();
-            keyboard.RefreshImeState();
+            keyboard.RefreshInputMode();
             keyboard.RequestSystemKeyboardHide();
 
             keyboard.RequestCandidateRefresh();

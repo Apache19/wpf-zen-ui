@@ -94,7 +94,6 @@ public class TsfInputProfileTests
         var method = new SoftKeyboardInputMethod(Guid.Empty, Guid.Empty, 0x0409, "US", true,
             keyboardLayout: handle);
         Assert.Equal(handle, method.KeyboardLayout);
-        Assert.False(method.SupportsImeToggle);
         Assert.Throws<ArgumentException>(() => new SoftKeyboardInputMethod(
             Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Invalid", false, keyboardLayout: handle));
     }

@@ -59,7 +59,9 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
                 [
                     SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "Numbers and symbols"),
                     ..
-                    context.CanToggleIme ? new[] { CreateImeKey(context) } : Array.Empty<SoftKeyboardKey>(),
+                    context.CanSwitchInputMode
+                        ? new[] { CreateInputModeKey(context) }
+                        : Array.Empty<SoftKeyboardKey>(),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "http", "http", text: "http", alternates: ["https"], alternateHint: "https"),
                     SoftKeyboardKey.FromText(":"),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
@@ -69,7 +71,9 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
                     new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
                 ],
-                context.CanToggleIme ? [2, 2, 2, 2, 2, 2, 2, 2, 2, 2] : [2, 2, 2, 4, 2, 2, 2, 2, 2]
+                context.CanSwitchInputMode
+                    ? [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+                    : [2, 2, 2, 4, 2, 2, 2, 2, 2]
             )
             .Build();
     }

@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Input;
-
 namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 /// <summary>
@@ -31,15 +29,17 @@ public interface ISoftKeyboardInputMethodSession : IDisposable
     bool TryActivate(SoftKeyboardInputMethod inputMethod);
 
     /// <summary>
-    /// Reads the current native/direct input state of the focused document.
+    /// Reads the active profile's current input mode from the focused document.
     /// </summary>
-    /// <returns>The observed state, or DoNotCare when unavailable.</returns>
-    InputMethodState GetState();
+    /// <param name="inputMethod">The active profile obtained from the current snapshot.</param>
+    /// <returns>The interpreted mode, or null when the state or switch contract is unavailable.</returns>
+    SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod);
 
     /// <summary>
-    /// Requests a native/direct input state change for the focused document.
+    /// Invokes the active profile's input-mode switch command for the focused document.
     /// </summary>
-    /// <param name="state">The requested state.</param>
-    /// <returns>True when the state change was accepted.</returns>
-    bool TrySetState(InputMethodState state);
+    /// <param name="inputMethod">The active profile obtained from the current snapshot.</param>
+    /// <param name="currentMode">The last mode observed for that profile.</param>
+    /// <returns>True when the transition request was accepted.</returns>
+    bool TrySwitchInputMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode);
 }

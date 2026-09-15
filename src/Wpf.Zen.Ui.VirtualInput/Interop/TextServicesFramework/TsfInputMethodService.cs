@@ -132,115 +132,98 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     }
 
     /// <inheritdoc />
-    public InputMethodState GetImeState()
+    public SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod)
     {
-        try
+        if (inputMethod.ClassId == Guid.Empty)
         {
-            // todo: InputMethod.Current 可能为 null
-            var openState = InputMethod.Current.ImeState;
-            if (openState != InputMethodState.On)
-            {
-                return openState;
-            }
+            return null;
+        }
 
-            // A TIP can keep the TSF keyboard-open compartment set while its conversion mode is
-            // alphanumeric. For this control, "IME" means native composition is active, so expose
-            // the combined state that matches what users see.
-            var conversionMode = InputMethod.Current.ImeConversionMode;
-            return (conversionMode & ImeConversionModeValues.Native) != 0
-                ? InputMethodState.On
-                : InputMethodState.Off;
-        }
-        catch (Exception exception) when (IsUnavailable(exception))
+        var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
+
+        // The generic interpreter deliberately recognizes only the canonical open values 0 and 1.
+        // Other nonzero values can carry vendor-specific semantics even though WPF reduces all of
+        // them to On. The conversion compartment remains a bit field rather than an enum value.
+        if (state is not { OpenValue: 0 or 1, ConversionValue: int conversion })
         {
-            return InputMethodState.DoNotCare;
+            return null;
         }
+
+        var isNative = state.OpenValue == 1 && (conversion & 0x0001) != 0;
+        var culture  = CultureInfo.GetCultureInfo(inputMethod.LanguageId);
+
+        return new SoftKeyboardInputMode(
+            isNative ? "native" : "direct",
+            isNative ? GetNativeInputLabel(culture) : "A",
+            isNative ? "Native input" : "Direct input",
+            isNative,
+            state.CanSwitch
+        );
     }
 
     /// <inheritdoc />
-    public bool TrySetImeState(InputMethodState state)
+    public bool TrySwitchInputMode(
+        SoftKeyboardInputMethod inputMethod,
+        SoftKeyboardInputMode currentMode)
     {
-        if (state == InputMethodState.DoNotCare)
-        {
-            return false;
-        }
-
-        try
-        {
-            // WPF maps this public property to the TSF keyboard-open compartment and mirrors it to
-            // IMM32 when required. A TIP may use a separate conversion compartment, so the open
-            // state alone can report On while letters still pass through directly. Keep both
-            // compartments aligned without synthesizing a locale-specific hotkey. Read the mode before changing
-            // the open compartment: activating a TIP establishes that profile's current preferences,
-            // including full/half shape and Roman input, and the keyboard must not replace them with
-            // its own policy.
-            var currentMode = InputMethod.Current.ImeConversionMode; // todo: InputMethod.Current 可能为 null
-            var targetMode  = GetConversionModeForImeState(currentMode, state);
-
-            InputMethod.Current.ImeState = state;
-
-            SetConversionMode(targetMode, state);
-            return true;
-        }
-        catch (Exception exception) when (IsUnavailable(exception))
-        {
-            return false;
-        }
+        return currentMode.CanSwitch
+            && inputMethod.ClassId != Guid.Empty
+            && SoftKeyboardTsfInputMode.TrySwitchInputMode(inputMethod.ClassId);
     }
 
     /// <summary>
-    /// Produces the conversion mode for an IME open-state transition without inventing unrelated
-    /// input preferences such as full shape, Roman input, symbol input, or fixed conversion.
+    /// Selects a compact fallback label for a standard native conversion mode.
     /// </summary>
-    /// <param name="currentMode">The active TIP's conversion flags before the transition.</param>
-    /// <param name="state">The requested logical native-composition or direct-letter state.</param>
-    /// <returns>The same preferences with only the native-language dimension changed.</returns>
     /// <remarks>
-    /// <see cref="ImeConversionModeValues.Alphanumeric"/> is WPF's managed sentinel for the native
-    /// value zero. It is therefore removed when native conversion is enabled and restored when the
-    /// language conversion bits are disabled. <see cref="ImeConversionModeValues.DoNotCare"/> is a
-    /// dependency-property policy value rather than a native conversion flag and must never be sent
-    /// to <see cref="InputMethod.ImeConversionMode"/>.
+    /// Language extensions can replace this generic presentation with precise service modes such
+    /// as Hiragana, full-width Katakana, or a vendor-defined Chinese/English state.
     /// </remarks>
-    internal static ImeConversionModeValues GetConversionModeForImeState(
-        ImeConversionModeValues currentMode,
-        InputMethodState state)
+    private static string GetNativeInputLabel(CultureInfo culture)
     {
-        var result = currentMode & ~ImeConversionModeValues.DoNotCare;
-        if (state == InputMethodState.On)
+        var language = culture.TwoLetterISOLanguageName;
+        foreach (var subtag in culture.Name.Split('-'))
         {
-            return (result & ~ImeConversionModeValues.Alphanumeric) | ImeConversionModeValues.Native;
+            if (string.Equals(subtag, "Latn", StringComparison.OrdinalIgnoreCase))
+            {
+                return language.ToUpperInvariant();
+            }
         }
 
-        return (result & ~(ImeConversionModeValues.Native | ImeConversionModeValues.Katakana))
-            | ImeConversionModeValues.Alphanumeric;
-    }
-
-    /// <summary>
-    /// Applies a conversion transition through WPF while preserving flags orthogonal to the
-    /// native/alphanumeric and full/half-shape dimensions.
-    /// </summary>
-    private static void SetConversionMode(ImeConversionModeValues targetMode, InputMethodState state)
-    {
-        var useFullShape = (targetMode & ImeConversionModeValues.FullShape) != 0;
-
-        var primaryMode = state == InputMethodState.On
-            ? ImeConversionModeValues.Native | (useFullShape ? ImeConversionModeValues.FullShape : 0)
-            : useFullShape
-                ? ImeConversionModeValues.FullShape
-                : ImeConversionModeValues.Alphanumeric;
-
-        // WPF's ImeConversionMode setter intentionally merges most flags into the existing TSF
-        // compartment. It clears conflicting language/shape bits only for one of its canonical
-        // primary modes (Native, Native|FullShape, FullShape, or Alphanumeric). Apply that canonical
-        // mode first, then restore auxiliary preferences. A single combined write such as
-        // Native|Roman can otherwise leave a stale FullShape bit behind in the native compartment.
-        InputMethod.Current.ImeConversionMode = primaryMode; // todo: InputMethod.Current 可能为 null
-
-        if (targetMode != primaryMode)
+        return language switch
         {
-            InputMethod.Current.ImeConversionMode = targetMode;
-        }
+            "zh" => "中",
+            "ja" => "あ",
+            "ko" => "한",
+
+            "hi" or "mr" or "ne" or "sa" => "अ",
+            "bn" or "as" => "অ",
+            "gu" => "અ",
+            "or" => "ଅ",
+            "ta" => "அ",
+            "te" => "అ",
+            "kn" => "ಅ",
+            "ml" => "അ",
+            "si" => "අ",
+            "th" => "ก",
+            "lo" => "ກ",
+            "km" => "ក",
+            "my" => "က",
+            "bo" or "dz" => "ཀ",
+
+            "ar" => "ع",
+            "fa" => "ف",
+            "ur" => "ا",
+            "ps" => "پ",
+            "he" or "yi" => "א",
+            "am" or "ti" => "አ",
+            "hy" => "Ա",
+            "ka" => "ა",
+            "el" => "α",
+            "ru" or "uk" or "bg" or "be" or "mk" => "Ж",
+
+            "" or "iv" or "und" => "IME",
+            _ => language.ToUpperInvariant(),
+        };
     }
 
     private static List<SoftKeyboardInputMethod> TryEnumerateProfiles()
@@ -399,7 +382,6 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                             : GetDescription(profiles, in legacy),
                         isActive,
                         !isLayout && isActive ? TsfTouchLayoutQuery.Query(native.clsid) : null,
-                        supportsImeToggle: !isLayout || PInvoke.ImmIsIME(native.hkl),
                         keyboardLayout: isLayout ? (IntPtr)native.hkl : IntPtr.Zero
                     )
                 );

@@ -159,7 +159,7 @@ public class SoftKeyboardRoutingTests
                 InputScopeNameValue.Url,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                InputMethodState.On,
+                new SoftKeyboardInputMode("native", "あ", "Hiragana", true, true),
                 new SoftKeyboardInputMethod(classId, id, 0x0411, "Test profile", true)
             );
         }
@@ -216,7 +216,13 @@ public class SoftKeyboardRoutingTests
 
     private static SoftKeyboardLayoutContext Context(
         string culture, InputScopeNameValue scope, string page = SoftKeyboardPages.Automatic) =>
-        new(CultureInfo.GetCultureInfo(culture), scope, page, SoftKeyboardShiftState.Off, InputMethodState.On);
+        new(
+            CultureInfo.GetCultureInfo(culture),
+            scope,
+            page,
+            SoftKeyboardShiftState.Off,
+            new SoftKeyboardInputMode("native", "あ", "Native input", true, true)
+        );
 
     private static SoftKeyboardLayout Layout(string marker, int columns, int rows)
     {

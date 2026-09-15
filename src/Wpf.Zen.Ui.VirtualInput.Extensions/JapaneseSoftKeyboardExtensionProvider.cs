@@ -59,7 +59,8 @@ public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensi
             [
                 new SoftKeyboardExtension(
                     layoutProvider: LanguageProvider,
-                    supplementalLayouts: SupplementalProvider
+                    supplementalLayouts: SupplementalProvider,
+                    inputModeAdapter: JapaneseInputModeAdapter.Default
                 )
             ]
             : [];
@@ -77,7 +78,7 @@ public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensi
             return UrlSoftKeyboardLayoutProvider.Default.CreateLayout(context)
                 ?? EmailSoftKeyboardLayoutProvider.Default.CreateLayout(context)
                 ?? NumberSoftKeyboardLayoutProvider.Default.CreateLayout(context)
-                ?? (context.ImeState == InputMethodState.On ? CompactProvider.CreateLayout(context) : null);
+                ?? (context.InputMode?.IsNativeInput == true ? CompactProvider.CreateLayout(context) : null);
         }
     }
 
@@ -159,7 +160,7 @@ public sealed class JapaneseFiftyLayoutProvider : ISoftKeyboardLayoutProvider
 
         builder.AddRow(
             5,
-            JapaneseLayoutHelpers.Commands().Prepend(JapaneseLayoutHelpers.Kana("ー"))
+            JapaneseLayoutHelpers.Commands(context).Prepend(JapaneseLayoutHelpers.Kana("ー"))
                 .Prepend(JapaneseLayoutHelpers.Kana("ん")),
             [1, 1, 1, 1, 1, 2, 1, 1, 1]
         );
@@ -217,7 +218,7 @@ public sealed class JapaneseTwelveLayoutProvider : ISoftKeyboardLayoutProvider
             );
         }
 
-        builder.AddRow(4, JapaneseLayoutHelpers.Commands(), [1, 1, 2, 4, 1, 1, 2]);
+        builder.AddRow(4, JapaneseLayoutHelpers.Commands(context), [1, 1, 2, 4, 1, 1, 2]);
         return builder.Build();
     }
 }
@@ -226,7 +227,7 @@ internal static class JapaneseLayoutHelpers
 {
     internal static bool CanCreate(SoftKeyboardLayoutContext context, string identifier)
     {
-        return context is { CanToggleIme: true, ImeState: InputMethodState.On }
+        return context is { CanSwitchInputMode: true, InputMode.IsNativeInput: true }
             && context.SupplementalLayout == identifier
             && context.Page is SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters
             && UrlSoftKeyboardLayoutProvider.Default.CreateLayout(context) is null
@@ -281,12 +282,16 @@ internal static class JapaneseLayoutHelpers
         return [.. result];
     }
 
-    internal static IEnumerable<SoftKeyboardKey> Commands()
+    internal static IEnumerable<SoftKeyboardKey> Commands(SoftKeyboardLayoutContext context)
     {
         return
         [
             SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "数字和符号"),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "あ", "切换输入模式"),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.SwitchInputMode,
+                context.InputMode!.KeyLabel,
+                context.InputMode.DisplayName
+            ),
             new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "输入法"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "转换或空格", key: Key.Space),
             new SoftKeyboardKey(

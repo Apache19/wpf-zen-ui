@@ -278,12 +278,11 @@
                                             VerticalAlignment="Center"
                                             Foreground="{ui:DynamicBrush TextPlaceholder}"
                                             Text="{Binding ActiveInputMethod.DisplayName, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=''}" />
-                                        <!--  todo: 状态文本仅用于测试  -->
                                         <TextBlock
                                             Margin="4,0,0,0"
                                             VerticalAlignment="Center"
                                             Foreground="{ui:DynamicBrush TextPlaceholder}"
-                                            Text="{Binding ActiveInputMethod.IsActive, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=''}" />
+                                            Text="{Binding InputMode.DisplayName, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=''}" />
                                     </StackPanel>
 
                                     <!--  候选栏 填充剩余空间  -->

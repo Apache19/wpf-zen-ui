@@ -187,7 +187,7 @@ public partial class SoftKeyboard
     internal bool CanPresentCandidates
     {
         get =>
-            ImeState == InputMethodState.On
+            InputMode?.IsNativeInput == true
             && ActiveInputMethod is not null
             && IsSystemKeyboardSuppressionRequired;
     }

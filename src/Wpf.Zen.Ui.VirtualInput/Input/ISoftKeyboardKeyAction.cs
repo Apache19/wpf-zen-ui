@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// Called synchronously on the keyboard dispatcher after target eligibility and focus validation.
 /// Use the supplied context for input and navigation; it expires on return and must not be retained
 /// for asynchronous work. Actions may be shared by layouts and must not retain an editor reference.
-/// Native conversion-mode changes belong in ISoftKeyboardInputStateAdapter; layout construction
+/// Native conversion-mode changes belong in ISoftKeyboardInputModeAdapter; layout construction
 /// must not mutate IME state. Exceptions from application action code propagate to the caller.
 /// </remarks>
 public interface ISoftKeyboardKeyAction : ISoftKeyboardAction

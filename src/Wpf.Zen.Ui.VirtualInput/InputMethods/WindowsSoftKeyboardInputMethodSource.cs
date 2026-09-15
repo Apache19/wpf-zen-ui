@@ -4,8 +4,6 @@
 // All Rights Reserved.
 
 using System.Collections.ObjectModel;
-using System.Windows.Input;
-
 namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 /// <summary>
@@ -65,18 +63,35 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
             return backend.TryActivate(inputMethod);
         }
 
-        public InputMethodState GetState()
+        public SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
             ThrowIfDisposed();
 
-            return backend.GetImeState();
+            if (inputMethod is null)
+            {
+                throw new ArgumentNullException(nameof(inputMethod));
+            }
+
+            return backend.GetInputMode(inputMethod);
         }
 
-        public bool TrySetState(InputMethodState state)
+        public bool TrySwitchInputMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
         {
             ThrowIfDisposed();
 
-            return backend.TrySetImeState(state);
+            if (inputMethod is null)
+            {
+                throw new ArgumentNullException(nameof(inputMethod));
+            }
+
+            if (currentMode is null)
+            {
+                throw new ArgumentNullException(nameof(currentMode));
+            }
+
+            return backend.TrySwitchInputMode(inputMethod, currentMode);
         }
 
         public void Dispose()

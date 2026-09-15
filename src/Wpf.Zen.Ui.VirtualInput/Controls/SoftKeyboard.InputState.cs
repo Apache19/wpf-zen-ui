@@ -16,32 +16,33 @@ public partial class SoftKeyboard
     private DispatcherTimer? _inputStateTimer;
 
     /// <summary>
-    /// Identifies the <see cref="InputStateAdapter"/> dependency property.
+    /// Identifies the <see cref="InputModeAdapter"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty InputStateAdapterProperty
+    public static readonly DependencyProperty InputModeAdapterProperty
         = DependencyProperty.Register(
-            nameof(InputStateAdapter),
-            typeof(ISoftKeyboardInputStateAdapter),
+            nameof(InputModeAdapter),
+            typeof(ISoftKeyboardInputModeAdapter),
             typeof(SoftKeyboard),
             new PropertyMetadata(
                 null,
-                static (owner, _) => ((SoftKeyboard)owner).RefreshImeState()
+                static (owner, _) => ((SoftKeyboard)owner).RefreshInputMode()
             )
         );
 
     /// <summary>
-    /// Gets or sets the adapter for nonstandard text-service mode APIs.
+    /// Gets or sets the adapter that interprets the active text service's input modes.
     /// </summary>
     /// <remarks>
-    /// The default is null, which uses WPF state. This property is not inherited or animated.
+    /// The default is null, which uses the input-method source's standard TSF interpretation.
+    /// This property is not inherited or animated.
     /// Changing it schedules a complete observation and may regenerate the layout. Adapter read
-    /// failures preserve the last valid state. A failed adapter write is never followed by a
-    /// second write through another state mechanism.
+    /// failures preserve the last valid mode. A failed adapter transition is never followed by a
+    /// second transition through another mechanism.
     /// </remarks>
-    public ISoftKeyboardInputStateAdapter? InputStateAdapter
+    public ISoftKeyboardInputModeAdapter? InputModeAdapter
     {
-        get => (ISoftKeyboardInputStateAdapter?)GetValue(InputStateAdapterProperty);
-        set => SetValue(InputStateAdapterProperty, value);
+        get => (ISoftKeyboardInputModeAdapter?)GetValue(InputModeAdapterProperty);
+        set => SetValue(InputModeAdapterProperty, value);
     }
 
     /// <summary>
@@ -89,7 +90,7 @@ public partial class SoftKeyboard
 
         // WPF compartment subscriptions do not describe a vendor adapter's notification contract.
         // Such adapters can observe a language-bar mode whose changes bypass WPF StateChanged.
-        var interval = ResolveInputStateAdapter() is not null
+        var interval = ResolveInputModeAdapter() is not null
             || InputMethodError is not null
             || (!sourceHasNotifications && !systemNotificationsHealthy)
                 ? TimeSpan.FromSeconds(1)

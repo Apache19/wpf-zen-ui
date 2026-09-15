@@ -204,14 +204,14 @@ public partial class SoftKeyboard
             ?? _supplementalLayouts[0];
     }
 
-    private ISoftKeyboardInputStateAdapter? ResolveInputStateAdapter()
+    private ISoftKeyboardInputModeAdapter? ResolveInputModeAdapter()
     {
-        if (InputStateAdapter is not null)
+        if (InputModeAdapter is not null)
         {
-            return InputStateAdapter;
+            return InputModeAdapter;
         }
 
-        return _activeExtensions.Select(static extension => extension.InputStateAdapter)
+        return _activeExtensions.Select(static extension => extension.InputModeAdapter)
             .FirstOrDefault(static adapter => adapter is not null);
     }
 
@@ -239,7 +239,7 @@ public partial class SoftKeyboard
         keyboard.CancelCandidateOperations();
         keyboard.ReleaseCandidatePresentation();
         keyboard.RebuildLayout();
-        keyboard.RefreshImeState();
+        keyboard.RefreshInputMode();
         // Extension registrations can change available settings without changing the input state.
         keyboard.RefreshSettings();
 

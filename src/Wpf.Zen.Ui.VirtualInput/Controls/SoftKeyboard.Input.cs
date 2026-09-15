@@ -41,9 +41,9 @@ public partial class SoftKeyboard
                 {
                     CloseKeyboard();
                 }
-                else if (button.Tag is SoftKeyboardKeyKind.ToggleIme)
+                else if (button.Tag is SoftKeyboardKeyKind.SwitchInputMode)
                 {
-                    ToggleIme();
+                    SwitchInputMode();
                 }
                 else
                 {
@@ -181,8 +181,8 @@ public partial class SoftKeyboard
                 ShowInputMethodMenu();
                 break;
 
-            case SoftKeyboardKeyKind.ToggleIme:
-                ToggleIme();
+            case SoftKeyboardKeyKind.SwitchInputMode:
+                SwitchInputMode();
                 break;
 
             case SoftKeyboardKeyKind.Close:
@@ -214,33 +214,28 @@ public partial class SoftKeyboard
         SetValue(ShiftStatePropertyKey, next);
     }
 
-    private void ToggleIme()
+    private void SwitchInputMode()
     {
-        RunAfterActiveCompositionCancellation(ToggleImeCore);
+        RunAfterActiveCompositionCancellation(SwitchInputModeCore);
     }
 
     /// <summary>
-    /// Writes the opposite of the last observed input mode through exactly one state mechanism.
+    /// Invokes the transition published by the adapter for the last observed input mode.
     /// </summary>
-    private void ToggleImeCore()
+    private void SwitchInputModeCore()
     {
         if (!PrepareTargetForInput())
         {
             return;
         }
 
-        var inputMethod  = ActiveInputMethod;
-        var currentState = ImeState;
+        var inputMethod = ActiveInputMethod;
+        var currentMode = InputMode;
 
-        if (inputMethod?.SupportsImeToggle != true
-            || currentState is not (InputMethodState.On or InputMethodState.Off))
+        if (inputMethod is null || currentMode?.CanSwitch != true)
         {
             return;
         }
-
-        var requestedState = currentState == InputMethodState.On
-            ? InputMethodState.Off
-            : InputMethodState.On;
 
         _ = RunInputMethodCommand((session, isCurrent) =>
         {
@@ -249,9 +244,9 @@ public partial class SoftKeyboard
                 return false;
             }
 
-            var adapter  = ResolveInputStateAdapter();
-            var accepted = adapter?.TrySetState(inputMethod, requestedState)
-                ?? session.TrySetState(requestedState);
+            var adapter  = ResolveInputModeAdapter();
+            var accepted = adapter?.TrySwitchMode(inputMethod, currentMode)
+                ?? session.TrySwitchInputMode(inputMethod, currentMode);
 
             return accepted && isCurrent();
         });

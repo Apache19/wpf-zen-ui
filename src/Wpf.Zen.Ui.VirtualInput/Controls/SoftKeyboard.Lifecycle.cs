@@ -30,7 +30,7 @@ public partial class SoftKeyboard
         }
 
         ResolveTarget();
-        RefreshImeState();
+        RefreshInputMode();
 
         if (IsOpen)
         {

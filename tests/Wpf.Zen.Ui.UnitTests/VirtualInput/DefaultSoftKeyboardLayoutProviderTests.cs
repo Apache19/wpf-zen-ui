@@ -22,18 +22,22 @@ public class DefaultSoftKeyboardLayoutProviderTests
     /// Capability, selection, and observed state are tested independently of input language.
     /// </summary>
     [Theory]
-    [InlineData(false, false, InputMethodState.Off, false)]
-    [InlineData(false, true, InputMethodState.On, false)]
-    [InlineData(true, false, InputMethodState.On, false)]
-    [InlineData(true, true, InputMethodState.DoNotCare, false)]
-    [InlineData(true, true, InputMethodState.Off, true)]
-    [InlineData(true, true, InputMethodState.On, true)]
-    public void ModeSwitch_RequiresActiveCapabilityAndKnownState(
-        bool selected, bool supported, InputMethodState state, bool visible)
+    [InlineData(false, false, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, false, false)]
+    [InlineData(true, true, true, true)]
+    public void ModeSwitch_RequiresActiveProfileAndPublishedCommand(
+        bool selected,
+        bool hasMode,
+        bool canSwitch,
+        bool visible)
     {
         var method = selected
-            ? new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test", true,
-                supportsImeToggle: supported)
+            ? new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test", true)
+            : null;
+        var inputMode = hasMode
+            ? new SoftKeyboardInputMode("test", "A", "Test mode", false, canSwitch)
             : null;
 
         foreach (var scope in new[]
@@ -42,13 +46,13 @@ public class DefaultSoftKeyboardLayoutProviderTests
             foreach (var page in SoftKeyboardPages.BuiltInPages)
             {
                 var context = new SoftKeyboardLayoutContext(CultureInfo.GetCultureInfo("en-US"),
-                    scope, page, SoftKeyboardShiftState.Off, state, method);
+                    scope, page, SoftKeyboardShiftState.Off, inputMode, method);
                 var layout = Assert.IsType<SoftKeyboardLayout>(
                     DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context));
 
-                Assert.Equal(visible, context.CanToggleIme);
+                Assert.Equal(visible, context.CanSwitchInputMode);
                 Assert.Equal(visible ? 1 : 0,
-                    layout.Keys.Count(key => key.Kind == SoftKeyboardKeyKind.ToggleIme));
+                    layout.Keys.Count(key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode));
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
                 foreach (var row in layout.Keys.Where(key => key.Row == 3
                     || page == SoftKeyboardPages.Numbers).GroupBy(key => key.Row))
@@ -63,9 +67,12 @@ public class DefaultSoftKeyboardLayoutProviderTests
                     Assert.Equal(layout.ColumnCount, end);
                 }
 
-                if (visible && state == InputMethodState.Off)
+                if (visible)
                 {
-                    Assert.Equal("A", layout.Keys.Single(key => key.Kind == SoftKeyboardKeyKind.ToggleIme).Content);
+                    Assert.Equal(
+                        "A",
+                        layout.Keys.Single(key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode).Content
+                    );
                 }
             }
         }
@@ -89,15 +96,16 @@ public class DefaultSoftKeyboardLayoutProviderTests
                         "en-US", "zh-CN", "ja-JP"
                     })
                 {
-                    foreach (var ime in new[]
+                    foreach (var native in new[]
                         {
-                            InputMethodState.On, InputMethodState.Off
+                            true, false
                         })
                     {
                         var layout = Assert.IsType<SoftKeyboardLayout>(
                             DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
                                 new SoftKeyboardLayoutContext(
-                                    CultureInfo.GetCultureInfo(culture), scope, mode, shift, ime,
+                                    CultureInfo.GetCultureInfo(culture), scope, mode, shift,
+                                    Mode(native),
                                     new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test IME", true)
                                 )
                             )
@@ -126,7 +134,7 @@ public class DefaultSoftKeyboardLayoutProviderTests
 
                         Assert.Equal("123", bottom[0].Content);
                         Assert.Equal(SoftKeyboardPages.Symbols, bottom[0].Page);
-                        Assert.Equal(SoftKeyboardKeyKind.ToggleIme, bottom[1].Kind);
+                        Assert.Equal(SoftKeyboardKeyKind.SwitchInputMode, bottom[1].Kind);
                         Assert.Equal(shortcut, bottom[2].Text);
 
                         if (url)
@@ -245,7 +253,7 @@ public class DefaultSoftKeyboardLayoutProviderTests
                 );
 
                 Assert.Equal([0, 1, 2, 3], layout.Keys.Select(key => key.Row).Distinct());
-                Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+                Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
                 Assert.DoesNotContain(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.Close);
 
@@ -271,7 +279,7 @@ public class DefaultSoftKeyboardLayoutProviderTests
             InputScopeNameValue.Default,
             SoftKeyboardPages.Letters,
             SoftKeyboardShiftState.Off,
-            InputMethodState.On,
+            Mode(true, "あ"),
             new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true)
         );
 
@@ -295,8 +303,19 @@ public class DefaultSoftKeyboardLayoutProviderTests
             InputScopeNameValue.Default,
             mode,
             SoftKeyboardShiftState.Off,
-            native ? InputMethodState.On : InputMethodState.Off,
+            Mode(native),
             new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Test IME", true)
+        );
+    }
+
+    private static SoftKeyboardInputMode Mode(bool native, string? label = null)
+    {
+        return new SoftKeyboardInputMode(
+            native ? "native" : "direct",
+            label ?? (native ? "中" : "A"),
+            native ? "Native input" : "Direct input",
+            native,
+            true
         );
     }
 }

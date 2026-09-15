@@ -98,7 +98,7 @@ public partial class SoftKeyboard
                 inputScope,
                 Page,
                 ShiftState,
-                ImeState,
+                InputMode,
                 ActiveInputMethod,
                 supplementalLayout: supplementalSelection
             );
@@ -111,7 +111,7 @@ public partial class SoftKeyboard
                 inputScope,
                 Page,
                 ShiftState,
-                ImeState,
+                InputMode,
                 ActiveInputMethod,
                 supplementalLayout: supplementalLayout.Id
             );
@@ -175,7 +175,7 @@ public partial class SoftKeyboard
                     inputScope,
                     Page,
                     ShiftState,
-                    ImeState,
+                    InputMode,
                     ActiveInputMethod,
                     supplementalLayout: SoftKeyboardSupplementalLayouts.Standard
                 );

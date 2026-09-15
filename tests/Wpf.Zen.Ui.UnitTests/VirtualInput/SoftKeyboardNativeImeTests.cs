@@ -125,7 +125,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var window = new Window { Content = root, Width = 850, Height = 450 };
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
-            var pinyinMode = InputMethodState.DoNotCare;
+            SoftKeyboardInputMethod? pinyin = null;
+            SoftKeyboardInputMode? pinyinMode = null;
             try
             {
                 window.Show();
@@ -134,13 +135,13 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(400);
                 keyboard.RefreshInputMethods();
                 original = keyboard.ActiveInputMethod;
-                var pinyin = keyboard.InputMethods.FirstOrDefault(p =>
+                pinyin = keyboard.InputMethods.FirstOrDefault(p =>
                     p.ClassId == new Guid("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E"));
                 Assert.SkipUnless(pinyin is not null, "Microsoft Pinyin is not installed.");
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
                 PumpFor(300);
-                pinyinMode = backend.GetImeState();
-                Assert.True(backend.TrySetImeState(InputMethodState.On));
+                pinyinMode = backend.GetInputMode(pinyin);
+                Assert.True(EnsureNativeInput(backend, pinyin));
                 PumpFor(200);
                 Assert.True(keyboard.SendActionKey(Key.N, ModifierKeys.None));
                 Assert.True(keyboard.SendActionKey(Key.I, ModifierKeys.None));
@@ -167,9 +168,9 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 {
                     keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
                     PumpFor(100);
-                    if (pinyinMode != InputMethodState.DoNotCare)
+                    if (pinyin is not null && pinyinMode is not null)
                     {
-                        backend.TrySetImeState(pinyinMode);
+                        RestoreInputMode(backend, pinyin, pinyinMode);
                     }
                 }
 
@@ -222,7 +223,12 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 var other = keyboard.InputMethods.First(p => p.ClassId != iflytek.ClassId);
                 Assert.True(keyboard.TryActivateInputMethod(other));
                 PumpFor(400);
-                Assert.True(backend.TrySetImeState(InputMethodState.On));
+                SoftKeyboardInputMethod? otherActive = keyboard.ActiveInputMethod;
+                if (otherActive is not null)
+                {
+                    _ = EnsureNativeInput(backend, otherActive);
+                }
+
                 keyboard.ShowInputMethodMenu();
                 PumpFor(200);
                 var menu = (ContextMenu)typeof(SoftKeyboard).GetField(
@@ -234,26 +240,27 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 SoftKeyboardCommands.ActivateInputMethod.Execute(item.CommandParameter, keyboard);
                 menu.IsOpen = false;
                 PumpFor(600);
-                output.WriteLine($"Menu activation: {keyboard.ImeState}, raw={SoftKeyboardTsfInputMode.GetKeyboardOpenValue()}");
+                output.WriteLine(
+                    $"Menu activation: {keyboard.InputMode}, raw={SoftKeyboardTsfInputMode.GetKeyboardOpenValue()}"
+                );
                 Assert.Equal(iflytek.ClassId, keyboard.ActiveInputMethod?.ClassId);
                 // The TIP can remember English mode across activations. Verify the reported
                 // mode against actual input before preparing Chinese for the sustained run.
-                var initialMode = keyboard.ImeState;
-                Assert.True(initialMode is InputMethodState.On or InputMethodState.Off);
+                var initialMode = Assert.IsType<SoftKeyboardInputMode>(keyboard.InputMode);
                 foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O, Key.Space })
                 {
                     Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
                     PumpFor(80);
                 }
 
-                var initialText = initialMode == InputMethodState.On ? "你好" : "nihao";
+                var initialText = initialMode.IsNativeInput ? "你好" : "nihao";
                 Assert.True(PumpUntil(() => editor.Text.Trim() == initialText, 2000),
                     $"Menu mode {initialMode} disagrees with actual input '{editor.Text}'.");
                 editor.Clear();
-                if (initialMode == InputMethodState.Off)
+                if (!initialMode.IsNativeInput)
                 {
-                    Assert.True(SoftKeyboardTsfInputMode.TryToggleInputMode(iflytek.ClassId));
-                    Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.On, 2000));
+                    Assert.True(SoftKeyboardTsfInputMode.TrySwitchInputMode(iflytek.ClassId));
+                    Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == true, 2000));
                 }
 
                 var expected = string.Empty;
@@ -275,7 +282,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         $"Cycle {cycle}: expected '{expected}', actual '{editor.Text}'.");
                     GC.Collect();
                     PumpFor(300);
-                    Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                    Assert.True(keyboard.InputMode?.IsNativeInput);
                 }
             }
             finally
@@ -324,8 +331,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var window = new Window { Content = root, Width = 850, Height = 420 };
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
-            var originalState = InputMethodState.DoNotCare;
-            ISoftKeyboardInputStateAdapter? adapter = null;
+            SoftKeyboardInputMode? originalMode = null;
+            ISoftKeyboardInputModeAdapter? adapter = null;
             try
             {
                 window.Show();
@@ -334,7 +341,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(400);
                 keyboard.RefreshInputMethods();
                 original = keyboard.ActiveInputMethod;
-                originalState = keyboard.ImeState;
+                originalMode = keyboard.InputMode;
                 var iflytek = keyboard.InputMethods.FirstOrDefault(p =>
                     p.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId);
                 output.WriteLine(string.Join("; ", keyboard.InputMethods.Select(p => $"{p.DisplayName}: {p.ClassId}")));
@@ -348,25 +355,33 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                             SoftKeyboardShiftState.Off, inputMethod: iflytek
                         )
                     )
-                ).Single().InputStateAdapter!;
+                ).First(extension => extension.InputModeAdapter is not null).InputModeAdapter!;
                 Assert.True(backend.TryActivate(iflytek));
                 PumpFor(400);
-                Assert.True(adapter.TrySetState(iflytek, InputMethodState.On));
-                Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.On, 2000));
+                var current = Assert.IsType<SoftKeyboardInputMode>(adapter.GetMode(iflytek));
+                if (!current.IsNativeInput)
+                {
+                    Assert.True(adapter.TrySwitchMode(iflytek, current));
+                }
+
+                Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == true, 2000));
 
                 for (var cycle = 0; cycle < 3; cycle++)
                 {
                     // Exercise the same command as the A/中 key, including adapter resolution.
-                    typeof(SoftKeyboard).GetMethod("ToggleImeCore", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    typeof(SoftKeyboard).GetMethod(
+                        "SwitchInputModeCore",
+                        BindingFlags.Instance | BindingFlags.NonPublic
+                    )!
                         .Invoke(keyboard, null);
-                    Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.Off, 2000));
+                    Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == false, 2000));
                     Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
                     Assert.True(PumpUntil(() => editor.Text == "a", 1000), "Direct text: " + editor.Text);
                     editor.Clear();
 
                     // Change the native mode outside the keyboard command to check observation.
-                    Assert.True(SoftKeyboardTsfInputMode.TryToggleInputMode(iflytek.ClassId));
-                    Assert.True(PumpUntil(() => keyboard.ImeState == InputMethodState.On, 2000));
+                    Assert.True(SoftKeyboardTsfInputMode.TrySwitchInputMode(iflytek.ClassId));
+                    Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == true, 2000));
                     foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O })
                     {
                         Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
@@ -394,13 +409,21 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 if (original is not null)
                 {
                     backend.TryActivate(original);
-                    if (original.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId)
+                    if (originalMode is not null)
                     {
-                        adapter?.TrySetState(original, originalState);
-                    }
-                    else
-                    {
-                        backend.TrySetImeState(originalState);
+                        if (original.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId)
+                        {
+                            var restored = adapter?.GetMode(original);
+                            if (restored is not null
+                                && restored.IsNativeInput != originalMode.IsNativeInput)
+                            {
+                                adapter?.TrySwitchMode(original, restored);
+                            }
+                        }
+                        else
+                        {
+                            RestoreInputMode(backend, original, originalMode);
+                        }
                     }
                 }
 
@@ -453,7 +476,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             };
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
-            var originalState = InputMethodState.DoNotCare;
+            SoftKeyboardInputMode? originalMode = null;
             try
             {
                 window.Show();
@@ -471,17 +494,19 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 }
 
                 original = keyboard.ActiveInputMethod;
-                originalState = backend.GetImeState();
+                originalMode = original is null ? null : backend.GetInputMode(original);
                 var profile = keyboard.InputMethods.FirstOrDefault(p => p.LanguageId == language
                     && (language != 0x0404 || p.ProfileId == new Guid("B2F9C502-1742-11D4-9790-0080C882687E")));
                 Assert.SkipUnless(profile is not null, "The requested input language is not installed.");
                 Assert.True(backend.TryActivate(profile));
                 PumpFor(500);
-                Assert.True(backend.TrySetImeState(InputMethodState.On));
+                Assert.True(EnsureNativeInput(backend, profile));
                 keyboard.OnSessionInputLanguageChanged();
                 PumpFor(200);
                 output.WriteLine(
-                    $"{keyboard.ActiveInputMethod?.DisplayName}, profile={keyboard.ActiveInputMethod?.ProfileId}, preference={keyboard.ActiveInputMethod?.TouchLayoutPreference}, IME={keyboard.ImeState}");
+                    $"{keyboard.ActiveInputMethod?.DisplayName}, profile={keyboard.ActiveInputMethod?.ProfileId}, "
+                    + $"preference={keyboard.ActiveInputMethod?.TouchLayoutPreference}, mode={keyboard.InputMode}"
+                );
                 if (language == 0x0404)
                 {
                     TraceCandidateFunctions(profile.ClassId);
@@ -623,7 +648,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                     Assert.True(PumpUntil(() => editor.Text == "がぱっろむをー", 2000), "Alternate result: " + editor.Text);
                 }
 
-                Assert.True(backend.TrySetImeState(InputMethodState.Off));
+                Assert.True(EnsureDirectInput(backend, profile));
                 keyboard.OnSessionInputLanguageChanged();
                 PumpFor(100);
                 Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => Equals(key.Content, caps[0]));
@@ -651,7 +676,10 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 if (original is not null)
                 {
                     backend.TryActivate(original);
-                    backend.TrySetImeState(originalState);
+                    if (originalMode is not null)
+                    {
+                        RestoreInputMode(backend, original, originalMode);
+                    }
                 }
 
                 window.Close();
@@ -693,7 +721,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             };
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
-            var originalState = InputMethodState.DoNotCare;
+            SoftKeyboardInputMode? originalMode = null;
             PreProcessInputEventHandler trace = (_, args) =>
             {
                 if (args.StagingItem.Input is KeyboardFocusChangedEventArgs focus &&
@@ -718,7 +746,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(400);
                 PumpUntil(() => keyboard.ActiveInputMethod is not null, 1500);
                 original = keyboard.ActiveInputMethod;
-                originalState = backend.GetImeState();
+                originalMode = original is null ? null : backend.GetInputMode(original);
                 output.WriteLine(string.Join(
                     Environment.NewLine,
                     keyboard.InputMethods.Select(p => $"{p.DisplayName}: {p.ClassId} / {p.LanguageId:X4}")));
@@ -728,11 +756,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.SkipUnless(weasel is not null, "Weasel is not installed.");
                 Assert.True(backend.TryActivate(weasel));
                 PumpFor(500);
-                Assert.True(backend.TrySetImeState(InputMethodState.On));
+                Assert.True(EnsureNativeInput(backend, weasel));
                 keyboard.OnSessionInputLanguageChanged();
                 PumpUntil(
                     () => keyboard.ActiveInputMethod?.ClassId == weasel.ClassId
-                        && keyboard.ImeState == InputMethodState.On,
+                        && keyboard.InputMode?.IsNativeInput == true,
                     2000
                 );
                 editor.SelectAll();
@@ -765,13 +793,46 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 if (original is not null)
                 {
                     backend.TryActivate(original);
-                    backend.TrySetImeState(originalState);
+                    if (originalMode is not null)
+                    {
+                        RestoreInputMode(backend, original, originalMode);
+                    }
                 }
 
                 window.Close();
                 InputManager.Current.PreProcessInput -= trace;
             }
         });
+    }
+
+    private static bool EnsureNativeInput(
+        TsfInputMethodService backend,
+        SoftKeyboardInputMethod inputMethod)
+    {
+        var mode = backend.GetInputMode(inputMethod);
+        return mode is not null
+            && (mode.IsNativeInput || backend.TrySwitchInputMode(inputMethod, mode));
+    }
+
+    private static bool EnsureDirectInput(
+        TsfInputMethodService backend,
+        SoftKeyboardInputMethod inputMethod)
+    {
+        var mode = backend.GetInputMode(inputMethod);
+        return mode is not null
+            && (!mode.IsNativeInput || backend.TrySwitchInputMode(inputMethod, mode));
+    }
+
+    private static void RestoreInputMode(
+        TsfInputMethodService backend,
+        SoftKeyboardInputMethod inputMethod,
+        SoftKeyboardInputMode expected)
+    {
+        var current = backend.GetInputMode(inputMethod);
+        if (current is not null && current.IsNativeInput != expected.IsNativeInput)
+        {
+            _ = backend.TrySwitchInputMode(inputMethod, current);
+        }
     }
 
     private static void InvokeCandidate(

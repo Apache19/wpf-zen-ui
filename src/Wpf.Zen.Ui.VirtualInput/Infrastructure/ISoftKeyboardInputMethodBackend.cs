@@ -4,8 +4,6 @@
 // All Rights Reserved.
 
 using System.Collections.ObjectModel;
-using System.Windows.Input;
-
 namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 
 /// <summary>
@@ -17,7 +15,7 @@ internal interface ISoftKeyboardInputMethodBackend
 
     bool TryActivate(SoftKeyboardInputMethod profile);
 
-    InputMethodState GetImeState();
+    SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod);
 
-    bool TrySetImeState(InputMethodState state);
+    bool TrySwitchInputMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode);
 }
