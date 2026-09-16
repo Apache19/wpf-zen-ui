@@ -41,24 +41,10 @@ public class SoftKeyboardExtensionArchitectureTests
         Assert.DoesNotContain(names, name => name.Contains("Weasel", StringComparison.Ordinal));
         Assert.DoesNotContain(names, name => name.Contains("Iflytek", StringComparison.Ordinal));
         Assert.DoesNotContain(
-            WeaselCandidateBehavior.CandidateElementId.ToString("D"),
+            "36C3C795-7159-45AA-AB12-30229A51DBD3",
             image,
             StringComparison.OrdinalIgnoreCase
         );
-    }
-
-    /// <summary>
-    /// iFlytek's two nonzero open values remain distinguishable for native-layout selection.
-    /// </summary>
-    [Theory]
-    [InlineData(null, null)]
-    [InlineData(0, false)]
-    [InlineData(1, false)]
-    [InlineData(2, true)]
-    [InlineData(3, null)]
-    public void IflytekOpenValue_PreservesNativeAndDirectModes(int? value, bool? expected)
-    {
-        Assert.Equal(expected, IflytekSoftKeyboardExtensionProvider.DecodeOpenValue(value));
     }
 
     /// <summary>
@@ -119,27 +105,6 @@ public class SoftKeyboardExtensionArchitectureTests
         Assert.Null(JapaneseInputModeAdapter.Decode(open, 1, canSwitch: true));
     }
 
-    /// <summary>
-    /// Vendor selection depends on the TSF service identity, not a localized display name.
-    /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void IflytekExtension_OnlyAppliesToItsService(bool matchesService)
-    {
-        var profile = new SoftKeyboardInputMethod(
-            matchesService ? IflytekSoftKeyboardExtensionProvider.ServiceId : Guid.NewGuid(),
-            Guid.NewGuid(), 0x0804, "讯飞输入法", true
-        );
-        var context = new SoftKeyboardExtensionContext(new SoftKeyboardLayoutContext(
-            CultureInfo.GetCultureInfo("zh-CN"), InputScopeNameValue.Default,
-            SoftKeyboardPages.Letters, SoftKeyboardShiftState.Off, inputMethod: profile
-        ));
-        var adapters = IflytekSoftKeyboardExtensionProvider.Default.GetExtensions(context)
-            .Where(extension => extension.InputModeAdapter is not null).ToArray();
-        Assert.Equal(matchesService ? 1 : 0, adapters.Length);
-    }
-
     [Fact]
     public void DefaultCoreConfiguration_HasOnlyAutomaticAndStandardLayouts()
     {
@@ -155,7 +120,7 @@ public class SoftKeyboardExtensionArchitectureTests
     }
 
     [Fact]
-    public void IndependentLanguageAndVendorCapabilities_ComposeInDeclarationOrder()
+    public void IndependentLanguageCapabilities_ComposeInDeclarationOrder()
     {
         var inputMethod = new SoftKeyboardInputMethod(
             Guid.NewGuid(),
@@ -176,13 +141,13 @@ public class SoftKeyboardExtensionArchitectureTests
         );
         var provider = new CompositeSoftKeyboardExtensionProvider(
             ChineseSoftKeyboardExtensionProvider.Default,
-            WeaselSoftKeyboardExtensionProvider.Default
+            JapaneseSoftKeyboardExtensionProvider.Default
         );
 
         SoftKeyboardExtension[] extensions = provider.GetExtensions(context).ToArray();
 
         Assert.NotNull(extensions[0].LayoutProvider);
-        Assert.NotNull(extensions[1].CandidateBehavior);
+        Assert.Single(extensions);
     }
 
     [Fact]

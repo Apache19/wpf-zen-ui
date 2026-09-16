@@ -4,25 +4,18 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
-using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
-using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Settings;
 using TextBox = System.Windows.Controls.TextBox;
 
@@ -34,6 +27,9 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 {
+    private static readonly Guid IflytekServiceId =
+        new("B722B5D7-0C4C-4933-A7B9-DF8C91F2C643");
+
     /// <summary>
     /// Exercises modern profile enumeration and exact keyboard-layout activation on Windows.
     /// </summary>
@@ -185,11 +181,10 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Keeps Chinese mode active across repeated compositions and checks profile selection through
-    /// the real menu.
+    /// Checks iFlytek profile selection and repeated composition through the core platform button.
     /// </summary>
     [Fact]
-    public void Iflytek_ContinuousChineseInputAfterProfileMenuSelection()
+    public void Iflytek_CoreButtonSupportsProfileMenuSelectionAndChineseInput()
     {
         Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IFLYTEK_TESTS") == "1",
             "Set WPF_ZEN_NATIVE_IFLYTEK_TESTS=1 to exercise installed iFlytek in a foreground window.");
@@ -218,7 +213,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 keyboard.RefreshInputMethods();
                 original = keyboard.ActiveInputMethod;
                 var iflytek = keyboard.InputMethods.FirstOrDefault(p =>
-                    p.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId);
+                    p.ClassId == IflytekServiceId);
                 Assert.SkipUnless(iflytek is not null, "iFlytek is not installed.");
                 var other = keyboard.InputMethods.First(p => p.ClassId != iflytek.ClassId);
                 Assert.True(keyboard.TryActivateInputMethod(other));
@@ -246,21 +241,21 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.Equal(iflytek.ClassId, keyboard.ActiveInputMethod?.ClassId);
                 // The TIP can remember English mode across activations. Verify the reported
                 // mode against actual input before preparing Chinese for the sustained run.
-                var initialMode = Assert.IsType<SoftKeyboardInputMode>(keyboard.InputMode);
+                Assert.NotNull(keyboard.InputModeButton);
                 foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O, Key.Space })
                 {
                     Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
                     PumpFor(80);
                 }
 
-                var initialText = initialMode.IsNativeInput ? "你好" : "nihao";
-                Assert.True(PumpUntil(() => editor.Text.Trim() == initialText, 2000),
-                    $"Menu mode {initialMode} disagrees with actual input '{editor.Text}'.");
+                Assert.True(PumpUntil(() => editor.Text.Trim() is "你好" or "nihao", 2000),
+                    $"Unexpected iFlytek input '{editor.Text}'.");
+                var initiallyNative = editor.Text.Trim() == "你好";
                 editor.Clear();
-                if (!initialMode.IsNativeInput)
+                if (!initiallyNative)
                 {
                     Assert.True(SoftKeyboardTsfInputMode.TrySwitchInputMode(iflytek.ClassId));
-                    Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == true, 2000));
+                    PumpFor(500);
                 }
 
                 var expected = string.Empty;
@@ -282,7 +277,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         $"Cycle {cycle}: expected '{expected}', actual '{editor.Text}'.");
                     GC.Collect();
                     PumpFor(300);
-                    Assert.True(keyboard.InputMode?.IsNativeInput);
+                    Assert.NotNull(keyboard.InputModeButton);
                 }
             }
             finally
@@ -304,11 +299,10 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Checks real iFlytek mode changes and COM cleanup before and after candidate composition.
-    /// These foreground cases are opt-in; use a fresh process for first-editor initialization.
+    /// Checks iFlytek platform-button changes and COM cleanup without a vendor state adapter.
     /// </summary>
     [Fact]
-    public void Iflytek_ModeChangesAndCompositionSurviveGarbageCollection()
+    public void Iflytek_CoreButtonSurvivesGarbageCollection()
     {
         Assert.SkipUnless(
             Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IFLYTEK_TESTS") == "1",
@@ -331,8 +325,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var window = new Window { Content = root, Width = 850, Height = 420 };
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
-            SoftKeyboardInputMode? originalMode = null;
-            ISoftKeyboardInputModeAdapter? adapter = null;
             try
             {
                 window.Show();
@@ -341,61 +333,29 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(400);
                 keyboard.RefreshInputMethods();
                 original = keyboard.ActiveInputMethod;
-                originalMode = keyboard.InputMode;
                 var iflytek = keyboard.InputMethods.FirstOrDefault(p =>
-                    p.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId);
+                    p.ClassId == IflytekServiceId);
                 output.WriteLine(string.Join("; ", keyboard.InputMethods.Select(p => $"{p.DisplayName}: {p.ClassId}")));
                 output.WriteLine("Observation error: " + keyboard.InputMethodError);
                 Assert.SkipUnless(iflytek is not null, "iFlytek is not installed.");
-                adapter = IflytekSoftKeyboardExtensionProvider.Default.GetExtensions(
-                    new SoftKeyboardExtensionContext(
-                        new SoftKeyboardLayoutContext(
-                            System.Globalization.CultureInfo.GetCultureInfo("zh-CN"),
-                            InputScopeNameValue.Default, SoftKeyboardPages.Letters,
-                            SoftKeyboardShiftState.Off, inputMethod: iflytek
-                        )
-                    )
-                ).First(extension => extension.InputModeAdapter is not null).InputModeAdapter!;
                 Assert.True(backend.TryActivate(iflytek));
                 PumpFor(400);
-                var current = Assert.IsType<SoftKeyboardInputMode>(adapter.GetMode(iflytek));
-                if (!current.IsNativeInput)
-                {
-                    Assert.True(adapter.TrySwitchMode(iflytek, current));
-                }
-
-                Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == true, 2000));
+                Assert.True(PumpUntil(() => keyboard.InputModeButton is not null, 2000));
 
                 for (var cycle = 0; cycle < 3; cycle++)
                 {
-                    // Exercise the same command as the A/中 key, including adapter resolution.
+                    var previousButton = keyboard.InputModeButton!.Id;
                     typeof(SoftKeyboard).GetMethod(
                         "SwitchInputModeCore",
                         BindingFlags.Instance | BindingFlags.NonPublic
                     )!
                         .Invoke(keyboard, null);
-                    Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == false, 2000));
-                    Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
-                    Assert.True(PumpUntil(() => editor.Text == "a", 1000), "Direct text: " + editor.Text);
-                    editor.Clear();
-
-                    // Change the native mode outside the keyboard command to check observation.
-                    Assert.True(SoftKeyboardTsfInputMode.TrySwitchInputMode(iflytek.ClassId));
-                    Assert.True(PumpUntil(() => keyboard.InputMode?.IsNativeInput == true, 2000));
-                    foreach (var key in new[] { Key.N, Key.I, Key.H, Key.A, Key.O })
-                    {
-                        Assert.True(keyboard.SendActionKey(key, ModifierKeys.None));
-                        PumpFor(80);
-                    }
-
+                    Assert.True(PumpUntil(
+                        () => keyboard.InputModeButton is { } button
+                            && button.Id != previousButton,
+                        2000));
                     GC.Collect();
-                    // Pump the STA so RCW cleanup can return to its owning apartment.
                     PumpFor(250);
-                    Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
-                    Assert.True(PumpUntil(() => editor.Text == "你好", 2000), "Chinese text: " + editor.Text);
-                    GC.Collect();
-                    PumpFor(750);
-                    editor.Clear();
                 }
             }
             finally
@@ -409,277 +369,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 if (original is not null)
                 {
                     backend.TryActivate(original);
-                    if (originalMode is not null)
-                    {
-                        if (original.ClassId == IflytekSoftKeyboardExtensionProvider.ServiceId)
-                        {
-                            var restored = adapter?.GetMode(original);
-                            if (restored is not null
-                                && restored.IsNativeInput != originalMode.IsNativeInput)
-                            {
-                                adapter?.TrySwitchMode(original, restored);
-                            }
-                        }
-                        else
-                        {
-                            RestoreInputMode(backend, original, originalMode);
-                        }
-                    }
-                }
-
-                window.Close();
-            }
-        });
-    }
-
-    [Theory]
-    [InlineData(0x0411, JapaneseSoftKeyboardLayouts.Fifty, false)]
-    [InlineData(0x0411, JapaneseSoftKeyboardLayouts.Twelve, false)]
-    [InlineData(0x0404, SoftKeyboardSupplementalLayouts.Automatic, false)]
-    [InlineData(0x0404, SoftKeyboardSupplementalLayouts.Automatic, true)]
-    public void NativeSupplementalPanel_ProducesImeTextAndKeepsMenuFocus(
-        int language, string supplemental, bool loadAfterEditor)
-    {
-        Assert.SkipUnless(
-            Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
-            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to test installed Japanese/Zhuyin IMEs in a foreground window."
-        );
-
-        WpfApplicationTestHost.Run(() =>
-        {
-            var editor = new TextBox
-            {
-                Height = 40,
-                FontSize = 24
-            };
-            var keyboard = new SoftKeyboard
-            {
-                IsOpen = true,
-                Target = editor,
-                AutoShowMode = SoftKeyboardAutoShowMode.AnyFocus,
-                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
-            };
-            var root = new DockPanel();
-            DockPanel.SetDock(editor, Dock.Top);
-            root.Children.Add(editor);
-            if (!loadAfterEditor)
-            {
-                root.Children.Add(keyboard);
-            }
-
-            var window = new Window
-            {
-                Title = "SoftKeyboard supplemental panel verification",
-                Content = root,
-                Width = 900,
-                Height = 460
-            };
-            var backend = new TsfInputMethodService();
-            SoftKeyboardInputMethod? original = null;
-            SoftKeyboardInputMode? originalMode = null;
-            try
-            {
-                window.Show();
-                ActivateTestWindow(window);
-                editor.Focus();
-                window.UpdateLayout();
-                PumpFor(400);
-                if (loadAfterEditor)
-                {
-                    // Existing text editors initialize their WPF TextStore before an on-demand
-                    // keyboard is loaded. Verify this activation order as well as initial load.
-                    root.Children.Add(keyboard);
-                    window.UpdateLayout();
-                    PumpFor(400);
-                }
-
-                original = keyboard.ActiveInputMethod;
-                originalMode = original is null ? null : backend.GetInputMode(original);
-                var profile = keyboard.InputMethods.FirstOrDefault(p => p.LanguageId == language
-                    && (language != 0x0404 || p.ProfileId == new Guid("B2F9C502-1742-11D4-9790-0080C882687E")));
-                Assert.SkipUnless(profile is not null, "The requested input language is not installed.");
-                Assert.True(backend.TryActivate(profile));
-                PumpFor(500);
-                Assert.True(EnsureNativeInput(backend, profile));
-                keyboard.OnSessionInputLanguageChanged();
-                PumpFor(200);
-                output.WriteLine(
-                    $"{keyboard.ActiveInputMethod?.DisplayName}, profile={keyboard.ActiveInputMethod?.ProfileId}, "
-                    + $"preference={keyboard.ActiveInputMethod?.TouchLayoutPreference}, mode={keyboard.InputMode}"
-                );
-                if (language == 0x0404)
-                {
-                    TraceCandidateFunctions(profile.ClassId);
-                }
-
-                // Exercise the actual DropDownButton/ContextMenu focus boundary and radio action.
-                var button =
-                    (DropDownButton)keyboard.Template.FindName("PART_SettingsButton", keyboard);
-
-                typeof(DropDownButton).GetMethod(
-                    "OnClick", BindingFlags.Instance | BindingFlags.NonPublic
-                )!.Invoke(button, null);
-
-                PumpFor(100);
-                Assert.True(button.IsDropDownOpen);
-                Assert.True(keyboard.IsOpen);
-
-                var layoutMenu = keyboard.SettingsMenu.Items.Cast<object>().OfType<MenuItem>()
-                    .Single(item
-                        => (item.DataContext as SoftKeyboardSetting)?.Id == "layout");
-
-                var choice = layoutMenu.Items.Cast<RadioMenuItem>().Single(
-                    item => (item.DataContext as SoftKeyboardSetting)?.Id == "layout." + supplemental
-                );
-
-                typeof(RadioMenuItem).GetMethod(
-                    "OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(choice, null);
-
-                PumpFor(100);
-
-                output.WriteLine(
-                    $"After choice: selected={keyboard.SelectedSupplementalLayout}, menu={keyboard.SettingsMenu.IsOpen}, button={button.IsDropDownOpen}");
-
-                Assert.True(
-                    PumpUntil(() => !button.IsDropDownOpen, 800), "DropDownButton did not observe menu dismissal.");
-
-                Assert.Equal(supplemental, keyboard.SelectedSupplementalLayout);
-                Assert.True(keyboard.IsOpen);
-
-                var invoke =
-                    typeof(SoftKeyboard).GetMethod("InvokeKey", BindingFlags.Instance | BindingFlags.NonPublic)!;
-                PumpFor(200);
-                CaptureIfRequested(keyboard, supplemental);
-                ActivateTestWindow(window);
-                editor.Focus();
-                Assert.True(
-                    PumpUntil(() => editor.IsKeyboardFocused, 1000), "The menu must return input to the test editor.");
-
-                PumpFor(300);
-                string[] caps = language == 0x0411 ? ["か", "な"] : ["ㄋ", "ㄧ", "ˇ"];
-                foreach (var cap in caps)
-                {
-                    var key = keyboard.CurrentLayout.Keys.Single(key => Equals(key.Content, cap));
-                    invoke.Invoke(keyboard, [
-                        key
-                    ]);
-                    PumpFor(300);
-                    if (language == 0x0404)
-                    {
-                        output.WriteLine(
-                            $"Zhuyin key {cap}: text={editor.Text}, count={keyboard.Candidates.Count}, state={keyboard.CandidatePresentationState}");
-                        if (cap == "ㄋ")
-                        {
-                            // An unfinished reading is distinct from alternatives for an already
-                            // converted syllable. Keep this reported scenario visible in test output.
-                            var down = keyboard.CurrentLayout.Keys.Single(k => k.Key == Key.Down);
-                            invoke.Invoke(keyboard, [
-                                down
-                            ]);
-                            PumpFor(200);
-                            output.WriteLine(
-                                $"Zhuyin unfinished reading + Down: text={editor.Text}, count={keyboard.Candidates.Count}, state={keyboard.CandidatePresentationState}");
-                            CaptureIfRequested(keyboard, "Zhuyin-Unfinished-" + loadAfterEditor);
-                        }
-                    }
-                }
-
-                if (language == 0x0411)
-                {
-                    Assert.NotNull(
-                        typeof(SoftKeyboard).GetField(
-                            "_activeTextComposition",
-                            BindingFlags.Instance | BindingFlags.NonPublic
-                        )!.GetValue(keyboard)
-                    );
-                }
-
-                if (language == 0x0404)
-                {
-                    output.WriteLine(
-                        $"Zhuyin before Down: text={editor.Text}, count={keyboard.Candidates.Count}, state={keyboard.CandidatePresentationState}");
-                    var choose = keyboard.CurrentLayout.Keys.Single(key => key.Key == Key.Down);
-                    invoke.Invoke(keyboard, [
-                        choose
-                    ]);
-                    PumpFor(500);
-                    output.WriteLine(
-                        $"Zhuyin after Down: text={editor.Text}, state={keyboard.CandidatePresentationState}, candidates={string.Join(" / ", keyboard.Candidates.Select(c => c.Text))}");
-
-                    Assert.True(
-                        keyboard.HasCandidates,
-                        $"Zhuyin after Down: text={editor.Text}, state={keyboard.CandidatePresentationState}"
-                    );
-
-                    CaptureIfRequested(keyboard, "Zhuyin-Candidates-" + loadAfterEditor);
-                    var candidate = keyboard.Candidates.First(c => c.Text.TrimEnd('\0') == "你");
-                    InvokeCandidate(keyboard, candidate);
-                    PumpFor(200);
-                }
-
-                Assert.True(keyboard.SendActionKey(Key.Enter, ModifierKeys.None));
-                var expected = language == 0x0411 ? "かな" : "你";
-                Assert.True(
-                    PumpUntil(() => editor.Text == expected, 2500), $"Expected {expected}, actual '{editor.Text}'");
-
-                if (language == 0x0411)
-                {
-                    editor.SelectAll();
-                    Assert.True(keyboard.SendActionKey(Key.Back, ModifierKeys.None));
-                    PumpFor(100);
-                    foreach (var alternate in new[]
-                        {
-                            "が", "ぱ", "っ", "ろ", "む", "を", "ー"
-                        })
-                    {
-                        var key = keyboard.CurrentLayout.Keys.First(key
-                            => Equals(key.Content, alternate) || key.Alternates.Contains(alternate));
-
-                        typeof(SoftKeyboard).GetMethod(
-                                "ExecuteCustomAction", BindingFlags.Instance | BindingFlags.NonPublic)!
-                            .Invoke(keyboard, [key.Action!, alternate]);
-
-                        PumpFor(120);
-                    }
-
-                    Assert.NotNull(typeof(SoftKeyboard).GetField(
-                        "_activeTextComposition", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(keyboard));
-                    Assert.True(keyboard.SendActionKey(Key.Enter, ModifierKeys.None));
-                    Assert.True(PumpUntil(() => editor.Text == "がぱっろむをー", 2000), "Alternate result: " + editor.Text);
-                }
-
-                Assert.True(EnsureDirectInput(backend, profile));
-                keyboard.OnSessionInputLanguageChanged();
-                PumpFor(100);
-                Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => Equals(key.Content, caps[0]));
-                var other = keyboard.InputMethods.First(p => p.LanguageId != language);
-                Assert.True(backend.TryActivate(other));
-                PumpFor(350);
-                keyboard.OnSessionInputLanguageChanged();
-                PumpFor(100);
-                Assert.Equal(SoftKeyboardSupplementalLayouts.Automatic, keyboard.SelectedSupplementalLayout);
-                Assert.True(backend.TryActivate(profile));
-                PumpFor(350);
-                keyboard.OnSessionInputLanguageChanged();
-                PumpFor(100);
-                Assert.Equal(supplemental, keyboard.SelectedSupplementalLayout);
-            }
-            finally
-            {
-                keyboard.SettingsMenu.IsOpen = false;
-                if (window.IsVisible)
-                {
-                    keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
-                    PumpFor(100);
-                }
-
-                if (original is not null)
-                {
-                    backend.TryActivate(original);
-                    if (originalMode is not null)
-                    {
-                        RestoreInputMode(backend, original, originalMode);
-                    }
                 }
 
                 window.Close();
@@ -688,7 +377,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void Weasel_PreservesNativePreview()
+    public void Weasel_CoreNegotiationPreservesNativePreview()
     {
         Assert.SkipUnless(
             Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
@@ -835,74 +524,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         }
     }
 
-    private static void InvokeCandidate(
-        SoftKeyboard keyboard, SoftKeyboardCandidate candidate)
-    {
-        keyboard.UpdateLayout();
-        var item = FindCandidateItem(keyboard, candidate.Index);
-        Assert.NotNull(item);
-        item.Invoke();
-    }
-
-    // Query optional public conversion channels without calling them or altering IME state.
-    // These HRESULTs distinguish a missing provider from an unsupported individual function.
-    private void TraceCandidateFunctions(Guid classId)
-    {
-        if (WpfTextServicesAccessor.TryGetThreadManager() is not ITfThreadMgrEx manager)
-        {
-            return;
-        }
-
-        foreach (var providerId in new[]
-            {
-                classId, new Guid("9A698BB0-0F21-11D3-8DF1-00105A2799B5")
-            })
-        {
-            object? providerObject = null;
-            try
-            {
-                var result = manager.GetFunctionProvider(in providerId, out providerObject);
-                output.WriteLine($"Candidate function provider {providerId}: HRESULT=0x{result:X8}");
-                if (providerObject is not ITfFunctionProvider provider)
-                {
-                    continue;
-                }
-
-                foreach (var interfaceId in new[]
-                    {
-                        new Guid("87A2AD8F-F27B-4920-8501-67602280175D"),
-                        new Guid("EA163CE2-7A65-4506-82A3-C528215DA64E")
-                    })
-                {
-                    object? function = null;
-                    try
-                    {
-                        var functionId = Guid.Empty;
-                        result = provider.GetFunction(in functionId, in interfaceId, out function);
-                        output.WriteLine(
-                            $"Candidate function {interfaceId}: HRESULT=0x{result:X8}, available={function is not null}");
-                    }
-                    finally
-                    {
-                        ReleaseCom(function);
-                    }
-                }
-            }
-            finally
-            {
-                ReleaseCom(providerObject);
-            }
-        }
-    }
-
-    private static void ReleaseCom(object? value)
-    {
-        if (value is not null && Marshal.IsComObject(value))
-        {
-            Marshal.ReleaseComObject(value);
-        }
-    }
-
     private static bool IsNativeCandidateShown()
     {
         var manager = WpfTextServicesAccessor.TryGetThreadManager() as ITfUIElementMgr;
@@ -944,25 +565,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Marshal.ReleaseComObject(value);
             }
         }
-    }
-
-    private static SoftKeyboardCandidateItem? FindCandidateItem(DependencyObject root, uint index)
-    {
-        if (root is SoftKeyboardCandidateItem item && item.Candidate?.Index == index)
-        {
-            return item;
-        }
-
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var match = FindCandidateItem(VisualTreeHelper.GetChild(root, i), index);
-            if (match is not null)
-            {
-                return match;
-            }
-        }
-
-        return null;
     }
 
     private static void ActivateTestWindow(Window window)
@@ -1029,41 +631,5 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     {
         var elapsed = Stopwatch.StartNew();
         PumpUntil(() => elapsed.ElapsedMilliseconds >= milliseconds, milliseconds + 100);
-    }
-
-    private static void CaptureIfRequested(FrameworkElement element, string name)
-    {
-        var directory = Environment.GetEnvironmentVariable("WPF_ZEN_IME_CAPTURE_DIR");
-        if (string.IsNullOrEmpty(directory))
-        {
-            return;
-        }
-
-        Directory.CreateDirectory(directory);
-        element.UpdateLayout();
-        var bitmap = new RenderTargetBitmap(
-            (int)Math.Ceiling(element.ActualWidth),
-            (int)Math.Ceiling(element.ActualHeight),
-            96,
-            96,
-            PixelFormats.Pbgra32
-        );
-
-        var visual = new DrawingVisual();
-
-        using (var drawing = visual.RenderOpen())
-        {
-            drawing.DrawRectangle(
-                new VisualBrush(element),
-                null,
-                new Rect(0, 0, element.ActualWidth, element.ActualHeight)
-            );
-        }
-
-        bitmap.Render(visual);
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using var stream = File.Create(Path.Combine(directory, "SoftKeyboard-" + name + ".png"));
-        encoder.Save(stream);
     }
 }

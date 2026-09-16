@@ -11,11 +11,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 public sealed class DefaultSoftKeyboardExtensionProvider : ISoftKeyboardExtensionProvider
 {
     private readonly CompositeSoftKeyboardExtensionProvider _provider = new(
-        IflytekSoftKeyboardExtensionProvider.Default,
         ChineseSoftKeyboardExtensionProvider.Default,
-        ZhuyinSoftKeyboardExtensionProvider.Default,
-        JapaneseSoftKeyboardExtensionProvider.Default,
-        WeaselSoftKeyboardExtensionProvider.Default
+        JapaneseSoftKeyboardExtensionProvider.Default
     );
 
     /// <summary>

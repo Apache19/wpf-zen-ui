@@ -3,7 +3,7 @@
 `SoftKeyboard` 是可参与 WPF 布局、保持编辑器焦点的软键盘控件，适合平板、电子触控互动设备、POS
 和需要让键盘稳定占据 Page、ContentDialog 或表单指定区域的应用。
 
-软键盘核心位于 `Wpf.Zen.Ui.VirtualInput` 程序集。中文、注音、日语和小狼毫适配位于单向依赖
+软键盘核心位于 `Wpf.Zen.Ui.VirtualInput` 程序集。中文和日语适配位于单向依赖
 核心的 `Wpf.Zen.Ui.VirtualInput.Extensions` 程序集。核心不扫描程序集、不执行模块初始化，也不维护
 进程级扩展注册表；每个 `SoftKeyboard` 通过 `ExtensionProvider` 显式选择自己的扩展组合。
 XAML 使用专属 XML 命名空间，C# API 按职责分布在 `.Controls`、`.Candidates`、`.Extensions`、
@@ -52,7 +52,7 @@ XAML 使用专属 XML 命名空间，C# API 按职责分布在 `.Controls`、`.C
 ```csharp
 keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
     ChineseSoftKeyboardExtensionProvider.Default,
-    WeaselSoftKeyboardExtensionProvider.Default
+    JapaneseSoftKeyboardExtensionProvider.Default
 );
 ```
 
@@ -62,7 +62,7 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 
 键盘及默认键帽均不可获得键盘焦点。每次输入前都会重新验证目标、作用域、前台 HWND、
 启用/只读状态和焦点。普通键通过虚拟键进入 WPF 原有的命令、选区、撤销、死键和 TSF/IME
-管线；普通符号和长按变体使用 Unicode `SendInput`，扩展提供的日语假名使用 IME 按键组合。
+管线；普通符号和长按变体使用 Unicode `SendInput`。
 默认不包含搜索或面板。
 
 ## TSF-aware 行为契约
@@ -322,8 +322,8 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 符号键盘中的 `ABC` 键只负责返回字母键面，两者语义不同。
 
 TIP 身份或 `ImmIsIME` 不能证明任意语言都具有二态输入法开关。基础库只为已知的中文、日文和韩文
-启用 open/close 回退；未知语言保持隐藏。扩展适配器仍拥有最高优先级，可以改用文字或其他内容并
-自行决定显隐与点击逻辑，例如讯飞适配器根据厂商值显示 `中` / `英`。
+启用 open/close 回退；未知语言保持隐藏。扩展适配器仍拥有最高优先级，可以解释已知输入法的状态，
+但平台按钮的图标和点击行为不需要依赖状态解释。
 
 TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存且可降级的反射读取
 `TextServicesHost.ThreadManager`；首个编辑器尚未初始化时，等待后续焦点或输入刷新重试。
@@ -335,13 +335,8 @@ UIElement 支持的第三方输入法，与“无法内嵌时使用原生浮窗�
 存续期间短时同步其内容。微软拼音支持这组标准 UIElement 接口，可使用内嵌候选栏。
 枚举器仅用于当前同步查询，并在当前 Dispatcher 上及时释放，缩短该快照的原生引用寿命。
 
-`IflytekSoftKeyboardExtensionProvider` 已包含在默认扩展组合中，按 TSF 服务 GUID 识别讯飞。
-讯飞 3.0 的 keyboard-open 原始值 `1` 表示英文、`2` 表示中文，conversion 值却保持为零；
-WPF 的 Boolean 开关和 `Native` 转换标志无法表达该状态。扩展读取原始整数，并通过标准
-`GUID_LBI_INPUTMODE` 语言栏按钮执行切换，让讯飞同时更新引擎和系统状态。
 输入法菜单及菜单项均不可获得键盘焦点；选择时编辑器持续持有其 TSF 文档和输入法状态。
 候选接管统一检查接口能力、候选所属文档与当前焦点，不按输入法服务 GUID 强制回退。
-讯飞 3.0 虽提供候选接口，但文档查询返回 `E_NOTIMPL`，因此通过通用规则保留原生浮窗。
 获取或枚举后未被接管的 UIElement 引用在当前同步查询结束前释放，不留给后续 GC 清理。
 `BeginUIElement` 协商显示，首次 `UpdateUIElement` 才读取候选内容。
 模式按钮或自定义模式适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖全部语言栏
@@ -349,25 +344,15 @@ WPF 的 Boolean 开关和 `Native` 转换标志无法表达该状态。扩展读
 切换 profile 时先按新 profile 选择模式适配器，再发布模式、按钮和布局；读取前后 profile 不一致的
 观察会被丢弃并重试，避免把旧输入法的状态或按钮发布到新 profile。
 未提供可控制候选接口的输入法继续使用自己的浮窗。
-诊断依据及验证范围见 [讯飞适配记录](SoftKeyboard.Iflytek.md)。
 
 候选展示由接口能力、文档归属和扩展协商自动决定，不提供手动展示模式设置。
-
-启用 `WeaselSoftKeyboardExtensionProvider` 后，扩展通过候选 GUID 识别小狼毫，并保留
-其原生浮窗。小狼毫关闭 `inline_preedit` 时，拼音预编辑
-保存在它自己的浮窗中，WPF 文档可能只得到占位空格。它的候选接口不提供该字符串，也不实现
-`ITfReadingInformationUIElement`；隐藏浮窗会同时隐藏唯一的拼音预览。WPF `TextStore.OnUpdateComposition`
-从文档组合范围读取文字，反射同一范围不能恢复输入法没有写入的内容。
-源码依据：[小狼毫候选实现](https://github.com/rime/weasel/blob/master/WeaselTSF/CandidateList.cpp)、
-[组合文本实现](https://github.com/rime/weasel/blob/master/WeaselTSF/Composition.cpp)。
 
 任何提交路径都以 TSF 后续通知决定候选显示，不因为 HRESULT 成功或按键入队就提前清空候选栏。
 
 只有 `SoftKeyboard` 已打开且实际可见时才隐藏输入法的原生候选窗。关闭键盘，或折叠键盘及其
 任意祖先（例如 Page、ContentDialog 的键盘区域）时，会先尝试恢复原生候选窗再释放内嵌候选；若
 组合输入仍在继续，键盘重新显示后可重新发现仍存续且符合策略的 TSF 候选。
-原生恢复依赖 TIP 正确实现 Show；小狼毫仅在 BeginUIElement 允许显示时创建原生窗口，
-因此自动策略从元素开始时就不接管它，而非等到隐藏后才尝试补救。
+原生恢复依赖 TIP 正确实现 Show。自动策略会从元素开始时协商是否接管，而非等到隐藏后才尝试补救。
 
 公开 TSF 的 UIElement 能力类别与 QueryInterface 能用于协商接口，但不保证其实现完整。
 `ITfIntegratableCandidateListUIElement` 也不是“完美兼容”的认证。没有找到系统触摸键盘完整判定流程的
@@ -694,29 +679,10 @@ public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
 
 布局查询使用 `ITfFnGetPreferredTouchKeyboardLayout.GetLayout`，只获取布局类型及标识，不获取系统面板的几何和行为。
 查询失败或输入法不实现接口时，`TouchLayoutPreference` 为 null；未知标识保留给自定义策略，不伪造系统支持。
-现代微软注音在部分桌面环境不导出这项旧接口，因此注音扩展另有精确的 ClassId + ProfileId 回退，
-不会仅凭 `zh-TW` 或显示名称把仓颉、大易等输入法识别为注音。
 
-- 启用日语扩展后，日语默认维持标准键盘，设置中可选“50音”或“12键”。50音包含五十音网格与功能行；
-  12键为四行三列假名组，加一行功能键。
-- 12键短按输入主音，长按选择同组其他音；同时提供小字、浊音和半浊音。复用现有长按浮层，不实现 Win11 专有的 flick／滑行手势。
-- 日语附加面板输入时明确使用全角平假名／假名按键模式，IME 的此模式在输入后继续保留。
-  按键由 Windows 当前 HKL 的假名转换表反查，支持 101／106 键配置差异，组合与候选仍由 IME 负责。
-- 启用注音扩展且识别为标准台湾注音时，默认选择 41 个注音／声调键，加一行功能键；IME 关闭后显示字母键盘，
-  重新开启恢复注音。
-- 注音功能行的 `↓` 是普通方向键，只按输入法当时的状态请求选字／导航，不能保证出现内嵌候选。
-  控件只能呈现输入法实际通过 TSF 发布的候选，不能凭空生成候选或靠补方向键模拟系统触摸键盘的候选行为。
-  [微软注音说明](https://support.microsoft.com/zh-tw/windows/hardware/input-devices/microsoft-traditional-chinese-ime)
-  描述输入法自己的窗口和按键语义，不证明自定义软键盘能接管候选。
-  本机测试限定 Profile `B2F9C502-1742-11D4-9790-0080C882687E`，输入 `ㄋㄧˇ` 后再按 Down；
-  单独输入 `ㄋ`，以及此时按 Down，均复现没有候选的现象；此阶段与已转换汉字的选字列表不同。
-  额外检查公开查询渠道：本机微软注音的 `GetFunctionProvider` 返回 `0x80040503`，
-  TSF 系统提供器对 `ITfFnSearchCandidateProvider` 和 `ITfFnGetLinguisticAlternates` 均返回 `E_NOINTERFACE`。
-  因而当前实现尚不能提供系统触摸键盘那样的未完成音节实时候选，问题未解决。
-  这些结果限于本机版本，也不足以确认系统触摸键盘具体使用哪个内部接口。
-- 附加选择与数字／符号 `Page` 分开，临时进入符号页再返回时仍保留所选面板；网址、邮箱、自动数字作用域保留专用布局。
-- 布局选择按 `(LanguageId, ClassId, ProfileId)` 保存在当前控件实例内，切换输入法后再切回来可恢复。
-  控件不自动写入配置文件或注册表；需要跨启动持久化时由应用存储，并在对应输入法激活后调用选择 API。
+日语扩展不提供独立假名面板。它解释标准的日语 open/conversion 状态，以便在直接输入、全／半角
+字母、平假名和全／半角片假名之间正确判断是否使用原生输入，并为原生模式提供日语标点和符号布局。
+实际输入、组合与候选仍由当前日语输入法负责。
 
 ### 验证入口
 
@@ -745,5 +711,5 @@ Remove-Item Env:WPF_ZEN_NATIVE_IME_TESTS
 各原生用例独立进程执行，隔离输入法在文档关闭和配置切换后的状态。当前同进程连续切换用例
 曾出现延迟输入进入后续编辑器的失败，不能将其结果当作独立会话的验证结果。
 
-本机验证覆盖小狼毫非首候选提交、微软日语两种面板的组合与浊音／半浊音／小字输入、微软注音、
-真实 DropDownButton 菜单开关，以及切换输入法后恢复布局选择。第三方自定义方案及其他 Windows/IME 版本仍需要各自验证。
+本机验证覆盖输入法枚举与切换、语言栏模式按钮、通用候选协商和真实 DropDownButton 菜单开关。
+第三方输入法及其他 Windows/IME 版本仍需要各自验证。

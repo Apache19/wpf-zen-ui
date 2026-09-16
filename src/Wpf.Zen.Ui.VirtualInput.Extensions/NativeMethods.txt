@@ -1,6 +1,0 @@
-ImmGetContext
-ImmGetConversionStatus
-ImmSetConversionStatus
-ImmReleaseContext
-MapVirtualKeyEx
-ToUnicodeEx

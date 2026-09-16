@@ -66,8 +66,8 @@ public class SoftKeyboardSettingsTests
     }
 
     [Theory]
-    [InlineData("ja-JP", null, 4)]
-    [InlineData("zh-TW", 0x0404, 3)]
+    [InlineData("ja-JP", null, 2)]
+    [InlineData("zh-TW", 0x0404, 2)]
     [InlineData("zh-TW", 0xF042, 2)]
     [InlineData("zh-TW", null, 2)]
     [InlineData("zh-CN", 0x0804, 2)]
@@ -89,136 +89,6 @@ public class SoftKeyboardSettingsTests
         Assert.Equal(choices > 2, nodes.Any(node => node.Id == "layout"));
         Assert.False(nodes.Last().IsSeparator);
         Assert.DoesNotContain(nodes, node => node.Id.StartsWith("candidates", StringComparison.Ordinal));
-    }
-
-    [Theory]
-    [InlineData(JapaneseSoftKeyboardLayouts.Fifty, 46)]
-    [InlineData(JapaneseSoftKeyboardLayouts.Twelve, 12)]
-    public void JapanesePanels_CoverKanaAndRouteAlternativesThroughIme(string id, int mainKeys)
-    {
-        var context = Context("ja-JP", null, id);
-        var layout = id == JapaneseSoftKeyboardLayouts.Fifty
-            ? JapaneseFiftyLayoutProvider.Default.CreateLayout(context)!
-            : JapaneseTwelveLayoutProvider.Default.CreateLayout(context)!;
-        var keys = layout.Keys.Where(key => key.Action is JapaneseKanaAction).ToArray();
-        Assert.Equal(mainKeys + (id == JapaneseSoftKeyboardLayouts.Fifty ? 1 : 0), keys.Length);
-        var kana = keys.SelectMany(key => key.Alternates.Append(key.Content.ToString()!))
-            .Where(value => value.Length == 1).ToHashSet();
-        foreach (var value in "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんー")
-        {
-            Assert.Contains(value.ToString(), kana);
-        }
-
-        foreach (var key in keys)
-        {
-            Assert.IsAssignableFrom<ISoftKeyboardAlternateKeyAction>(key.Action);
-            Assert.All(key.Alternates, alternate => Assert.InRange(Assert.Single(alternate), '\u3041', '\u30fc'));
-        }
-
-        Assert.DoesNotContain(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.Text);
-    }
-
-    [Theory]
-    [InlineData(JapaneseSoftKeyboardLayouts.Fifty)]
-    [InlineData(JapaneseSoftKeyboardLayouts.Twelve)]
-    public void JapanesePanels_RepeatCursorAndEditingKeys(string id)
-    {
-        var context = Context("ja-JP", null, id);
-        var layout = id == JapaneseSoftKeyboardLayouts.Fifty
-            ? JapaneseFiftyLayoutProvider.Default.CreateLayout(context)!
-            : JapaneseTwelveLayoutProvider.Default.CreateLayout(context)!;
-
-        Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Left).IsRepeatEnabled);
-        Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Back).IsRepeatEnabled);
-    }
-
-    [Fact]
-    public void ZhuyinPreference_Chooses41PhoneticKeysOnlyInNativeLetterMode()
-    {
-        var layout = ZhuyinSoftKeyboardLayoutProvider.Default.CreateLayout(
-            Context("zh-TW", 0x0404, ZhuyinSoftKeyboardLayouts.Standard)
-        )!;
-
-        var phonetic = layout.Keys.Where(key => key.Kind == SoftKeyboardKeyKind.Custom).ToArray();
-
-        Assert.Equal(41, phonetic.Length);
-        Assert.Equal(41, phonetic.Select(key => key.Content).Distinct().Count());
-        Assert.Contains(phonetic, key => Equals(key.Content, "ㄅ"));
-        Assert.Contains(phonetic, key => Equals(key.Content, "˙"));
-
-        var choose = Assert.Single(layout.Keys, key => key.Key == Key.Down);
-
-        Assert.Equal(Key.Down, choose.Key);
-        Assert.Equal(SoftKeyboardKeyKind.VirtualKey, choose.Kind);
-        Assert.True(Assert.Single(layout.Keys, key => key.Key == Key.Back).IsRepeatEnabled);
-
-        foreach (bool? native in new bool?[] { false, null })
-        {
-            Assert.Null(
-                ZhuyinSoftKeyboardLayoutProvider.Default.CreateLayout(
-                    Context("zh-TW", 0x0404, ZhuyinSoftKeyboardLayouts.Standard, native: native)
-                )
-            );
-        }
-
-        Assert.Null(
-            ZhuyinSoftKeyboardLayoutProvider.Default.CreateLayout(
-                Context("zh-TW", 0x0404, SoftKeyboardSupplementalLayouts.Standard)
-            )
-        );
-
-        Assert.Null(
-            ZhuyinSoftKeyboardLayoutProvider.Default.CreateLayout(
-                Context("zh-TW", null, ZhuyinSoftKeyboardLayouts.Standard)
-            )
-        );
-    }
-
-    [Fact]
-    public void ModernMicrosoftBopomofo_UsesExactProfileFallbackWhenTouchQueryIsUnavailable()
-    {
-        var profile = new SoftKeyboardInputMethod(
-            new Guid("B115690A-EA02-48D5-A231-E3578D2FDF80"),
-            new Guid("B2F9C502-1742-11D4-9790-0080C882687E"),
-            0x0404,
-            "Name is not used for detection",
-            true
-        );
-
-        var context = new SoftKeyboardLayoutContext(
-            CultureInfo.GetCultureInfo("zh-TW"),
-            InputScopeNameValue.Default,
-            SoftKeyboardPages.Automatic,
-            SoftKeyboardShiftState.Off,
-            NativeMode(),
-            profile
-        );
-
-        Assert.True(ZhuyinSoftKeyboardExtensionProvider.IsZhuyin(context));
-
-        var extension = Assert.Single(
-            ZhuyinSoftKeyboardExtensionProvider.Default.GetExtensions(
-                new SoftKeyboardExtensionContext(context)
-            )
-        );
-
-        var registration = Assert.Single(extension.SupplementalLayouts!.GetLayouts(context));
-
-        Assert.Equal(ZhuyinSoftKeyboardLayouts.Standard, registration.Id);
-        Assert.True(registration.IsAutomaticPreferred);
-    }
-
-    [Theory]
-    [InlineData(InputScopeNameValue.Url)]
-    [InlineData(InputScopeNameValue.EmailSmtpAddress)]
-    [InlineData(InputScopeNameValue.Number)]
-    public void SupplementalPreference_DoesNotOverrideSpecializedAutomaticScopes(InputScopeNameValue scope)
-    {
-        Assert.Null(
-            JapaneseFiftyLayoutProvider.Default.CreateLayout(
-                Context("ja-JP", null, JapaneseSoftKeyboardLayouts.Fifty, scope: scope)
-            )
-        );
     }
 
     private static IReadOnlyList<SoftKeyboardLayoutOption> LayoutOptions(SoftKeyboardLayoutContext context)
