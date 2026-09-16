@@ -65,7 +65,7 @@ public sealed class SoftKeyboardLayoutContext
         InputMode          = inputMode;
         InputMethod        = inputMethod;
         SupplementalLayout = supplementalLayout;
-        InputModeButton    = inputMode?.Button ?? inputModeButton;
+        InputModeButton    = inputModeButton;
     }
 
     /// <summary>

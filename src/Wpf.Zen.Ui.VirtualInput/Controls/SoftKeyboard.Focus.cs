@@ -83,6 +83,7 @@ public partial class SoftKeyboard
     /// </summary>
     internal void OnSessionInputMethodStateInvalidated()
     {
+        RestartInputMethodProfileSettlement();
         QueueInputMethodStateRefresh();
     }
 

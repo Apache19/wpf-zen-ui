@@ -38,7 +38,7 @@ public class DefaultSoftKeyboardLayoutProviderTests
             ? new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test", true)
             : null;
         var inputMode = hasMode
-            ? new SoftKeyboardInputMode("test", false, true)
+            ? new SoftKeyboardInputMode("test", false)
             : null;
         var inputModeButton = hasButton
             ? new SoftKeyboardInputModeButton("test", "A", "Test mode")
@@ -111,7 +111,14 @@ public class DefaultSoftKeyboardLayoutProviderTests
                                 new SoftKeyboardLayoutContext(
                                     CultureInfo.GetCultureInfo(culture), scope, mode, shift,
                                     Mode(native),
-                                    new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test IME", true)
+                                    new SoftKeyboardInputMethod(
+                                        Guid.NewGuid(),
+                                        Guid.NewGuid(),
+                                        0x0409,
+                                        "Test IME",
+                                        true
+                                    ),
+                                    inputModeButton: Button(native)
                                 )
                             )
                         );
@@ -285,7 +292,8 @@ public class DefaultSoftKeyboardLayoutProviderTests
             SoftKeyboardPages.Letters,
             SoftKeyboardShiftState.Off,
             Mode(true, "あ"),
-            new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true)
+            new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true),
+            inputModeButton: Button(true, "あ")
         );
 
         var provider = JapaneseSoftKeyboardExtensionProvider.Default
@@ -309,7 +317,8 @@ public class DefaultSoftKeyboardLayoutProviderTests
             mode,
             SoftKeyboardShiftState.Off,
             Mode(native),
-            new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Test IME", true)
+            new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Test IME", true),
+            inputModeButton: Button(native)
         );
     }
 
@@ -317,13 +326,16 @@ public class DefaultSoftKeyboardLayoutProviderTests
     {
         return new SoftKeyboardInputMode(
             native ? "native" : "direct",
-            native,
-            true,
-            new SoftKeyboardInputModeButton(
-                native ? "native" : "direct",
-                label ?? (native ? "中" : "A"),
-                native ? "Native input" : "Direct input"
-            )
+            native
+        );
+    }
+
+    private static SoftKeyboardInputModeButton Button(bool native, string? label = null)
+    {
+        return new SoftKeyboardInputModeButton(
+            native ? "native" : "direct",
+            label ?? (native ? "中" : "A"),
+            native ? "Native input" : "Direct input"
         );
     }
 }

@@ -35,7 +35,7 @@ public class TsfInputProfileTests
         Assert.False(
             service.TrySwitchInputMode(
                 inputMethod,
-                new SoftKeyboardInputMode("native", true, true)
+                new SoftKeyboardInputMode("native", true)
             )
         );
     }

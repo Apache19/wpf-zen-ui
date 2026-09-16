@@ -3033,20 +3033,34 @@ public class SoftKeyboardTests
 
     private sealed class TestInputModeAdapter : ISoftKeyboardInputModeAdapter
     {
+        private static readonly SoftKeyboardInputModeTransition Transition = new("test-switch");
+
         internal bool ThrowOnRead { get; set; }
 
         internal bool SwitchRequested { get; private set; }
 
-        public SoftKeyboardInputMode GetMode(SoftKeyboardInputMethod inputMethod)
+        public SoftKeyboardInputModeContribution GetContribution(
+            SoftKeyboardInputMethod inputMethod)
         {
-            return ThrowOnRead
-                ? throw new InvalidOperationException("Unavailable")
-                : new SoftKeyboardInputMode("direct", false, true);
+            if (ThrowOnRead)
+            {
+                throw new InvalidOperationException("Unavailable");
+            }
+
+            return new SoftKeyboardInputModeContribution(
+                SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(
+                    new SoftKeyboardInputMode("direct", false)
+                ),
+                SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.FromValue(
+                    new SoftKeyboardInputModeButton("test", "A", "Direct input")
+                ),
+                SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(Transition)
+            );
         }
 
         public bool TrySwitchMode(
             SoftKeyboardInputMethod inputMethod,
-            SoftKeyboardInputMode currentMode)
+            SoftKeyboardInputModeTransition transition)
         {
             SwitchRequested = true;
             return false;
@@ -3059,7 +3073,7 @@ public class SoftKeyboardTests
     {
         private static readonly Guid FakeClassId = new("D9400B6B-9E48-4D79-90A6-62A3C085B3C2");
         private static readonly Guid FakeProfileId = new("451C2C15-CE41-49D1-A05E-D6474366F501");
-        private SoftKeyboardInputMode _inputMode = new("native", true, true);
+        private SoftKeyboardInputMode _inputMode = new("native", true);
         private bool _profileActive = true;
 
         internal int ActivationCount { get; private set; }
@@ -3107,21 +3121,21 @@ public class SoftKeyboardTests
             SoftKeyboardInputMode currentMode)
         {
             _inputMode = currentMode.IsNativeInput
-                ? new SoftKeyboardInputMode("direct", false, true)
-                : new SoftKeyboardInputMode("native", true, true);
+                ? new SoftKeyboardInputMode("direct", false)
+                : new SoftKeyboardInputMode("native", true);
             return true;
         }
 
         internal void SetNativeInput(bool native)
         {
             _inputMode = native
-                ? new SoftKeyboardInputMode("native", true, true)
-                : new SoftKeyboardInputMode("direct", false, true);
+                ? new SoftKeyboardInputMode("native", true)
+                : new SoftKeyboardInputMode("direct", false);
         }
 
         internal void UseDirectKeyboardLayout()
         {
-            _inputMode = new SoftKeyboardInputMode("direct", false, true);
+            _inputMode = new SoftKeyboardInputMode("direct", false);
             _profileActive = false;
         }
     }

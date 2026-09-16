@@ -116,7 +116,7 @@ public class SoftKeyboardCompositionTests
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("direct", false, true)
+                new SoftKeyboardInputMode("direct", false)
             )
         )!;
 
@@ -193,7 +193,7 @@ public class SoftKeyboardCompositionTests
             InputScopeNameValue.Default,
             page,
             SoftKeyboardShiftState.Off,
-            new SoftKeyboardInputMode("native", true, true)
+            new SoftKeyboardInputMode("native", true)
         );
     }
 

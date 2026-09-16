@@ -159,7 +159,7 @@ public class SoftKeyboardRoutingTests
                 InputScopeNameValue.Url,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("native", true, true),
+                new SoftKeyboardInputMode("native", true),
                 new SoftKeyboardInputMethod(classId, id, 0x0411, "Test profile", true)
             );
         }
@@ -221,7 +221,7 @@ public class SoftKeyboardRoutingTests
             scope,
             page,
             SoftKeyboardShiftState.Off,
-            new SoftKeyboardInputMode("native", true, true)
+            new SoftKeyboardInputMode("native", true)
         );
 
     private static SoftKeyboardLayout Layout(string marker, int columns, int rows)

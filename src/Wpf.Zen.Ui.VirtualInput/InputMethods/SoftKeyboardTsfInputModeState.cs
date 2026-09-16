@@ -6,12 +6,12 @@
 namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 /// <summary>
-/// Captures the raw TSF values used by a text service to describe its current keyboard mode.
+/// Captures platform values used by a text service to describe its current keyboard mode.
 /// </summary>
 /// <remarks>
-/// The values are deliberately not reduced to an On/Off state. Adapters must interpret them for a
-/// known text service. In particular, a nonzero open value is not necessarily equivalent to native
-/// input, and the conversion value is a bit field rather than an enumeration of exclusive states.
+/// Values are not reduced to an On/Off state. Open remains the original TSF value, while conversion
+/// may be normalized from WPF's IMM32 compatibility path into TSF flag values. Adapters must still
+/// interpret both values for a known text service.
 /// </remarks>
 public sealed class SoftKeyboardTsfInputModeState
 {
@@ -19,7 +19,7 @@ public sealed class SoftKeyboardTsfInputModeState
     /// Initializes a new instance of the <see cref="SoftKeyboardTsfInputModeState"/> class.
     /// </summary>
     /// <param name="openValue">The raw keyboard open/close compartment value.</param>
-    /// <param name="conversionValue">The raw keyboard conversion-mode compartment value.</param>
+    /// <param name="conversionValue">The TSF conversion flags, normalized when necessary.</param>
     /// <param name="canSwitch">
     /// Whether the active service owns an enabled standard TSF input-mode command.
     /// </param>
@@ -36,7 +36,7 @@ public sealed class SoftKeyboardTsfInputModeState
     public int? OpenValue { get; }
 
     /// <summary>
-    /// Gets the raw value of <c>GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION</c>, or null when unavailable.
+    /// Gets the TSF conversion bit field, normalized from WPF's compatibility path when necessary.
     /// </summary>
     public int? ConversionValue { get; }
 

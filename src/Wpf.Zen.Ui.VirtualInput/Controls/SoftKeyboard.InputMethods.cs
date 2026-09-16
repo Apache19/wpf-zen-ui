@@ -13,6 +13,10 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    // Profile identity and thread-compartment callbacks are not atomic. This quiet window groups
+    // one activation burst without adding latency to ordinary mode changes.
+    private static readonly TimeSpan InputMethodProfileQuietPeriod = TimeSpan.FromMilliseconds(75);
+
     /// <summary>
     /// Gets whether a profile command or state publication is currently in progress.
     /// Candidate discovery resumes after the operation and its layout publication finish.
@@ -27,6 +31,12 @@ public partial class SoftKeyboard
     private int  _inputMethodInvalidationVersion;
     private bool _inputMethodOperationActive;
     private bool _inputMethodStateRefreshQueued;
+
+    private DispatcherTimer?         _inputMethodProfileTimer;
+    private SoftKeyboardInputMethod? _settlingInputMethod;
+    private bool                     _inputMethodProfileReady;
+
+    private InputModeTransitionRoute? _inputModeTransitionRoute;
 
     private CultureInfo? _observedInputCulture;
 
@@ -369,11 +379,24 @@ public partial class SoftKeyboard
 
         var mode   = InputMode;
         var button = InputModeButton;
+        var transitionRoute = _inputModeTransitionRoute;
 
         var menuLacksFocusedTarget = (_inputMethodMenuCatalogRefreshDepth > 0
                 || _inputMethodMenu?.IsOpen == true
                 || SettingsMenu?.IsOpen == true)
             && !ReferenceEquals(Keyboard.FocusedElement, target);
+
+        var profileSettling = !menuLacksFocusedTarget
+            && ShouldDeferInputMethodProfile(snapshot.ActiveInputMethod);
+
+        if (profileSettling)
+        {
+            // Publish the verified profile identity without attaching a command read from a
+            // thread compartment that the newly activated TIP may still be initializing.
+            return isCurrent()
+                ? new InputMethodObservation(snapshot, null, null, null, culture, true)
+                : null;
+        }
 
         // A disabled focusless menu may still refresh the catalog while focus is outside the
         // remembered editor. Preserve that editor's last mode instead of reading another TSF
@@ -383,8 +406,9 @@ public partial class SoftKeyboard
             var active = snapshot.ActiveInputMethod;
             if (active is null)
             {
-                mode   = null;
-                button = null;
+                mode            = null;
+                button          = null;
+                transitionRoute = null;
             }
             else
             {
@@ -394,17 +418,57 @@ public partial class SoftKeyboard
                     return null;
                 }
 
-                mode = adapter is null
-                    ? session.GetInputMode(active)
-                    : adapter.GetMode(active);
+                var contribution = adapter?.GetContribution(active)
+                    ?? SoftKeyboardInputModeContribution.Empty;
 
                 // Mode interpretation and button discovery are independent. The platform command
-                // supplies the default presentation even when an extension interprets additional
-                // state; an adapter replaces it only by publishing an explicit button descriptor.
-                var platformButton = session is ISoftKeyboardInputModeButtonSession buttonSession
-                    ? buttonSession.GetInputModeButton(active)
+                // supplies defaults only for facets that the extension left unhandled.
+                var defaultMode = contribution.Mode.IsHandled
+                    ? null
+                    : session.GetInputMode(active);
+
+                mode = contribution.Mode.IsHandled
+                    ? contribution.Mode.Value
+                    : defaultMode;
+
+                var buttonSession = session as ISoftKeyboardInputModeButtonSession;
+                var needsPlatformButton = !contribution.Presentation.IsHandled
+                    || !contribution.Transition.IsHandled;
+                var platformButton = needsPlatformButton
+                    ? buttonSession?.GetInputModeButton(active)
                     : null;
-                button = mode?.Button ?? platformButton;
+
+                button = contribution.Presentation.IsHandled
+                    ? contribution.Presentation.Value
+                    : platformButton;
+
+                if (contribution.Transition.IsHandled)
+                {
+                    transitionRoute = adapter is not null
+                        && contribution.Transition.Value is { } adapterTransition
+                        ? InputModeTransitionRoute.FromAdapter(adapter, adapterTransition)
+                        : null;
+                }
+                else if (buttonSession is not null && platformButton is not null)
+                {
+                    transitionRoute = InputModeTransitionRoute.FromPlatformButton();
+                }
+                else if (defaultMode is not null)
+                {
+                    transitionRoute = InputModeTransitionRoute.FromPlatformMode(defaultMode);
+                }
+                else
+                {
+                    transitionRoute = null;
+                }
+
+                // A mode key is actionable UI. Never publish presentation without the command
+                // selected by the same resolution pass, or a hidden command without presentation.
+                if (button is null || transitionRoute is null)
+                {
+                    button          = null;
+                    transitionRoute = null;
+                }
 
                 // Profile activation and compartment publication are independent TSF callbacks.
                 // Verify the identity again so a mode read from the old service is never published
@@ -415,11 +479,22 @@ public partial class SoftKeyboard
                     QueueInputMethodStateRefresh();
                     return null;
                 }
+
+                return isCurrent()
+                    ? new InputMethodObservation(
+                        snapshot,
+                        mode,
+                        button,
+                        transitionRoute,
+                        culture,
+                        false
+                    )
+                    : null;
             }
         }
 
         return isCurrent()
-            ? new InputMethodObservation(snapshot, mode, button, culture)
+            ? new InputMethodObservation(snapshot, mode, button, transitionRoute, culture, false)
             : null;
     }
 
@@ -507,6 +582,8 @@ public partial class SoftKeyboard
             SetValue(InputModeButtonPropertyKey, observation.Button);
         }
 
+        _inputModeTransitionRoute = observation.TransitionRoute;
+
         _observedInputCulture     =  observation.Culture;
         _inputMethodLayoutPending |= profileChanged || modeChanged || buttonChanged
             || cultureChanged;
@@ -527,7 +604,18 @@ public partial class SoftKeyboard
             ReleaseCandidatePresentation();
         }
 
-        return isCurrent();
+        if (!isCurrent())
+        {
+            return false;
+        }
+
+        if (!observation.IsProfileSettling
+            && HaveSameInputMethod(_settlingInputMethod, snapshot.ActiveInputMethod))
+        {
+            CompleteInputMethodProfileSettlement();
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -578,8 +666,12 @@ public partial class SoftKeyboard
                 SetValue(InputModeButtonPropertyKey, null);
             }
 
+            _inputModeTransitionRoute = null;
+
             _observedInputCulture     = null;
             _inputMethodLayoutPending = true;
+
+            CompleteInputMethodProfileSettlement();
 
             if (!operationActive)
             {
@@ -713,7 +805,96 @@ public partial class SoftKeyboard
             return;
         }
 
+        RestartInputMethodProfileSettlement();
         QueueInputMethodStateRefresh();
+    }
+
+    /// <summary>
+    /// Withholds profile-dependent mode state until native activation callbacks become quiet.
+    /// </summary>
+    /// <remarks>
+    /// TSF publishes profile identity and thread-compartment values independently. During profile
+    /// activation, the new identity can therefore be observable before the TIP has restored its
+    /// remembered conversion mode. The transition publishes no command until the callback stream
+    /// has been quiet for one bounded interval.
+    /// </remarks>
+    private bool ShouldDeferInputMethodProfile(SoftKeyboardInputMethod? inputMethod)
+    {
+        if (InputMethodSource is not WindowsSoftKeyboardInputMethodSource
+            || inputMethod is null)
+        {
+            CompleteInputMethodProfileSettlement();
+            return false;
+        }
+
+        if (HaveSameInputMethod(_settlingInputMethod, inputMethod))
+        {
+            return !_inputMethodProfileReady;
+        }
+
+        // The first profile observed after the control is loaded already belongs to the focused
+        // editor; there is no previously published profile transition to stabilize.
+        if (ActiveInputMethod is null && _observedInputCulture is null)
+        {
+            return false;
+        }
+
+        if (HaveSameInputMethod(ActiveInputMethod, inputMethod))
+        {
+            CompleteInputMethodProfileSettlement();
+            return false;
+        }
+
+        _settlingInputMethod     = inputMethod;
+        _inputMethodProfileReady = false;
+
+        _inputMethodProfileTimer ??= new DispatcherTimer(
+            InputMethodProfileQuietPeriod,
+            DispatcherPriority.Background,
+            OnInputMethodProfileTimerTick,
+            Dispatcher
+        );
+
+        _inputMethodProfileTimer.Stop();
+        _inputMethodProfileTimer.Start();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Restarts the quiet period when another native notification arrives during activation.
+    /// </summary>
+    private void RestartInputMethodProfileSettlement()
+    {
+        if (_settlingInputMethod is null || _inputMethodProfileTimer is null)
+        {
+            return;
+        }
+
+        _inputMethodProfileReady = false;
+        _inputMethodProfileTimer.Stop();
+        _inputMethodProfileTimer.Start();
+    }
+
+    /// <summary>
+    /// Allows one final observation after the activation callback stream becomes quiet.
+    /// </summary>
+    private void OnInputMethodProfileTimerTick(object? sender, EventArgs eventArgs)
+    {
+        _inputMethodProfileTimer?.Stop();
+        _inputMethodProfileReady = true;
+
+        QueueInputMethodStateRefresh();
+    }
+
+    /// <summary>
+    /// Ends the current profile settlement and releases its timer state.
+    /// </summary>
+    private void CompleteInputMethodProfileSettlement()
+    {
+        _inputMethodProfileTimer?.Stop();
+        _settlingInputMethod     = null;
+        _inputMethodProfileReady = false;
     }
 
     private static void OnInputMethodSourceChanged(
@@ -781,6 +962,67 @@ public partial class SoftKeyboard
         SoftKeyboardInputMethodSnapshot Snapshot,
         SoftKeyboardInputMode? Mode,
         SoftKeyboardInputModeButton? Button,
-        CultureInfo Culture
+        InputModeTransitionRoute? TransitionRoute,
+        CultureInfo Culture,
+        bool IsProfileSettling
     );
+
+    /// <summary>
+    /// Retains the command owner selected by the same pass that resolved visible mode state.
+    /// </summary>
+    private sealed class InputModeTransitionRoute
+    {
+        private readonly ISoftKeyboardInputModeAdapter? _adapter;
+        private readonly SoftKeyboardInputModeTransition? _adapterTransition;
+        private readonly SoftKeyboardInputMode? _platformMode;
+        private readonly bool _usesPlatformButton;
+
+        private InputModeTransitionRoute(
+            ISoftKeyboardInputModeAdapter? adapter,
+            SoftKeyboardInputModeTransition? adapterTransition,
+            SoftKeyboardInputMode? platformMode,
+            bool usesPlatformButton)
+        {
+            _adapter            = adapter;
+            _adapterTransition  = adapterTransition;
+            _platformMode       = platformMode;
+            _usesPlatformButton = usesPlatformButton;
+        }
+
+        internal static InputModeTransitionRoute FromAdapter(
+            ISoftKeyboardInputModeAdapter adapter,
+            SoftKeyboardInputModeTransition transition)
+        {
+            return new InputModeTransitionRoute(adapter, transition, null, false);
+        }
+
+        internal static InputModeTransitionRoute FromPlatformButton()
+        {
+            return new InputModeTransitionRoute(null, null, null, true);
+        }
+
+        internal static InputModeTransitionRoute FromPlatformMode(SoftKeyboardInputMode mode)
+        {
+            return new InputModeTransitionRoute(null, null, mode, false);
+        }
+
+        internal bool TryInvoke(
+            ISoftKeyboardInputMethodSession session,
+            SoftKeyboardInputMethod inputMethod)
+        {
+            if (_adapter is not null && _adapterTransition is not null)
+            {
+                return _adapter.TrySwitchMode(inputMethod, _adapterTransition);
+            }
+
+            if (_usesPlatformButton)
+            {
+                return session is ISoftKeyboardInputModeButtonSession buttonSession
+                    && buttonSession.TryInvokeInputModeButton(inputMethod);
+            }
+
+            return _platformMode is not null
+                && session.TrySwitchInputMode(inputMethod, _platformMode);
+        }
+    }
 }

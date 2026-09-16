@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -22,6 +23,65 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 public class SoftKeyboardAsyncSourceTests
 {
+    /// <summary>
+    /// A profile transition never publishes mode state read before the new profile becomes quiet.
+    /// </summary>
+    [Fact]
+    public void InputMethodProfileTransition_WithholdsTransientMode()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var backend = new SettlingInputMethodBackend();
+            var keyboard = CreateKeyboard();
+            keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
+            keyboard.IsOpen = true;
+            var editor = new TextBox();
+            var panel = new StackPanel();
+            panel.Children.Add(editor);
+            panel.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = panel, ShowInTaskbar = false };
+            var publishedCaps = new List<object>();
+            var descriptor = DependencyPropertyDescriptor.FromProperty(
+                SoftKeyboard.InputModeButtonProperty,
+                typeof(SoftKeyboard)
+            );
+
+            void RecordButton(object? sender, EventArgs args)
+            {
+                if (keyboard.InputModeButton is { } button)
+                {
+                    publishedCaps.Add(button.Content);
+                }
+            }
+
+            descriptor.AddValueChanged(keyboard, RecordButton);
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                PumpUntil(() => Equals(keyboard.InputModeButton?.Content, "A"));
+
+                Assert.True(keyboard.TryActivateInputMethod(backend.Next));
+                Assert.True(keyboard.RefreshInputMethods());
+                Assert.Equal(backend.Next.ClassId, keyboard.ActiveInputMethod?.ClassId);
+                Assert.Null(keyboard.InputMode);
+                Assert.Null(keyboard.InputModeButton);
+
+                backend.CompleteActivation();
+                keyboard.OnSessionInputMethodStateInvalidated();
+                PumpUntil(() => Equals(keyboard.InputModeButton?.Content, "英"));
+
+                Assert.DoesNotContain("中", publishedCaps);
+            }
+            finally
+            {
+                descriptor.RemoveValueChanged(keyboard, RecordButton);
+                window.Close();
+            }
+        });
+    }
+
     [Fact]
     public void CandidateRefresh_RejectsLateSnapshotFromSupersededRequest()
     {
@@ -450,7 +510,7 @@ public class SoftKeyboardAsyncSourceTests
 
         public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return new SoftKeyboardInputMode("native", true, true);
+            return new SoftKeyboardInputMode("native", true);
         }
 
         public bool TrySwitchInputMode(
@@ -458,6 +518,91 @@ public class SoftKeyboardAsyncSourceTests
             SoftKeyboardInputMode currentMode)
         {
             return false;
+        }
+    }
+
+    private sealed class SettlingInputMethodBackend :
+        ISoftKeyboardInputMethodBackend,
+        ISoftKeyboardInputModeButtonBackend
+    {
+        private readonly SoftKeyboardInputMethod _initial = new(
+            Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Initial", true
+        );
+
+        private SoftKeyboardInputMethod _active;
+        private bool _native;
+
+        internal SettlingInputMethodBackend()
+        {
+            _active = _initial;
+            Next = new SoftKeyboardInputMethod(
+                Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Next", false
+            );
+        }
+
+        internal SoftKeyboardInputMethod Next { get; }
+
+        internal void CompleteActivation()
+        {
+            _native = false;
+        }
+
+        public void Refresh(
+            ObservableCollection<SoftKeyboardInputMethod> destination,
+            out SoftKeyboardInputMethod? active)
+        {
+            destination.Clear();
+            destination.Add(Copy(_initial));
+            destination.Add(Copy(Next));
+            active = destination.Single(item => item.ClassId == _active.ClassId);
+        }
+
+        public bool TryActivate(SoftKeyboardInputMethod profile)
+        {
+            _active = profile;
+            _native = true;
+            return true;
+        }
+
+        public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
+        {
+            return new SoftKeyboardInputMode(
+                _native ? "native" : "direct",
+                _native
+            );
+        }
+
+        public bool TrySwitchInputMode(
+            SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputMode currentMode)
+        {
+            return false;
+        }
+
+        public SoftKeyboardInputModeButton GetInputModeButton(
+            SoftKeyboardInputMethod inputMethod)
+        {
+            return new SoftKeyboardInputModeButton(
+                _native ? "native" : "direct",
+                _native ? "中" : inputMethod.ClassId == _initial.ClassId ? "A" : "英",
+                _native ? "Native input" : "Direct input"
+            );
+        }
+
+        public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+        {
+            return false;
+        }
+
+        private SoftKeyboardInputMethod Copy(SoftKeyboardInputMethod inputMethod)
+        {
+            return new SoftKeyboardInputMethod(
+                inputMethod.ClassId,
+                inputMethod.ProfileId,
+                inputMethod.LanguageId,
+                inputMethod.DisplayName,
+                inputMethod.ClassId == _active.ClassId
+            );
         }
     }
 

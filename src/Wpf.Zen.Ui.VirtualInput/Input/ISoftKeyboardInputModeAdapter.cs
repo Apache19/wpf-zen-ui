@@ -6,35 +6,38 @@
 namespace Wpf.Zen.Ui.VirtualInput.Input;
 
 /// <summary>
-/// Interprets and switches the native mode contract of a particular text service.
+/// Contributes independently resolvable mode capabilities for a particular text service.
 /// </summary>
 /// <remarks>
 /// TSF standardizes the compartments that carry open and conversion values, but a text service can
 /// use additional values or expose service-specific transitions. The adapter owns that
-/// interpretation and may explicitly attach a replacement button to the returned mode. Merely
-/// interpreting state leaves the platform button presentation unchanged. Calls run on the keyboard
-/// Dispatcher, must not block, and must not activate another profile or change focus.
+/// interpretation. Each state, presentation, and transition facet can either stop resolution or
+/// allow the platform default to supply that facet. Calls run on the keyboard Dispatcher, must not
+/// block, and must not activate another profile or change focus.
 /// </remarks>
 public interface ISoftKeyboardInputModeAdapter
 {
     /// <summary>
-    /// Reads and interprets the current mode of the active input method.
+    /// Reads one coherent native snapshot and contributes any facets understood by the adapter.
     /// </summary>
     /// <param name="inputMethod">The active input-method profile.</param>
-    /// <returns>The interpreted mode, or null when no coherent state can be observed.</returns>
-    SoftKeyboardInputMode? GetMode(SoftKeyboardInputMethod inputMethod);
+    /// <returns>
+    /// Independently handled state, presentation, and transition facets. Unhandled facets continue
+    /// through the platform-default resolver.
+    /// </returns>
+    SoftKeyboardInputModeContribution GetContribution(SoftKeyboardInputMethod inputMethod);
 
     /// <summary>
     /// Requests a transition using the text service's mode-switch contract.
     /// </summary>
     /// <param name="inputMethod">The active input-method profile.</param>
-    /// <param name="currentMode">The last mode observed for that profile.</param>
+    /// <param name="transition">The transition descriptor returned by this adapter.</param>
     /// <returns>Whether the mode-switch request was accepted.</returns>
     /// <remarks>
-    /// This is intentionally a transition rather than an On/Off setter. Services such as Microsoft
-    /// Japanese IME expose more than two modes, while vendor services may use non-Boolean state
-    /// codes.
-    /// The displayed mode is always read back after the request.
+    /// The displayed state is always read back after the request. The method is called only for a
+    /// transition facet returned by the same adapter and published for the same active profile.
     /// </remarks>
-    bool TrySwitchMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode);
+    bool TrySwitchMode(
+        SoftKeyboardInputMethod inputMethod,
+        SoftKeyboardInputModeTransition transition);
 }

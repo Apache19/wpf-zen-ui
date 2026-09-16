@@ -220,7 +220,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Invokes the extension-owned transition or the independently discovered native command.
+    /// Invokes the transition selected by the last complete input-mode resolution pass.
     /// </summary>
     private void SwitchInputModeCore()
     {
@@ -230,9 +230,9 @@ public partial class SoftKeyboard
         }
 
         var inputMethod = ActiveInputMethod;
-        var currentMode = InputMode;
+        var transitionRoute = _inputModeTransitionRoute;
 
-        if (inputMethod is null || InputModeButton is null)
+        if (inputMethod is null || InputModeButton is null || transitionRoute is null)
         {
             return;
         }
@@ -244,21 +244,7 @@ public partial class SoftKeyboard
                 return false;
             }
 
-            var adapter = ResolveInputModeAdapter();
-            bool accepted;
-
-            if (currentMode?.CanSwitch == true)
-            {
-                accepted = adapter?.TrySwitchMode(inputMethod, currentMode)
-                    ?? session.TrySwitchInputMode(inputMethod, currentMode);
-            }
-            else
-            {
-                accepted = session is ISoftKeyboardInputModeButtonSession buttonSession
-                    && buttonSession.TryInvokeInputModeButton(inputMethod);
-            }
-
-            return accepted && isCurrent();
+            return transitionRoute.TryInvoke(session, inputMethod) && isCurrent();
         });
 
         QueueInputMethodStateRefresh();

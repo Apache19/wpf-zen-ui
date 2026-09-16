@@ -47,7 +47,7 @@ public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensi
             throw new ArgumentNullException(nameof(context));
         }
 
-        return context.Layout.Culture.TwoLetterISOLanguageName == "ja"
+        return SupportsJapanese(context.Layout)
             ?
             [
                 new SoftKeyboardExtension(
@@ -62,7 +62,7 @@ public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensi
     {
         public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
         {
-            if (context.Culture.TwoLetterISOLanguageName != "ja")
+            if (!SupportsJapanese(context))
             {
                 return null;
             }
@@ -72,5 +72,15 @@ public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensi
                 ?? NumberSoftKeyboardLayoutProvider.Default.CreateLayout(context)
                 ?? (context.InputMode?.IsNativeInput == true ? CompactProvider.CreateLayout(context) : null);
         }
+    }
+
+    /// <summary>
+    /// Uses the verified active profile for routing and falls back to culture without a profile.
+    /// </summary>
+    private static bool SupportsJapanese(SoftKeyboardLayoutContext context)
+    {
+        return context.InputMethod is { } inputMethod
+            ? (inputMethod.LanguageId & 0x03FF) == 0x11
+            : context.Culture.TwoLetterISOLanguageName == "ja";
     }
 }

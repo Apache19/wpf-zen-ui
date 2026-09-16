@@ -13,6 +13,7 @@ using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Input;
+using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
 using Wpf.Zen.Ui.VirtualInput.Settings;
@@ -53,6 +54,7 @@ public class SoftKeyboardExtensionArchitectureTests
     [Theory]
     [InlineData(0, 0x00, "direct", false)]
     [InlineData(1, 0x00, "half-width-alphanumeric", false)]
+    [InlineData(2, 0x00, "half-width-alphanumeric", false)]
     [InlineData(1, 0x08, "full-width-alphanumeric", false)]
     [InlineData(1, 0x09, "hiragana", true)]
     [InlineData(1, 0x0B, "full-width-katakana", true)]
@@ -64,13 +66,67 @@ public class SoftKeyboardExtensionArchitectureTests
         bool native)
     {
         var mode = Assert.IsType<SoftKeyboardInputMode>(
-            JapaneseInputModeAdapter.Decode(open, conversion, canSwitch: true)
+            JapaneseInputModeAdapter.Decode(open, conversion)
         );
 
         Assert.Equal(id, mode.Id);
         Assert.Equal(native, mode.IsNativeInput);
-        Assert.True(mode.CanSwitch);
-        Assert.Null(mode.Button);
+    }
+
+    /// <summary>
+    /// Japanese services without a standard command publish mode-specific presentation and leave
+    /// no room for the generic open-state label to replace it.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0x00, "A")]
+    [InlineData(1, 0x00, "A")]
+    [InlineData(1, 0x08, "Ａ")]
+    [InlineData(1, 0x09, "あ")]
+    [InlineData(1, 0x0B, "カ")]
+    [InlineData(1, 0x03, "ｶ")]
+    public void JapaneseMode_ReplacesOnlyMissingPresentationAndTransition(
+        int open,
+        int conversion,
+        string content)
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0411,
+            "Japanese TIP",
+            true
+        );
+        var contribution = JapaneseInputModeAdapter.Decode(
+            inputMethod,
+            new SoftKeyboardTsfInputModeState(open, conversion, canSwitch: false)
+        );
+
+        Assert.NotNull(contribution.Mode.Value);
+        Assert.Equal(content, contribution.Presentation.Value?.Content);
+        Assert.NotNull(contribution.Transition.Value);
+    }
+
+    /// <summary>
+    /// A Japanese service-owned command remains the default presentation and transition provider.
+    /// </summary>
+    [Fact]
+    public void JapaneseMode_PreservesServiceOwnedCommandFacets()
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0411,
+            "Japanese TIP",
+            true
+        );
+        var contribution = JapaneseInputModeAdapter.Decode(
+            inputMethod,
+            new SoftKeyboardTsfInputModeState(1, 0, canSwitch: true)
+        );
+
+        Assert.Equal("half-width-alphanumeric", contribution.Mode.Value?.Id);
+        Assert.False(contribution.Presentation.IsHandled);
+        Assert.False(contribution.Transition.IsHandled);
     }
 
     /// <summary>
@@ -86,11 +142,116 @@ public class SoftKeyboardExtensionArchitectureTests
         bool native)
     {
         var mode = Assert.IsType<SoftKeyboardInputMode>(
-            ChineseInputModeAdapter.Decode(open, conversion, canSwitch: true)
+            ChineseInputModeAdapter.Decode(open, conversion)
         );
 
         Assert.Equal(native, mode.IsNativeInput);
-        Assert.Null(mode.Button);
+    }
+
+    /// <summary>
+    /// Chinese services without a language-bar command expose their decoded conversion state as
+    /// a matching fallback key cap.
+    /// </summary>
+    [Theory]
+    [InlineData(0, "英", false)]
+    [InlineData(1, "中", true)]
+    public void ChineseMode_UsesNativeConversionFallback(
+        int conversion,
+        string content,
+        bool native)
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0804,
+            "Chinese TIP",
+            true
+        );
+        var contribution = ChineseInputModeAdapter.Decode(
+            inputMethod,
+            new SoftKeyboardTsfInputModeState(1, conversion, canSwitch: false)
+        );
+        var mode = Assert.IsType<SoftKeyboardInputMode>(
+            contribution.Mode.Value
+        );
+
+        Assert.Equal(native, mode.IsNativeInput);
+        Assert.Equal(content, contribution.Presentation.Value?.Content);
+        Assert.NotNull(contribution.Transition.Value);
+    }
+
+    /// <summary>
+    /// A service-owned input-mode command retains platform presentation and invocation ownership.
+    /// </summary>
+    [Fact]
+    public void ChineseMode_PreservesServiceOwnedCommand()
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0804,
+            "Chinese TIP",
+            true
+        );
+        var contribution = ChineseInputModeAdapter.Decode(
+            inputMethod,
+            new SoftKeyboardTsfInputModeState(1, 1, canSwitch: true)
+        );
+
+        Assert.NotNull(contribution.Mode.Value);
+        Assert.False(contribution.Presentation.IsHandled);
+        Assert.False(contribution.Transition.IsHandled);
+    }
+
+    /// <summary>
+    /// A verified active profile selects its language extension before a lagging ambient culture.
+    /// </summary>
+    [Fact]
+    public void LanguageExtensionRouting_PrefersActiveProfileLanguage()
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0411,
+            "Japanese TIP",
+            true
+        );
+        var layout = new SoftKeyboardLayoutContext(
+            CultureInfo.GetCultureInfo("zh-CN"),
+            InputScopeNameValue.Default,
+            SoftKeyboardPages.Letters,
+            SoftKeyboardShiftState.Off,
+            inputMethod: inputMethod
+        );
+        var extensions = DefaultSoftKeyboardExtensionProvider.Default
+            .GetExtensions(new SoftKeyboardExtensionContext(layout))
+            .ToArray();
+
+        var extension = Assert.Single(extensions);
+        Assert.Same(JapaneseInputModeAdapter.Default, extension.InputModeAdapter);
+    }
+
+    /// <summary>
+    /// A closed Chinese TIP leaves reopening to the platform keyboard-open fallback.
+    /// </summary>
+    [Fact]
+    public void ChineseMode_ClosedPreservesPlatformOpenFallback()
+    {
+        var inputMethod = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0804,
+            "Chinese TIP",
+            true
+        );
+        var contribution = ChineseInputModeAdapter.Decode(
+            inputMethod,
+            new SoftKeyboardTsfInputModeState(0, 1, canSwitch: false)
+        );
+
+        Assert.NotNull(contribution.Mode.Value);
+        Assert.False(contribution.Presentation.IsHandled);
+        Assert.False(contribution.Transition.IsHandled);
     }
 
     /// <summary>
@@ -101,8 +262,11 @@ public class SoftKeyboardExtensionArchitectureTests
     [InlineData(2)]
     public void StandardModeAdapters_RejectVendorOpenValues(int? open)
     {
-        Assert.Null(ChineseInputModeAdapter.Decode(open, 1, canSwitch: true));
-        Assert.Null(JapaneseInputModeAdapter.Decode(open, 1, canSwitch: true));
+        Assert.Null(ChineseInputModeAdapter.Decode(open, 1));
+        if (open is null)
+        {
+            Assert.Null(JapaneseInputModeAdapter.Decode(open, 1));
+        }
     }
 
     [Fact]
@@ -135,7 +299,7 @@ public class SoftKeyboardExtensionArchitectureTests
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("chinese", true, true),
+                new SoftKeyboardInputMode("chinese", true),
                 inputMethod
             )
         );

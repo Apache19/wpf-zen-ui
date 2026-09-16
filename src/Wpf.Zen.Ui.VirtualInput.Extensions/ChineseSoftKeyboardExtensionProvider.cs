@@ -12,7 +12,6 @@ public sealed class ChineseSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
 {
     private static readonly ISoftKeyboardLayoutProvider LayoutProvider =
         new LanguageCompactLayoutProvider(
-            "zh",
             new SoftKeyboardCompactRepertoire
             {
                 Comma = "，",
@@ -39,7 +38,7 @@ public sealed class ChineseSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
             throw new ArgumentNullException(nameof(context));
         }
 
-        return context.Layout.Culture.TwoLetterISOLanguageName == "zh"
+        return SupportsChinese(context.Layout)
             ?
             [
                 new SoftKeyboardExtension(
@@ -52,18 +51,16 @@ public sealed class ChineseSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
 
     private sealed class LanguageCompactLayoutProvider : ISoftKeyboardLayoutProvider
     {
-        private readonly string _language;
         private readonly CompactSoftKeyboardLayoutProvider _compact;
 
-        internal LanguageCompactLayoutProvider(string language, SoftKeyboardCompactRepertoire repertoire)
+        internal LanguageCompactLayoutProvider(SoftKeyboardCompactRepertoire repertoire)
         {
-            _language = language;
             _compact = new CompactSoftKeyboardLayoutProvider(repertoire);
         }
 
         public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
         {
-            if (context.Culture.TwoLetterISOLanguageName != _language)
+            if (!SupportsChinese(context))
             {
                 return null;
             }
@@ -73,5 +70,15 @@ public sealed class ChineseSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
                 ?? NumberSoftKeyboardLayoutProvider.Default.CreateLayout(context)
                 ?? (context.InputMode?.IsNativeInput == true ? _compact.CreateLayout(context) : null);
         }
+    }
+
+    /// <summary>
+    /// Uses the verified active profile for routing and falls back to culture without a profile.
+    /// </summary>
+    private static bool SupportsChinese(SoftKeyboardLayoutContext context)
+    {
+        return context.InputMethod is { } inputMethod
+            ? (inputMethod.LanguageId & 0x03FF) == 0x04
+            : context.Culture.TwoLetterISOLanguageName == "zh";
     }
 }

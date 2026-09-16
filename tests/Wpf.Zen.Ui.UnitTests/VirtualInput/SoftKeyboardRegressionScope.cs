@@ -125,7 +125,7 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         /// <inheritdoc />
         public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
         {
-            return new SoftKeyboardInputMode("native", true, true);
+            return new SoftKeyboardInputMode("native", true);
         }
 
         /// <inheritdoc />
