@@ -177,6 +177,69 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
+    /// Without explicit extension policy, a candidate that only implements the basic UI-less
+    /// interfaces keeps its native window.
+    /// </summary>
+    [Fact]
+    public Task BasicCandidateInterfaces_UseNativePresentation()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => new CandidateElement(native.Document, "basic");
+            var show = 0;
+
+            ((ISoftKeyboardTsfUIElementSink)native.Session).BeginUIElement(1, ref show);
+
+            Assert.Equal(1, show);
+            Assert.Empty(scope.Keyboard.Candidates);
+            Assert.Equal(
+                SoftKeyboardCandidatePresentationState.NativeFallback,
+                scope.Keyboard.CandidatePresentationState
+            );
+        });
+    }
+
+    /// <summary>
+    /// Explicit extension policy can identify a known candidate implementation that does not
+    /// expose the optional integrated-candidate interface.
+    /// </summary>
+    [Fact]
+    public Task CandidateExtension_CanEmbedKnownBasicImplementation()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            var behavior = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            behavior.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded
+            );
+            var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
+            provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
+                [new SoftKeyboardExtension(candidateBehavior: behavior)]
+            );
+            scope.Keyboard.ExtensionProvider = provider;
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => new CandidateElement(native.Document, "basic");
+            var show = 1;
+            var sink = (ISoftKeyboardTsfUIElementSink)native.Session;
+
+            sink.BeginUIElement(1, ref show);
+            sink.UpdateUIElement(1);
+
+            Assert.Equal(0, show);
+            Assert.NotEmpty(scope.Keyboard.Candidates);
+            Assert.Equal(
+                SoftKeyboardCandidatePresentationState.Embedded,
+                scope.Keyboard.CandidatePresentationState
+            );
+        });
+    }
+
+    /// <summary>
     /// Rejected native UI elements must release their RCW references before the next composition,
     /// through both discovery paths. A native IUnknown avoids the CLR unwrapping a managed COM
     /// double.
@@ -506,12 +569,12 @@ public class TsfCandidateLifetimeTests
 
         internal CandidateHarness(SoftKeyboard keyboard)
         {
-            var document = new object();
-            First = new CandidateElement(document, "first");
-            Second = new CandidateElement(document, "second");
+            Document = new object();
+            First = new IntegratedCandidateElement(Document, "first");
+            Second = new IntegratedCandidateElement(Document, "second");
             Session = new TsfCandidateSession(Dispatcher.CurrentDispatcher);
             SetField("_reflectionUnavailable", true);
-            SetField("_threadManager", new ThreadManager(document));
+            SetField("_threadManager", new ThreadManager(Document));
             Manager = new ElementManager(First, Second);
             SetField("_elementManager", Manager);
             Session.Register(keyboard);
@@ -522,6 +585,7 @@ public class TsfCandidateLifetimeTests
         internal ElementManager Manager { get; }
         internal CandidateElement First { get; }
         internal CandidateElement Second { get; }
+        internal object Document { get; }
 
         internal void Begin(uint id)
         {
@@ -726,6 +790,7 @@ public class TsfCandidateLifetimeTests
                 // delegates when the leaked RCW eventually finalizes.
                 FailedTestRoots.Add(this);
             }
+
             GC.KeepAlive(_query);
             GC.KeepAlive(_addRef);
             GC.KeepAlive(_release);
@@ -733,7 +798,7 @@ public class TsfCandidateLifetimeTests
         }
     }
 
-    private sealed class CandidateElement(object document, string name)
+    private class CandidateElement(object document, string name)
         : ITfCandidateListUIElement, ITfCandidateListUIElementBehavior
     {
         private uint _selection;
@@ -864,5 +929,10 @@ public class TsfCandidateLifetimeTests
         {
             return 0;
         }
+    }
+
+    private sealed class IntegratedCandidateElement(object document, string name)
+        : CandidateElement(document, name), ITfIntegratableCandidateListUIElementCapability
+    {
     }
 }

@@ -134,10 +134,10 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// A profile that changes while its mode is being read cannot be published beside the old mode.
+    /// A source mutation without a notification does not fabricate another refresh.
     /// </summary>
     [Fact]
-    public Task ProfileObservation_DiscardsModeReadCrossedByProfileChange()
+    public Task ProfileObservation_DoesNotRetryWithoutNotification()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -176,19 +176,14 @@ public class SoftKeyboardRegressionTests
             });
             adapter.GetContribution(next).Returns(ModeContribution(DirectMode));
 
-            Assert.False(scope.Keyboard.RefreshInputMethods());
-            Assert.Same(scope.Method, scope.Keyboard.ActiveInputMethod);
-            Assert.Same(NativeMode, scope.Keyboard.InputMode);
-
             Assert.True(scope.Keyboard.RefreshInputMethods());
-            Assert.Same(next, scope.Keyboard.ActiveInputMethod);
+            Assert.Same(scope.Method, scope.Keyboard.ActiveInputMethod);
             Assert.Same(DirectMode, scope.Keyboard.InputMode);
         });
     }
 
     /// <summary>
-    /// Profile activation writes no mode and coalesces reentrant notifications into one
-    /// observation.
+    /// Profile activation writes no mode and publishes the observation before returning.
     /// </summary>
     [Fact]
     public Task InputMethodActivation_OnlySelectsProfileAndPublishesOneObservation()
@@ -232,8 +227,6 @@ public class SoftKeyboardRegressionTests
                 Arg.Any<SoftKeyboardInputMethod>(),
                 Arg.Any<SoftKeyboardInputMode>()
             );
-            Assert.Empty(contexts);
-            await scope.DrainAsync();
             var context = Assert.Single(contexts);
             Assert.Same(next, context.InputMethod);
             Assert.Same(DirectMode, context.InputMode);
@@ -507,10 +500,10 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// A current activation performs only the profile write and defers observation.
+    /// A current activation writes only the command and waits for source invalidation before read.
     /// </summary>
     [Fact]
-    public Task Activation_PerformsOnlyProfileCommand()
+    public Task Activation_WaitsForStateInvalidation()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -520,26 +513,29 @@ public class SoftKeyboardRegressionTests
             session.GetInputMode(scope.Method).Returns(DirectMode);
             scope.Keyboard.InputMethodSource = source;
             session.ClearReceivedCalls();
+            session.GetInputMode(scope.Method).Returns(NativeMode);
             Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
             session.Received(1).TryActivate(scope.Method);
             session.DidNotReceive().GetSnapshot();
-            session.DidNotReceive().GetInputMode(Arg.Any<SoftKeyboardInputMethod>());
+            session.DidNotReceive().GetInputMode(scope.Method);
+            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+
+            scope.Keyboard.OnSessionInputMethodStateInvalidated();
+            session.Received(1).GetSnapshot();
+            session.Received(1).GetInputMode(scope.Method);
             session.DidNotReceive().TrySwitchInputMode(
                 Arg.Any<SoftKeyboardInputMethod>(),
                 Arg.Any<SoftKeyboardInputMode>()
             );
-            await scope.DrainAsync();
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            Assert.Same(NativeMode, scope.Keyboard.InputMode);
         });
     }
 
     /// <summary>
-    /// Switching invokes the command route selected during observation and leaves publication to
-    /// the queued
-    /// observation.
+    /// Switching invokes the observed command route and publishes only after source invalidation.
     /// </summary>
     [Fact]
-    public Task InputModeSwitch_InvokesTransitionWithoutReadingOrActivatingProfile()
+    public Task InputModeSwitch_WaitsForStateInvalidation()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -548,6 +544,7 @@ public class SoftKeyboardRegressionTests
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
             Assert.True(scope.Keyboard.RefreshInputMethods());
             session.ClearReceivedCalls();
+            session.GetInputMode(scope.Method).Returns(DirectMode);
 
             typeof(SoftKeyboard).GetMethod(
                 "SwitchInputModeCore",
@@ -562,11 +559,45 @@ public class SoftKeyboardRegressionTests
             );
             session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
             session.DidNotReceive().GetSnapshot();
-            session.DidNotReceive().GetInputMode(Arg.Any<SoftKeyboardInputMethod>());
+            session.DidNotReceive().GetInputMode(scope.Method);
             Assert.Same(NativeMode, scope.Keyboard.InputMode);
 
-            session.GetInputMode(scope.Method).Returns(DirectMode);
+            scope.Keyboard.OnSessionInputMethodStateInvalidated();
+            session.Received(1).GetSnapshot();
+            session.Received(1).GetInputMode(scope.Method);
+            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+        });
+    }
+
+    /// <summary>
+    /// A notification raised inside a native command is drained after the command releases the
+    /// operation gate.
+    /// </summary>
+    [Fact]
+    public Task InputModeSwitch_DrainsReentrantStateInvalidation()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
+            scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            var buttonSession = Assert.IsAssignableFrom<ISoftKeyboardInputModeButtonSession>(session);
+            session.GetInputMode(scope.Method).Returns(DirectMode);
+            buttonSession.TryInvokeInputModeButton(scope.Method).Returns(_ =>
+            {
+                scope.Keyboard.OnSessionInputMethodStateInvalidated();
+                return true;
+            });
+            session.ClearReceivedCalls();
+
+            typeof(SoftKeyboard).GetMethod(
+                "SwitchInputModeCore",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!.Invoke(scope.Keyboard, null);
+
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method);
+            session.Received(1).GetSnapshot();
+            session.Received(1).GetInputMode(scope.Method);
             Assert.Same(DirectMode, scope.Keyboard.InputMode);
         });
     }
@@ -842,10 +873,10 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Multiple custom-source invalidations in one callback turn produce one observation.
+    /// Every custom-source invalidation is observed before its event handler returns.
     /// </summary>
     [Fact]
-    public Task ObservableInputMethodSource_CoalescesInvalidations()
+    public Task ObservableInputMethodSource_RefreshesEveryInvalidationImmediately()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -867,16 +898,14 @@ public class SoftKeyboardRegressionTests
 
             session.StateInvalidated += Raise.Event<EventHandler>(session, EventArgs.Empty);
             session.StateInvalidated += Raise.Event<EventHandler>(session, EventArgs.Empty);
-            await scope.DrainAsync();
-
             session.Received(2).GetSnapshot();
-            session.Received(1).GetInputMode(scope.Method);
+            session.Received(2).GetInputMode(scope.Method);
             Assert.Same(DirectMode, scope.Keyboard.InputMode);
         });
     }
 
     /// <summary>
-    /// A notification raised during a read invalidates the entire observation before publication.
+    /// A notification raised during a read repeats the observation before the call returns.
     /// </summary>
     [Fact]
     public Task InputMethodObservation_DiscardsSnapshotCrossedByNotification()
@@ -901,10 +930,7 @@ public class SoftKeyboardRegressionTests
                 return new SoftKeyboardInputMethodSnapshot([next], next);
             });
 
-            Assert.False(scope.Keyboard.RefreshInputMethods());
-            Assert.Same(scope.Method, scope.Keyboard.ActiveInputMethod);
-
-            await scope.DrainAsync();
+            Assert.True(scope.Keyboard.RefreshInputMethods());
             Assert.Same(next, scope.Keyboard.ActiveInputMethod);
         });
     }
@@ -1259,7 +1285,7 @@ public class SoftKeyboardRegressionTests
 
             scope.Keyboard.ShowInputMethodMenu();
             Assert.NotEqual(true, GetMenu(scope.Keyboard)?.IsOpen);
-            // Stop provoking reentrancy before queued observation runs.
+            // Stop provoking reentrancy before the next explicit observation.
             session.Configure().GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method));
         });
     }

@@ -24,10 +24,10 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardAsyncSourceTests
 {
     /// <summary>
-    /// A profile transition never publishes mode state read before the new profile becomes quiet.
+    /// A state notification immediately replaces the mode published for the active profile.
     /// </summary>
     [Fact]
-    public void InputMethodProfileTransition_WithholdsTransientMode()
+    public void InputMethodNotification_ImmediatelyPublishesFinalMode()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -63,16 +63,22 @@ public class SoftKeyboardAsyncSourceTests
                 PumpUntil(() => Equals(keyboard.InputModeButton?.Content, "A"));
 
                 Assert.True(keyboard.TryActivateInputMethod(backend.Next));
-                Assert.True(keyboard.RefreshInputMethods());
+                Assert.NotEqual(backend.Next.ClassId, keyboard.ActiveInputMethod?.ClassId);
+                Assert.Equal("direct", keyboard.InputMode?.Id);
+                Assert.Equal("A", keyboard.InputModeButton?.Content);
+
+                keyboard.OnSessionInputMethodStateInvalidated();
                 Assert.Equal(backend.Next.ClassId, keyboard.ActiveInputMethod?.ClassId);
-                Assert.Null(keyboard.InputMode);
-                Assert.Null(keyboard.InputModeButton);
+                Assert.Equal("native", keyboard.InputMode?.Id);
+                Assert.Equal("中", keyboard.InputModeButton?.Content);
 
                 backend.CompleteActivation();
                 keyboard.OnSessionInputMethodStateInvalidated();
-                PumpUntil(() => Equals(keyboard.InputModeButton?.Content, "英"));
+                Assert.Equal("direct", keyboard.InputMode?.Id);
+                Assert.Equal("英", keyboard.InputModeButton?.Content);
 
-                Assert.DoesNotContain("中", publishedCaps);
+                Assert.Contains("中", publishedCaps);
+                Assert.Contains("英", publishedCaps);
             }
             finally
             {

@@ -1166,6 +1166,7 @@ public class SoftKeyboardTests
             );
             button.Invoke();
             PumpDispatcher();
+            keyboard.OnSessionInputMethodStateInvalidated();
 
             Assert.False(keyboard.InputMode?.IsNativeInput);
             Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
@@ -1173,6 +1174,7 @@ public class SoftKeyboardTests
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
             PumpDispatcher();
+            keyboard.OnSessionInputMethodStateInvalidated();
             Assert.True(keyboard.InputMode?.IsNativeInput);
             window.Close();
         });
@@ -2684,6 +2686,7 @@ public class SoftKeyboardTests
                 Assert.True(keyboard.InputMode?.IsNativeInput);
                 composition.Complete();
                 PumpDispatcher();
+                keyboard.OnSessionInputMethodStateInvalidated();
                 Assert.False(keyboard.InputMode?.IsNativeInput);
             }
             finally
@@ -2764,14 +2767,17 @@ public class SoftKeyboardTests
 
                 Observe(TextCompositionManager.PreviewTextInputEvent, editor);
                 PumpDispatcher();
+                keyboard.OnSessionInputMethodStateInvalidated();
                 Assert.False(keyboard.InputMode?.IsNativeInput);
                 Assert.Same(editor, Keyboard.FocusedElement);
 
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
+                keyboard.OnSessionInputMethodStateInvalidated();
                 Assert.True(keyboard.InputMode?.IsNativeInput);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
+                keyboard.OnSessionInputMethodStateInvalidated();
                 Assert.False(keyboard.InputMode?.IsNativeInput);
             }
             finally

@@ -4,11 +4,11 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -17,6 +17,7 @@ using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
+using Wpf.Zen.Ui.VirtualInput.Interop;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Settings;
@@ -138,13 +139,38 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                     p.ClassId == new Guid("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E"));
                 Assert.SkipUnless(pinyin is not null, "Microsoft Pinyin is not installed.");
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
-                PumpFor(300);
+                Assert.True(PumpUntil(
+                    () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId,
+                    2000));
                 pinyinMode = backend.GetInputMode(pinyin);
-                Assert.True(EnsureNativeInput(backend, pinyin));
+                var state = SoftKeyboardTsfInputMode.GetState(pinyin.ClassId);
+                Assert.NotNull(state?.ConversionValue);
+                if ((state!.ConversionValue!.Value & 1) == 0)
+                {
+                    Assert.True(PumpUntil(
+                        () => FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Any(
+                            cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
+                        ),
+                        2000));
+                    FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Single(
+                        cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
+                    ).Invoke();
+                    Assert.True(PumpUntil(
+                        () => (SoftKeyboardTsfInputMode.GetState(pinyin.ClassId)?.ConversionValue & 1)
+                            != 0,
+                        2000));
+                }
+
                 PumpFor(200);
                 Assert.True(keyboard.SendActionKey(Key.N, ModifierKeys.None));
                 Assert.True(keyboard.SendActionKey(Key.I, ModifierKeys.None));
-                Assert.True(PumpUntil(() => keyboard.HasCandidates, 2000));
+                Assert.True(
+                    PumpUntil(() => keyboard.HasCandidates, 2000),
+                    $"presentation={keyboard.CandidatePresentationState}, "
+                    + $"active={keyboard.ActiveInputMethod?.ClassId}, "
+                    + $"behaviors={keyboard.GetTsfCandidateBehaviors().Count}, "
+                    + $"extensionError={keyboard.ExtensionError}"
+                );
 
                 var literal = keyboard.SendActionTextAsync("★");
                 Assert.True(PumpUntil(() => literal.IsCompleted, 2000));
@@ -224,7 +250,10 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
                 Assert.True(PumpUntil(
                     () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
-                        && keyboard.InputModeButton is not null,
+                        && keyboard.InputModeButton is not null
+                        && FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Any(
+                            cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
+                        ),
                     2000));
 
                 var originalState = SoftKeyboardTsfInputMode.GetState(pinyin.ClassId);
@@ -281,10 +310,10 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Returning to Microsoft Pinyin in direct mode does not publish its transient native state.
+    /// Returning to Microsoft Pinyin in direct mode publishes its current conversion state.
     /// </summary>
     [Fact]
-    public void Pinyin_ProfileActivationPublishesOnlySettledMode()
+    public void Pinyin_ProfileActivationPublishesCurrentMode()
     {
         Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
             "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Microsoft Pinyin.");
@@ -306,21 +335,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             SoftKeyboardInputMethod? original = null;
             SoftKeyboardInputMethod? pinyin = null;
             bool? originalNative = null;
-            var publishedCaps = new List<object>();
-            var descriptor = DependencyPropertyDescriptor.FromProperty(
-                SoftKeyboard.InputModeButtonProperty,
-                typeof(SoftKeyboard)
-            );
-
-            void RecordPinyinButton(object? sender, EventArgs args)
-            {
-                if (keyboard.ActiveInputMethod?.ClassId == pinyin?.ClassId
-                    && keyboard.InputModeButton is { } button)
-                {
-                    publishedCaps.Add(button.Content);
-                }
-            }
-
             try
             {
                 window.Show();
@@ -362,19 +376,14 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                     2000));
                 PumpFor(150);
 
-                descriptor.AddValueChanged(keyboard, RecordPinyinButton);
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
                 Assert.True(PumpUntil(
                     () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
                         && Equals(keyboard.InputModeButton?.Content, "英"),
                     2000));
-
-                Assert.DoesNotContain("中", publishedCaps);
             }
             finally
             {
-                descriptor.RemoveValueChanged(keyboard, RecordPinyinButton);
-
                 if (pinyin is not null
                     && originalNative == true
                     && keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
@@ -400,11 +409,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Microsoft Japanese IME without a standard language-bar command derives both its key cap
-    /// and transition from the decoded conversion state rather than the generic open-state label.
+    /// Microsoft Japanese IME without a standard language-bar command changes its effective mode,
+    /// not only its published conversion value.
     /// </summary>
     [Fact]
-    public void Japanese_ModeKeyFollowsAndChangesConversionState()
+    public void Japanese_ModeKeyChangesEffectiveInputMode()
     {
         Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
             "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Microsoft Japanese IME.");
@@ -459,10 +468,16 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         2000));
                 }
 
-                Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(japanese, 0));
+                Assert.True(SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
+                    japanese,
+                    Key.DbeAlphanumeric
+                ));
                 var observedDirectMode = PumpUntil(
-                    () => keyboard.InputMode?.Id == "half-width-alphanumeric"
-                        && Equals(keyboard.InputModeButton?.Content, "A"),
+                    () => keyboard.InputMode?.IsNativeInput == false
+                        && Equals(keyboard.InputModeButton?.Content, "A")
+                        && FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Any(
+                            cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
+                        ),
                     2000);
                 var directState = SoftKeyboardTsfInputMode.GetState(japanese.ClassId);
                 output.WriteLine(
@@ -480,21 +495,39 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 );
                 modeKey.Invoke();
 
-                Assert.True(PumpUntil(
+                var observedNativeMode = PumpUntil(
                     () => SoftKeyboardTsfInputMode.GetState(japanese.ClassId) is { } state
                         && state.ConversionValue is int conversion
                         && (conversion & 1) != 0
                         && keyboard.InputMode?.Id == "hiragana"
                         && Equals(keyboard.InputModeButton?.Content, "あ"),
-                    2000));
+                    2000);
+                output.WriteLine(
+                    $"Japanese native: mode={keyboard.InputMode?.Id}, "
+                    + $"button={keyboard.InputModeButton?.Content}"
+                );
+                Assert.True(observedNativeMode);
+
+                Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
+                var typedJapanese = PumpUntil(
+                    () => editor.Text.Any(IsJapaneseCharacter),
+                    2000);
+                output.WriteLine(
+                    $"Japanese typed: text={editor.Text}, imeState={InputMethod.Current.ImeState}, "
+                    + $"wpfConversion={InputMethod.Current.ImeConversionMode}, "
+                    + $"state={SoftKeyboardTsfInputMode.GetState(japanese.ClassId)?.ConversionValue}"
+                );
+                Assert.True(typedJapanese);
             }
             finally
             {
                 if (japanese is not null && originalConversion is int conversion)
                 {
-                    _ = SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(
+                    _ = SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
                         japanese,
-                        conversion
+                        (conversion & 1) != 0
+                            ? Key.KanjiMode
+                            : Key.DbeAlphanumeric
                     );
 
                     var currentOpen = SoftKeyboardTsfInputMode.GetKeyboardOpenValue();
@@ -839,6 +872,179 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         var mode = backend.GetInputMode(inputMethod);
         return mode is not null
             && (mode.IsNativeInput || backend.TrySwitchInputMode(inputMethod, mode));
+    }
+
+    /// <summary>
+    /// Switching from a Chinese TIP must not interpret its conversion compartment as the initial
+    /// Microsoft Japanese input mode.
+    /// </summary>
+    [Fact]
+    public void Japanese_ProfileActivationStartsFromNewGenerationDefaults()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Chinese and Japanese IMEs.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox();
+            var keyboard = new SoftKeyboard
+            {
+                Target = editor,
+                IsOpen = true,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
+            };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 450 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            var stopwatch = Stopwatch.StartNew();
+            var observedJapaneseModes = new List<string?>();
+            var descriptors = new[]
+            {
+                DependencyPropertyDescriptor.FromProperty(
+                    SoftKeyboard.ActiveInputMethodProperty,
+                    typeof(SoftKeyboard)
+                ),
+                DependencyPropertyDescriptor.FromProperty(
+                    SoftKeyboard.InputModeProperty,
+                    typeof(SoftKeyboard)
+                ),
+                DependencyPropertyDescriptor.FromProperty(
+                    SoftKeyboard.InputModeButtonProperty,
+                    typeof(SoftKeyboard)
+                ),
+            };
+
+            void TraceState(object? sender, EventArgs args)
+            {
+                if ((keyboard.ActiveInputMethod?.LanguageId & 0x03FF) == 0x11)
+                {
+                    observedJapaneseModes.Add(keyboard.InputMode?.Id);
+                }
+
+                var raw = SoftKeyboardTsfInputMode.GetState(
+                    keyboard.ActiveInputMethod?.ClassId ?? Guid.Empty
+                );
+                var windowHandle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+                var hasImmOpen = ImmInputContextState.TryReadOpen(windowHandle, out var immOpen);
+                var hasImmConversion = ImmInputContextState.TryReadConversion(
+                    windowHandle,
+                    out var immConversion
+                );
+                output.WriteLine(
+                    $"{stopwatch.ElapsedMilliseconds,4} ms: "
+                    + $"profile={keyboard.ActiveInputMethod?.DisplayName}, "
+                    + $"mode={keyboard.InputMode?.Id}, button={keyboard.InputModeButton?.Content}, "
+                    + $"open={raw?.OpenValue}, conversion={raw?.ConversionValue}, "
+                    + $"wpf={InputMethod.Current.ImeConversionMode}, "
+                    + $"immOpen={(hasImmOpen ? immOpen : null)}, "
+                    + $"immConversion={(hasImmConversion ? immConversion : null)}"
+                );
+            }
+
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                editor.Focus();
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+
+                var japanese = keyboard.InputMethods.FirstOrDefault(profile =>
+                    profile.ClassId != Guid.Empty && (profile.LanguageId & 0x03FF) == 0x11);
+                var chinese = keyboard.ActiveInputMethod is { } active
+                    && active.ClassId != Guid.Empty
+                    && (active.LanguageId & 0x03FF) == 0x04
+                        ? active
+                        : keyboard.InputMethods.FirstOrDefault(profile =>
+                            profile.ClassId != Guid.Empty
+                            && (profile.LanguageId & 0x03FF) == 0x04);
+                Assert.SkipUnless(chinese is not null && japanese is not null,
+                    "A Chinese TIP or Microsoft Japanese IME is not installed.");
+
+                foreach (var descriptor in descriptors)
+                {
+                    descriptor.AddValueChanged(keyboard, TraceState);
+                }
+
+                if (keyboard.ActiveInputMethod?.ProfileId != chinese.ProfileId)
+                {
+                    Assert.True(keyboard.TryActivateInputMethod(chinese));
+                    Assert.True(PumpUntil(
+                        () => keyboard.ActiveInputMethod?.ProfileId == chinese.ProfileId,
+                        2000));
+                }
+
+                var chineseState = SoftKeyboardTsfInputMode.GetState(chinese.ClassId);
+                var chineseConversion = chineseState?.ConversionValue;
+                Assert.SkipUnless(chineseConversion is not null,
+                    "The active Chinese TIP does not expose conversion state.");
+                if ((chineseConversion.GetValueOrDefault() & 1) == 0)
+                {
+                    Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(
+                        chinese,
+                        chineseConversion.GetValueOrDefault() | 1
+                    ));
+                    Assert.True(PumpUntil(
+                        () => SoftKeyboardTsfInputMode.GetKeyboardConversionValue()
+                            is int currentConversion
+                            && (currentConversion & 1) != 0,
+                        2000));
+                }
+
+                japanese = keyboard.InputMethods.First(profile =>
+                    profile.ClassId == japanese.ClassId && profile.ProfileId == japanese.ProfileId);
+                stopwatch.Restart();
+                Assert.True(keyboard.TryActivateInputMethod(japanese));
+                Assert.True(PumpUntil(
+                    () => keyboard.ActiveInputMethod?.ClassId == japanese.ClassId,
+                    2000));
+                PumpFor(1500);
+                TraceState(null, EventArgs.Empty);
+
+                Assert.Contains("direct", observedJapaneseModes);
+
+                editor.Clear();
+                Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
+                if (keyboard.InputMode?.IsNativeInput == true)
+                {
+                    Assert.True(PumpUntil(
+                        () => editor.Text.Any(IsJapaneseCharacter),
+                        2000
+                    ));
+                }
+                else
+                {
+                    Assert.True(PumpUntil(
+                        () => editor.Text.Any(character => character is 'a' or 'A'),
+                        2000
+                    ));
+                    Assert.DoesNotContain(editor.Text, IsJapaneseCharacter);
+                }
+            }
+            finally
+            {
+                foreach (var descriptor in descriptors)
+                {
+                    descriptor.RemoveValueChanged(keyboard, TraceState);
+                }
+
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                }
+
+                window.Close();
+            }
+        });
+    }
+
+    private static bool IsJapaneseCharacter(char character)
+    {
+        return character is >= '\u3040' and <= '\u30FF';
     }
 
     private static bool EnsureDirectInput(

@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Windows.Win32;
 using Windows.Win32.UI.WindowsAndMessaging;
+using Wpf.Zen.Ui.VirtualInput.Interop;
 
 namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 
@@ -173,6 +174,35 @@ public static class SoftKeyboardTsfInputMode
     public static int? GetKeyboardOpenValue()
     {
         return GetCompartmentInteger(KeyboardOpenId);
+    }
+
+    /// <summary>
+    /// Reads the integer keyboard conversion compartment without assigning it to a profile.
+    /// </summary>
+    /// <returns>The raw TSF bit field, or null when the value is unavailable.</returns>
+    /// <remarks>
+    /// The compartment is thread-scoped. Callers must associate the value only with the active
+    /// profile generation that received the corresponding conversion notification.
+    /// </remarks>
+    internal static int? GetKeyboardConversionValue()
+    {
+        return GetCompartmentInteger(KeyboardConversionId)
+            ?? GetWpfKeyboardConversionMode();
+    }
+
+    /// <summary>
+    /// Gets whether the expected service currently publishes an enabled input-mode command.
+    /// </summary>
+    internal static bool CanInvokeInputModeButton(Guid serviceId)
+    {
+        var available = TryGetInputModeButton(
+            serviceId,
+            requireVisible: false,
+            out var button
+        );
+
+        ReleaseComObject(button);
+        return available;
     }
 
     /// <summary>
@@ -342,6 +372,56 @@ public static class SoftKeyboardTsfInputMode
     }
 
     /// <summary>
+    /// Sends a dedicated East Asian conversion-mode key through the focused window's hardware
+    /// keyboard input stream.
+    /// </summary>
+    /// <param name="inputMethod">The active input method expected to consume the key.</param>
+    /// <param name="modeKey">A dedicated WPF conversion-mode key.</param>
+    /// <returns>True when the complete key press was inserted; otherwise false.</returns>
+    /// <remarks>
+    /// Some text services publish writable TSF conversion compartments but do not treat a direct
+    /// compartment write as an input-mode command. Their dedicated conversion keys update both
+    /// the service's effective mode and its published compartments. Callers must already have
+    /// validated and focused the intended editor before invoking this operation.
+    /// </remarks>
+    internal static bool TrySendKeyboardConversionModeKey(
+        SoftKeyboardInputMethod inputMethod,
+        Key modeKey)
+    {
+        if (inputMethod is null)
+        {
+            throw new ArgumentNullException(nameof(inputMethod));
+        }
+
+        if (inputMethod.ClassId == Guid.Empty || !IsConversionModeKey(modeKey))
+        {
+            return false;
+        }
+
+        return SoftKeyboardInputInjector.SendVirtualKey(
+            modeKey,
+            ModifierKeys.None,
+            useScanCode: false
+        );
+    }
+
+    /// <summary>
+    /// Gets whether a key is one of the virtual-key commands reserved for East Asian conversion
+    /// modes.
+    /// </summary>
+    private static bool IsConversionModeKey(Key key)
+    {
+        return key is Key.KanjiMode
+            or Key.DbeAlphanumeric
+            or Key.DbeKatakana
+            or Key.DbeHiragana
+            or Key.DbeSbcsChar
+            or Key.DbeDbcsChar
+            or Key.DbeRoman
+            or Key.DbeNoRoman;
+    }
+
+    /// <summary>
     /// Reads WPF's normalized conversion state when the active TIP exposes no TSF compartment.
     /// </summary>
     /// <remarks>
@@ -441,7 +521,9 @@ public static class SoftKeyboardTsfInputMode
     /// input method uses that binary contract.
     /// </summary>
     /// <param name="languageId">The Windows language identifier of the active input method.</param>
-    /// <param name="openValue">The raw keyboard-open compartment value, or null when unavailable.</param>
+    /// <param name="openValue">
+    /// The raw keyboard-open compartment value, or null when unavailable.
+    /// </param>
     /// <returns>
     /// A stateful key-cap descriptor for a supported language and value; otherwise null.
     /// </returns>

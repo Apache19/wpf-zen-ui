@@ -128,7 +128,8 @@ public partial class SoftKeyboard
 
         _inputMethodMenu = menu;
 
-        menu.Closed += (_, _) => QueueInputMethodStateRefresh();
+        menu.Closed += (_, _) =>
+            RefreshInputMethodState();
 
         menu.IsOpen = menu.Items.Count > 0;
     }

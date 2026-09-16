@@ -327,22 +327,25 @@ TIP 身份或 `ImmIsIME` 不能证明任意语言都具有二态输入法开关�
 
 TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存且可降级的反射读取
 `TextServicesHost.ThreadManager`；首个编辑器尚未初始化时，等待后续焦点或输入刷新重试。
-候选桥接不设置 `TF_TMAE_UIELEMENTENABLEDONLY`：该标志会限制能激活的输入法，影响没有完整
-UIElement 支持的第三方输入法，与“无法内嵌时使用原生浮窗”的策略冲突。
-仅在键盘打开、候选属于 TSF 当前焦点文档且输入法实现
-`ITfCandidateListUIElementBehavior` 且扩展允许接管时内嵌候选；标准提交调用 `SetSelection` 与 `Finalize`。
+候选桥接不设置 `TF_TMAE_UIELEMENTENABLEDONLY`：WPF 已经拥有并激活线程管理器，事后修改激活
+标志会改变当前线程允许加载的输入法。系统触摸键盘使用 UI-less 激活模式；公开 TSF 允许宿主在
+`BeginUIElement` 中决定是否隐藏输入法 UI，但 Windows Shell 对内置输入法还有未公开的产品策略。
+控件只在键盘打开、候选属于 TSF 当前焦点文档且实现
+`ITfCandidateListUIElementBehavior` 时继续协商。`Wpf.Zen.Ui.VirtualInput.Extensions` 的默认策略
+明确内嵌已知 Windows 内置东亚输入法，第三方输入法保留原生浮窗。没有扩展明确决策时，核心仅对
+实现 `ITfIntegratableCandidateListUIElement` 的候选使用内嵌；标准提交调用 `SetSelection` 与
+`Finalize`。
 若 TIP 在 sink 订阅前已打开候选，控件还会从同一个 `ITfUIElementMgr` 发现该候选，并仅在候选
-存续期间短时同步其内容。微软拼音支持这组标准 UIElement 接口，可使用内嵌候选栏。
+存续期间短时同步其内容。微软拼音支持这组集成候选接口，可使用内嵌候选栏。
 枚举器仅用于当前同步查询，并在当前 Dispatcher 上及时释放，缩短该快照的原生引用寿命。
 
 输入法菜单及菜单项均不可获得键盘焦点；选择时编辑器持续持有其 TSF 文档和输入法状态。
 候选接管统一检查接口能力、候选所属文档与当前焦点，不按输入法服务 GUID 强制回退。
 获取或枚举后未被接管的 UIElement 引用在当前同步查询结束前释放，不留给后续 GC 清理。
 `BeginUIElement` 协商显示，首次 `UpdateUIElement` 才读取候选内容。
-模式按钮或自定义模式适配器在持有前台编辑器焦点时每秒补充观察一次，避免依赖并不覆盖全部语言栏
-图标和厂商模式的 WPF 通知。
-切换 profile 时先按新 profile 选择模式适配器，再发布模式、按钮和布局；读取前后 profile 不一致的
-观察会被丢弃并重试，避免把旧输入法的状态或按钮发布到新 profile。
+模式按钮和自定义模式适配器完全由系统通知驱动，不使用定时轮询。切换 profile 时先为新 profile
+建立 `open=off`、`conversion=0` 的状态基线，再按新 profile 选择适配器并发布模式、按钮和布局；
+旧 profile 的 compartment 值不会带入新 profile。
 未提供可控制候选接口的输入法继续使用自己的浮窗。
 
 候选展示由接口能力、文档归属和扩展协商自动决定，不提供手动展示模式设置。
@@ -354,9 +357,32 @@ UIElement 支持的第三方输入法，与“无法内嵌时使用原生浮窗�
 组合输入仍在继续，键盘重新显示后可重新发现仍存续且符合策略的 TSF 候选。
 原生恢复依赖 TIP 正确实现 Show。自动策略会从元素开始时协商是否接管，而非等到隐藏后才尝试补救。
 
-公开 TSF 的 UIElement 能力类别与 QueryInterface 能用于协商接口，但不保证其实现完整。
-`ITfIntegratableCandidateListUIElement` 也不是“完美兼容”的认证。没有找到系统触摸键盘完整判定流程的
-公开契约；本库采用明确的已知兼容性规则，不声称复刻系统内部策略。
+`GUID_TFCAT_TIPCAP_UIELEMENTENABLED` 只声明基础 UIElement 能力，第三方输入法即使注册该类别，
+也不一定支持完整的集成候选交互。`ITfIntegratableCandidateListUIElement` 是 Windows 文档为
+IME 集成控件定义的更强但可选的契约；实际 Microsoft Pinyin 也不一定暴露它。因此该接口只能
+作为公开的保守回退信号，不能复刻 Windows Shell 的完整判断。默认扩展把已知 Windows 内置 TSF
+服务身份作为显式产品策略，应用仍可用 `ISoftKeyboardTsfCandidateBehavior` 覆盖特定输入法。
+
+输入法状态同时监听 WPF 输入语言与 `InputMethod.StateChanged`、TSF profile activation、
+`GUID_LBI_INPUTMODE` 语言栏项目更新，以及 HWND 的 `WM_INPUTLANGCHANGE`、`WM_IME_NOTIFY`。
+这些渠道只作为通知来源，不拼装跨通知的“完整快照”：profile 或输入语言通知刷新目录和活动
+profile；open 通知只读取 open compartment；conversion 通知只读取 conversion compartment；
+语言栏通知只刷新按钮呈现。WPF 状态事件读取触发该事件的 TSF compartment；
+`WM_IME_NOTIFY` 则从发出消息的 HWND 所属 HIMC 读取 IMM 状态，不用一种通知去读取另一套状态源。
+每次更新随后立即按当前已知字段重建受影响的布局。
+
+profile 通知开始一代新状态。如果这一代尚未收到 open 或 conversion 通知，对应值分别按 off 和 0
+解释，不读取也不保留上一代的值。因此从中文输入法切到微软日语输入法时，即使线程级 conversion
+compartment 暂时仍保留中文值，软键盘也先显示直接输入 `A`，而不会误显示成“あ”。
+`WM_IME_NOTIFY` 是 IMM input context 的状态通知。收到 `IMN_SETOPENSTATUS` 或
+`IMN_SETCONVERSIONMODE` 时，控件借用该 HWND 的 HIMC，通过 `ImmGetOpenStatus` 或
+`ImmGetConversionStatus` 读取相应真实值，读完立即释放。它不会转而读取线程级 TSF compartment，
+也不会根据输入法品牌、按键来源或命令执行记录过滤通知。
+
+模式按钮和 profile 菜单只发送原生命令，不根据命令返回值推测状态，也不在命令返回后主动读取。
+只有来源真正发出变更通知时才读取并发布新状态。COM 通知可能同步嵌套在原生命令调用栈中；此时
+控件就在通知回调中读取并应用对应字段，不等待命令返回，不把通知合并成无类型的失效标记，也不
+通过 Dispatcher 延迟调度。
 
 不支持可控制候选的输入法继续显示原生候选窗。可通过 `CandidatePresentationState` 区分
 `Embedded`、`NativeFallback` 和 `Unavailable`；当前分页由 `CandidatePageNumber` 与
@@ -471,9 +497,9 @@ keyboard.InputMethodSource = new AppInputMethodSource();
 bool refreshed = keyboard.RefreshInputMethods();
 ```
 
-输入法激活使用 `TryActivateInputMethod(profile)`，把激活、目录确认、启用输入作为一次同步操作；
-任一步骤失败或调用期间发生源、目标、生命周期变化，返回 false。重入操作直接返回 false。
-返回 true 表示原生请求被接受，不保证未来候选或组合输入结果。
+输入法激活使用 `TryActivateInputMethod(profile)`，只向系统发送 profile 激活请求，不写 open 或
+conversion，也不根据返回值提前发布界面状态。请求失败或调用期间发生源、目标、生命周期变化时
+返回 false；重入操作直接返回 false。返回 true 只表示原生请求被接受，后续状态由系统通知发布。
 
 `InputMethods` 是只读依赖属性，每次发布完整的 `IReadOnlyList<SoftKeyboardInputMethod>` 快照。
 使用属性绑定观察替换；已持有的旧列表保持不变。替换来源时立即清空旧目录。
@@ -492,9 +518,8 @@ bool refreshed = keyboard.RefreshInputMethods();
 `SoftKeyboardCandidateList` 是可派生的 `ItemsControl`，使用标准 `ItemsSource`、`ItemsPanel`、
 `ItemTemplate` 与 `ItemContainerStyle`；默认横向 `StackPanel` 可换成 `WrapPanel` 或自定义面板。
 
-输入模式通过 WPF 的 StateChanged、焦点和输入语言事件即时同步；控件拥有前台编辑焦点时，
-还会按通知健康状况复查 profile 与模式，覆盖同语言输入法切换没有语言变更事件的情况。复查只读取系统状态，
-不会主动切换用户输入法。输入法菜单和菜单项不参与键盘焦点；没有有效编辑器持有焦点时仍
+输入模式通过 WPF、TSF 和窗口消息通知即时同步；同语言 TIP 切换由 TSF profile activation 通知
+覆盖，不依赖输入语言变化，也不使用周期复查。输入法菜单和菜单项不参与键盘焦点；没有有效编辑器持有焦点时仍
 展示输入法列表，但禁用所有选择项。焦点离开原编辑器会使尚未执行的选择失效，不会重新聚焦
 记忆中的目标。
 
@@ -682,7 +707,9 @@ public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
 
 日语扩展不提供独立假名面板。它解释标准的日语 open/conversion 状态，以便在直接输入、全／半角
 字母、平假名和全／半角片假名之间正确判断是否使用原生输入，并为原生模式提供日语标点和符号布局。
-实际输入、组合与候选仍由当前日语输入法负责。
+模式按钮使用 `VK_DBE_ALPHANUMERIC` / `VK_KANJI` 作为输入法命令，不再把写入 conversion
+compartment 当作切换成功；微软日语输入法可能回显写入值，却仍让实际按键走直接英文输入。专用模式键会让
+输入法切换有效状态并自行发布新的 compartment 值。实际输入、组合与候选仍由当前日语输入法负责。
 
 ### 验证入口
 

@@ -247,7 +247,6 @@ public partial class SoftKeyboard
             return transitionRoute.TryInvoke(session, inputMethod) && isCurrent();
         });
 
-        QueueInputMethodStateRefresh();
         RequestSystemKeyboardHide();
     }
 

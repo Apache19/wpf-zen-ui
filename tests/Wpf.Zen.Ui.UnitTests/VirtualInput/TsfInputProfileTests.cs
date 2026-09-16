@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Input;
 using Windows.Win32.UI.TextServices;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
@@ -132,6 +133,35 @@ public class TsfInputProfileTests
 
         Assert.False(SoftKeyboardTsfInputMode.SupportsKeyboardOpenFallback(layout));
         Assert.False(SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(layout));
+    }
+
+    /// <summary>
+    /// Conversion-mode injection accepts only semantic East Asian mode keys and a TIP identity.
+    /// </summary>
+    [Fact]
+    public void ConversionModeKey_RejectsOrdinaryKeysAndKeyboardLayouts()
+    {
+        var tip = new SoftKeyboardInputMethod(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0x0411,
+            "Japanese IME",
+            true
+        );
+        var layout = new SoftKeyboardInputMethod(
+            Guid.Empty,
+            Guid.Empty,
+            0x0411,
+            "Japanese keyboard",
+            true,
+            keyboardLayout: new IntPtr(0x04110411)
+        );
+
+        Assert.False(SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(tip, Key.A));
+        Assert.False(SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
+            layout,
+            Key.DbeHiragana
+        ));
     }
 
     /// <summary>

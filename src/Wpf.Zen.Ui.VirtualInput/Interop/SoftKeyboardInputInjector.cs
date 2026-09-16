@@ -15,12 +15,25 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop;
 /// </summary>
 /// <remarks>
 /// Directly assigning TextBox.Text would bypass WPF editing commands, selection, undo grouping,
-/// dead keys, and TSF. SendInput is process-global, so every call is preceded by a foreground-window
-/// and focus validation in <see cref="SoftKeyboard"/>; this type never attempts to activate a window.
+/// dead keys, and TSF. SendInput is process-global, so every call is preceded by a
+/// foreground-window and focus validation in <see cref="SoftKeyboard"/>; this type never attempts
+/// to activate a window.
 /// </remarks>
 internal static class SoftKeyboardInputInjector
 {
     internal static bool SendVirtualKey(Key key, ModifierKeys modifiers)
+    {
+        return SendVirtualKey(key, modifiers, useScanCode: true);
+    }
+
+    /// <summary>
+    /// Sends a virtual key, optionally preserving its semantic virtual-key identity instead of
+    /// translating it to a physical scan code.
+    /// </summary>
+    internal static bool SendVirtualKey(
+        Key key,
+        ModifierKeys modifiers,
+        bool useScanCode)
     {
         var virtualKey = KeyInterop.VirtualKeyFromKey(key);
         if (virtualKey is <= 0 or > ushort.MaxValue)
@@ -42,17 +55,27 @@ internal static class SoftKeyboardInputInjector
         var inputs = new List<INPUT>((modifierKeys.Length * 2) + 2);
         foreach (var modifierKey in modifierKeys)
         {
-            inputs.Add(CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(modifierKey), false, false));
+            inputs.Add(CreateVirtualKeyInput(
+                KeyInterop.VirtualKeyFromKey(modifierKey),
+                false,
+                false,
+                useScanCode
+            ));
         }
 
         var extended = IsExtendedKey(key);
 
-        inputs.Add(CreateVirtualKeyInput(virtualKey, false, extended));
-        inputs.Add(CreateVirtualKeyInput(virtualKey, true, extended));
+        inputs.Add(CreateVirtualKeyInput(virtualKey, false, extended, useScanCode));
+        inputs.Add(CreateVirtualKeyInput(virtualKey, true, extended, useScanCode));
 
         for (var index = modifierKeys.Length - 1; index >= 0; index--)
         {
-            inputs.Add(CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(modifierKeys[index]), true, false));
+            inputs.Add(CreateVirtualKeyInput(
+                KeyInterop.VirtualKeyFromKey(modifierKeys[index]),
+                true,
+                false,
+                useScanCode
+            ));
         }
 
         var sent = Send(inputs);
@@ -63,13 +86,18 @@ internal static class SoftKeyboardInputInjector
             // idempotent release sequence before returning failure.
             var releases = new List<INPUT>(modifierKeys.Length + 1)
             {
-                CreateVirtualKeyInput(virtualKey, true, extended),
+                CreateVirtualKeyInput(virtualKey, true, extended, useScanCode),
             };
 
             for (var index = modifierKeys.Length - 1; index >= 0; index--)
             {
                 releases.Add(
-                    CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(modifierKeys[index]), true, false)
+                    CreateVirtualKeyInput(
+                        KeyInterop.VirtualKeyFromKey(modifierKeys[index]),
+                        true,
+                        false,
+                        useScanCode
+                    )
                 );
             }
 
@@ -132,13 +160,19 @@ internal static class SoftKeyboardInputInjector
         return sent == inputs.Length;
     }
 
-    private static INPUT CreateVirtualKeyInput(int virtualKey, bool isKeyUp, bool isExtended)
+    private static INPUT CreateVirtualKeyInput(
+        int virtualKey,
+        bool isKeyUp,
+        bool isExtended,
+        bool useScanCode)
     {
-        var scanCode = PInvoke.MapVirtualKeyEx(
-            (uint)virtualKey,
-            MAP_VIRTUAL_KEY_TYPE.MAPVK_VK_TO_VSC,
-            PInvoke.GetKeyboardLayout(0)
-        );
+        var scanCode = useScanCode
+            ? PInvoke.MapVirtualKeyEx(
+                (uint)virtualKey,
+                MAP_VIRTUAL_KEY_TYPE.MAPVK_VK_TO_VSC,
+                PInvoke.GetKeyboardLayout(0)
+            )
+            : 0;
 
         return new INPUT
         {

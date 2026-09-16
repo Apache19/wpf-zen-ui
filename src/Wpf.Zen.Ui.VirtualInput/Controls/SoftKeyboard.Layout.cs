@@ -67,7 +67,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        if (_inputMethodOperationActive && !publishInputMethodState)
+        if (IsInputMethodOperationActive && !publishInputMethodState)
         {
             // A complete input-method observation publishes all fields before one layout rebuild.
             _inputMethodLayoutPending = true;

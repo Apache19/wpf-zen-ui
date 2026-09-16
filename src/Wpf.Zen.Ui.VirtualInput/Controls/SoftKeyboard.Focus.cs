@@ -54,7 +54,7 @@ public partial class SoftKeyboard
 
             if (IsOpen)
             {
-                QueueInputMethodStateRefresh();
+                RefreshInputMethodState();
 
                 RequestSystemKeyboardHide();
 
@@ -79,12 +79,84 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Invalidates the published input-method snapshot after any WPF or TSF notification.
+    /// Applies one typed WPF or TSF notification to the input-method state.
+    /// </summary>
+    internal void OnSessionInputMethodChanged(InputMethodChange change)
+    {
+        VerifyAccess();
+        ApplyInputMethodChange(change);
+    }
+
+    /// <summary>
+    /// Reads only the state owned by one notification type and refreshes affected properties.
+    /// </summary>
+    private void ApplyInputMethodChange(InputMethodChange change)
+    {
+        switch (change.Kind)
+        {
+            case InputMethodChangeKind.RefreshAll:
+                RefreshInputMethodStateNow();
+                return;
+
+            case InputMethodChangeKind.Profile:
+                if (!change.Profile.IsActive)
+                {
+                    return;
+                }
+
+                ResetObservedPlatformState();
+                RefreshInputMethodStateNow();
+                return;
+
+            case InputMethodChangeKind.ImeOpen:
+                _observedImeOpenValue = GetRequiredStateValue(change);
+                RefreshObservedInputMode();
+                RefreshCandidatesAfterInputMethodChange();
+                return;
+
+            case InputMethodChangeKind.ImeConversion:
+                _observedImeConversionValue = GetRequiredStateValue(change);
+                RefreshObservedInputMode();
+                RefreshCandidatesAfterInputMethodChange();
+                return;
+
+            case InputMethodChangeKind.InputLanguage:
+                _observedModeProfile        = null;
+                _observedImeOpenValue       = 0;
+                _observedImeConversionValue = 0;
+                _resetObservedPlatformState = true;
+                RefreshInputMethodStateNow();
+                return;
+
+            case InputMethodChangeKind.InputModePresentation:
+                RefreshObservedInputMode();
+                RefreshCandidatesAfterInputMethodChange();
+                return;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(change));
+        }
+    }
+
+    /// <summary>
+    /// Returns the value read by an open or conversion notification callback.
+    /// </summary>
+    private static int GetRequiredStateValue(InputMethodChange change)
+    {
+        return change.StateValue
+            ?? throw new InvalidOperationException(
+                $"The {change.Kind} notification did not include its observed value."
+            );
+    }
+
+    /// <summary>
+    /// Refreshes an application-defined source whose notification contract has no Windows type.
     /// </summary>
     internal void OnSessionInputMethodStateInvalidated()
     {
-        RestartInputMethodProfileSettlement();
-        QueueInputMethodStateRefresh();
+        OnSessionInputMethodChanged(
+            new InputMethodChange(InputMethodChangeKind.RefreshAll)
+        );
     }
 
     /// <summary>
@@ -92,7 +164,9 @@ public partial class SoftKeyboard
     /// </summary>
     internal void OnSessionInputLanguageChanged()
     {
-        OnSessionInputMethodStateInvalidated();
+        OnSessionInputMethodChanged(
+            new InputMethodChange(InputMethodChangeKind.InputLanguage)
+        );
     }
 
     /// <summary>

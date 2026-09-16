@@ -10,6 +10,10 @@ namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 /// </summary>
 public sealed class DefaultSoftKeyboardExtensionProvider : ISoftKeyboardExtensionProvider
 {
+    private static readonly SoftKeyboardExtension CandidatePolicyExtension = new(
+        candidateBehavior: WindowsCandidatePresentationBehavior.Default
+    );
+
     private readonly CompositeSoftKeyboardExtensionProvider _provider = new(
         ChineseSoftKeyboardExtensionProvider.Default,
         JapaneseSoftKeyboardExtensionProvider.Default
@@ -23,6 +27,6 @@ public sealed class DefaultSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
     /// <inheritdoc />
     public IEnumerable<SoftKeyboardExtension> GetExtensions(SoftKeyboardExtensionContext context)
     {
-        return _provider.GetExtensions(context);
+        return _provider.GetExtensions(context).Append(CandidatePolicyExtension);
     }
 }

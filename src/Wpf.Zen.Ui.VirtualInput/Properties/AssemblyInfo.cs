@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Markup;
 
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
+[assembly: InternalsVisibleTo("Wpf.Zen.Ui.VirtualInput.Extensions")]
 [assembly: InternalsVisibleTo("Wpf.Zen.Ui.UnitTests")]
 
 [assembly: XmlnsPrefix("http://schemas.thezendev.com/wpf/2027/virtual-input", "keyboard")]

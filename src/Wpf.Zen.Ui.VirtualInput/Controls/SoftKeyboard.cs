@@ -27,8 +27,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// <para>
 /// Set <see cref="IsOpen"/> explicitly for deterministic application layout. Alternatively set
 /// <see cref="AutoShowMode"/> to open after touch/pen focus or every supported editor focus.
-/// <see cref="TargetScope"/> separates keyboard ownership when multiple forms, Pages, or dialogs are
-/// loaded on the same Dispatcher.
+/// <see cref="TargetScope"/> separates keyboard ownership when multiple forms, Pages, or dialogs
+/// are loaded on the same Dispatcher.
 /// </para>
 /// <para>
 /// The default template provides a <c>PART_Keys</c> items surface whose containers pass each key's
@@ -60,6 +60,7 @@ public partial class SoftKeyboard : Control
 
     private SoftKeyboardDispatcherSession? _session;
     private Window?                        _window;
+    private HwndSource?                    _windowSource;
     private TextComposition?               _activeTextComposition;
     private IInputElement?                 _compositionTarget;
     private bool                           _compositionCancellationRequested;
@@ -101,7 +102,8 @@ public partial class SoftKeyboard : Control
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SoftKeyboard"/> class with replaceable platform boundaries.
+    /// Initializes a new instance of the <see cref="SoftKeyboard"/> class with replaceable
+    /// platform boundaries.
     /// </summary>
     /// <param name="platform">The native service boundary.</param>
     internal SoftKeyboard(SoftKeyboardPlatformServices platform)
@@ -198,9 +200,9 @@ public partial class SoftKeyboard : Control
     /// </summary>
     /// <remarks>
     /// A theme or application can replace the template without unloading the control. The active
-    /// key's interaction must not survive that replacement, even without mouse capture. Cleanup runs at
-    /// template change rather than OnApplyTemplate because an empty template creates no tree
-    /// and does not receive that callback.
+    /// key's interaction must not survive that replacement, even without mouse capture. Cleanup
+    /// runs at template change rather than OnApplyTemplate because an empty template creates no
+    /// tree and does not receive that callback.
     /// </remarks>
     /// <param name="oldTemplate">The previous template, or null.</param>
     /// <param name="newTemplate">The replacement template, or null.</param>

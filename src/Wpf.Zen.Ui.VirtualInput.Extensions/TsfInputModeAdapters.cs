@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Globalization;
+using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
@@ -10,11 +12,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 /// <summary>
 /// Interprets the standard TSF conversion flags used by Chinese input methods.
 /// </summary>
-internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
+internal sealed class ChineseInputModeAdapter : ISoftKeyboardObservedInputModeAdapter
 {
-    private static readonly SoftKeyboardInputModeTransition ToggleNativeTransition =
-        new("toggle-native");
-
     internal static ChineseInputModeAdapter Default { get; } = new();
 
     /// <inheritdoc />
@@ -27,7 +26,17 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
         }
 
         var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-        return state is null ? SoftKeyboardInputModeContribution.Empty : Decode(inputMethod, state);
+        return state is null
+            ? SoftKeyboardInputModeContribution.Empty
+            : GetContribution(inputMethod, state);
+    }
+
+    /// <inheritdoc />
+    public SoftKeyboardInputModeContribution GetContribution(
+        SoftKeyboardInputMethod inputMethod,
+        SoftKeyboardTsfInputModeState state)
+    {
+        return Decode(inputMethod, state);
     }
 
     /// <summary>
@@ -68,7 +77,9 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
             presentation,
             fallback
                 ? SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(
-                    ToggleNativeTransition
+                    new SoftKeyboardInputModeTransition(
+                        $"set-conversion:{state.ConversionValue!.Value ^ TsfConversionMode.Native}"
+                    )
                 )
                 : SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.Unhandled
         );
@@ -96,25 +107,20 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
         SoftKeyboardInputMethod inputMethod,
         SoftKeyboardInputModeTransition transition)
     {
-        if (!Equals(transition, ToggleNativeTransition))
+        const string prefix = "set-conversion:";
+        if (!transition.Id.StartsWith(prefix, StringComparison.Ordinal)
+            || !int.TryParse(
+                transition.Id.Substring(prefix.Length),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var conversion
+            ))
         {
             return false;
         }
 
-        var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-        if (state is null)
-        {
-            return false;
-        }
-
-        return !state.CanSwitch
-            && state.OpenValue == 1
-            && state.ConversionValue is int conversion
-            && IsChineseTip(inputMethod)
-            && SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(
-                inputMethod,
-                conversion ^ TsfConversionMode.Native
-            );
+        return IsChineseTip(inputMethod)
+            && SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(inputMethod, conversion);
     }
 
     /// <summary>
@@ -129,10 +135,13 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardInputModeAdapter
 /// <summary>
 /// Interprets the standard TSF open and conversion values used by Japanese input methods.
 /// </summary>
-internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
+internal sealed class JapaneseInputModeAdapter : ISoftKeyboardObservedInputModeAdapter
 {
-    private static readonly SoftKeyboardInputModeTransition ToggleNativeTransition =
-        new("toggle-native");
+    private static readonly SoftKeyboardInputModeTransition EnterNativeTransition =
+        new("japanese-native");
+
+    private static readonly SoftKeyboardInputModeTransition EnterDirectTransition =
+        new("japanese-direct");
 
     internal static JapaneseInputModeAdapter Default { get; } = new();
 
@@ -146,7 +155,17 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
         }
 
         var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-        return state is null ? SoftKeyboardInputModeContribution.Empty : Decode(inputMethod, state);
+        return state is null
+            ? SoftKeyboardInputModeContribution.Empty
+            : GetContribution(inputMethod, state);
+    }
+
+    /// <inheritdoc />
+    public SoftKeyboardInputModeContribution GetContribution(
+        SoftKeyboardInputMethod inputMethod,
+        SoftKeyboardTsfInputModeState state)
+    {
+        return Decode(inputMethod, state);
     }
 
     /// <summary>
@@ -185,7 +204,7 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
                 CreatePresentation(inputMethod, mode)
             ),
             SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(
-                ToggleNativeTransition
+                mode.IsNativeInput ? EnterDirectTransition : EnterNativeTransition
             )
         );
     }
@@ -231,28 +250,23 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardInputModeAdapter
         SoftKeyboardInputMethod inputMethod,
         SoftKeyboardInputModeTransition transition)
     {
-        if (!Equals(transition, ToggleNativeTransition)
-            || SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId) is not { } state
-            || state.CanSwitch
-            || state.ConversionValue is not int conversion)
+        if (Equals(transition, EnterDirectTransition))
         {
-            return false;
+            return SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
+                inputMethod,
+                Key.DbeAlphanumeric
+            );
         }
 
-        var preserved = conversion
-            & ~(TsfConversionMode.Native | TsfConversionMode.Katakana | TsfConversionMode.FullShape);
-        var native = state.OpenValue != 0
-            && (conversion & TsfConversionMode.Native) != 0;
-        var next = native
-            ? preserved
-            : preserved | TsfConversionMode.Native | TsfConversionMode.FullShape;
-
-        if (!SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(inputMethod, next))
+        if (Equals(transition, EnterNativeTransition))
         {
-            return false;
+            return SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
+                inputMethod,
+                Key.KanjiMode
+            );
         }
 
-        return state.OpenValue != 0 || SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(inputMethod);
+        return false;
     }
 
     /// <summary>

@@ -20,4 +20,16 @@ internal interface ITfLangBarItemMgr
 
     [PreserveSig]
     int GetItem(in Guid id, [MarshalAs(UnmanagedType.IUnknown)] out object? item);
+
+    [PreserveSig]
+    int AddItem([MarshalAs(UnmanagedType.IUnknown)] object item);
+
+    [PreserveSig]
+    int RemoveItem([MarshalAs(UnmanagedType.IUnknown)] object item);
+
+    [PreserveSig]
+    int AdviseItemSink(IntPtr sink, out uint cookie, in Guid itemId);
+
+    [PreserveSig]
+    int UnadviseItemSink(uint cookie);
 }

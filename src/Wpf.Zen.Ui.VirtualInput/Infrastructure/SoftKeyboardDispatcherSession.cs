@@ -61,11 +61,6 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     }
 
     /// <summary>
-    /// Gets the input-method notification version for validating a synchronous observation.
-    /// </summary>
-    internal int InputMethodVersion => _inputMethodMonitor.Version;
-
-    /// <summary>
     /// Gets whether all system notification paths required for normal synchronization are active.
     /// </summary>
     internal bool HasReliableInputMethodNotifications => _inputMethodMonitor.HasReliableNotifications;
@@ -138,9 +133,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         );
     }
 
-    private void OnInputMethodStateInvalidated()
+    private void OnInputMethodStateInvalidated(InputMethodChange change)
     {
-        ForEachKeyboard(static keyboard => keyboard.OnSessionInputMethodStateInvalidated());
+        ForEachKeyboard(keyboard => keyboard.OnSessionInputMethodChanged(change));
     }
 
     private void OnDispatcherShutdownStarted(object? sender, EventArgs eventArgs)

@@ -450,7 +450,11 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             if (candidate is not ITfCandidateListUIElementBehavior behavior
                 || !MatchesFocusedDocument(candidate)
-                || !ShouldEmbedCandidate(keyboard, behavior))
+                || !ShouldEmbedCandidate(
+                    keyboard,
+                    behavior,
+                    candidate is ITfIntegratableCandidateListUIElementCapability
+                ))
             {
                 show = 1;
                 keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
@@ -599,7 +603,13 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
                     if (!MatchesFocusedDocument(candidate)
                         || element is not ITfCandidateListUIElementBehavior behavior
-                        || !ShouldEmbedCandidate(keyboard, behavior))
+                        // Enumeration must use the same capability boundary as BeginUIElement;
+                        // otherwise callback timing could change the presentation decision.
+                        || !ShouldEmbedCandidate(
+                            keyboard,
+                            behavior,
+                            element is ITfIntegratableCandidateListUIElementCapability
+                        ))
                     {
                         keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
                         continue;
@@ -890,7 +900,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         return keyboard?.CanPresentCandidates == true;
     }
 
-    private static bool ShouldEmbedCandidate(SoftKeyboard keyboard, ITfCandidateListUIElementBehavior behavior)
+    private static bool ShouldEmbedCandidate(
+        SoftKeyboard keyboard,
+        ITfCandidateListUIElementBehavior behavior,
+        bool supportsIntegratedCandidate)
     {
         if (behavior.GetGuid(out var elementType) < 0)
         {
@@ -917,7 +930,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             }
         }
 
-        return true;
+        // The optional integration interface is the strongest public TSF capability signal.
+        // Extension policy can make a more specific decision for known platform or vendor TIPs.
+        return supportsIntegratedCandidate;
     }
 
     /// <summary>

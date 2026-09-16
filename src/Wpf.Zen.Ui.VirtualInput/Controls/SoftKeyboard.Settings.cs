@@ -158,7 +158,7 @@ public partial class SoftKeyboard
                             PrepareTargetForInput();
                         }
 
-                        QueueInputMethodStateRefresh();
+                        RefreshInputMethodState();
                     }
                 )
             );
@@ -388,7 +388,7 @@ public partial class SoftKeyboard
 
         _settingsLayoutContext = context;
 
-        // Native state is polled and often produces equivalent immutable profile snapshots.
+        // Different native notification categories can produce an equivalent immutable context.
         // Replacing menu containers for those notifications can discard a queued MenuItem.Click.
         if (previous is null
             || previous.Page != context.Page
