@@ -183,6 +183,28 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
+    /// Invalidating a profile generation preserves unknown native values instead of publishing
+    /// fabricated direct-input defaults before the next platform read.
+    /// </summary>
+    [Fact]
+    public Task ProfileObservation_InvalidationDoesNotFabricatePlatformState()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+
+            typeof(SoftKeyboard).GetMethod(
+                "ResetObservedPlatformState",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            )!.Invoke(scope.Keyboard, null);
+
+            Assert.Null(GetPrivateField(scope.Keyboard, "_observedImeOpenValue"));
+            Assert.Null(GetPrivateField(scope.Keyboard, "_observedImeConversionValue"));
+        });
+    }
+
+    /// <summary>
     /// Profile activation writes no mode and publishes the observation before returning.
     /// </summary>
     [Fact]
@@ -1355,6 +1377,14 @@ public class SoftKeyboardRegressionTests
     {
         return (ContextMenu?)typeof(SoftKeyboard).GetField(
             "_inputMethodMenu", BindingFlags.Instance | BindingFlags.NonPublic
+        )!.GetValue(keyboard);
+    }
+
+    private static object? GetPrivateField(SoftKeyboard keyboard, string name)
+    {
+        return typeof(SoftKeyboard).GetField(
+            name,
+            BindingFlags.Instance | BindingFlags.NonPublic
         )!.GetValue(keyboard);
     }
 

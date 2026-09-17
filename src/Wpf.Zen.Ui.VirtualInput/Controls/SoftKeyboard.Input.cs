@@ -369,7 +369,6 @@ public partial class SoftKeyboard
             return scopeSource;
         }
 
-        return PresentationSource.FromDependencyObject(this) as HwndSource
-            ?? _windowSource;
+        return PresentationSource.FromDependencyObject(this) as HwndSource;
     }
 }

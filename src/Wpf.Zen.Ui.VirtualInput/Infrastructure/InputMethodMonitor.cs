@@ -4,13 +4,12 @@
 // All Rights Reserved.
 
 using System.Runtime.InteropServices;
-using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 
 /// <summary>
-/// Observes dispatcher-wide WPF and TSF input-method changes independently of candidate UI.
+/// Observes dispatcher-wide TSF input-method changes independently of candidate UI.
 /// </summary>
 /// <remarks>
 /// Every callback reports its native state category. Consumers can then read and publish only the
@@ -20,7 +19,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 [ClassInterface(ClassInterfaceType.None)]
 internal sealed class InputMethodMonitor
     : ISoftKeyboardTsfInputProcessorProfileActivationSink,
-      ISoftKeyboardTsfActiveLanguageProfileNotifySink,
+      ISoftKeyboardTsfCompartmentEventSink,
       ISoftKeyboardTsfLangBarItemSink,
       IDisposable
 {
@@ -29,8 +28,14 @@ internal sealed class InputMethodMonitor
     private static readonly Guid ProfileActivationSinkId =
         new("71C6E74E-0F28-11D8-A82A-00065B84435C");
 
-    private static readonly Guid ActiveLanguageProfileSinkId =
-        new("B246CB75-A93E-4652-BF8C-B3FE0CFD7E57");
+    private static readonly Guid CompartmentEventSinkId =
+        new("743ABD5F-F26D-48DF-8CC5-238492419B64");
+
+    private static readonly Guid KeyboardOpenId =
+        new("58273AAD-01BB-4164-95C6-755BA0B5162D");
+
+    private static readonly Guid KeyboardConversionId =
+        new("CCF05DD8-4A87-11D7-A6E2-00065B84435C");
 
     private static readonly Guid InputModeItemId =
         new("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
@@ -38,14 +43,16 @@ internal sealed class InputMethodMonitor
     private readonly Dispatcher _dispatcher;
     private readonly Action<InputMethodChange> _changed;
 
-    private InputMethod? _inputMethod;
     private ITfSource?   _source;
+    private ITfSource?   _keyboardOpenSource;
+    private ITfSource?   _keyboardConversionSource;
     private IntPtr       _profileActivationSinkPointer;
-    private IntPtr       _activeLanguageProfileSinkPointer;
+    private IntPtr       _compartmentSinkPointer;
     private IntPtr       _languageBarItemSinkPointer;
     private ITfLangBarItemMgr? _languageBarItemManager;
     private uint         _profileActivationCookie;
-    private uint         _activeLanguageProfileCookie;
+    private uint         _keyboardOpenCookie;
+    private uint         _keyboardConversionCookie;
     private uint         _languageBarItemCookie;
     private bool         _disposed;
 
@@ -54,27 +61,21 @@ internal sealed class InputMethodMonitor
         _dispatcher  = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _changed     = changed ?? throw new ArgumentNullException(nameof(changed));
 
-        InputLanguageManager.Current.InputLanguageChanged += OnInputLanguageChanged;
-
-        _inputMethod = InputMethod.Current;
-        if (_inputMethod is not null)
-        {
-            _inputMethod.StateChanged += OnInputMethodStateChanged;
-        }
-
         _dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
-        EnsureProfileNotifications();
+        EnsureNotifications();
     }
 
     /// <summary>
-    /// Gets whether WPF compartment notifications and the TSF profile sink are both connected.
+    /// Gets whether the profile and input-mode TSF sinks are connected.
     /// </summary>
-    internal bool HasReliableNotifications => _inputMethod is not null && _source is not null;
+    internal bool HasReliableNotifications => _source is not null
+        && _keyboardOpenSource is not null
+        && _keyboardConversionSource is not null;
 
     /// <summary>
-    /// Retries the TSF profile subscription after WPF has created its text-services host.
+    /// Connects the TSF notification sinks after WPF has created its text-services host.
     /// </summary>
-    internal void EnsureProfileNotifications()
+    internal void EnsureNotifications()
     {
         _dispatcher.VerifyAccess();
 
@@ -85,6 +86,7 @@ internal sealed class InputMethodMonitor
 
         if (_source is not null)
         {
+            ConnectCompartmentNotifications();
             ConnectLanguageBarItemNotifications();
             return;
         }
@@ -96,7 +98,6 @@ internal sealed class InputMethodMonitor
         }
 
         var profileActivationPointer = IntPtr.Zero;
-        var activeLanguagePointer = IntPtr.Zero;
         try
         {
             profileActivationPointer = Marshal.GetComInterfaceForObject(
@@ -114,30 +115,12 @@ internal sealed class InputMethodMonitor
                 return;
             }
 
-            activeLanguagePointer = Marshal.GetComInterfaceForObject(
-                this,
-                typeof(ISoftKeyboardTsfActiveLanguageProfileNotifySink)
-            );
+            _source                       = source;
+            _profileActivationSinkPointer = profileActivationPointer;
+            _profileActivationCookie      = profileActivationCookie;
+            profileActivationPointer      = IntPtr.Zero;
 
-            var activeLanguageProfileSinkId = ActiveLanguageProfileSinkId;
-            if (source.AdviseSink(
-                ref activeLanguageProfileSinkId,
-                activeLanguagePointer,
-                out var activeLanguageProfileCookie
-            ) < 0)
-            {
-                _ = source.UnadviseSink(profileActivationCookie);
-                return;
-            }
-
-            _source                           = source;
-            _profileActivationSinkPointer     = profileActivationPointer;
-            _activeLanguageProfileSinkPointer = activeLanguagePointer;
-            _profileActivationCookie          = profileActivationCookie;
-            _activeLanguageProfileCookie      = activeLanguageProfileCookie;
-            profileActivationPointer          = IntPtr.Zero;
-            activeLanguagePointer             = IntPtr.Zero;
-
+            ConnectCompartmentNotifications();
             ConnectLanguageBarItemNotifications();
         }
         catch (Exception exception) when (IsUnavailable(exception))
@@ -149,11 +132,6 @@ internal sealed class InputMethodMonitor
             if (profileActivationPointer != IntPtr.Zero)
             {
                 _ = Marshal.Release(profileActivationPointer);
-            }
-
-            if (activeLanguagePointer != IntPtr.Zero)
-            {
-                _ = Marshal.Release(activeLanguagePointer);
             }
         }
     }
@@ -191,42 +169,9 @@ internal sealed class InputMethodMonitor
         return 0;
     }
 
-    int ISoftKeyboardTsfActiveLanguageProfileNotifySink.OnActivated(
-        ref Guid classId,
-        ref Guid profileId,
-        int activated)
+    int ISoftKeyboardTsfCompartmentEventSink.OnChange(ref Guid compartmentId)
     {
-        Publish(
-            new InputMethodChange(
-                InputMethodChangeKind.Profile,
-                new InputProcessorProfileChange(
-                    0,
-                    0,
-                    classId,
-                    Guid.Empty,
-                    profileId,
-                    IntPtr.Zero,
-                    activated != 0
-                )
-            )
-        );
-
-        return 0;
-    }
-
-    private void OnInputLanguageChanged(object sender, InputLanguageEventArgs eventArgs)
-    {
-        Publish(
-            new InputMethodChange(
-                InputMethodChangeKind.InputLanguage,
-                KeyboardLayout: Layouts.Internal.KeyboardLayoutLabels.GetCurrentLayout()
-            )
-        );
-    }
-
-    private void OnInputMethodStateChanged(object sender, InputMethodStateChangedEventArgs eventArgs)
-    {
-        if (eventArgs.IsImeStateChanged
+        if (compartmentId == KeyboardOpenId
             && SoftKeyboardTsfInputMode.GetKeyboardOpenValue() is { } openValue)
         {
             Publish(
@@ -236,8 +181,7 @@ internal sealed class InputMethodMonitor
                 )
             );
         }
-
-        if (eventArgs.IsImeConversionModeChanged
+        else if (compartmentId == KeyboardConversionId
             && SoftKeyboardTsfInputMode.GetKeyboardConversionValue() is { } conversionValue)
         {
             Publish(
@@ -247,6 +191,8 @@ internal sealed class InputMethodMonitor
                 )
             );
         }
+
+        return 0;
     }
 
     private void Publish(InputMethodChange change)
@@ -257,8 +203,9 @@ internal sealed class InputMethodMonitor
     private void DisconnectProfileNotifications()
     {
         DisconnectLanguageBarItemNotifications();
+        DisconnectCompartmentNotifications();
 
-        if (_source is not null && _profileActivationCookie != 0)
+        if (_source is not null)
         {
             try
             {
@@ -270,20 +217,7 @@ internal sealed class InputMethodMonitor
             }
         }
 
-        if (_source is not null && _activeLanguageProfileCookie != 0)
-        {
-            try
-            {
-                _ = _source.UnadviseSink(_activeLanguageProfileCookie);
-            }
-            catch (Exception exception) when (IsUnavailable(exception))
-            {
-                // WPF can release its TSF host before Dispatcher shutdown reaches this monitor.
-            }
-        }
-
-        _profileActivationCookie     = 0;
-        _activeLanguageProfileCookie = 0;
+        _profileActivationCookie = 0;
         _source = null;
 
         if (_profileActivationSinkPointer != IntPtr.Zero)
@@ -291,12 +225,124 @@ internal sealed class InputMethodMonitor
             _ = Marshal.Release(_profileActivationSinkPointer);
             _profileActivationSinkPointer = IntPtr.Zero;
         }
+    }
 
-        if (_activeLanguageProfileSinkPointer != IntPtr.Zero)
+    /// <summary>
+    /// Subscribes directly to the TSF compartments that own input-mode state.
+    /// </summary>
+    private void ConnectCompartmentNotifications()
+    {
+        if ((_keyboardOpenSource is not null && _keyboardConversionSource is not null)
+            || WpfTextServicesAccessor.TryGetThreadManager() is not ITfCompartmentMgr manager)
         {
-            _ = Marshal.Release(_activeLanguageProfileSinkPointer);
-            _activeLanguageProfileSinkPointer = IntPtr.Zero;
+            return;
         }
+
+        try
+        {
+            if (_compartmentSinkPointer == IntPtr.Zero)
+            {
+                _compartmentSinkPointer = Marshal.GetComInterfaceForObject(
+                    this,
+                    typeof(ISoftKeyboardTsfCompartmentEventSink)
+                );
+            }
+
+            if (_keyboardOpenSource is null
+                && TryConnectCompartment(
+                    manager,
+                    KeyboardOpenId,
+                    _compartmentSinkPointer,
+                    out var openSource,
+                    out var openCookie
+                ))
+            {
+                _keyboardOpenSource = openSource;
+                _keyboardOpenCookie = openCookie;
+            }
+
+            if (_keyboardConversionSource is null
+                && TryConnectCompartment(
+                    manager,
+                    KeyboardConversionId,
+                    _compartmentSinkPointer,
+                    out var conversionSource,
+                    out var conversionCookie
+                ))
+            {
+                _keyboardConversionSource = conversionSource;
+                _keyboardConversionCookie = conversionCookie;
+            }
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            // The owning dispatcher can expose the thread manager before its compartments.
+        }
+
+        if (_keyboardOpenSource is null
+            && _keyboardConversionSource is null
+            && _compartmentSinkPointer != IntPtr.Zero)
+        {
+            _ = Marshal.Release(_compartmentSinkPointer);
+            _compartmentSinkPointer = IntPtr.Zero;
+        }
+    }
+
+    private static bool TryConnectCompartment(
+        ITfCompartmentMgr manager,
+        Guid compartmentId,
+        IntPtr sinkPointer,
+        out ITfSource? source,
+        out uint cookie)
+    {
+        source = null;
+        cookie = 0;
+
+        if (manager.GetCompartment(in compartmentId, out var compartment) < 0
+            || compartment is not ITfSource compartmentSource)
+        {
+            return false;
+        }
+
+        var sinkId = CompartmentEventSinkId;
+        if (compartmentSource.AdviseSink(ref sinkId, sinkPointer, out cookie) < 0)
+        {
+            cookie = 0;
+            return false;
+        }
+
+        source = compartmentSource;
+        return true;
+    }
+
+    private void DisconnectCompartmentNotifications()
+    {
+        DisconnectCompartment(ref _keyboardOpenSource, ref _keyboardOpenCookie);
+        DisconnectCompartment(ref _keyboardConversionSource, ref _keyboardConversionCookie);
+
+        if (_compartmentSinkPointer != IntPtr.Zero)
+        {
+            _ = Marshal.Release(_compartmentSinkPointer);
+            _compartmentSinkPointer = IntPtr.Zero;
+        }
+    }
+
+    private static void DisconnectCompartment(ref ITfSource? source, ref uint cookie)
+    {
+        if (source is not null)
+        {
+            try
+            {
+                _ = source.UnadviseSink(cookie);
+            }
+            catch (Exception exception) when (IsUnavailable(exception))
+            {
+                // TSF can release a compartment before Dispatcher shutdown.
+            }
+        }
+
+        cookie = 0;
+        source = null;
     }
 
     /// <summary>
@@ -347,7 +393,7 @@ internal sealed class InputMethodMonitor
 
     private void DisconnectLanguageBarItemNotifications()
     {
-        if (_languageBarItemManager is not null && _languageBarItemCookie != 0)
+        if (_languageBarItemManager is not null)
         {
             try
             {
@@ -375,7 +421,7 @@ internal sealed class InputMethodMonitor
     }
 
     /// <summary>
-    /// Releases all WPF and TSF subscriptions. Repeated calls are safe.
+    /// Releases all TSF subscriptions. Repeated calls are safe.
     /// </summary>
     public void Dispose()
     {
@@ -387,14 +433,6 @@ internal sealed class InputMethodMonitor
         }
 
         _disposed = true;
-
-        InputLanguageManager.Current.InputLanguageChanged -= OnInputLanguageChanged;
-
-        if (_inputMethod is not null)
-        {
-            _inputMethod.StateChanged -= OnInputMethodStateChanged;
-            _inputMethod              =  null;
-        }
 
         DisconnectProfileNotifications();
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;

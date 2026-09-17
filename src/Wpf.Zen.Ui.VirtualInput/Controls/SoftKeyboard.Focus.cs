@@ -120,14 +120,6 @@ public partial class SoftKeyboard
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
-            case InputMethodChangeKind.InputLanguage:
-                _observedModeProfile        = null;
-                _observedImeOpenValue       = 0;
-                _observedImeConversionValue = 0;
-                _resetObservedPlatformState = true;
-                RefreshInputMethodStateNow();
-                return;
-
             case InputMethodChangeKind.InputModePresentation:
                 RefreshObservedInputMode();
                 RefreshCandidatesAfterInputMethodChange();
@@ -160,12 +152,12 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Invalidates input-method state for tests and compatibility with existing internal callers.
+    /// Invalidates the complete input-method snapshot for existing internal callers.
     /// </summary>
     internal void OnSessionInputLanguageChanged()
     {
         OnSessionInputMethodChanged(
-            new InputMethodChange(InputMethodChangeKind.InputLanguage)
+            new InputMethodChange(InputMethodChangeKind.RefreshAll)
         );
     }
 
@@ -256,8 +248,7 @@ public partial class SoftKeyboard
         return TargetScope
             ?? _window
             ?? Window.GetWindow(this)
-            ?? (PresentationSource.FromDependencyObject(this) as HwndSource)?.RootVisual
-            ?? _windowSource?.RootVisual;
+            ?? (PresentationSource.FromDependencyObject(this) as HwndSource)?.RootVisual;
     }
 
     private bool IsWithinEffectiveScope(DependencyObject element)

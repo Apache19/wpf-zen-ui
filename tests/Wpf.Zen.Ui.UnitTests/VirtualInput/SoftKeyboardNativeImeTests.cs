@@ -875,11 +875,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Switching from a Chinese TIP must not interpret its conversion compartment as the initial
-    /// Microsoft Japanese input mode.
+    /// Switching from a Chinese TIP publishes the state read from the newly active Japanese
+    /// profile instead of fabricating direct-input defaults for the new generation.
     /// </summary>
     [Fact]
-    public void Japanese_ProfileActivationStartsFromNewGenerationDefaults()
+    public void Japanese_ProfileActivationPublishesObservedGenerationState()
     {
         Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
             "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Chinese and Japanese IMEs.");
@@ -900,7 +900,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
             var stopwatch = Stopwatch.StartNew();
-            var observedJapaneseModes = new List<string?>();
             var descriptors = new[]
             {
                 DependencyPropertyDescriptor.FromProperty(
@@ -919,11 +918,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
             void TraceState(object? sender, EventArgs args)
             {
-                if ((keyboard.ActiveInputMethod?.LanguageId & 0x03FF) == 0x11)
-                {
-                    observedJapaneseModes.Add(keyboard.InputMode?.Id);
-                }
-
                 var raw = SoftKeyboardTsfInputMode.GetState(
                     keyboard.ActiveInputMethod?.ClassId ?? Guid.Empty
                 );
@@ -1005,7 +999,16 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(1500);
                 TraceState(null, EventArgs.Empty);
 
-                Assert.Contains("direct", observedJapaneseModes);
+                var japaneseState = Assert.IsType<SoftKeyboardTsfInputModeState>(
+                    SoftKeyboardTsfInputMode.GetState(japanese.ClassId)
+                );
+                var expectedMode = Assert.IsType<SoftKeyboardInputMode>(
+                    JapaneseInputModeAdapter.Decode(
+                        japaneseState.OpenValue,
+                        japaneseState.ConversionValue
+                    )
+                );
+                Assert.Equal(expectedMode.Id, keyboard.InputMode?.Id);
 
                 editor.Clear();
                 Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));

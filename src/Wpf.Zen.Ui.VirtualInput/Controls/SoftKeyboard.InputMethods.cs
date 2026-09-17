@@ -30,9 +30,8 @@ public partial class SoftKeyboard
 
     private CultureInfo? _observedInputCulture;
     private SoftKeyboardInputMethod? _observedModeProfile;
-    private int _observedImeOpenValue;
-    private int _observedImeConversionValue;
-    private bool _resetObservedPlatformState;
+    private int? _observedImeOpenValue;
+    private int? _observedImeConversionValue;
 
     #region DP: InputMethodSource
 
@@ -639,10 +638,8 @@ public partial class SoftKeyboard
             _inputModeTransitionRoute = null;
 
             _observedInputCulture     = null;
-            _observedModeProfile      = null;
-            _observedImeOpenValue     = 0;
-            _observedImeConversionValue = 0;
             _inputMethodLayoutPending = true;
+            ResetObservedPlatformState();
 
             if (!operationActive)
             {
@@ -910,21 +907,11 @@ public partial class SoftKeyboard
     {
         if (!HaveSameInputMethod(_observedModeProfile, inputMethod))
         {
-            if (_resetObservedPlatformState)
-            {
-                _observedModeProfile        = inputMethod;
-                _observedImeOpenValue       = 0;
-                _observedImeConversionValue = 0;
-                _resetObservedPlatformState = false;
-            }
-            else
-            {
-                var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
+            var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
 
-                _observedModeProfile        = inputMethod;
-                _observedImeOpenValue       = state?.OpenValue ?? 0;
-                _observedImeConversionValue = state?.ConversionValue ?? 0;
-            }
+            _observedModeProfile        = inputMethod;
+            _observedImeOpenValue       = state?.OpenValue;
+            _observedImeConversionValue = state?.ConversionValue;
         }
 
         return new SoftKeyboardTsfInputModeState(
@@ -935,14 +922,14 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Starts a new profile generation from direct-input defaults.
+    /// Invalidates values associated with the previous active-profile generation.
+    /// The next observation reads both values directly from the newly active profile.
     /// </summary>
     private void ResetObservedPlatformState()
     {
         _observedModeProfile        = null;
-        _observedImeOpenValue       = 0;
-        _observedImeConversionValue = 0;
-        _resetObservedPlatformState = true;
+        _observedImeOpenValue       = null;
+        _observedImeConversionValue = null;
     }
 
     /// <summary>

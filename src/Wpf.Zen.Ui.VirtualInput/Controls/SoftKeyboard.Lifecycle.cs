@@ -24,10 +24,7 @@ public partial class SoftKeyboard
         {
             _window.Activated   += OnWindowActivated;
             _window.Deactivated += OnWindowDeactivated;
-            _window.SourceInitialized += OnWindowSourceInitialized;
         }
-
-        AttachWindowMessageHook();
 
         ResolveTarget();
         RefreshInputMode();
@@ -63,9 +60,6 @@ public partial class SoftKeyboard
         {
             _window.Activated   -= OnWindowActivated;
             _window.Deactivated -= OnWindowDeactivated;
-            _window.SourceInitialized -= OnWindowSourceInitialized;
-
-            DetachWindowMessageHook();
 
             _window = null;
         }
@@ -131,80 +125,6 @@ public partial class SoftKeyboard
         ReleaseSystemKeyboardSuppression(tryRestore: false);
 
         ResetCandidateSession();
-    }
-
-    private void OnWindowSourceInitialized(object? sender, EventArgs args)
-    {
-        AttachWindowMessageHook();
-    }
-
-    /// <summary>
-    /// Observes exact HKL changes and legacy IMM mode notifications for this HWND.
-    /// </summary>
-    private void AttachWindowMessageHook()
-    {
-        if (_windowSource is not null)
-        {
-            return;
-        }
-
-        _windowSource = GetHostHwndSource();
-        _windowSource?.AddHook(OnWindowMessage);
-    }
-
-    private void DetachWindowMessageHook()
-    {
-        _windowSource?.RemoveHook(OnWindowMessage);
-        _windowSource = null;
-    }
-
-    private IntPtr OnWindowMessage(
-        IntPtr window,
-        int message,
-        IntPtr wParam,
-        IntPtr lParam,
-        ref bool handled)
-    {
-        const int WmInputLanguageChange = 0x0051;
-        const int WmImeNotify           = 0x0282;
-        const int ImnSetConversionMode  = 0x0006;
-        const int ImnSetOpenStatus      = 0x0008;
-
-        if (message == WmInputLanguageChange)
-        {
-            OnSessionInputMethodChanged(
-                new InputMethodChange(
-                    InputMethodChangeKind.InputLanguage,
-                    KeyboardLayout: lParam
-                )
-            );
-        }
-        else if (message == WmImeNotify && wParam.ToInt32() == ImnSetOpenStatus)
-        {
-            if (ImmInputContextState.TryReadOpen(window, out var open))
-            {
-                OnSessionInputMethodChanged(
-                    new InputMethodChange(
-                        InputMethodChangeKind.ImeOpen,
-                        StateValue: open
-                    )
-                );
-            }
-        }
-        else if (message == WmImeNotify && wParam.ToInt32() == ImnSetConversionMode)
-        {
-            if (ImmInputContextState.TryReadConversion(window, out var conversion))
-            {
-                OnSessionInputMethodChanged(
-                    new InputMethodChange(
-                        InputMethodChangeKind.ImeConversion,
-                        StateValue: conversion
-                    )
-                );
-            }
-        }
-
-        return IntPtr.Zero;
     }
 
     private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs args)

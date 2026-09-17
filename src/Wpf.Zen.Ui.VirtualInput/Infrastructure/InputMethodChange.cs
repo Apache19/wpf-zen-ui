@@ -12,7 +12,6 @@ internal enum InputMethodChangeKind
 {
     RefreshAll,
     Profile,
-    InputLanguage,
     ImeOpen,
     ImeConversion,
     InputModePresentation,
@@ -24,7 +23,6 @@ internal enum InputMethodChangeKind
 internal readonly record struct InputMethodChange(
     InputMethodChangeKind Kind,
     InputProcessorProfileChange Profile = default,
-    IntPtr KeyboardLayout = default,
     int? StateValue = null
 );
 

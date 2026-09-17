@@ -57,7 +57,7 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         }
 
         _keyboards.Add(new WeakReference(keyboard));
-        _inputMethodMonitor.EnsureProfileNotifications();
+        _inputMethodMonitor.EnsureNotifications();
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     /// </summary>
     internal void EnsureInputMethodMonitoring()
     {
-        _inputMethodMonitor.EnsureProfileNotifications();
+        _inputMethodMonitor.EnsureNotifications();
     }
 
     internal void Unregister(SoftKeyboard keyboard)
@@ -124,7 +124,7 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         var elapsed             = unchecked(Environment.TickCount - _lastTouchOrPenTick);
         var touchOrPenInitiated = elapsed is >= 0 and <= 1000;
 
-        _inputMethodMonitor.EnsureProfileNotifications();
+        _inputMethodMonitor.EnsureNotifications();
 
         ForEachKeyboard(
             keyboard => keyboard.OnSessionFocusChanged(

@@ -60,7 +60,6 @@ public partial class SoftKeyboard : Control
 
     private SoftKeyboardDispatcherSession? _session;
     private Window?                        _window;
-    private HwndSource?                    _windowSource;
     private TextComposition?               _activeTextComposition;
     private IInputElement?                 _compositionTarget;
     private bool                           _compositionCancellationRequested;
