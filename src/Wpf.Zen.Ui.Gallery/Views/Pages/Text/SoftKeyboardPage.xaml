@@ -79,15 +79,31 @@
                     Height="80"
                     HorizontalAlignment="Left" />
 
-                <CheckBox
-                    Grid.Row="4"
-                    HorizontalAlignment="Left"
-                    Content="Keyboard open"
-                    IsChecked="{Binding IsOpen, ElementName=Keyboard, Mode=TwoWay}" />
+                <StackPanel
+                    Grid.Row="6"
+                    HorizontalAlignment="Left">
+                    <WrapPanel>
+                        <CheckBox
+                            Margin="0,0,24,0"
+                            Content="Keyboard open"
+                            IsChecked="{Binding IsOpen, ElementName=Keyboard, Mode=TwoWay}" />
+                        <CheckBox
+                            x:Name="CandidateWindowBoundsCheckBox"
+                            Checked="OnCandidateWindowBoundsChecked"
+                            Content="Outline native window below pointer"
+                            Unchecked="OnCandidateWindowBoundsUnchecked" />
+                    </WrapPanel>
+                    <TextBlock
+                        x:Name="CandidateWindowDiagnosticStatus"
+                        Margin="0,6,0,0"
+                        FontFamily="Consolas"
+                        Text="Enable the outline, then move the pointer over the blocked key area."
+                        TextWrapping="Wrap" />
+                </StackPanel>
 
                 <keyboard:SoftKeyboard
                     x:Name="Keyboard"
-                    Grid.Row="6"
+                    Grid.Row="4"
                     AutoHideMode="Manual"
                     AutoShowMode="TouchAndPen"
                     ExtensionProvider="{x:Static keyboardExt:DefaultSoftKeyboardExtensionProvider.Default}"

@@ -10,11 +10,12 @@ namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 /// </summary>
 internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCandidateBehavior
 {
-    private static readonly HashSet<Guid> InboxInputMethodIds =
+    private static readonly HashSet<Guid> EmbeddedInputMethodIds =
     [
         new("03B5835F-F03C-411B-9CE2-AA23E1171E36"), // Microsoft Japanese IME
         new("531FDEBF-9B4C-4A43-A2AA-960E8FCDC732"), // Microsoft Cangjie
         new("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E"), // Microsoft Pinyin and Wubi
+        new("86598FB9-66A2-463E-B9C2-AEB906D477AD"), // WeChat Input Method (WeType)
         new("A028AE76-01B1-46C2-99C4-ACD9858AE02F"), // Microsoft Korean IME
         new("A1E2B86B-924A-4D43-80F6-8A820DF7190F"), // Microsoft Old Hangul IME
         new("B115690A-EA02-48D5-A231-E3578D2FDF80"), // Microsoft Bopomofo
@@ -39,7 +40,7 @@ internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCan
             throw new ArgumentNullException(nameof(context));
         }
 
-        return IsInboxInputMethod(context.InputMethod?.ClassId)
+        return IsEmbeddedInputMethod(context.InputMethod?.ClassId)
             ? SoftKeyboardTsfCandidatePresentation.Embedded
             : SoftKeyboardTsfCandidatePresentation.Native;
     }
@@ -63,12 +64,12 @@ internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCan
     }
 
     /// <summary>
-    /// Determines whether a TSF service is one of the Windows inbox East Asian IMEs.
+    /// Determines whether the candidate UI of a TSF service should be embedded in the soft keyboard.
     /// </summary>
     /// <param name="classId">The active TSF text service class identifier.</param>
-    /// <returns>True for an inbox Windows input method; otherwise false.</returns>
-    internal static bool IsInboxInputMethod(Guid? classId)
+    /// <returns>True when the soft keyboard should present the service's candidates; otherwise false.</returns>
+    internal static bool IsEmbeddedInputMethod(Guid? classId)
     {
-        return classId is { } value && InboxInputMethodIds.Contains(value);
+        return classId is { } value && EmbeddedInputMethodIds.Contains(value);
     }
 }

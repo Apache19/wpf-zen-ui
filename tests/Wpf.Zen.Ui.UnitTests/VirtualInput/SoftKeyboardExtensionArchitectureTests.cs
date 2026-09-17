@@ -27,23 +27,23 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardExtensionArchitectureTests
 {
     /// <summary>
-    /// The default extension embeds known Windows IMEs and leaves third-party services native.
+    /// The default extension embeds candidates for explicitly supported input methods.
     /// </summary>
     /// <param name="classId">The TSF text service class identifier.</param>
-    /// <param name="expected">Whether the service is part of the Windows inbox policy.</param>
+    /// <param name="expected">Whether the service uses embedded candidate presentation.</param>
     [Theory]
     [InlineData("03B5835F-F03C-411B-9CE2-AA23E1171E36", true)]
     [InlineData("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E", true)]
-    [InlineData("86598FB9-66A2-463E-B9C2-AEB906D477AD", false)]
+    [InlineData("86598FB9-66A2-463E-B9C2-AEB906D477AD", true)]
     [InlineData("AE51F1C0-807F-4A64-AC55-F2ADF92E2603", false)]
     [InlineData("A3F4CDED-B1E9-41EE-9CA6-7B4D0DE6CB0A", false)]
-    public void WindowsCandidatePolicy_SeparatesInboxAndThirdParty(
+    public void WindowsCandidatePolicy_EmbedsSupportedInputMethods(
         string classId,
         bool expected)
     {
         Assert.Equal(
             expected,
-            WindowsCandidatePresentationBehavior.IsInboxInputMethod(Guid.Parse(classId))
+            WindowsCandidatePresentationBehavior.IsEmbeddedInputMethod(Guid.Parse(classId))
         );
     }
 
