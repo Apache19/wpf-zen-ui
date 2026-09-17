@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -25,6 +26,7 @@ public partial class SoftKeyboard
 
     private int _inputMethodSessionVersion;
     private int _inputMethodOperationDepth;
+    private int _inputMethodObservationVersion;
 
     private InputModeTransitionRoute? _inputModeTransitionRoute;
 
@@ -32,6 +34,8 @@ public partial class SoftKeyboard
     private SoftKeyboardInputMethod? _observedModeProfile;
     private int? _observedImeOpenValue;
     private int? _observedImeConversionValue;
+    private bool _observedCanSwitchInputMode;
+    private SoftKeyboardInputModeButton? _observedInputModeButton;
 
     #region DP: InputMethodSource
 
@@ -138,15 +142,17 @@ public partial class SoftKeyboard
     {
         _inputMethodOperationDepth++;
 
-        var sessionVersion = _inputMethodSessionVersion;
-        var inputVersion   = _inputOperationVersion;
-        var target         = ActiveTarget;
-        var session        = _inputMethodSession;
+        var sessionVersion     = _inputMethodSessionVersion;
+        var inputVersion       = _inputOperationVersion;
+        var observationVersion = _inputMethodObservationVersion;
+        var target             = ActiveTarget;
+        var session            = _inputMethodSession;
 
         bool IsCurrent()
         {
             return sessionVersion == _inputMethodSessionVersion
                 && inputVersion == _inputOperationVersion
+                && observationVersion == _inputMethodObservationVersion
                 && ReferenceEquals(target, ActiveTarget)
                 && ReferenceEquals(session, _inputMethodSession);
         }
@@ -398,8 +404,7 @@ public partial class SoftKeyboard
         CultureInfo culture,
         IInputElement? target)
     {
-        var menuLacksFocusedTarget = (_inputMethodMenuCatalogRefreshDepth > 0
-                || _inputMethodMenu?.IsOpen == true
+        var menuLacksFocusedTarget = (_inputMethodMenu?.IsOpen == true
                 || SettingsMenu?.IsOpen == true)
             && !ReferenceEquals(Keyboard.FocusedElement, target);
 
@@ -418,7 +423,7 @@ public partial class SoftKeyboard
         }
 
         var adapter = ResolveObservedInputModeAdapter(active, culture, target);
-        var platformState = GetObservedPlatformState(active);
+        var platformState = GetObservedPlatformState(session, active);
         var contribution = adapter is ISoftKeyboardObservedInputModeAdapter observedAdapter
             ? observedAdapter.GetContribution(active, platformState)
             : adapter?.GetContribution(active)
@@ -432,11 +437,10 @@ public partial class SoftKeyboard
             ? contribution.Mode.Value
             : defaultMode;
 
-        var buttonSession = session as ISoftKeyboardInputModeButtonSession;
         var needsPlatformButton = !contribution.Presentation.IsHandled
             || !contribution.Transition.IsHandled;
         var platformButton = needsPlatformButton
-            ? buttonSession?.GetInputModeButton(active)
+            ? _observedInputModeButton
             : null;
 
         var button = contribution.Presentation.IsHandled
@@ -451,7 +455,7 @@ public partial class SoftKeyboard
                 ? InputModeTransitionRoute.FromAdapter(adapter, adapterTransition)
                 : null;
         }
-        else if (buttonSession is not null && platformButton is not null)
+        else if (session is ISoftKeyboardInputModeButtonSession && platformButton is not null)
         {
             transitionRoute = InputModeTransitionRoute.FromPlatformButton();
         }
@@ -763,62 +767,30 @@ public partial class SoftKeyboard
         OnSessionInputMethodStateInvalidated();
     }
 
-    private static void OnInputMethodSourceChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs args)
-    {
-        var keyboard = (SoftKeyboard)dependencyObject;
-        var operationActive = keyboard.IsInputMethodOperationActive;
-
-        keyboard.ResetInputMethodSession();
-        keyboard.SetValue(InputMethodErrorPropertyKey, null);
-
-        if (!operationActive)
-        {
-            keyboard.RefreshInputMethodState();
-        }
-    }
-
-    private static bool HaveSameCatalog(
-        IReadOnlyList<SoftKeyboardInputMethod> left,
-        IReadOnlyList<SoftKeyboardInputMethod> right)
-    {
-        if (left.Count != right.Count)
-        {
-            return false;
-        }
-
-        for (var index = 0; index < left.Count; index++)
-        {
-            if (!HaveSamePublishedInputMethod(left[index], right[index]))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /// <summary>
-    /// Reinterprets only the active profile's mode after an Open, Conversion, or language-bar
-    /// notification.
+    /// Reinterprets the active profile from retained category values after one TSF notification.
     /// </summary>
-    private bool RefreshObservedInputMode()
+    /// <param name="refreshPresentation">
+    /// Whether the language-bar notification owns this update and its button must be read.
+    /// </param>
+    private bool RefreshObservedInputMode(bool refreshPresentation)
     {
         VerifyAccess();
 
         _inputMethodOperationDepth++;
 
-        var sessionVersion = _inputMethodSessionVersion;
-        var inputVersion   = _inputOperationVersion;
-        var target         = ActiveTarget;
-        var active         = ActiveInputMethod;
-        var session        = _inputMethodSession;
+        var sessionVersion     = _inputMethodSessionVersion;
+        var inputVersion       = _inputOperationVersion;
+        var observationVersion = _inputMethodObservationVersion;
+        var target             = ActiveTarget;
+        var active             = ActiveInputMethod;
+        var session            = _inputMethodSession;
 
         bool IsCurrent()
         {
             return sessionVersion == _inputMethodSessionVersion
                 && inputVersion == _inputOperationVersion
+                && observationVersion == _inputMethodObservationVersion
                 && ReferenceEquals(target, ActiveTarget)
                 && HaveSameInputMethod(active, ActiveInputMethod)
                 && ReferenceEquals(session, _inputMethodSession);
@@ -827,9 +799,19 @@ public partial class SoftKeyboard
         try
         {
             session = GetOrCreateInputMethodSession(session, sessionVersion, inputVersion);
-            if (session is null || !IsCurrent())
+            if (session is null || active is null || !IsCurrent())
             {
                 return false;
+            }
+
+            if (!HaveSameInputMethod(_observedModeProfile, active))
+            {
+                return false;
+            }
+
+            if (refreshPresentation)
+            {
+                RefreshObservedPresentation(session, active);
             }
 
             var culture = _observedInputCulture
@@ -880,6 +862,42 @@ public partial class SoftKeyboard
         }
     }
 
+    private static void OnInputMethodSourceChanged(
+        DependencyObject dependencyObject,
+        DependencyPropertyChangedEventArgs args)
+    {
+        var keyboard = (SoftKeyboard)dependencyObject;
+        var operationActive = keyboard.IsInputMethodOperationActive;
+
+        keyboard.ResetInputMethodSession();
+        keyboard.SetValue(InputMethodErrorPropertyKey, null);
+
+        if (!operationActive)
+        {
+            keyboard.RefreshInputMethodState();
+        }
+    }
+
+    private static bool HaveSameCatalog(
+        IReadOnlyList<SoftKeyboardInputMethod> left,
+        IReadOnlyList<SoftKeyboardInputMethod> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.Count; index++)
+        {
+            if (!HaveSamePublishedInputMethod(left[index], right[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static bool HaveSamePublishedInputMethod(
         SoftKeyboardInputMethod? left,
         SoftKeyboardInputMethod? right)
@@ -900,9 +918,10 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Returns standard TSF values owned by the current active-profile generation.
+    /// Establishes the initial category values for one active-profile generation.
     /// </summary>
     private SoftKeyboardTsfInputModeState GetObservedPlatformState(
+        ISoftKeyboardInputMethodSession session,
         SoftKeyboardInputMethod inputMethod)
     {
         if (!HaveSameInputMethod(_observedModeProfile, inputMethod))
@@ -912,24 +931,44 @@ public partial class SoftKeyboard
             _observedModeProfile        = inputMethod;
             _observedImeOpenValue       = state?.OpenValue;
             _observedImeConversionValue = state?.ConversionValue;
+            _observedCanSwitchInputMode = state?.CanSwitch == true;
+            _observedInputModeButton = session is ISoftKeyboardInputModeButtonSession buttonSession
+                ? buttonSession.GetInputModeButton(inputMethod)
+                : null;
         }
 
         return new SoftKeyboardTsfInputModeState(
             _observedImeOpenValue,
             _observedImeConversionValue,
-            SoftKeyboardTsfInputMode.CanInvokeInputModeButton(inputMethod.ClassId)
+            _observedCanSwitchInputMode
         );
     }
 
     /// <summary>
-    /// Invalidates values associated with the previous active-profile generation.
-    /// The next observation reads both values directly from the newly active profile.
+    /// Reads only the language-bar presentation owned by an item update notification.
+    /// </summary>
+    private void RefreshObservedPresentation(
+        ISoftKeyboardInputMethodSession session,
+        SoftKeyboardInputMethod inputMethod)
+    {
+        _observedCanSwitchInputMode = SoftKeyboardTsfInputMode.CanInvokeInputModeButton(
+            inputMethod.ClassId
+        );
+        _observedInputModeButton = session is ISoftKeyboardInputModeButtonSession buttonSession
+            ? buttonSession.GetInputModeButton(inputMethod)
+            : null;
+    }
+
+    /// <summary>
+    /// Clears values owned by the previous active-profile generation.
     /// </summary>
     private void ResetObservedPlatformState()
     {
         _observedModeProfile        = null;
         _observedImeOpenValue       = null;
         _observedImeConversionValue = null;
+        _observedCanSwitchInputMode = false;
+        _observedInputModeButton    = null;
     }
 
     /// <summary>
@@ -988,23 +1027,45 @@ public partial class SoftKeyboard
             return new InputModeTransitionRoute(null, null, mode, false);
         }
 
+        internal string Description => _adapter is not null
+            ? $"Adapter:{_adapter.GetType().Name}/{_adapterTransition?.Id ?? "<null>"}"
+            : _usesPlatformButton
+                ? "PlatformButton:GUID_LBI_INPUTMODE"
+                : $"PlatformMode:{_platformMode?.Id ?? "<null>"}";
+
         internal bool TryInvoke(
             ISoftKeyboardInputMethodSession session,
             SoftKeyboardInputMethod inputMethod)
         {
             if (_adapter is not null && _adapterTransition is not null)
             {
-                return _adapter.TrySwitchMode(inputMethod, _adapterTransition);
+                var result = _adapter.TrySwitchMode(inputMethod, _adapterTransition);
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode] Adapter route returned; "
+                    + $"adapter={_adapter.GetType().FullName}, "
+                    + $"transition={_adapterTransition.Id}, result={result}."
+                );
+                return result;
             }
 
             if (_usesPlatformButton)
             {
-                return session is ISoftKeyboardInputModeButtonSession buttonSession
-                    && buttonSession.TryInvokeInputModeButton(inputMethod);
+                var buttonSession = session as ISoftKeyboardInputModeButtonSession;
+                var result = buttonSession?.TryInvokeInputModeButton(inputMethod) == true;
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode] Platform-button route returned; "
+                    + $"buttonSession={buttonSession is not null}, result={result}."
+                );
+                return result;
             }
 
-            return _platformMode is not null
+            var platformResult = _platformMode is not null
                 && session.TrySwitchInputMode(inputMethod, _platformMode);
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Platform-mode route returned; "
+                + $"mode={_platformMode?.Id ?? "<null>"}, result={platformResult}."
+            );
+            return platformResult;
         }
     }
 }

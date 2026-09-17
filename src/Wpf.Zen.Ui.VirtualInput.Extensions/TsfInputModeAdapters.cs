@@ -40,8 +40,8 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardObservedInputModeAd
     }
 
     /// <summary>
-    /// Converts Chinese TSF state and supplies a conversion-mode fallback only when the active
-    /// service does not publish its standard input-mode command.
+    /// Converts Chinese TSF state and supplies a binary native/alphanumeric fallback only when
+    /// the active service does not publish its standard input-mode command.
     /// </summary>
     /// <param name="inputMethod">The active Chinese input-method profile.</param>
     /// <param name="state">The raw TSF state observed for that profile.</param>
@@ -72,13 +72,20 @@ internal sealed class ChineseInputModeAdapter : ISoftKeyboardObservedInputModeAd
             )
             : SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.Unhandled;
 
+        // Chinese mode switching is a binary request. Some services retain auxiliary bits such
+        // as SYMBOL in their published native state; carrying those bits into the alphanumeric
+        // target requests a different conversion mode instead of ordinary English input.
+        var targetConversion = mode.IsNativeInput
+            ? TsfConversionMode.Alphanumeric
+            : TsfConversionMode.Native;
+
         return new SoftKeyboardInputModeContribution(
             SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode),
             presentation,
             fallback
                 ? SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(
                     new SoftKeyboardInputModeTransition(
-                        $"set-conversion:{state.ConversionValue!.Value ^ TsfConversionMode.Native}"
+                        $"set-conversion:{targetConversion}"
                     )
                 )
                 : SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.Unhandled
@@ -303,7 +310,8 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardObservedInputModeA
 /// </summary>
 internal static class TsfConversionMode
 {
-    internal const int Native    = 0x0001;
-    internal const int Katakana  = 0x0002;
-    internal const int FullShape = 0x0008;
+    internal const int Alphanumeric = 0x0000;
+    internal const int Native       = 0x0001;
+    internal const int Katakana     = 0x0002;
+    internal const int FullShape    = 0x0008;
 }

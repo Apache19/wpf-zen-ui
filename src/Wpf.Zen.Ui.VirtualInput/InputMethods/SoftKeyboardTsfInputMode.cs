@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -177,13 +178,9 @@ public static class SoftKeyboardTsfInputMode
     }
 
     /// <summary>
-    /// Reads the integer keyboard conversion compartment without assigning it to a profile.
+    /// Reads the integer keyboard conversion compartment at its TSF notification boundary.
     /// </summary>
     /// <returns>The raw TSF bit field, or null when the value is unavailable.</returns>
-    /// <remarks>
-    /// The compartment is thread-scoped. Callers must associate the value only with the active
-    /// profile generation that received the corresponding conversion notification.
-    /// </remarks>
     internal static int? GetKeyboardConversionValue()
     {
         return GetCompartmentInteger(KeyboardConversionId)
@@ -217,13 +214,35 @@ public static class SoftKeyboardTsfInputMode
     {
         if (inputMethod.ClassId == Guid.Empty)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] TSF button route rejected: profile has no class ID."
+            );
             return false;
         }
 
         var languageBarButton = GetInputModeButton(inputMethod.ClassId);
-        return languageBarButton is not null
-            ? TrySwitchInputMode(inputMethod.ClassId)
-            : TryToggleKeyboardOpen(inputMethod);
+        if (languageBarButton is not null)
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Visible GUID_LBI_INPUTMODE icon found; "
+                + "invoking the TSF language-bar command."
+            );
+            var result = TrySwitchInputMode(inputMethod.ClassId);
+            Debug.WriteLine(
+                $"[SoftKeyboard.InputMode] TSF language-bar command returned; result={result}."
+            );
+            return result;
+        }
+
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode] Visible GUID_LBI_INPUTMODE icon unavailable; "
+            + "falling back to keyboard-open state."
+        );
+        var fallbackResult = TryToggleKeyboardOpen(inputMethod);
+        Debug.WriteLine(
+            $"[SoftKeyboard.InputMode] Keyboard-open fallback returned; result={fallbackResult}."
+        );
+        return fallbackResult;
     }
 
     /// <summary>
@@ -242,6 +261,10 @@ public static class SoftKeyboardTsfInputMode
     {
         if (!TryGetInputModeButton(serviceId, requireVisible: false, out var button))
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] TSF command lookup failed; "
+                + $"serviceId={serviceId}."
+            );
             return false;
         }
 
@@ -250,7 +273,12 @@ public static class SoftKeyboardTsfInputMode
             // GUID_LBI_INPUTMODE is the TSF input-mode command, even when the language bar itself
             // is hidden. The left-click action does not need a menu anchor or a synthesized hotkey.
             var rectangle = new TfInputModeRectangle();
-            return button!.OnClick(LeftClick, default, in rectangle) >= 0;
+            var result = button!.OnClick(LeftClick, default, in rectangle);
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE OnClick completed; "
+                + $"serviceId={serviceId}, hresult=0x{result:X8}."
+            );
+            return result >= 0;
         }
         finally
         {
@@ -308,14 +336,24 @@ public static class SoftKeyboardTsfInputMode
         var currentInputMethod = InputMethod.Current;
         if (openValue is null || currentInputMethod is null)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Keyboard-open fallback unavailable; "
+                + $"openValue={openValue?.ToString() ?? "<null>"}, "
+                + $"wpfInputMethod={currentInputMethod is not null}."
+            );
             return false;
         }
 
         try
         {
-            currentInputMethod.ImeState = openValue == 0
+            var nextState = openValue == 0
                 ? InputMethodState.On
                 : InputMethodState.Off;
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Writing WPF ImeState fallback; "
+                + $"openValue={openValue}, nextState={nextState}."
+            );
+            currentInputMethod.ImeState = nextState;
 
             return true;
         }

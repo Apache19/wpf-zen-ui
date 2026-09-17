@@ -15,8 +15,8 @@ public sealed class DefaultSoftKeyboardExtensionProvider : ISoftKeyboardExtensio
     );
 
     private readonly CompositeSoftKeyboardExtensionProvider _provider = new(
-        ChineseSoftKeyboardExtensionProvider.Default,
-        JapaneseSoftKeyboardExtensionProvider.Default
+        // ChineseSoftKeyboardExtensionProvider.Default,
+        // JapaneseSoftKeyboardExtensionProvider.Default
     );
 
     /// <summary>

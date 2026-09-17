@@ -16,7 +16,6 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     private ContextMenu? _inputMethodMenu;
-    private int          _inputMethodMenuCatalogRefreshDepth;
     private int          _inputMethodMenuRequestVersion;
 
     /// <summary>
@@ -24,8 +23,8 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// The menu is anchored to the last invoked key and never takes keyboard focus from the
-    /// editor. The catalog is refreshed before opening. Items remain disabled unless a valid
-    /// editor currently owns keyboard focus. A closed, superseded, or expired request stays closed.
+    /// editor. It presents the current catalog snapshot without observing or changing input-mode
+    /// state. Items remain disabled unless a valid editor currently owns keyboard focus.
     /// </remarks>
     public void ShowInputMethodMenu()
     {
@@ -46,8 +45,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Reads the catalog before constructing the menu and rejects reentrant source or
-    /// target changes.
+    /// Constructs the menu from the current catalog snapshot and rejects expired requests.
     /// </summary>
     private void OpenInputMethodMenuCore(UIElement anchor, int requestVersion)
     {
@@ -57,24 +55,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        var operationVersion = _inputOperationVersion;
-        var sessionVersion   = _inputMethodSessionVersion;
-
-        bool refreshed;
-
-        try
-        {
-            _inputMethodMenuCatalogRefreshDepth++;
-            refreshed = RefreshInputMethods();
-        }
-        finally
-        {
-            _inputMethodMenuCatalogRefreshDepth--;
-        }
-
-        if (!refreshed || requestVersion != _inputMethodMenuRequestVersion
-            || operationVersion != _inputOperationVersion
-            || sessionVersion != _inputMethodSessionVersion
+        if (requestVersion != _inputMethodMenuRequestVersion
             || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
         {
             return;
@@ -127,9 +108,6 @@ public partial class SoftKeyboard
         }
 
         _inputMethodMenu = menu;
-
-        menu.Closed += (_, _) =>
-            RefreshInputMethodState();
 
         menu.IsOpen = menu.Items.Count > 0;
     }

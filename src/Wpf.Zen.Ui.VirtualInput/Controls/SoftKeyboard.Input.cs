@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -216,6 +217,9 @@ public partial class SoftKeyboard
 
     private void SwitchInputMode()
     {
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode] Click received; requesting composition cancellation."
+        );
         RunAfterActiveCompositionCancellation(SwitchInputModeCore);
     }
 
@@ -226,6 +230,9 @@ public partial class SoftKeyboard
     {
         if (!PrepareTargetForInput())
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Command stopped: target preparation failed."
+            );
             return;
         }
 
@@ -234,18 +241,42 @@ public partial class SoftKeyboard
 
         if (inputMethod is null || InputModeButton is null || transitionRoute is null)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Command stopped: required resolved state is missing; "
+                + $"inputMethod={inputMethod is not null}, button={InputModeButton is not null}, "
+                + $"route={transitionRoute?.Description ?? "<null>"}."
+            );
             return;
         }
 
-        _ = RunInputMethodCommand((session, isCurrent) =>
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode] Invoking resolved route; "
+            + $"profile='{inputMethod.DisplayName}', classId={inputMethod.ClassId}, "
+            + $"profileId={inputMethod.ProfileId}, route={transitionRoute.Description}."
+        );
+
+        var commandAccepted = RunInputMethodCommand((session, isCurrent) =>
         {
             if (!isCurrent())
             {
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode] Command stopped: session became stale before invoke."
+                );
                 return false;
             }
 
-            return transitionRoute.TryInvoke(session, inputMethod) && isCurrent();
+            var invoked = transitionRoute.TryInvoke(session, inputMethod);
+            var remainsCurrent = isCurrent();
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Route completed; "
+                + $"invoked={invoked}, sessionCurrent={remainsCurrent}."
+            );
+            return invoked && remainsCurrent;
         });
+
+        Debug.WriteLine(
+            $"[SoftKeyboard.InputMode] Command pipeline completed; accepted={commandAccepted}."
+        );
 
         RequestSystemKeyboardHide();
     }

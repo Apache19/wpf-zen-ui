@@ -88,10 +88,15 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Reads only the state owned by one notification type and refreshes affected properties.
+    /// Applies only the state category completed by one TSF notification.
     /// </summary>
     private void ApplyInputMethodChange(InputMethodChange change)
     {
+        unchecked
+        {
+            _inputMethodObservationVersion++;
+        }
+
         switch (change.Kind)
         {
             case InputMethodChangeKind.RefreshAll:
@@ -110,18 +115,18 @@ public partial class SoftKeyboard
 
             case InputMethodChangeKind.ImeOpen:
                 _observedImeOpenValue = GetRequiredStateValue(change);
-                RefreshObservedInputMode();
+                RefreshObservedInputMode(refreshPresentation: false);
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
             case InputMethodChangeKind.ImeConversion:
                 _observedImeConversionValue = GetRequiredStateValue(change);
-                RefreshObservedInputMode();
+                RefreshObservedInputMode(refreshPresentation: false);
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
             case InputMethodChangeKind.InputModePresentation:
-                RefreshObservedInputMode();
+                RefreshObservedInputMode(refreshPresentation: true);
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
@@ -131,7 +136,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Returns the value read by an open or conversion notification callback.
+    /// Returns the compartment value read synchronously by its TSF notification callback.
     /// </summary>
     private static int GetRequiredStateValue(InputMethodChange change)
     {

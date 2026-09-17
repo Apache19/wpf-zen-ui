@@ -18,7 +18,7 @@ internal enum InputMethodChangeKind
 }
 
 /// <summary>
-/// Carries one typed input-method refresh cause without combining unrelated native state.
+/// Carries one typed input-method invalidation cause.
 /// </summary>
 internal readonly record struct InputMethodChange(
     InputMethodChangeKind Kind,

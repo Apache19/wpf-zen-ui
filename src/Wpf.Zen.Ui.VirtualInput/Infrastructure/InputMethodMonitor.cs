@@ -12,8 +12,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// Observes dispatcher-wide TSF input-method changes independently of candidate UI.
 /// </summary>
 /// <remarks>
-/// Every callback reports its native state category. Consumers can then read and publish only the
-/// state owned by that category while preserving callback order.
+/// Each native callback reports only the state category that TSF has completed changing. This
+/// preserves the ordering of independent TSF sources without constructing a mixed snapshot.
 /// </remarks>
 [ComVisible(true)]
 [ClassInterface(ClassInterfaceType.None)]
@@ -24,6 +24,8 @@ internal sealed class InputMethodMonitor
       IDisposable
 {
     private const uint ActiveProfileFlag = 0x00000001;
+    private const uint LanguageBarIconFlag = 0x00000001;
+    private const uint LanguageBarStatusFlag = 0x00010000;
 
     private static readonly Guid ProfileActivationSinkId =
         new("71C6E74E-0F28-11D8-A82A-00065B84435C");
@@ -165,7 +167,13 @@ internal sealed class InputMethodMonitor
 
     int ISoftKeyboardTsfLangBarItemSink.OnUpdate(uint flags)
     {
-        Publish(new InputMethodChange(InputMethodChangeKind.InputModePresentation));
+        if ((flags & (LanguageBarIconFlag | LanguageBarStatusFlag)) != 0)
+        {
+            Publish(
+                new InputMethodChange(InputMethodChangeKind.InputModePresentation)
+            );
+        }
+
         return 0;
     }
 
@@ -175,10 +183,7 @@ internal sealed class InputMethodMonitor
             && SoftKeyboardTsfInputMode.GetKeyboardOpenValue() is { } openValue)
         {
             Publish(
-                new InputMethodChange(
-                    InputMethodChangeKind.ImeOpen,
-                    StateValue: openValue
-                )
+                new InputMethodChange(InputMethodChangeKind.ImeOpen, StateValue: openValue)
             );
         }
         else if (compartmentId == KeyboardConversionId
