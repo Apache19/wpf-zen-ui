@@ -76,9 +76,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        var window = _window ?? Window.GetWindow(this);
-        var handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
-        var result = _platform.InputPane.TryHide(handle);
+        var result = _platform.InputPane.TryHide(GetHostWindowHandle());
 
         if (result == SoftKeyboardSystemKeyboardSuppressionState.Hidden)
         {
@@ -157,10 +155,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        var window = _window ?? Window.GetWindow(this);
-        var handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
-
-        _ = _platform.InputPane.TryShow(handle);
+        _ = _platform.InputPane.TryShow(GetHostWindowHandle());
     }
 
     /// <summary>

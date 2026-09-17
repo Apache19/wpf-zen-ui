@@ -93,7 +93,9 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 ## 目标与自动开关
 
 - 设置 `Target` 可锁定单个编辑器；留空则跟随 `TargetScope` 内最后聚焦的受支持编辑器。
-- `TargetScope` 为空时使用所在 `Window`。
+- `TargetScope` 为空时使用所在 `Window`；在 WinForms `ElementHost` 或独立
+  `HwndSource` 中则使用当前呈现源的根视觉元素。前台安全校验、InputPane 请求与输入法消息
+  都使用编辑器所属的 HWND，不要求 WPF `Window`。
 - `AutoShowMode="TouchAndPen"` 仅响应触摸或笔引发的焦点变化；`AnyFocus` 响应任意焦点来源。
 - `AutoHideMode="FocusLeavesScope"` 在焦点离开表单或对话框区域时关闭；`Manual` 由应用控制。
 - 打开、关闭策略独立，手动打开也可以配合自动关闭。

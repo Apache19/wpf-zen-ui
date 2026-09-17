@@ -21,11 +21,7 @@ public partial class SoftKeyboard
 
     internal IntPtr HostWindowHandle
     {
-        get
-        {
-            var window = Window.GetWindow(this);
-            return window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
-        }
+        get => GetHostWindowHandle();
     }
 
     private void ExecuteCustomAction(ISoftKeyboardAction action, string? alternative = null)

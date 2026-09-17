@@ -253,7 +253,11 @@ public partial class SoftKeyboard
 
     private DependencyObject? GetEffectiveScope()
     {
-        return TargetScope ?? _window ?? Window.GetWindow(this);
+        return TargetScope
+            ?? _window
+            ?? Window.GetWindow(this)
+            ?? (PresentationSource.FromDependencyObject(this) as HwndSource)?.RootVisual
+            ?? _windowSource?.RootVisual;
     }
 
     private bool IsWithinEffectiveScope(DependencyObject element)

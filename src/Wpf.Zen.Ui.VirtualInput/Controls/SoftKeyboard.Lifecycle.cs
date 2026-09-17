@@ -18,16 +18,16 @@ public partial class SoftKeyboard
 
         _ = EnsureCandidateSession();
 
-        // todo: 在没有 Window 的环境下（例如 WinForms/HostElement），如何让此机制生效？
         _window = Window.GetWindow(this);
 
         if (_window is not null)
         {
-            _window.Activated += OnWindowActivated;
+            _window.Activated   += OnWindowActivated;
             _window.Deactivated += OnWindowDeactivated;
             _window.SourceInitialized += OnWindowSourceInitialized;
-            AttachWindowMessageHook();
         }
+
+        AttachWindowMessageHook();
 
         ResolveTarget();
         RefreshInputMode();
@@ -61,10 +61,12 @@ public partial class SoftKeyboard
 
         if (_window is not null)
         {
-            _window.Activated -= OnWindowActivated;
+            _window.Activated   -= OnWindowActivated;
             _window.Deactivated -= OnWindowDeactivated;
             _window.SourceInitialized -= OnWindowSourceInitialized;
+
             DetachWindowMessageHook();
+
             _window = null;
         }
 
@@ -141,12 +143,12 @@ public partial class SoftKeyboard
     /// </summary>
     private void AttachWindowMessageHook()
     {
-        if (_windowSource is not null || _window is null)
+        if (_windowSource is not null)
         {
             return;
         }
 
-        _windowSource = PresentationSource.FromVisual(_window) as HwndSource;
+        _windowSource = GetHostHwndSource();
         _windowSource?.AddHook(OnWindowMessage);
     }
 

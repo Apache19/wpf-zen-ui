@@ -191,7 +191,9 @@ public partial class SoftKeyboard
     /// Gets or sets the visual or logical subtree whose editors belong to this keyboard.
     /// </summary>
     /// <remarks>
-    /// A <see langword="null"/> value uses the containing <see cref="Window"/>.
+    /// A <see langword="null"/> value uses the containing <see cref="Window"/>, or the root visual
+    /// of the containing <see cref="HwndSource"/> when hosted by ElementHost or a standalone native
+    /// source.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]

@@ -334,14 +334,42 @@ public partial class SoftKeyboard
 
     private bool IsWindowForeground()
     {
-        var window = _window ?? Window.GetWindow(this);
-        if (window is null)
+        return _platform.Input.IsHostForeground(GetHostWindowHandle());
+    }
+
+    /// <summary>
+    /// Resolves the HWND that owns the current input target without requiring a WPF
+    /// <see cref="Window"/>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PresentationSource.FromDependencyObject(DependencyObject)"/> covers ordinary
+    /// windows, WinForms <see cref="HwndSource"/> islands created by ElementHost, and standalone
+    /// HwndSource roots. The target is preferred because injected input and InputPane requests must
+    /// be guarded against the native host that actually owns the editor.
+    /// </remarks>
+    private IntPtr GetHostWindowHandle()
+    {
+        return GetHostHwndSource()?.Handle ?? IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Gets the connected HWND presentation source for the target or keyboard surface.
+    /// </summary>
+    private HwndSource? GetHostHwndSource()
+    {
+        if ((Target ?? ActiveTarget) is DependencyObject targetObject
+            && PresentationSource.FromDependencyObject(targetObject) is HwndSource targetSource)
         {
-            return false;
+            return targetSource;
         }
 
-        var host = new WindowInteropHelper(window).Handle;
+        if (TargetScope is not null
+            && PresentationSource.FromDependencyObject(TargetScope) is HwndSource scopeSource)
+        {
+            return scopeSource;
+        }
 
-        return _platform.Input.IsHostForeground(host);
+        return PresentationSource.FromDependencyObject(this) as HwndSource
+            ?? _windowSource;
     }
 }

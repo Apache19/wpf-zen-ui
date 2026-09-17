@@ -16,6 +16,7 @@ using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
@@ -950,6 +951,106 @@ public class SoftKeyboardTests
             Assert.Equal((Key.A, false), Assert.Single(input.VirtualKeys));
             Assert.Same(editor, Keyboard.FocusedElement);
             window.Close();
+        });
+    }
+
+    [Fact]
+    public void EmbeddedHwndSource_UsesEditorHostForGuardedInputWithoutWpfWindow()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var services = CreateServices(out RecordingInputBackend input, out _, out _);
+            input.RequireNonZeroForegroundHost = true;
+            var editor = new System.Windows.Controls.TextBox();
+            var keyboard = new SoftKeyboard(services)
+            {
+                IsOpen = true,
+                Target = editor,
+                TargetAdapter = new NumberScopeAdapter()
+            };
+            var root = new Grid();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            keyboard.TargetScope = root;
+            var owner = new Window
+            {
+                Width = 700,
+                Height = 500,
+                ShowInTaskbar = false
+            };
+
+            try
+            {
+                owner.Show();
+                var ownerHandle = new WindowInteropHelper(owner).Handle;
+                using var source = new HwndSource(new HwndSourceParameters("Embedded soft keyboard")
+                {
+                    ParentWindow = ownerHandle,
+                    Width = 600,
+                    Height = 400,
+                    WindowStyle = 0x50000000
+                })
+                {
+                    RootVisual = root
+                };
+                PumpDispatcher();
+
+                Assert.True(keyboard.IsLoaded);
+                Assert.Null(Window.GetWindow(keyboard));
+                Assert.True(editor.Focus());
+
+                InvokeKey(
+                    keyboard,
+                    new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "1", "Digit 1", key: Key.D1)
+                );
+
+                Assert.Equal((Key.D1, false), Assert.Single(input.VirtualKeys));
+                Assert.Equal(source.Handle, input.LastForegroundHost);
+                Assert.Equal(source.Handle, keyboard.HostWindowHandle);
+            }
+            finally
+            {
+                owner.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void StandaloneHwndSource_UsesPresentationRootAsDefaultTargetScope()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var services = CreateServices(out RecordingInputBackend input, out _, out _);
+            input.RequireNonZeroForegroundHost = true;
+            var editor = new System.Windows.Controls.TextBox();
+            var keyboard = new SoftKeyboard(services)
+            {
+                IsOpen = true,
+                Target = editor,
+                TargetAdapter = new NumberScopeAdapter()
+            };
+            var root = new Grid();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            using var source = new HwndSource(new HwndSourceParameters("Standalone soft keyboard")
+            {
+                Width = 600,
+                Height = 400
+            })
+            {
+                RootVisual = root
+            };
+            PumpDispatcher();
+
+            Assert.Null(Window.GetWindow(keyboard));
+            Assert.Same(editor, keyboard.ActiveTarget);
+            Assert.True(
+                (bool)typeof(SoftKeyboard)
+                    .GetMethod("IsWindowForeground", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(keyboard, null)!
+            );
+            Assert.Equal(source.Handle, input.LastForegroundHost);
+            Assert.Equal(source.Handle, keyboard.HostWindowHandle);
         });
     }
 
@@ -2938,6 +3039,10 @@ public class SoftKeyboardTests
 
     private sealed class RecordingInputBackend : ISoftKeyboardInputBackend
     {
+        internal bool RequireNonZeroForegroundHost { get; set; }
+
+        internal IntPtr LastForegroundHost { get; private set; }
+
         internal List<(Key Key, bool Shift)> VirtualKeys { get; } = [];
 
         internal List<(Key Key, ModifierKeys Modifiers)> Chords { get; } = [];
@@ -2958,7 +3063,11 @@ public class SoftKeyboardTests
             return true;
         }
 
-        public bool IsHostForeground(IntPtr host) => true;
+        public bool IsHostForeground(IntPtr host)
+        {
+            LastForegroundHost = host;
+            return !RequireNonZeroForegroundHost || host != IntPtr.Zero;
+        }
     }
 
     private sealed class FakeInputPaneBackend : ISoftKeyboardInputPaneBackend
