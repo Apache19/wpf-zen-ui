@@ -365,7 +365,5 @@ MigrationBackup/
 .ionide/
 
 # AI Agents
-AGENTS.md
 .codex/
-CLAUDE.md
 .claude/
