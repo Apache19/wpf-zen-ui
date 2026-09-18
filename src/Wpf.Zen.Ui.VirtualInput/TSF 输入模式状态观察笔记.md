@@ -20,7 +20,7 @@
 | 输入法 | ClassId | 关闭状态 | 开启状态 | 备注 |
 | --- | --- | --- | --- | --- |
 | 微软拼音 | `{81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E}` | `open = 1`，`conversion = 0` | `open = 1`，`conversion = 1025 (0x0401)` | conversion 区分开关。 |
-| 讯飞输入法 | `{B722B5D7-0C4C-4933-A7B9-DF8C91F2C643}` | `open = 2`，`conversion = 0` | `open = 1`，`conversion = 0` | conversion 未观察到参与模式区分。 |
+| 讯飞输入法 | `{B722B5D7-0C4C-4933-A7B9-DF8C91F2C643}` | `open = 1`，`conversion = 0` | `open = 2`，`conversion = 0` | conversion 未观察到参与模式区分。 |
 | 微信输入法 | `{86598FB9-66A2-463E-B9C2-AEB906D477AD}` | `open = 0`，`conversion = 0` | `open = 1`，`conversion = 0` | conversion 未观察到参与模式区分。 |
 | 微软注音 | `{B115690A-EA02-48D5-A231-E3578D2FDF80}` | `open = 1`，`conversion = 0` | `open = 1`，`conversion = 1` | conversion 区分开关。 |
 | 微软日语 IME | `{03B5835F-F03C-411B-9CE2-AA23E1171E36}` | `open = 0`，conversion 保留 | `open = 1`，conversion 随具体输入模式变化 | 已观察到的 conversion：`9 (0x09)` 平假名、`11 (0x0B)` 全角片假名、`8 (0x08)` 全角字母数字、`3 (0x03)` 半角片假名。 |
@@ -109,6 +109,93 @@ conversion 两种通知，也不能假设未收到通知的 compartment 会被�
 这进一步证明，Profile 激活、compartment 状态完成和语言栏项目就绪是相互独立的事件，
 不能用其中任意一个事件代表整个输入模式状态已经完成初始化。
 
+## IMM 窗口消息实验
+
+为避免软键盘现有 TSF 观察逻辑干扰结果，在图库程序的 Sandbox 窗口中加入了独立实验。
+实验被测窗口直接记录 `WM_INPUTLANGCHANGE`、`WM_IME_NOTIFY` 等窗口消息，并在每条关键
+消息到达时，通过该窗口当前的 HIMC 调用 `ImmGetOpenStatus` 和
+`ImmGetConversionStatus`。实验还在消息之后继续采样至 500 毫秒，用来判断状态是否延迟
+变化。
+
+### 中文首次切换到微软日语
+
+本轮切换的关键时序如下：
+
+```text
+02:04:42.509  HKL 已为 ja-JP，open=0，conversion=25
+02:04:42.513  WPF InputLanguageChanged(ja-JP)
+02:04:42.515  WM_INPUTLANGCHANGE，open=0，conversion=25
+02:04:42.520  IMN_SETOPENSTATUS，open=0，conversion=25
+02:04:42.522  IMN_SETCONVERSIONMODE，open=0，conversion=25
+```
+
+随后直至 500 毫秒的采样始终为 `open = 0`、`conversion = 25 (0x19)`。`0x19` 可分解为
+`NATIVE | FULLSHAPE | ROMAN`。这组值在 HKL 已经切换为 `ja-JP` 后读取，并由日语输入法的
+两条状态通知确认，因此本轮 `conversion = 25` 不是中文输入法遗留值，而是微软日语输入法
+关闭时保存的模式值。
+
+### 日语输入法内部切换模式
+
+在日语输入法内开启输入模式时，观察到两条相邻通知：
+
+```text
+02:04:48.845  IMN_SETOPENSTATUS，open=1，conversion=25
+02:04:48.848  IMN_SETCONVERSIONMODE，open=1，conversion=9
+```
+
+这说明一次用户操作可以分两步更新 HIMC。第一条通知到达时，open 已经更新，而 conversion
+仍是本次转换前的值；约 3 毫秒后的第二条通知才把 conversion 更新为
+`9 (NATIVE | FULLSHAPE)`。因此，不能把第一条 `IMN_SETOPENSTATUS` 到达时读取的两个字段
+直接当作完整的最终快照。可以把同一消息队列批次内连续到达的状态通知合并，在该批消息
+处理完后读取并发布一次。
+
+### 在中文和日语之间往返
+
+本次实验随后观察到以下稳定状态：
+
+```text
+日语首次激活：             open=0，conversion=25
+日语内部切换后：           open=1，conversion=9
+切换回中文：               open=2，conversion=1
+再次切换到日语：           open=1，conversion=9
+```
+
+再次激活日语时，它恢复了自己上次的 `open = 1`、`conversion = 9`；中文则恢复为
+`open = 2`、`conversion = 1`。整个过程中 HIMC 句柄始终是同一个 `0xF1095D`。这表明同一个
+窗口 HIMC 可以在输入法切换时装载各输入法分别保存的状态；HIMC 句柄相同，不表示其中的
+状态一定属于上一输入法。
+
+两次输入法切换都收到以下消息：
+
+- `WM_INPUTLANGCHANGE`；
+- `WM_IME_NOTIFY / IMN_SETOPENSTATUS`；
+- `WM_IME_NOTIFY / IMN_SETCONVERSIONMODE`。
+
+在本次实验中，`WM_INPUTLANGCHANGE` 到达时已经可以读到新输入法的正确状态，后续状态通知
+又明确标识了 open 和 conversion 的更新。10 至 500 毫秒的延迟采样没有观察到进一步变化，
+因此这些切换不需要固定等待 100、250 或 500 毫秒。
+
+日志中的 `after-dispatch` 有时延迟几十毫秒，这是实验代码通过 WPF Dispatcher 排队后才
+执行采样造成的，不能解释为输入法状态经过同样长的时间才稳定。判断真实时序时，应以窗口
+钩子直接记录的消息行及其中的即时读数为准。
+
+### 实验结论与边界
+
+本次结果修正了仅依据 TSF compartment 日志形成的悲观判断：
+
+- TSF Profile 激活回调仍然不是可靠的状态稳定边界；
+- 目标窗口的 IMM 消息在本次微软日语和中文输入法实验中提供了及时、明确的状态通知；
+- IMM 状态与窗口 HIMC 关联，和 TSF 线程 compartment 是不同的观察路径；
+- 状态可以在几毫秒内分多条消息更新，发布方需要合并当前消息批次，而非设置较长静默期；
+- `ImmGetOpenStatus` 的非零值不能在采集层过早压缩成布尔值，讯飞实测的 `1` 和 `2` 具有
+  不同含义，必须保留原始整数；
+- 当前证据来自图库 Sandbox 的被测窗口，仍需验证软键盘所服务的真实目标窗口能否收到同样
+  的消息，以及跨进程目标窗口是否需要在目标线程内建立观察机制。
+
+因此，下一阶段应优先验证以 `WM_INPUTLANGCHANGE` 和 `WM_IME_NOTIFY` 驱动的 IMM 窗口状态
+观察层。TSF 可以继续提供活动 Profile 身份，但不应再假定 TSF compartment 是唯一的模式
+状态来源。
+
 ## 架构结论
 
 ### 可以通用化的部分
@@ -116,6 +203,8 @@ conversion 两种通知，也不能假设未收到通知的 compartment 会被�
 基础设施可以统一负责采集原始信号：
 
 - 活动 Profile、ClassId 和 ProfileId；
+- 目标窗口的 HKL、HIMC、`WM_INPUTLANGCHANGE` 和 `WM_IME_NOTIFY`；
+- 通过 IMM 读取的原始 open、conversion 和 sentence 值；
 - open compartment 的原始值及其通知；
 - conversion compartment 的原始值及其通知；
 - `GUID_LBI_INPUTMODE` 语言栏项目及其更新；
@@ -154,8 +243,11 @@ Profile 激活时立即读取的 open/conversion 只能作为诊断或候选观�
 
 ## 状态收敛与原子发布方案
 
-输入模式观察应从“每条通知立即刷新界面”改为“收集一个稳定快照后原子发布”。建议采用
-以下状态过程：
+以下方案是针对 TSF compartment 观察路径形成的设计。IMM 窗口消息实验表明，目标窗口可能
+存在更直接的观察边界；在决定最终架构前，不应把本节的长收敛窗口直接套用到 IMM 路径。
+
+输入模式观察应从“每条通知立即刷新界面”改为“收集一个一致快照后原子发布”。针对 TSF
+路径曾建议采用以下状态过程：
 
 ```text
 Stable
@@ -261,7 +353,8 @@ TSF 提供了 Profile、compartment、焦点和语言栏等机制，但没有要
 输入模式模型。系统语言栏能够准确显示某个 TIP 的状态，是因为 TIP 自己拥有并发布相应的
 呈现；外部控件仅凭标准 compartment 无法完整复制这种内部知识。
 
-因此，本项目的长期方案应当是：
+因此，当前更准确的方向是：
 
-> 通用地观察原始信号，在 Profile 激活后等待状态收敛，由扩展按输入法解释同一份快照，
-> 最后原子发布布局、模式和切换按钮。
+> 使用 TSF 确认活动 Profile 身份，同时优先研究目标窗口的 IMM 消息和 HIMC 状态；合并同一
+> 消息批次内的相关更新后，由对应输入法适配器解释原始值，并原子发布布局、模式和切换
+> 按钮。仅在只能取得 TSF 信号时，才把不确定状态作为候选观察继续验证。

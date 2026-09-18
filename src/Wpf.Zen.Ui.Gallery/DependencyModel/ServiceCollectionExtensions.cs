@@ -21,7 +21,10 @@ internal static class ServiceCollectionExtensions
                 .GetTypes()
                 .Where(x =>
                     x.IsClass
-                    && x.Namespace!.StartsWith(namespaceName, StringComparison.InvariantCultureIgnoreCase)
+                    && x.Namespace?.StartsWith(
+                        namespaceName,
+                        StringComparison.InvariantCultureIgnoreCase
+                    ) == true
                 );
 
             foreach (Type? type in types)
