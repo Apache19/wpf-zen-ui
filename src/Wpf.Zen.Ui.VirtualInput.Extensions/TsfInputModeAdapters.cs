@@ -3,160 +3,83 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Globalization;
-using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 
 /// <summary>
-/// Interprets the standard TSF conversion flags used by Chinese input methods.
+/// Applies observed contracts only to explicitly identified Chinese text services.
 /// </summary>
-internal sealed class ChineseInputModeAdapter : ISoftKeyboardObservedInputModeAdapter
+internal sealed class ChineseInputModeAdapter : KnownInputModeAdapter
 {
     internal static ChineseInputModeAdapter Default { get; } = new();
 
     /// <inheritdoc />
-    public SoftKeyboardInputModeContribution GetContribution(
-        SoftKeyboardInputMethod inputMethod)
+    protected override bool Supports(Guid classId)
     {
-        if (inputMethod.ClassId == Guid.Empty)
-        {
-            return SoftKeyboardInputModeContribution.Empty;
-        }
-
-        var state = SoftKeyboardTsfInputMode.GetState(inputMethod.ClassId);
-        return state is null
-            ? SoftKeyboardInputModeContribution.Empty
-            : GetContribution(inputMethod, state);
-    }
-
-    /// <inheritdoc />
-    public SoftKeyboardInputModeContribution GetContribution(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardTsfInputModeState state)
-    {
-        return Decode(inputMethod, state);
-    }
-
-    /// <summary>
-    /// Converts Chinese TSF state and supplies a binary native/alphanumeric fallback only when
-    /// the active service does not publish its standard input-mode command.
-    /// </summary>
-    /// <param name="inputMethod">The active Chinese input-method profile.</param>
-    /// <param name="state">The raw TSF state observed for that profile.</param>
-    /// <returns>The independently handled state, presentation, and transition facets.</returns>
-    internal static SoftKeyboardInputModeContribution Decode(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardTsfInputModeState state)
-    {
-        var fallback = !state.CanSwitch
-            && state.OpenValue == 1
-            && state.ConversionValue is not null
-            && IsChineseTip(inputMethod);
-
-        var mode = Decode(state.OpenValue, state.ConversionValue);
-
-        if (mode is null)
-        {
-            return SoftKeyboardInputModeContribution.Empty;
-        }
-
-        var presentation = fallback
-            ? SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.FromValue(
-                new SoftKeyboardInputModeButton(
-                    $"tsf-conversion-native:{inputMethod.LanguageId:X4}:{(mode.IsNativeInput ? 1 : 0)}",
-                    mode.IsNativeInput ? "中" : "英",
-                    mode.IsNativeInput ? "中文输入" : "英文输入"
-                )
-            )
-            : SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.Unhandled;
-
-        // Chinese mode switching is a binary request. Some services retain auxiliary bits such
-        // as SYMBOL in their published native state; carrying those bits into the alphanumeric
-        // target requests a different conversion mode instead of ordinary English input.
-        var targetConversion = mode.IsNativeInput
-            ? TsfConversionMode.Alphanumeric
-            : TsfConversionMode.Native;
-
-        return new SoftKeyboardInputModeContribution(
-            SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode),
-            presentation,
-            fallback
-                ? SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(
-                    new SoftKeyboardInputModeTransition(
-                        $"set-conversion:{targetConversion}"
-                    )
-                )
-                : SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.Unhandled
-        );
-    }
-
-    /// <summary>
-    /// Converts the standard Chinese TSF values into a keyboard mode.
-    /// </summary>
-    internal static SoftKeyboardInputMode? Decode(int? open, int? conversion)
-    {
-        if (open is not (0 or 1) || conversion is not int conversionValue)
-        {
-            return null;
-        }
-
-        var native = open == 1 && (conversionValue & TsfConversionMode.Native) != 0;
-        return new SoftKeyboardInputMode(
-            native ? "chinese" : "alphanumeric",
-            native
-        );
-    }
-
-    /// <inheritdoc />
-    public bool TrySwitchMode(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardInputModeTransition transition)
-    {
-        const string prefix = "set-conversion:";
-        if (!transition.Id.StartsWith(prefix, StringComparison.Ordinal)
-            || !int.TryParse(
-                transition.Id.Substring(prefix.Length),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out var conversion
-            ))
-        {
-            return false;
-        }
-
-        return IsChineseTip(inputMethod)
-            && SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(inputMethod, conversion);
-    }
-
-    /// <summary>
-    /// Determines whether a profile is a Chinese text service rather than a keyboard layout.
-    /// </summary>
-    private static bool IsChineseTip(SoftKeyboardInputMethod inputMethod)
-    {
-        return inputMethod.ClassId != Guid.Empty && (inputMethod.LanguageId & 0x03FF) == 0x04;
+        return classId == Pinyin || classId == Bopomofo || classId == IFlytek || classId == WeChat;
     }
 }
 
 /// <summary>
-/// Interprets the standard TSF open and conversion values used by Japanese input methods.
+/// Applies Microsoft's Japanese IME open contract while retaining its selected conversion mode.
 /// </summary>
-internal sealed class JapaneseInputModeAdapter : ISoftKeyboardObservedInputModeAdapter
+internal sealed class JapaneseInputModeAdapter : KnownInputModeAdapter
 {
-    private static readonly SoftKeyboardInputModeTransition EnterNativeTransition =
-        new("japanese-native");
-
-    private static readonly SoftKeyboardInputModeTransition EnterDirectTransition =
-        new("japanese-direct");
-
     internal static JapaneseInputModeAdapter Default { get; } = new();
 
     /// <inheritdoc />
-    public SoftKeyboardInputModeContribution GetContribution(
-        SoftKeyboardInputMethod inputMethod)
+    protected override bool Supports(Guid classId)
     {
-        if (inputMethod.ClassId == Guid.Empty)
+        return classId == Japanese;
+    }
+}
+
+/// <summary>
+/// Supplies service-specific state and fallback commands for verified ClassId values.
+/// </summary>
+/// <remarks>
+/// Language-bar presentation and commands retain priority independently. Microsoft Japanese IME
+/// uses a decoded textual cap because one native button icon cannot describe all conversion modes.
+/// Unrecognized states contribute no fallback. Raw writes express observed targets; acceptance
+/// does not confirm a mode change.
+/// </remarks>
+internal abstract class KnownInputModeAdapter : ISoftKeyboardObservedInputModeAdapter
+{
+    /// <summary>
+    /// Identifies the verified Pinyin text service.
+    /// </summary>
+    protected static readonly Guid Pinyin = new("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E");
+
+    /// <summary>
+    /// Identifies the verified Bopomofo text service.
+    /// </summary>
+    protected static readonly Guid Bopomofo = new("B115690A-EA02-48D5-A231-E3578D2FDF80");
+
+    /// <summary>
+    /// Identifies the verified IFlytek text service.
+    /// </summary>
+    protected static readonly Guid IFlytek = new("B722B5D7-0C4C-4933-A7B9-DF8C91F2C643");
+
+    /// <summary>
+    /// Identifies the verified WeChat text service.
+    /// </summary>
+    protected static readonly Guid WeChat = new("86598FB9-66A2-463E-B9C2-AEB906D477AD");
+
+    /// <summary>
+    /// Identifies the verified Japanese text service.
+    /// </summary>
+    protected static readonly Guid Japanese = new("03B5835F-F03C-411B-9CE2-AA23E1171E36");
+
+    /// <summary>
+    /// Restricts the adapter to the service identities owned by its extension provider.
+    /// </summary>
+    protected abstract bool Supports(Guid classId);
+
+    /// <inheritdoc />
+    public SoftKeyboardInputModeContribution GetContribution(SoftKeyboardInputMethod inputMethod)
+    {
+        if (!Supports(inputMethod.ClassId))
         {
             return SoftKeyboardInputModeContribution.Empty;
         }
@@ -169,119 +92,66 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardObservedInputModeA
 
     /// <inheritdoc />
     public SoftKeyboardInputModeContribution GetContribution(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardTsfInputModeState state)
+        SoftKeyboardInputMethod inputMethod, SoftKeyboardTsfInputModeState state)
     {
-        return Decode(inputMethod, state);
-    }
-
-    /// <summary>
-    /// Converts Japanese TSF state and supplies only the facets missing from the active service.
-    /// </summary>
-    /// <param name="inputMethod">The active Japanese input-method profile.</param>
-    /// <param name="state">The raw TSF state observed for that profile.</param>
-    /// <returns>The independently handled state, presentation, and transition facets.</returns>
-    internal static SoftKeyboardInputModeContribution Decode(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardTsfInputModeState state)
-    {
-        var mode = Decode(state.OpenValue, state.ConversionValue);
-        if (mode is null)
+        if (!Supports(inputMethod.ClassId)
+            || Decode(inputMethod.ClassId, state) is not { } enabled)
         {
             return SoftKeyboardInputModeContribution.Empty;
         }
 
-        if (state.CanSwitch)
-        {
-            return new SoftKeyboardInputModeContribution(
-                mode: SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode)
-            );
-        }
-
-        if (!SoftKeyboardTsfInputMode.SupportsKeyboardOpenFallback(inputMethod))
-        {
-            return new SoftKeyboardInputModeContribution(
-                mode: SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode)
-            );
-        }
+        var japanese = inputMethod.ClassId == Japanese;
+        var mode = japanese
+            ? DecodeJapaneseMode(enabled, state.ConversionValue)
+            : new SoftKeyboardInputMode(enabled ? "chinese" : "alphanumeric", enabled);
+        // The Japanese language-bar icon identifies the command rather than the active conversion
+        // mode. Use the decoded cap even when that icon is available, while CanSwitch continues to
+        // select the native command as the transition route.
+        var presentation = japanese
+            ? CreateJapanesePresentation(inputMethod.ClassId, mode)
+            : SoftKeyboardTsfInputMode.GetInputModeButton(inputMethod.ClassId)
+              ?? new SoftKeyboardInputModeButton(
+                  $"known-tip:{inputMethod.ClassId:D}:{mode.Id}",
+                  enabled ? "中" : "A",
+                  enabled ? "中文输入" : "字母数字输入");
 
         return new SoftKeyboardInputModeContribution(
             SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode),
-            SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.FromValue(
-                CreatePresentation(inputMethod, mode)
-            ),
+            SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.FromValue(presentation),
             SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(
-                mode.IsNativeInput ? EnterDirectTransition : EnterNativeTransition
-            )
-        );
+                new SoftKeyboardInputModeTransition(enabled ? "disable" : "enable")));
     }
 
     /// <summary>
-    /// Converts the standard Japanese TSF values into a precise keyboard mode.
+    /// Decodes Microsoft Japanese conversion flags only while its open compartment is one.
+    /// The binary transition uses open rather than IsNativeInput, so full-width Latin input
+    /// can still be switched off and the selected conversion remains intact when reopening.
     /// </summary>
-    internal static SoftKeyboardInputMode? Decode(int? open, int? conversion)
+    private static SoftKeyboardInputMode DecodeJapaneseMode(bool enabled, int? conversion)
     {
-        if (open is null || conversion is not int conversionValue)
+        if (!enabled)
         {
-            return null;
+            return new SoftKeyboardInputMode("direct", false);
         }
 
-        if (open == 0)
+        // Only name conversion values observed from Microsoft Japanese IME. Other nonzero values
+        // still indicate Japanese input, but must not be mistaken for one of these specific modes.
+        return conversion switch
         {
-            return Mode("direct", false);
-        }
-
-        var native    = (conversionValue & TsfConversionMode.Native) != 0;
-        var katakana  = (conversionValue & TsfConversionMode.Katakana) != 0;
-        var fullShape = (conversionValue & TsfConversionMode.FullShape) != 0;
-
-        if (!native)
-        {
-            return fullShape
-                ? Mode("full-width-alphanumeric", false)
-                : Mode("half-width-alphanumeric", false);
-        }
-
-        if (!katakana)
-        {
-            return Mode("hiragana", true);
-        }
-
-        return fullShape
-            ? Mode("full-width-katakana", true)
-            : Mode("half-width-katakana", true);
-    }
-
-    /// <inheritdoc />
-    public bool TrySwitchMode(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardInputModeTransition transition)
-    {
-        if (Equals(transition, EnterDirectTransition))
-        {
-            return SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
-                inputMethod,
-                Key.DbeAlphanumeric
-            );
-        }
-
-        if (Equals(transition, EnterNativeTransition))
-        {
-            return SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
-                inputMethod,
-                Key.KanjiMode
-            );
-        }
-
-        return false;
+            0x09 => new SoftKeyboardInputMode("hiragana", true),
+            0x0B => new SoftKeyboardInputMode("full-width-katakana", true),
+            0x08 => new SoftKeyboardInputMode("full-width-alphanumeric", false),
+            0x03 => new SoftKeyboardInputMode("half-width-katakana", true),
+            0x00 => new SoftKeyboardInputMode("half-width-alphanumeric", false),
+            _    => new SoftKeyboardInputMode("japanese", true),
+        };
     }
 
     /// <summary>
-    /// Creates the textual mode-key presentation used when the TIP supplies no standard command.
+    /// Creates the textual cap that identifies Microsoft Japanese IME's effective input mode.
     /// </summary>
-    private static SoftKeyboardInputModeButton CreatePresentation(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardInputMode mode)
+    private static SoftKeyboardInputModeButton CreateJapanesePresentation(
+        Guid classId, SoftKeyboardInputMode mode)
     {
         var (content, automationName) = mode.Id switch
         {
@@ -289,29 +159,79 @@ internal sealed class JapaneseInputModeAdapter : ISoftKeyboardObservedInputModeA
             "full-width-katakana"     => ("カ", "全角片假名输入"),
             "half-width-katakana"     => ("ｶ", "半角片假名输入"),
             "full-width-alphanumeric" => ("Ａ", "全角字母数字输入"),
-            _                          => ("A", "半角字母数字和直接输入"),
+            "japanese"                => ("日", "日语输入"),
+            _                         => ("A", "字母数字输入"),
         };
 
         return new SoftKeyboardInputModeButton(
-            $"tsf-japanese:{inputMethod.LanguageId:X4}:{mode.Id}",
-            content,
-            automationName
-        );
+            $"known-tip:{classId:D}:{mode.Id}", content, automationName);
     }
 
-    private static SoftKeyboardInputMode Mode(string id, bool native)
+    /// <summary>
+    /// Recognizes the captured service states without generalizing to other values or services.
+    /// Japanese open state is independent of conversion, including retained values while closed.
+    /// </summary>
+    private static bool? Decode(Guid classId, SoftKeyboardTsfInputModeState state)
     {
-        return new SoftKeyboardInputMode(id, native);
-    }
-}
+        var open       = state.OpenValue;
+        var conversion = state.ConversionValue;
+        if (classId == Japanese)
+        {
+            return open == 1 ? true : open == 0 ? false : null;
+        }
 
-/// <summary>
-/// Defines the TSF conversion bits used by the language adapters.
-/// </summary>
-internal static class TsfConversionMode
-{
-    internal const int Alphanumeric = 0x0000;
-    internal const int Native       = 0x0001;
-    internal const int Katakana     = 0x0002;
-    internal const int FullShape    = 0x0008;
+        if (classId == Pinyin && open == 1)
+        {
+            return conversion == 1025 ? true : conversion == 0 ? false : null;
+        }
+
+        if (classId == Bopomofo && open == 1)
+        {
+            return conversion == 1 ? true : conversion == 0 ? false : null;
+        }
+
+        if (conversion == 0 && (classId == IFlytek || classId == WeChat))
+        {
+            var closed = classId == IFlytek ? 2 : 0;
+            return open == 1 ? true : open == closed ? false : null;
+        }
+
+        return null;
+    }
+
+    /// <inheritdoc />
+    public bool TrySwitchMode(
+        SoftKeyboardInputMethod inputMethod, SoftKeyboardInputModeTransition transition)
+    {
+        var classId = inputMethod.ClassId;
+        if (!Supports(classId) || transition.Id is not ("enable" or "disable"))
+        {
+            return false;
+        }
+
+        // Recheck after editor focus restoration; a native command failure is not a request
+        // to execute a second transition through compartments.
+        var state = SoftKeyboardTsfInputMode.GetState(classId);
+        if (state?.CanSwitch == true)
+        {
+            return SoftKeyboardTsfInputMode.TrySwitchInputMode(classId);
+        }
+
+        if (state is null || Decode(classId, state) is null)
+        {
+            return false;
+        }
+
+        var enable = transition.Id == "enable";
+        if (classId == Pinyin || classId == Bopomofo)
+        {
+            return SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(
+                inputMethod, enable ? (classId == Pinyin ? 1025 : 1) : 0);
+        }
+
+        // Japanese preserves its selected conversion. Third-party services use their exact
+        // observed open integers, including IFlytek's non-Boolean closed value of two.
+        return SoftKeyboardTsfInputMode.TrySetKeyboardOpenValue(
+            inputMethod, enable ? 1 : (classId == IFlytek ? 2 : 0));
+    }
 }

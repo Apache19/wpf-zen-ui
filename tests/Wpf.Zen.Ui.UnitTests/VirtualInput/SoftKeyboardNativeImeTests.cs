@@ -409,149 +409,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Microsoft Japanese IME without a standard language-bar command changes its effective mode,
-    /// not only its published conversion value.
-    /// </summary>
-    [Fact]
-    public void Japanese_ModeKeyChangesEffectiveInputMode()
-    {
-        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
-            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Microsoft Japanese IME.");
-        WpfApplicationTestHost.Run(() =>
-        {
-            var editor = new TextBox();
-            var keyboard = new SoftKeyboard
-            {
-                Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
-                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
-            };
-            var root = new StackPanel();
-            root.Children.Add(editor);
-            root.Children.Add(keyboard);
-            var window = new Window { Content = root, Width = 850, Height = 450 };
-            var backend = new TsfInputMethodService();
-            SoftKeyboardInputMethod? original = null;
-            SoftKeyboardInputMethod? japanese = null;
-            int? originalOpen = null;
-            int? originalConversion = null;
-
-            try
-            {
-                window.Show();
-                ActivateTestWindow(window);
-                editor.Focus();
-                PumpFor(400);
-                keyboard.RefreshInputMethods();
-                original = keyboard.ActiveInputMethod;
-                japanese = keyboard.InputMethods.FirstOrDefault(profile =>
-                    profile.ClassId != Guid.Empty && (profile.LanguageId & 0x03FF) == 0x11);
-                Assert.SkipUnless(japanese is not null, "Microsoft Japanese IME is not installed.");
-                Assert.True(keyboard.TryActivateInputMethod(japanese));
-                Assert.True(PumpUntil(
-                    () => keyboard.ActiveInputMethod?.ClassId == japanese.ClassId,
-                    2000));
-
-                var originalState = SoftKeyboardTsfInputMode.GetState(japanese.ClassId);
-                Assert.NotNull(originalState?.ConversionValue);
-                Assert.SkipUnless(originalState!.CanSwitch == false,
-                    "The installed Japanese IME publishes a standard input-mode command.");
-                originalOpen = originalState.OpenValue;
-                originalConversion = originalState.ConversionValue;
-
-                if (originalOpen == 0)
-                {
-                    Assert.True(SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(japanese));
-                    Assert.True(PumpUntil(
-                        () => SoftKeyboardTsfInputMode.GetKeyboardOpenValue() == 1,
-                        2000));
-                }
-
-                Assert.True(SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
-                    japanese,
-                    Key.DbeAlphanumeric
-                ));
-                var observedDirectMode = PumpUntil(
-                    () => keyboard.InputMode?.IsNativeInput == false
-                        && Equals(keyboard.InputModeButton?.Content, "A")
-                        && FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Any(
-                            cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
-                        ),
-                    2000);
-                var directState = SoftKeyboardTsfInputMode.GetState(japanese.ClassId);
-                output.WriteLine(
-                    $"Japanese direct: language={japanese.LanguageId:X4}, "
-                    + $"culture={InputLanguageManager.Current.CurrentInputLanguage.Name}, "
-                    + $"open={directState?.OpenValue}, conversion={directState?.ConversionValue}, "
-                    + $"canSwitch={directState?.CanSwitch}, mode={keyboard.InputMode?.Id}, "
-                    + $"button={keyboard.InputModeButton?.Content}, "
-                    + $"error={keyboard.ExtensionError}"
-                );
-                Assert.True(observedDirectMode);
-
-                var modeKey = FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Single(
-                    cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
-                );
-                modeKey.Invoke();
-
-                var observedNativeMode = PumpUntil(
-                    () => SoftKeyboardTsfInputMode.GetState(japanese.ClassId) is { } state
-                        && state.ConversionValue is int conversion
-                        && (conversion & 1) != 0
-                        && keyboard.InputMode?.Id == "hiragana"
-                        && Equals(keyboard.InputModeButton?.Content, "あ"),
-                    2000);
-                output.WriteLine(
-                    $"Japanese native: mode={keyboard.InputMode?.Id}, "
-                    + $"button={keyboard.InputModeButton?.Content}"
-                );
-                Assert.True(observedNativeMode);
-
-                Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
-                var typedJapanese = PumpUntil(
-                    () => editor.Text.Any(IsJapaneseCharacter),
-                    2000);
-                output.WriteLine(
-                    $"Japanese typed: text={editor.Text}, imeState={InputMethod.Current.ImeState}, "
-                    + $"wpfConversion={InputMethod.Current.ImeConversionMode}, "
-                    + $"state={SoftKeyboardTsfInputMode.GetState(japanese.ClassId)?.ConversionValue}"
-                );
-                Assert.True(typedJapanese);
-            }
-            finally
-            {
-                if (japanese is not null && originalConversion is int conversion)
-                {
-                    _ = SoftKeyboardTsfInputMode.TrySendKeyboardConversionModeKey(
-                        japanese,
-                        (conversion & 1) != 0
-                            ? Key.KanjiMode
-                            : Key.DbeAlphanumeric
-                    );
-
-                    var currentOpen = SoftKeyboardTsfInputMode.GetKeyboardOpenValue();
-                    if (originalOpen is int expectedOpen
-                        && currentOpen is int actualOpen
-                        && (actualOpen != 0) != (expectedOpen != 0))
-                    {
-                        _ = SoftKeyboardTsfInputMode.TryToggleKeyboardOpen(japanese);
-                    }
-
-                    PumpFor(200);
-                }
-
-                if (original is not null)
-                {
-                    backend.TryActivate(original);
-                }
-
-                window.Close();
-            }
-        });
-    }
-
-    /// <summary>
     /// Checks iFlytek profile selection and repeated composition through the core platform button.
     /// </summary>
     [Fact]
@@ -921,20 +778,12 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 var raw = SoftKeyboardTsfInputMode.GetState(
                     keyboard.ActiveInputMethod?.ClassId ?? Guid.Empty
                 );
-                var windowHandle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
-                var hasImmOpen = ImmInputContextState.TryReadOpen(windowHandle, out var immOpen);
-                var hasImmConversion = ImmInputContextState.TryReadConversion(
-                    windowHandle,
-                    out var immConversion
-                );
                 output.WriteLine(
                     $"{stopwatch.ElapsedMilliseconds,4} ms: "
                     + $"profile={keyboard.ActiveInputMethod?.DisplayName}, "
                     + $"mode={keyboard.InputMode?.Id}, button={keyboard.InputModeButton?.Content}, "
                     + $"open={raw?.OpenValue}, conversion={raw?.ConversionValue}, "
-                    + $"wpf={InputMethod.Current.ImeConversionMode}, "
-                    + $"immOpen={(hasImmOpen ? immOpen : null)}, "
-                    + $"immConversion={(hasImmConversion ? immConversion : null)}"
+                    + $"wpf={InputMethod.Current.ImeConversionMode}"
                 );
             }
 
@@ -1002,13 +851,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 var japaneseState = Assert.IsType<SoftKeyboardTsfInputModeState>(
                     SoftKeyboardTsfInputMode.GetState(japanese.ClassId)
                 );
-                var expectedMode = Assert.IsType<SoftKeyboardInputMode>(
-                    JapaneseInputModeAdapter.Decode(
-                        japaneseState.OpenValue,
-                        japaneseState.ConversionValue
-                    )
-                );
-                Assert.Equal(expectedMode.Id, keyboard.InputMode?.Id);
+                Assert.NotNull(japaneseState.ConversionValue);
+                Assert.NotNull(keyboard.InputMode);
 
                 editor.Clear();
                 Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));

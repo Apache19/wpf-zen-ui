@@ -10,9 +10,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// </summary>
 /// <remarks>
 /// The descriptor presents a mode command without claiming to interpret a service-specific
-/// conversion mode. The Windows source creates it from the active TSF language-bar item or a
-/// supported keyboard-open fallback, while an input-mode adapter can replace it with a
-/// service-specific descriptor. A null descriptor means that no reliable command should be
+/// conversion mode. The Windows source creates it from the active TSF language-bar item.
+/// An input-mode adapter can replace it with a service-specific descriptor. A null descriptor means that no reliable command should be
 /// displayed.
 /// </remarks>
 public sealed class SoftKeyboardInputModeButton : IEquatable<SoftKeyboardInputModeButton>
@@ -27,15 +26,24 @@ public sealed class SoftKeyboardInputModeButton : IEquatable<SoftKeyboardInputMo
     /// <param name="automationName">The descriptive name exposed to UI Automation.</param>
     public SoftKeyboardInputModeButton(string id, object content, string automationName)
     {
-        Id = !string.IsNullOrWhiteSpace(id)
-            ? id
-            : throw new ArgumentException("A button presentation identifier is required.", nameof(id));
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw new ArgumentException("A button presentation identifier is required.", nameof(id));
+        }
 
-        Content = content ?? throw new ArgumentNullException(nameof(content));
+        if (content is null)
+        {
+            throw new ArgumentNullException(nameof(content));
+        }
 
-        AutomationName = !string.IsNullOrWhiteSpace(automationName)
-            ? automationName
-            : throw new ArgumentException("A button automation name is required.", nameof(automationName));
+        if (string.IsNullOrWhiteSpace(automationName))
+        {
+            throw new ArgumentException("A button automation name is required.", nameof(automationName));
+        }
+        
+        Id             = id;
+        Content        = content;
+        AutomationName = automationName;
     }
 
     /// <summary>

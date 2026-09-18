@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 
@@ -23,24 +24,15 @@ internal sealed class InputMethodMonitor
       ISoftKeyboardTsfLangBarItemSink,
       IDisposable
 {
-    private const uint ActiveProfileFlag = 0x00000001;
-    private const uint LanguageBarIconFlag = 0x00000001;
+    private const uint ActiveProfileFlag     = 0x00000001;
+    private const uint LanguageBarIconFlag   = 0x00000001;
     private const uint LanguageBarStatusFlag = 0x00010000;
 
-    private static readonly Guid ProfileActivationSinkId =
-        new("71C6E74E-0F28-11D8-A82A-00065B84435C");
-
-    private static readonly Guid CompartmentEventSinkId =
-        new("743ABD5F-F26D-48DF-8CC5-238492419B64");
-
-    private static readonly Guid KeyboardOpenId =
-        new("58273AAD-01BB-4164-95C6-755BA0B5162D");
-
-    private static readonly Guid KeyboardConversionId =
-        new("CCF05DD8-4A87-11D7-A6E2-00065B84435C");
-
-    private static readonly Guid InputModeItemId =
-        new("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
+    private static readonly Guid ProfileActivationSinkId = new("71C6E74E-0F28-11D8-A82A-00065B84435C");
+    private static readonly Guid CompartmentEventSinkId  = new("743ABD5F-F26D-48DF-8CC5-238492419B64");
+    private static readonly Guid KeyboardOpenId          = new("58273AAD-01BB-4164-95C6-755BA0B5162D");
+    private static readonly Guid KeyboardConversionId    = new("CCF05DD8-4A87-11D7-A6E2-00065B84435C");
+    private static readonly Guid InputModeItemId         = new("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
 
     private readonly Dispatcher _dispatcher;
     private readonly Action<InputMethodChange> _changed;
@@ -147,6 +139,14 @@ internal sealed class InputMethodMonitor
         IntPtr keyboardLayout,
         uint flags)
     {
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode.Monitor] Profile activation observed; "
+            + $"profileType={profileType}, languageId=0x{languageId:X4}, "
+            + $"classId={classId}, categoryId={categoryId}, profileId={profileId}, "
+            + $"keyboardLayout=0x{keyboardLayout.ToInt64():X}, flags=0x{flags:X8}, "
+            + $"active={(flags & ActiveProfileFlag) != 0}."
+        );
+
         Publish(
             new InputMethodChange(
                 InputMethodChangeKind.Profile,
@@ -167,7 +167,16 @@ internal sealed class InputMethodMonitor
 
     int ISoftKeyboardTsfLangBarItemSink.OnUpdate(uint flags)
     {
-        if ((flags & (LanguageBarIconFlag | LanguageBarStatusFlag)) != 0)
+        var relevantFlags = flags & (LanguageBarIconFlag | LanguageBarStatusFlag);
+
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode.Monitor] Language-bar item update observed; "
+            + $"flags=0x{flags:X8}, iconChanged={(flags & LanguageBarIconFlag) != 0}, "
+            + $"statusChanged={(flags & LanguageBarStatusFlag) != 0}, "
+            + $"published={relevantFlags != 0}."
+        );
+
+        if (relevantFlags != 0)
         {
             Publish(
                 new InputMethodChange(InputMethodChangeKind.InputModePresentation)
@@ -179,25 +188,66 @@ internal sealed class InputMethodMonitor
 
     int ISoftKeyboardTsfCompartmentEventSink.OnChange(ref Guid compartmentId)
     {
-        if (compartmentId == KeyboardOpenId
-            && SoftKeyboardTsfInputMode.GetKeyboardOpenValue() is { } openValue)
+        if (compartmentId == KeyboardOpenId)
         {
+            var openValue = SoftKeyboardTsfInputMode.GetKeyboardOpenValue();
+
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Monitor] TSF OPEN/CLOSE compartment notification; "
+                + "compartment=GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, "
+                + $"openValue={FormatValue(openValue)}, "
+                + $"published={openValue is not null}."
+            );
+
+            if (openValue is null)
+            {
+                return 0;
+            }
+
             Publish(
-                new InputMethodChange(InputMethodChangeKind.ImeOpen, StateValue: openValue)
+                new InputMethodChange(InputMethodChangeKind.ImeOpen, StateValue: openValue.Value)
             );
         }
-        else if (compartmentId == KeyboardConversionId
-            && SoftKeyboardTsfInputMode.GetKeyboardConversionValue() is { } conversionValue)
+        else if (compartmentId == KeyboardConversionId)
         {
+            var conversionValue = SoftKeyboardTsfInputMode.GetKeyboardConversionValue();
+
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Monitor] TSF CONVERSION compartment notification; "
+                + "compartment=GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, "
+                + $"conversionValue={FormatValue(conversionValue)}, "
+                + $"published={conversionValue is not null}."
+            );
+
+            if (conversionValue is null)
+            {
+                return 0;
+            }
+
             Publish(
                 new InputMethodChange(
                     InputMethodChangeKind.ImeConversion,
-                    StateValue: conversionValue
+                    StateValue: conversionValue.Value
                 )
+            );
+        }
+        else
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Monitor] Untracked compartment change ignored; "
+                + $"compartmentId={compartmentId}."
             );
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Formats a monitored TSF integer as both its decimal value and native hexadecimal bit field.
+    /// </summary>
+    private static string FormatValue(int? value)
+    {
+        return value is { } integer ? $"{integer} (0x{integer:X8})" : "<unavailable>";
     }
 
     private void Publish(InputMethodChange change)
@@ -410,7 +460,7 @@ internal sealed class InputMethodMonitor
             }
         }
 
-        _languageBarItemCookie = 0;
+        _languageBarItemCookie  = 0;
         _languageBarItemManager = null;
 
         if (_languageBarItemSinkPointer != IntPtr.Zero)

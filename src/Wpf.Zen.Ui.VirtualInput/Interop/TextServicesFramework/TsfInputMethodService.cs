@@ -156,7 +156,7 @@ internal sealed class TsfInputMethodService :
     public SoftKeyboardInputModeButton? GetInputModeButton(
         SoftKeyboardInputMethod inputMethod)
     {
-        return SoftKeyboardTsfInputMode.GetInputModeButton(inputMethod);
+        return SoftKeyboardTsfInputMode.GetInputModeButton(inputMethod.ClassId);
     }
 
     /// <inheritdoc />

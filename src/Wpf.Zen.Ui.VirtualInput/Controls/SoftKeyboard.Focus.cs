@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
@@ -97,36 +98,78 @@ public partial class SoftKeyboard
             _inputMethodObservationVersion++;
         }
 
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode.Monitor] Applying observed change; "
+            + $"kind={change.Kind}, stateValue={FormatObservedValue(change.StateValue)}, "
+            + $"observationVersion={_inputMethodObservationVersion}."
+        );
+
         switch (change.Kind)
         {
             case InputMethodChangeKind.RefreshAll:
-                RefreshInputMethodStateNow();
+                var refreshResult = RefreshInputMethodStateNow();
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode.Monitor] Full observed-state refresh completed; "
+                    + $"result={refreshResult}."
+                );
                 return;
 
             case InputMethodChangeKind.Profile:
                 if (!change.Profile.IsActive)
                 {
+                    Debug.WriteLine(
+                        "[SoftKeyboard.InputMode.Monitor] Inactive profile notification ignored; "
+                        + $"classId={change.Profile.ClassId}, "
+                        + $"profileId={change.Profile.ProfileId}."
+                    );
                     return;
                 }
 
                 ResetObservedPlatformState();
-                RefreshInputMethodStateNow();
+                var profileRefreshResult = RefreshInputMethodStateNow();
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode.Monitor] Active profile refresh completed; "
+                    + $"classId={change.Profile.ClassId}, "
+                    + $"profileId={change.Profile.ProfileId}, result={profileRefreshResult}."
+                );
                 return;
 
             case InputMethodChangeKind.ImeOpen:
+                var previousOpen = _observedImeOpenValue;
                 _observedImeOpenValue = GetRequiredStateValue(change);
-                RefreshObservedInputMode(refreshPresentation: false);
+                var openRefreshResult = RefreshObservedInputMode(refreshPresentation: false);
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode.Monitor] TSF OPEN/CLOSE state processed; "
+                    + $"previousOpenValue={FormatObservedValue(previousOpen)}, "
+                    + $"currentOpenValue={FormatObservedValue(_observedImeOpenValue)}, "
+                    + $"observationPublished={openRefreshResult}."
+                );
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
             case InputMethodChangeKind.ImeConversion:
+                var previousConversion = _observedImeConversionValue;
                 _observedImeConversionValue = GetRequiredStateValue(change);
-                RefreshObservedInputMode(refreshPresentation: false);
+                var conversionRefreshResult = RefreshObservedInputMode(
+                    refreshPresentation: false
+                );
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode.Monitor] TSF CONVERSION state processed; "
+                    + $"previousConversionValue={FormatObservedValue(previousConversion)}, "
+                    + $"currentConversionValue={FormatObservedValue(_observedImeConversionValue)}, "
+                    + $"observationPublished={conversionRefreshResult}."
+                );
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
             case InputMethodChangeKind.InputModePresentation:
-                RefreshObservedInputMode(refreshPresentation: true);
+                var presentationRefreshResult = RefreshObservedInputMode(
+                    refreshPresentation: true
+                );
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode.Monitor] Input-mode presentation refresh completed; "
+                    + $"result={presentationRefreshResult}."
+                );
                 RefreshCandidatesAfterInputMethodChange();
                 return;
 
@@ -144,6 +187,14 @@ public partial class SoftKeyboard
             ?? throw new InvalidOperationException(
                 $"The {change.Kind} notification did not include its observed value."
             );
+    }
+
+    /// <summary>
+    /// Formats a retained notification value as decimal and native hexadecimal state.
+    /// </summary>
+    private static string FormatObservedValue(int? value)
+    {
+        return value is { } integer ? $"{integer} (0x{integer:X8})" : "<none>";
     }
 
     /// <summary>

@@ -5,7 +5,6 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Windows.Win32;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -27,29 +26,9 @@ public static class SoftKeyboardTsfInputMode
     private const uint ButtonDisabled = 0x00000002;
     private const uint LeftClick      = 2;
 
-    private const int ConversionNative       = 0x0001;
-    private const int ConversionKatakana     = 0x0002;
-    private const int ConversionFullShape    = 0x0008;
-    private const int ConversionRoman        = 0x0010;
-    private const int ConversionCharCode     = 0x0020;
-    private const int ConversionNoConversion = 0x0100;
-    private const int ConversionEudc         = 0x0200;
-    private const int ConversionSymbol       = 0x0400;
-    private const int ConversionFixed        = 0x0800;
-
     private static readonly Guid KeyboardOpenId       = new("58273AAD-01BB-4164-95C6-755BA0B5162D");
     private static readonly Guid KeyboardConversionId = new("CCF05DD8-4A87-11D7-A6E2-00065B84435C");
     private static readonly Guid InputModeItemId      = new("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
-
-    // Keys are Windows primary-language identifiers so every regional Chinese language shares the
-    // same cap. Unlisted languages stay hidden until an extension supplies a stronger contract.
-    private static readonly IReadOnlyDictionary<ushort, (string Label, string AutomationName)>
-        OpenCloseLanguages = new Dictionary<ushort, (string, string)>
-        {
-            [0x04] = ("中", "Chinese input"),
-            [0x11] = ("日", "Japanese input"),
-            [0x12] = ("한", "Korean input"),
-        };
 
     /// <summary>
     /// Reads the raw TSF input-mode compartments and discovers the active service's standard
@@ -57,18 +36,21 @@ public static class SoftKeyboardTsfInputMode
     /// </summary>
     /// <param name="serviceId">The expected active TIP.</param>
     /// <returns>
-    /// A snapshot when open or conversion state is readable; otherwise null. Conversion falls back
-    /// to WPF's normalized IMM32-compatible value when no TSF compartment exists. Command discovery
-    /// remains false when the service does not publish <c>GUID_LBI_INPUTMODE</c>.
+    /// A snapshot when open or conversion state is readable; otherwise null. Missing compartments
+    /// remain unavailable. Command discovery remains false when the service does not publish
+    /// <c>GUID_LBI_INPUTMODE</c>.
     /// </returns>
     public static SoftKeyboardTsfInputModeState? GetState(Guid serviceId)
     {
         var open       = GetCompartmentInteger(KeyboardOpenId);
-        var conversion = GetCompartmentInteger(KeyboardConversionId)
-            ?? GetWpfKeyboardConversionMode();
+        var conversion = GetCompartmentInteger(KeyboardConversionId);
 
         if (open is null && conversion is null)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] TSF state read failed: open and conversion "
+                + $"compartments are unavailable; serviceId={serviceId}."
+            );
             return null;
         }
 
@@ -76,6 +58,12 @@ public static class SoftKeyboardTsfInputMode
             serviceId,
             requireVisible: false,
             out var button
+        );
+
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode] TSF state read; "
+            + $"serviceId={serviceId}, openValue={FormatValue(open)}, "
+            + $"conversionValue={FormatValue(conversion)}, inputModeCommand={canSwitch}."
         );
 
         ReleaseComObject(button);
@@ -106,8 +94,14 @@ public static class SoftKeyboardTsfInputMode
 
         try
         {
-            if (button!.GetIcon(out icon) < 0 || icon == IntPtr.Zero)
+            var iconResult = button!.GetIcon(out icon);
+            if (iconResult < 0 || icon == IntPtr.Zero)
             {
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode] Input-mode presentation unavailable: "
+                    + $"icon lookup failed; serviceId={serviceId}, "
+                    + $"hresult=0x{iconResult:X8}, iconHandle=0x{icon.ToInt64():X}."
+                );
                 return null;
             }
 
@@ -127,6 +121,11 @@ public static class SoftKeyboardTsfInputMode
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] Input-mode presentation failed with exception; "
+                + $"serviceId={serviceId}, exception={exception.GetType().FullName}, "
+                + $"message='{exception.Message}'."
+            );
             return null;
         }
         finally
@@ -138,32 +137,6 @@ public static class SoftKeyboardTsfInputMode
 
             ReleaseComObject(button);
         }
-    }
-
-    /// <summary>
-    /// Resolves the best mode command offered by the Windows input-method source.
-    /// </summary>
-    /// <param name="inputMethod">The active input method.</param>
-    /// <returns>
-    /// The service-owned language-bar button, or a keyboard-open fallback for a supported
-    /// language; otherwise null.
-    /// </returns>
-    internal static SoftKeyboardInputModeButton? GetInputModeButton(
-        SoftKeyboardInputMethod inputMethod)
-    {
-        if (inputMethod.ClassId == Guid.Empty)
-        {
-            return null;
-        }
-
-        var languageBarButton = GetInputModeButton(inputMethod.ClassId);
-        if (languageBarButton is not null
-            || !OpenCloseLanguages.ContainsKey(GetPrimaryLanguageId(inputMethod.LanguageId)))
-        {
-            return languageBarButton;
-        }
-
-        return CreateKeyboardOpenButton(inputMethod.LanguageId, GetKeyboardOpenValue());
     }
 
     /// <summary>
@@ -183,8 +156,7 @@ public static class SoftKeyboardTsfInputMode
     /// <returns>The raw TSF bit field, or null when the value is unavailable.</returns>
     internal static int? GetKeyboardConversionValue()
     {
-        return GetCompartmentInteger(KeyboardConversionId)
-            ?? GetWpfKeyboardConversionMode();
+        return GetCompartmentInteger(KeyboardConversionId);
     }
 
     /// <summary>
@@ -203,46 +175,65 @@ public static class SoftKeyboardTsfInputMode
     }
 
     /// <summary>
-    /// Invokes the service-owned language-bar command, falling back to the keyboard-open
-    /// compartment for supported languages.
+    /// Invokes only the active service's standard language-bar command.
     /// </summary>
-    /// <param name="inputMethod">The active input method.</param>
-    /// <returns>
-    /// True when one of the two command paths accepted the request; otherwise false.
-    /// </returns>
     internal static bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
     {
-        if (inputMethod.ClassId == Guid.Empty)
+        return TrySwitchInputMode(inputMethod.ClassId);
+    }
+
+    /// <summary>
+    /// Writes the exact conversion integer selected by a service-specific adapter.
+    /// </summary>
+    /// <param name="inputMethod">The active text-service profile.</param>
+    /// <param name="conversionMode">The complete replacement integer.</param>
+    /// <returns>Whether TSF accepted the write.</returns>
+    public static bool TrySetKeyboardConversionMode(
+        SoftKeyboardInputMethod inputMethod, int conversionMode)
+    {
+        return TrySetCompartmentInteger(inputMethod, KeyboardConversionId, conversionMode);
+    }
+
+    /// <summary>
+    /// Writes the exact open integer selected by a service-specific adapter.
+    /// </summary>
+    /// <param name="inputMethod">The active text-service profile.</param>
+    /// <param name="openValue">The service-defined replacement integer.</param>
+    /// <returns>Whether TSF accepted the write.</returns>
+    public static bool TrySetKeyboardOpenValue(SoftKeyboardInputMethod inputMethod, int openValue)
+    {
+        return TrySetCompartmentInteger(inputMethod, KeyboardOpenId, openValue);
+    }
+
+    /// <summary>
+    /// Transports an opaque integer to TSF without normalizing it through WPF properties.
+    /// </summary>
+    private static bool TrySetCompartmentInteger(
+        SoftKeyboardInputMethod inputMethod, Guid compartmentId, int value)
+    {
+        if (inputMethod is null)
         {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] TSF button route rejected: profile has no class ID."
-            );
+            throw new ArgumentNullException(nameof(inputMethod));
+        }
+
+        try
+        {
+            if (inputMethod.ClassId == Guid.Empty
+                || WpfTextServicesAccessor.TryGetThreadManager() is not ITfCompartmentMgr manager
+                || manager.GetCompartment(in compartmentId, out var compartment) < 0)
+            {
+                return false;
+            }
+
+            object replacement = value;
+            return compartment.SetValue(0, ref replacement) >= 0;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+            or COMException or PlatformNotSupportedException)
+        {
+            Debug.WriteLine($"[SoftKeyboard.InputMode] Compartment write failed: {exception.Message}");
             return false;
         }
-
-        var languageBarButton = GetInputModeButton(inputMethod.ClassId);
-        if (languageBarButton is not null)
-        {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] Visible GUID_LBI_INPUTMODE icon found; "
-                + "invoking the TSF language-bar command."
-            );
-            var result = TrySwitchInputMode(inputMethod.ClassId);
-            Debug.WriteLine(
-                $"[SoftKeyboard.InputMode] TSF language-bar command returned; result={result}."
-            );
-            return result;
-        }
-
-        Debug.WriteLine(
-            "[SoftKeyboard.InputMode] Visible GUID_LBI_INPUTMODE icon unavailable; "
-            + "falling back to keyboard-open state."
-        );
-        var fallbackResult = TryToggleKeyboardOpen(inputMethod);
-        Debug.WriteLine(
-            $"[SoftKeyboard.InputMode] Keyboard-open fallback returned; result={fallbackResult}."
-        );
-        return fallbackResult;
     }
 
     /// <summary>
@@ -287,311 +278,6 @@ public static class SoftKeyboardTsfInputMode
     }
 
     /// <summary>
-    /// Gets whether an input method belongs to a language covered by the core binary
-    /// keyboard-open policy.
-    /// </summary>
-    /// <param name="inputMethod">The active input method.</param>
-    /// <returns>
-    /// True when the language supports the keyboard-open fallback; otherwise false.
-    /// </returns>
-    /// <remarks>
-    /// This capability does not describe conversion modes. Extensions may combine it with their
-    /// own state interpretation while retaining the core open/close transition.
-    /// </remarks>
-    public static bool SupportsKeyboardOpenFallback(SoftKeyboardInputMethod inputMethod)
-    {
-        if (inputMethod is null)
-        {
-            throw new ArgumentNullException(nameof(inputMethod));
-        }
-
-        return inputMethod.ClassId != Guid.Empty
-            && OpenCloseLanguages.ContainsKey(GetPrimaryLanguageId(inputMethod.LanguageId));
-    }
-
-    /// <summary>
-    /// Toggles WPF's keyboard-open state without reading or changing the conversion compartment.
-    /// </summary>
-    /// <param name="inputMethod">The active input method.</param>
-    /// <returns>True when the state-change request was issued; otherwise false.</returns>
-    /// <remarks>
-    /// This operation is limited to languages covered by the core binary fallback policy. WPF
-    /// writes <c>GUID_COMPARTMENT_KEYBOARD_OPENCLOSE</c> and mirrors the state to IMM32 when its
-    /// compatibility path is active.
-    /// </remarks>
-    public static bool TryToggleKeyboardOpen(SoftKeyboardInputMethod inputMethod)
-    {
-        if (inputMethod is null)
-        {
-            throw new ArgumentNullException(nameof(inputMethod));
-        }
-
-        if (inputMethod.ClassId == Guid.Empty
-            || !OpenCloseLanguages.ContainsKey(GetPrimaryLanguageId(inputMethod.LanguageId)))
-        {
-            return false;
-        }
-
-        var openValue = GetKeyboardOpenValue();
-        var currentInputMethod = InputMethod.Current;
-        if (openValue is null || currentInputMethod is null)
-        {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] Keyboard-open fallback unavailable; "
-                + $"openValue={openValue?.ToString() ?? "<null>"}, "
-                + $"wpfInputMethod={currentInputMethod is not null}."
-            );
-            return false;
-        }
-
-        try
-        {
-            var nextState = openValue == 0
-                ? InputMethodState.On
-                : InputMethodState.Off;
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] Writing WPF ImeState fallback; "
-                + $"openValue={openValue}, nextState={nextState}."
-            );
-            currentInputMethod.ImeState = nextState;
-
-            return true;
-        }
-        catch (Exception exception) when (exception is InvalidOperationException
-            or COMException
-            or PlatformNotSupportedException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Writes the keyboard conversion state used by the active WPF editor.
-    /// </summary>
-    /// <param name="inputMethod">The active input method.</param>
-    /// <param name="conversionMode">The complete TSF conversion-mode bit field to write.</param>
-    /// <returns>True when TSF accepted the conversion-mode value; otherwise false.</returns>
-    /// <remarks>
-    /// This method does not interpret the bit field. It writes the TSF compartment when available
-    /// and otherwise uses WPF's normalized IMM32-compatible path. A service-specific adapter must
-    /// derive a complete replacement value from a fresh observation and preserve unowned flags.
-    /// </remarks>
-    public static bool TrySetKeyboardConversionMode(
-        SoftKeyboardInputMethod inputMethod,
-        int conversionMode)
-    {
-        if (inputMethod is null)
-        {
-            throw new ArgumentNullException(nameof(inputMethod));
-        }
-
-        if (inputMethod.ClassId == Guid.Empty)
-        {
-            return false;
-        }
-
-        if (WpfTextServicesAccessor.TryGetThreadManager() is not ITfCompartmentMgr manager
-            || manager.GetCompartment(in KeyboardConversionId, out var compartment) < 0)
-        {
-            return TrySetWpfKeyboardConversionMode(conversionMode);
-        }
-
-        try
-        {
-            object value = conversionMode;
-            return compartment.SetValue(0, ref value) >= 0;
-        }
-        catch (Exception exception) when (exception is InvalidOperationException
-            or COMException
-            or PlatformNotSupportedException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Sends a dedicated East Asian conversion-mode key through the focused window's hardware
-    /// keyboard input stream.
-    /// </summary>
-    /// <param name="inputMethod">The active input method expected to consume the key.</param>
-    /// <param name="modeKey">A dedicated WPF conversion-mode key.</param>
-    /// <returns>True when the complete key press was inserted; otherwise false.</returns>
-    /// <remarks>
-    /// Some text services publish writable TSF conversion compartments but do not treat a direct
-    /// compartment write as an input-mode command. Their dedicated conversion keys update both
-    /// the service's effective mode and its published compartments. Callers must already have
-    /// validated and focused the intended editor before invoking this operation.
-    /// </remarks>
-    internal static bool TrySendKeyboardConversionModeKey(
-        SoftKeyboardInputMethod inputMethod,
-        Key modeKey)
-    {
-        if (inputMethod is null)
-        {
-            throw new ArgumentNullException(nameof(inputMethod));
-        }
-
-        if (inputMethod.ClassId == Guid.Empty || !IsConversionModeKey(modeKey))
-        {
-            return false;
-        }
-
-        return SoftKeyboardInputInjector.SendVirtualKey(
-            modeKey,
-            ModifierKeys.None,
-            useScanCode: false
-        );
-    }
-
-    /// <summary>
-    /// Gets whether a key is one of the virtual-key commands reserved for East Asian conversion
-    /// modes.
-    /// </summary>
-    private static bool IsConversionModeKey(Key key)
-    {
-        return key is Key.KanjiMode
-            or Key.DbeAlphanumeric
-            or Key.DbeKatakana
-            or Key.DbeHiragana
-            or Key.DbeSbcsChar
-            or Key.DbeDbcsChar
-            or Key.DbeRoman
-            or Key.DbeNoRoman;
-    }
-
-    /// <summary>
-    /// Reads WPF's normalized conversion state when the active TIP exposes no TSF compartment.
-    /// </summary>
-    /// <remarks>
-    /// WPF uses the same TSF compartment when available and falls back to its IMM32 compatibility
-    /// path for legacy services. The public flags use different numeric values and are therefore
-    /// translated explicitly rather than cast.
-    /// </remarks>
-    private static int? GetWpfKeyboardConversionMode()
-    {
-        try
-        {
-            return InputMethod.Current is { } inputMethod
-                ? FromWpfConversionMode(inputMethod.ImeConversionMode)
-                : null;
-        }
-        catch (Exception exception) when (exception is InvalidOperationException
-            or COMException
-            or PlatformNotSupportedException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Writes WPF's normalized conversion state for a TIP using the IMM32 compatibility path.
-    /// </summary>
-    private static bool TrySetWpfKeyboardConversionMode(int conversionMode)
-    {
-        var inputMethod = InputMethod.Current;
-        if (inputMethod is null)
-        {
-            return false;
-        }
-
-        try
-        {
-            inputMethod.ImeConversionMode = ToWpfConversionMode(conversionMode);
-            return true;
-        }
-        catch (Exception exception) when (exception is ArgumentException
-            or InvalidOperationException
-            or COMException
-            or PlatformNotSupportedException)
-        {
-            return false;
-        }
-    }
-
-    private static int FromWpfConversionMode(ImeConversionModeValues mode)
-    {
-        var value = 0;
-        Add(ImeConversionModeValues.Native, ConversionNative);
-        Add(ImeConversionModeValues.Katakana, ConversionKatakana);
-        Add(ImeConversionModeValues.FullShape, ConversionFullShape);
-        Add(ImeConversionModeValues.Roman, ConversionRoman);
-        Add(ImeConversionModeValues.CharCode, ConversionCharCode);
-        Add(ImeConversionModeValues.NoConversion, ConversionNoConversion);
-        Add(ImeConversionModeValues.Eudc, ConversionEudc);
-        Add(ImeConversionModeValues.Symbol, ConversionSymbol);
-        Add(ImeConversionModeValues.Fixed, ConversionFixed);
-        return value;
-
-        void Add(ImeConversionModeValues flag, int nativeFlag)
-        {
-            if ((mode & flag) != 0)
-            {
-                value |= nativeFlag;
-            }
-        }
-    }
-
-    private static ImeConversionModeValues ToWpfConversionMode(int mode)
-    {
-        var value = ImeConversionModeValues.Alphanumeric;
-        Add(ConversionNative, ImeConversionModeValues.Native);
-        Add(ConversionKatakana, ImeConversionModeValues.Katakana);
-        Add(ConversionFullShape, ImeConversionModeValues.FullShape);
-        Add(ConversionRoman, ImeConversionModeValues.Roman);
-        Add(ConversionCharCode, ImeConversionModeValues.CharCode);
-        Add(ConversionNoConversion, ImeConversionModeValues.NoConversion);
-        Add(ConversionEudc, ImeConversionModeValues.Eudc);
-        Add(ConversionSymbol, ImeConversionModeValues.Symbol);
-        Add(ConversionFixed, ImeConversionModeValues.Fixed);
-        return value;
-
-        void Add(int nativeFlag, ImeConversionModeValues flag)
-        {
-            if ((mode & nativeFlag) != 0)
-            {
-                value |= flag;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Creates a direct representation of the keyboard-open compartment for a language whose
-    /// input method uses that binary contract.
-    /// </summary>
-    /// <param name="languageId">The Windows language identifier of the active input method.</param>
-    /// <param name="openValue">
-    /// The raw keyboard-open compartment value, or null when unavailable.
-    /// </param>
-    /// <returns>
-    /// A stateful key-cap descriptor for a supported language and value; otherwise null.
-    /// </returns>
-    internal static SoftKeyboardInputModeButton? CreateKeyboardOpenButton(
-        ushort languageId,
-        int? openValue)
-    {
-        if (openValue is null
-            || !OpenCloseLanguages.TryGetValue(GetPrimaryLanguageId(languageId), out var language))
-        {
-            return null;
-        }
-
-        var isOpen = openValue != 0;
-        return new SoftKeyboardInputModeButton(
-            $"tsf-openclose:{languageId:X4}:{(isOpen ? 1 : 0)}",
-            isOpen ? language.Label : "A",
-            isOpen ? language.AutomationName : "Direct input"
-        );
-    }
-
-    /// <summary>
-    /// Extracts the Windows primary-language identifier shared by regional language identifiers.
-    /// </summary>
-    private static ushort GetPrimaryLanguageId(ushort languageId)
-    {
-        return (ushort)(languageId & 0x03FF);
-    }
-
-    /// <summary>
     /// Reads an integer compartment without applying WPF's Boolean or managed-flag conversion.
     /// </summary>
     private static int? GetCompartmentInteger(Guid compartmentId)
@@ -617,31 +303,80 @@ public static class SoftKeyboardTsfInputMode
     {
         button = null;
 
-        if (serviceId == Guid.Empty
-            || WpfTextServicesAccessor.TryGetThreadManager() is not ITfLangBarItemMgr manager
-            || manager.GetItem(in InputModeItemId, out var item) < 0)
+        if (serviceId == Guid.Empty)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup rejected: "
+                + "expected service ID is empty."
+            );
+            return false;
+        }
+
+        if (WpfTextServicesAccessor.TryGetThreadManager() is not ITfLangBarItemMgr manager)
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup failed: "
+                + $"language-bar manager is unavailable; serviceId={serviceId}."
+            );
+            return false;
+        }
+
+        var getResult = manager.GetItem(in InputModeItemId, out var item);
+        if (getResult < 0)
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup failed: item is unavailable; "
+                + $"serviceId={serviceId}, hresult=0x{getResult:X8}."
+            );
             return false;
         }
 
         if (item is not ITfLangBarItemButton candidate)
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup failed: "
+                + $"item does not implement ITfLangBarItemButton; serviceId={serviceId}."
+            );
             ReleaseComObject(item);
             return false;
         }
 
-        if (candidate.GetInfo(out var info) < 0
-            || info.ServiceId != serviceId
-            || candidate.GetStatus(out var status) < 0
-            || (status & ButtonDisabled) != 0
-            || (requireVisible && (status & ButtonHidden) != 0))
+        var infoResult = candidate.GetInfo(out var info);
+        var statusResult = candidate.GetStatus(out var status);
+        var serviceMatches = infoResult >= 0 && info.ServiceId == serviceId;
+        var isDisabled = statusResult >= 0 && (status & ButtonDisabled) != 0;
+        var isHidden = statusResult >= 0 && (status & ButtonHidden) != 0;
+
+        if (infoResult < 0 || !serviceMatches || statusResult < 0 || isDisabled
+            || (requireVisible && isHidden))
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup rejected; "
+                + $"serviceId={serviceId}, itemServiceId="
+                + $"{(infoResult >= 0 ? info.ServiceId : Guid.Empty)}, "
+                + $"infoHresult=0x{infoResult:X8}, statusHresult=0x{statusResult:X8}, "
+                + $"status=0x{status:X8}, disabled={isDisabled}, hidden={isHidden}, "
+                + $"requireVisible={requireVisible}."
+            );
             ReleaseComObject(candidate);
             return false;
         }
 
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup succeeded; "
+            + $"serviceId={serviceId}, status=0x{status:X8}, hidden={isHidden}, "
+            + $"requireVisible={requireVisible}."
+        );
         button = candidate;
         return true;
+    }
+
+    /// <summary>
+    /// Formats a nullable TSF integer as both its decimal value and native hexadecimal bit field.
+    /// </summary>
+    private static string FormatValue(int? value)
+    {
+        return value is { } integer ? $"{integer} (0x{integer:X8})" : "<unavailable>";
     }
 
     /// <summary>
