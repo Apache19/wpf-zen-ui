@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -21,14 +21,12 @@ public sealed class SoftKeyboardInputRequestedEventArgs : RoutedEventArgs
     /// The selected alternative, or null for the primary action.
     /// </param>
     public SoftKeyboardInputRequestedEventArgs(
-        RoutedEvent routedEvent,
-        object source,
-        SoftKeyboardKey key,
-        string? alternateText = null
-        )
-        : base(routedEvent, source)
+        RoutedEvent      routedEvent,
+        object           source,
+        SoftKeyboardKey  key,
+        string?          alternateText = null) : base(routedEvent, source)
     {
-        Key = key ?? throw new ArgumentNullException(nameof(key));
+        Key           = key ?? throw new ArgumentNullException(nameof(key));
         AlternateText = alternateText;
     }
 

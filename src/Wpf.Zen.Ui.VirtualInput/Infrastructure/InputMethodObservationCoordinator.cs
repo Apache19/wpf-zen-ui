@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -18,16 +18,18 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// Pending publications can coalesce, including the language-bar icon's 30 ms settling delay.
 /// </remarks>
 internal sealed class InputMethodObservationCoordinator(
-    IInputObservationScheduler scheduler, Action publish, Action? activationStarted = null) : IDisposable
+    IInputObservationScheduler scheduler,
+    Action publish,
+    Action? activationStarted = null) : IDisposable
 {
     private IDisposable? _refresh;
     private IDisposable? _clickRefresh;
     private IDisposable? _activationWork;
-    private long _started;
-    private long _refreshDue;
-    private long? _presentationDue;
-    private int _generation;
-    private bool _completionAttempted;
+    private long         _started;
+    private long         _refreshDue;
+    private long?        _presentationDue;
+    private int          _generation;
+    private bool         _completionAttempted;
 
     /// <summary>
     /// Gets the identity used to reject operations started for an earlier activation.
@@ -38,6 +40,7 @@ internal sealed class InputMethodObservationCoordinator(
     /// Gets whether the last committed surface must remain unchanged.
     /// </summary>
     internal bool IsObserving { get; private set; }
+
     /// <summary>
     /// Gets immutable raw data captured for the current generation.
     /// </summary>
@@ -49,12 +52,16 @@ internal sealed class InputMethodObservationCoordinator(
     internal void Begin()
     {
         Cancel();
+
         IsObserving = true;
-        _started = scheduler.Now;
+        _started    = scheduler.Now;
+
         Debug.WriteLine($"[SoftKeyboard.InputMode.Observation] WINDOW started; generation={_generation}.");
+
         if (activationStarted is not null)
         {
             var generation = _generation;
+
             _activationWork = scheduler.Schedule(0, () =>
             {
                 _activationWork = null;
@@ -64,6 +71,7 @@ internal sealed class InputMethodObservationCoordinator(
                 }
             });
         }
+
         ScheduleRefresh(100);
     }
 
@@ -82,26 +90,32 @@ internal sealed class InputMethodObservationCoordinator(
     internal void Observe(InputMethodChange change)
     {
         var unchanged = false;
+
         if (change.State is { } state
             && change.Kind is InputMethodChangeKind.ImeOpen or InputMethodChangeKind.ImeConversion)
         {
-            unchanged = (!state.OpenObserved
+            unchanged =
+                (!state.OpenObserved
                     || (Observation.OpenObserved && Observation.OpenValue == state.OpenValue))
-                && (!state.ConversionObserved
-                    || (Observation.ConversionObserved
-                        && Observation.ConversionValue == state.ConversionValue));
+                &&
+                (!state.ConversionObserved
+                    || (Observation.ConversionObserved && Observation.ConversionValue == state.ConversionValue));
+
             Observation = new SoftKeyboardInputObservation(
-                Observation.OpenObserved || state.OpenObserved,
-                state.OpenObserved ? state.OpenValue : Observation.OpenValue,
-                Observation.ConversionObserved || state.ConversionObserved,
-                state.ConversionObserved ? state.ConversionValue : Observation.ConversionValue);
+                openObserved: Observation.OpenObserved || state.OpenObserved,
+                openValue: state.OpenObserved ? state.OpenValue : Observation.OpenValue,
+                conversionObserved: Observation.ConversionObserved || state.ConversionObserved,
+                conversionValue: state.ConversionObserved ? state.ConversionValue : Observation.ConversionValue
+            );
         }
         else if (change.Kind == InputMethodChangeKind.InputModePresentation)
         {
             _presentationDue = scheduler.Now + 30;
+
             var due = IsObserving
                 ? Math.Min(_started + 500, Math.Max(_refreshDue, _presentationDue.Value))
                 : _presentationDue.Value;
+
             ScheduleRefresh((int)Math.Max(0, due - scheduler.Now));
             return;
         }
@@ -110,7 +124,9 @@ internal sealed class InputMethodObservationCoordinator(
         {
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Observation] Equal VALUE recorded; "
-                + $"generation={_generation}, kind={change.Kind}, deadlineExtended=False.");
+                + $"generation={_generation}, kind={change.Kind}, deadlineExtended=False."
+            );
+
             return;
         }
 
@@ -137,24 +153,30 @@ internal sealed class InputMethodObservationCoordinator(
         }
 
         _completionAttempted = true;
+
         var generation = _generation;
-        var retained = Observation;
+        var retained   = Observation;
+
         bool IsCurrent()
         {
             return generation == _generation && ReferenceEquals(retained, Observation) && isCurrent();
         }
 
         var interpreted = canInterpret(retained);
+
         if (!IsCurrent() || (interpreted && retained.OpenValue is not null
             && retained.ConversionValue is not null))
         {
             return;
         }
 
+        // @formatter:off
         // TSF is sampled first; IMM is a second chance through the focused HWND's own context.
         foreach (var useImm in new[] { false, true })
         {
+            // @formatter:on
             var sample = read(useImm);
+
             if (!IsCurrent())
             {
                 return;
@@ -164,12 +186,14 @@ internal sealed class InputMethodObservationCoordinator(
                 retained.OpenObserved || sample.OpenObserved,
                 retained.OpenValue ?? sample.OpenValue,
                 retained.ConversionObserved || sample.ConversionObserved,
-                retained.ConversionValue ?? sample.ConversionValue);
+                retained.ConversionValue ?? sample.ConversionValue
+            );
+
             var accepted = canInterpret(candidate);
             if (!accepted && !interpreted)
             {
                 candidate = sample;
-                accepted = canInterpret(candidate);
+                accepted  = canInterpret(candidate);
             }
 
             if (!IsCurrent())
@@ -177,13 +201,17 @@ internal sealed class InputMethodObservationCoordinator(
                 return;
             }
 
-            var applied = accepted && (candidate.OpenValue != retained.OpenValue
-                || candidate.ConversionValue != retained.ConversionValue);
+            var applied = accepted
+                && (candidate.OpenValue != retained.OpenValue
+                    || candidate.ConversionValue != retained.ConversionValue);
+
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Observation] FALLBACK sampled; "
                 + $"generation={generation}, api={(useImm ? "IMM" : "TSF")}, "
                 + $"open={sample.OpenValue}, conversion={sample.ConversionValue}, "
-                + $"interpreted={accepted}, applied={applied}.");
+                + $"interpreted={accepted}, applied={applied}."
+            );
+
             if (applied)
             {
                 Observation = candidate;
@@ -204,6 +232,7 @@ internal sealed class InputMethodObservationCoordinator(
     {
         var now = scheduler.Now;
         var due = Math.Max(now + (IsObserving ? 100 : 0), _presentationDue ?? now);
+
         if (IsObserving)
         {
             due = Math.Min(due, _started + 500);
@@ -227,7 +256,9 @@ internal sealed class InputMethodObservationCoordinator(
         }
 
         _clickRefresh?.Dispose();
+
         var generation = _generation;
+
         _clickRefresh = scheduler.Schedule(30, () =>
         {
             _clickRefresh = null;
@@ -249,24 +280,30 @@ internal sealed class InputMethodObservationCoordinator(
     {
         _refresh?.Dispose();
         _refreshDue = scheduler.Now + delay;
+
         var generation = _generation;
+
         _refresh = scheduler.Schedule(delay, () =>
         {
             _refresh = null;
+
             if (generation != _generation)
             {
                 return;
             }
 
             var wasObserving = IsObserving;
-            IsObserving = false;
+
+            IsObserving      = false;
             _presentationDue = null;
+
             if (wasObserving)
             {
                 Debug.WriteLine(
                     "[SoftKeyboard.InputMode.Observation] WINDOW completed; "
                     + $"generation={generation}, elapsedMs={scheduler.Now - _started}, "
-                    + $"open={Observation.OpenValue}, conversion={Observation.ConversionValue}.");
+                    + $"open={Observation.OpenValue}, conversion={Observation.ConversionValue}."
+                );
             }
 
             publish();
@@ -283,18 +320,19 @@ internal sealed class InputMethodObservationCoordinator(
             Debug.WriteLine(
                 $"[SoftKeyboard.InputMode.Observation] Pending work CANCELED; generation={_generation}.");
         }
+
         _generation++;
         _activationWork?.Dispose();
         _activationWork = null;
         _refresh?.Dispose();
         _clickRefresh?.Dispose();
-        _refresh = null;
-        _clickRefresh = null;
-        _presentationDue = null;
-        _refreshDue = 0;
+        _refresh             = null;
+        _clickRefresh        = null;
+        _presentationDue     = null;
+        _refreshDue          = 0;
         _completionAttempted = false;
-        IsObserving = false;
-        Observation = SoftKeyboardInputObservation.Empty;
+        IsObserving          = false;
+        Observation          = SoftKeyboardInputObservation.Empty;
     }
 
     /// <inheritdoc />

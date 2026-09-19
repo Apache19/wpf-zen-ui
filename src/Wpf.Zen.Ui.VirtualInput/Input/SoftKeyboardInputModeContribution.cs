@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -21,14 +21,14 @@ public sealed class SoftKeyboardInputModeContribution
     /// Whether a nonnull button overrides platform content.
     /// </param>
     public SoftKeyboardInputModeContribution(
-        SoftKeyboardInputModeButton? button = null,
-        SoftKeyboardInputModeTransition? transition = null,
-        ISoftKeyboardLayoutProvider? layoutProvider = null,
+        SoftKeyboardInputModeButton?          button = null,
+        SoftKeyboardInputModeTransition?      transition = null,
+        ISoftKeyboardLayoutProvider?          layoutProvider = null,
         bool overridePlatformButton = false)
     {
-        Button = button;
-        Transition = transition;
-        LayoutProvider = layoutProvider;
+        Button                 = button;
+        Transition             = transition;
+        LayoutProvider         = layoutProvider;
         OverridePlatformButton = overridePlatformButton;
     }
 

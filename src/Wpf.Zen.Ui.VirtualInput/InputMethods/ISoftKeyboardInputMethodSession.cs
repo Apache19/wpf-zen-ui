@@ -28,5 +28,4 @@ public interface ISoftKeyboardInputMethodSession : IDisposable
     /// <param name="inputMethod">The profile to activate.</param>
     /// <returns>True when the native activation request was accepted.</returns>
     bool TryActivate(SoftKeyboardInputMethod inputMethod);
-
 }

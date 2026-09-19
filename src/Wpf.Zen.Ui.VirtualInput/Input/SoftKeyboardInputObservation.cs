@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -27,13 +27,15 @@ public sealed class SoftKeyboardInputObservation
     /// </param>
     /// <param name="conversionValue">Its last integer, or null when that read failed.</param>
     public SoftKeyboardInputObservation(
-        bool openObserved = false, int? openValue = null,
-        bool conversionObserved = false, int? conversionValue = null)
+        bool openObserved       = false,
+        int? openValue          = null,
+        bool conversionObserved = false,
+        int? conversionValue    = null)
     {
-        OpenObserved = openObserved;
-        OpenValue = openObserved ? openValue : null;
-        ConversionObserved = conversionObserved;
-        ConversionValue = conversionObserved ? conversionValue : null;
+        OpenObserved            = openObserved;
+        OpenValue               = openObserved ? openValue : null;
+        ConversionObserved      = conversionObserved;
+        ConversionValue         = conversionObserved ? conversionValue : null;
     }
 
     /// <summary>

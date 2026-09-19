@@ -147,14 +147,18 @@ internal static class SystemInputPaneController
         }
 
         var sourceParameter = Expression.Parameter(typeof(HwndSource), "source");
-        var paneParameter = Expression.Parameter(typeof(IDisposable), "pane");
-        var showParameter = Expression.Parameter(typeof(bool), "show");
-        var typedPane = Expression.Convert(paneParameter, paneType);
+        var paneParameter   = Expression.Parameter(typeof(IDisposable), "pane");
+        var showParameter   = Expression.Parameter(typeof(bool), "show");
+        var typedPane       = Expression.Convert(paneParameter, paneType);
 
         var acquire = Expression.Lambda<Func<HwndSource, IDisposable?>>(
-            Expression.Convert(Expression.Call(getForWindow, sourceParameter), typeof(IDisposable)),
+            Expression.Convert(
+                Expression.Call(getForWindow, sourceParameter),
+                typeof(IDisposable)
+            ),
             sourceParameter
         ).Compile();
+
         var request = Expression.Lambda<Func<IDisposable, bool, bool>>(
             Expression.Condition(
                 showParameter,
@@ -167,7 +171,7 @@ internal static class SystemInputPaneController
         return (source, show) =>
         {
 #if DEBUG
-            var started = Stopwatch.GetTimestamp();
+            var  started = Stopwatch.GetTimestamp();
             long acquired;
             long requested;
 #endif
@@ -193,8 +197,9 @@ internal static class SystemInputPaneController
             }
 
 #if DEBUG
-            var completed = Stopwatch.GetTimestamp();
+            var completed         = Stopwatch.GetTimestamp();
             var totalMilliseconds = (completed - started) * 1000.0 / Stopwatch.Frequency;
+
             if (totalMilliseconds >= 16)
             {
                 Debug.WriteLine(
@@ -202,7 +207,8 @@ internal static class SystemInputPaneController
                     + $"accepted={accepted}, "
                     + $"acquireMs={(acquired - started) * 1000.0 / Stopwatch.Frequency:F3}, "
                     + $"requestMs={(requested - acquired) * 1000.0 / Stopwatch.Frequency:F3}, "
-                    + $"disposeMs={(completed - requested) * 1000.0 / Stopwatch.Frequency:F3}.");
+                    + $"disposeMs={(completed - requested) * 1000.0 / Stopwatch.Frequency:F3}."
+                );
             }
 #endif
             return accepted;

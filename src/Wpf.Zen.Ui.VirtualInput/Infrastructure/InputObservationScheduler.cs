@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -17,6 +17,7 @@ internal interface IInputObservationScheduler
     /// Gets monotonic elapsed milliseconds for quiet-window and maximum-deadline calculations.
     /// </summary>
     long Now { get; }
+
     /// <summary>
     /// Queues one callback on the owning Dispatcher and returns its cancellation handle.
     /// </summary>
@@ -39,20 +40,24 @@ internal sealed class DispatcherInputObservationScheduler(Dispatcher dispatcher)
 
     private sealed class ScheduledCallback : IDisposable
     {
-        private readonly Dispatcher _dispatcher;
+        private readonly Dispatcher      _dispatcher;
         private readonly DispatcherTimer _timer;
+
         private Action? _callback;
 
         internal ScheduledCallback(Dispatcher dispatcher, int milliseconds, Action callback)
         {
             _dispatcher = dispatcher;
-            _callback = callback;
+            _callback   = callback;
+
             _timer = new DispatcherTimer(DispatcherPriority.Background, dispatcher)
             {
                 Interval = TimeSpan.FromMilliseconds(milliseconds),
             };
-            _timer.Tick += OnTick;
+
+            _timer.Tick                += OnTick;
             dispatcher.ShutdownStarted += OnShutdown;
+
             if (!dispatcher.HasShutdownStarted)
             {
                 _timer.Start();
@@ -80,7 +85,7 @@ internal sealed class DispatcherInputObservationScheduler(Dispatcher dispatcher)
         {
             _callback = null;
             _timer.Stop();
-            _timer.Tick -= OnTick;
+            _timer.Tick                 -= OnTick;
             _dispatcher.ShutdownStarted -= OnShutdown;
         }
     }

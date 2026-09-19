@@ -108,8 +108,9 @@ public partial class SoftKeyboard
 
         if (change.Kind == InputMethodChangeKind.Profile)
         {
-            var profile = change.Profile;
+            var profile          = change.Profile;
             var keyboardCategory = new Guid("34745C63-B2F0-4784-8B67-5E12C8701A31");
+
             if (profile.ProfileType != 2 && (profile.ProfileType != 1
                 || profile.CategoryId != keyboardCategory))
             {
@@ -127,17 +128,24 @@ public partial class SoftKeyboard
                     _inputMethodObservationVersion++;
                     BeginInputObservation(null);
                 }
+
                 return;
             }
 
             _inputMethodObservationVersion++;
-            BeginInputObservation(new SoftKeyboardInputMethod(
-                profile.ClassId, profile.ProfileId, profile.LanguageId, "Observed profile", true,
-                keyboardLayout: profile.KeyboardLayout));
+
+            BeginInputObservation(
+                new SoftKeyboardInputMethod(
+                    profile.ClassId, profile.ProfileId, profile.LanguageId, "Observed profile", true,
+                    keyboardLayout: profile.KeyboardLayout
+                )
+            );
+
             return;
         }
 
         _inputMethodObservationVersion++;
+
         if (change.Kind == InputMethodChangeKind.RefreshAll)
         {
             _inputObservation.RequestRefresh();

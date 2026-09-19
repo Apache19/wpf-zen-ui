@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -228,10 +228,13 @@ public partial class SoftKeyboard
 
         var anchor = _inputMethodMenuAnchor as FrameworkElement ?? this;
         var bounds = new Rect();
+
         if (PresentationSource.FromVisual(anchor) is not null)
         {
-            bounds = new Rect(anchor.PointToScreen(new Point()),
-                anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight)));
+            bounds = new Rect(
+                anchor.PointToScreen(new Point()),
+                anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight))
+            );
         }
 
         RunAfterActiveCompositionCancellation(() => SwitchInputModeCore(bounds));
@@ -248,14 +251,15 @@ public partial class SoftKeyboard
             return;
         }
 
-        var attempted = false;
+        var attempted      = false;
         var sessionVersion = _inputMethodSessionVersion;
-        var inputVersion = _inputOperationVersion;
+        var inputVersion   = _inputOperationVersion;
         try
         {
             RunInputMethodCommand((session, isCurrent) =>
             {
                 var actual = session.GetSnapshot().ActiveInputMethod;
+
                 if (!isCurrent() || !HaveSameInputMethod(actual, _observedModeProfile)
                     || !HaveSameInputMethod(actual, ActiveInputMethod))
                 {
@@ -263,6 +267,7 @@ public partial class SoftKeyboard
                     {
                         BeginInputObservation(actual);
                     }
+
                     return false;
                 }
 
@@ -272,23 +277,31 @@ public partial class SoftKeyboard
                 }
 
                 attempted = true;
+
                 var result = session is ISoftKeyboardInputModeButtonSession platform
                     ? platform.TryInvokeInputModeButton(actual, screenBounds)
                     : SoftKeyboardInputModeCommandResult.Unavailable;
+
                 Debug.WriteLine(
                     "[SoftKeyboard.InputMode.Command] PLATFORM returned; "
-                    + $"profileId={actual.ProfileId}, result={result}.");
+                    + $"profileId={actual.ProfileId}, result={result}."
+                );
+
                 if (result != SoftKeyboardInputModeCommandResult.Unavailable || !isCurrent()
                     || _inputObservation.IsObserving)
                 {
                     return result == SoftKeyboardInputModeCommandResult.Accepted;
                 }
 
-                var adapter = ResolveObservedInputModeAdapter(actual,
+                var adapter = ResolveObservedInputModeAdapter(
+                    actual,
                     _observedInputCulture ?? InputLanguageManager.Current.CurrentInputLanguage,
-                    ActiveTarget);
-                var observation = _inputObservation.Observation;
+                    ActiveTarget
+                );
+
+                var observation  = _inputObservation.Observation;
                 var contribution = adapter?.GetContribution(actual, observation);
+
                 if (!isCurrent() || _inputObservation.IsObserving
                     || contribution?.Transition is not { } transition)
                 {
@@ -296,9 +309,12 @@ public partial class SoftKeyboard
                 }
 
                 var accepted = adapter!.TrySwitchMode(actual, observation, transition);
+
                 Debug.WriteLine(
                     "[SoftKeyboard.InputMode.Command] EXTENSION returned; "
-                    + $"profileId={actual.ProfileId}, transition={transition.Id}, accepted={accepted}.");
+                    + $"profileId={actual.ProfileId}, transition={transition.Id}, accepted={accepted}."
+                );
+
                 return accepted;
             });
         }

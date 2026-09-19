@@ -74,8 +74,8 @@ internal static class WpfTextServicesAccessor
         PropertyInfo? hostProperty,
         PropertyInfo? managerProperty)
     {
-        var storeGetter = storeProperty?.GetGetMethod(nonPublic: true);
-        var hostGetter = hostProperty?.GetGetMethod(nonPublic: true);
+        var storeGetter   = storeProperty?.GetGetMethod(nonPublic: true);
+        var hostGetter    = hostProperty?.GetGetMethod(nonPublic: true);
         var managerGetter = managerProperty?.GetGetMethod(nonPublic: true);
 
         if (storeGetter is null || !storeGetter.IsStatic || storeGetter.GetParameters().Length != 0
@@ -90,8 +90,8 @@ internal static class WpfTextServicesAccessor
             return null;
         }
 
-        var store = Expression.Variable(storeGetter.ReturnType, "store");
-        var host = Expression.Variable(hostGetter.ReturnType, "host");
+        var store     = Expression.Variable(storeGetter.ReturnType, "store");
+        var host      = Expression.Variable(hostGetter.ReturnType, "host");
         var noManager = Expression.Constant(null, typeof(object));
 
         return Expression.Lambda<Func<object?>>(

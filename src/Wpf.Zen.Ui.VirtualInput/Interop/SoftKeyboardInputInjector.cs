@@ -52,7 +52,8 @@ internal static class SoftKeyboardInputInjector
         }
 
         var modifierKeys = GetModifierKeys(modifiers);
-        var inputs = new List<INPUT>((modifierKeys.Length * 2) + 2);
+        var inputs       = new List<INPUT>((modifierKeys.Length * 2) + 2);
+
         foreach (var modifierKey in modifierKeys)
         {
             inputs.Add(CreateVirtualKeyInput(

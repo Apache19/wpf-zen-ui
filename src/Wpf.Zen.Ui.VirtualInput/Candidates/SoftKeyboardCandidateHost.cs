@@ -18,6 +18,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Candidates;
 public sealed class SoftKeyboardCandidateHost
 {
     private readonly AsyncLocal<RefreshScope?> _refresh = new();
+
     private SoftKeyboard? _keyboard;
 
     internal SoftKeyboardCandidateHost(SoftKeyboard keyboard)
@@ -136,16 +137,16 @@ public sealed class SoftKeyboardCandidateHost
 
     private sealed class RefreshScope : IDisposable
     {
-        private readonly RefreshScope? _previous;
-        private SoftKeyboardCandidateHost? _host;
+        private readonly RefreshScope?              _previous;
+        private          SoftKeyboardCandidateHost? _host;
 
         internal RefreshScope(
             SoftKeyboardCandidateHost host, RefreshScope? previous, int version, CancellationToken token)
         {
-            _host = host;
+            _host     = host;
             _previous = previous;
-            Version = version;
-            Token = token;
+            Version   = version;
+            Token     = token;
         }
 
         internal int Version { get; }
@@ -155,12 +156,14 @@ public sealed class SoftKeyboardCandidateHost
         public void Dispose()
         {
             SoftKeyboardCandidateHost? host = _host;
+
             if (host is null)
             {
                 return;
             }
 
             _host = null;
+
             host._refresh.Value = _previous;
         }
     }

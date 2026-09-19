@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -163,10 +163,13 @@ public static class SoftKeyboardTsfInputMode
 
             object replacement = value;
             var result = compartment.SetValue(0, ref replacement);
+
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Command] COMPARTMENT write returned; "
                 + $"profileId={inputMethod.ProfileId}, compartment={compartmentId}, "
-                + $"value={value}, hresult=0x{result:X8}.");
+                + $"value={value}, hresult=0x{result:X8}."
+            );
+
             return result >= 0;
         }
         catch (Exception exception) when (exception is InvalidOperationException
@@ -174,7 +177,9 @@ public static class SoftKeyboardTsfInputMode
         {
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Command] COMPARTMENT write failed; "
-                + $"compartment={compartmentId}, exception={exception.GetType().Name}.");
+                + $"compartment={compartmentId}, exception={exception.GetType().Name}."
+            );
+
             return false;
         }
     }
@@ -187,6 +192,7 @@ public static class SoftKeyboardTsfInputMode
     {
         ITfLangBarItemButton? button = null;
         var invoked = false;
+
         try
         {
             if (!TryGetInputModeButton(inputMethod.ClassId, requireVisible: false, out button))
@@ -201,16 +207,22 @@ public static class SoftKeyboardTsfInputMode
                 Right = (int)screenBounds.Right,
                 Bottom = (int)screenBounds.Bottom,
             };
+
             var point = new TfInputModePoint
             {
                 X = (int)(screenBounds.Left + screenBounds.Width / 2),
                 Y = (int)(screenBounds.Top + screenBounds.Height / 2),
             };
+
             invoked = true;
+
             var result = button!.OnClick(LeftClick, point, in rectangle);
+
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Command] GUID_LBI_INPUTMODE invoked; "
-                + $"serviceId={inputMethod.ClassId}, hresult=0x{result:X8}.");
+                + $"serviceId={inputMethod.ClassId}, hresult=0x{result:X8}."
+            );
+
             return result >= 0 ? SoftKeyboardInputModeCommandResult.Accepted
                 : SoftKeyboardInputModeCommandResult.Failed;
         }
@@ -218,7 +230,9 @@ public static class SoftKeyboardTsfInputMode
         {
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Command] Command failed; "
-                + $"invoked={invoked}, exception={exception.GetType().Name}.");
+                + $"invoked={invoked}, exception={exception.GetType().Name}."
+            );
+
             return invoked ? SoftKeyboardInputModeCommandResult.Failed
                 : SoftKeyboardInputModeCommandResult.Unavailable;
         }
@@ -260,6 +274,7 @@ public static class SoftKeyboardTsfInputMode
                 "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup rejected: "
                 + "expected service ID is empty."
             );
+
             return false;
         }
 
@@ -269,6 +284,7 @@ public static class SoftKeyboardTsfInputMode
                 "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup failed: "
                 + $"language-bar manager is unavailable; serviceId={serviceId}."
             );
+
             return false;
         }
 
@@ -279,6 +295,7 @@ public static class SoftKeyboardTsfInputMode
                 "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup failed: item is unavailable; "
                 + $"serviceId={serviceId}, hresult=0x{getResult:X8}."
             );
+
             return false;
         }
 
@@ -288,18 +305,23 @@ public static class SoftKeyboardTsfInputMode
                 "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup failed: "
                 + $"item does not implement ITfLangBarItemButton; serviceId={serviceId}."
             );
+
             ReleaseComObject(item);
+
             return false;
         }
 
         // Transfer ownership before querying provider code so the caller releases on exceptions.
         button = candidate;
-        var infoResult = candidate.GetInfo(out var info);
+
+        var infoResult   = candidate.GetInfo(out var info);
         var statusResult = candidate.GetStatus(out var status);
+
         var serviceMatches = infoResult >= 0 && info.ServiceId == serviceId
             && info.ItemId == InputModeItemId && (info.Style & ButtonClickStyles) != 0;
+
         var isDisabled = statusResult >= 0 && (status & ButtonDisabled) != 0;
-        var isHidden = statusResult >= 0 && (status & ButtonHidden) != 0;
+        var isHidden   = statusResult >= 0 && (status & ButtonHidden) != 0;
 
         if (infoResult < 0 || !serviceMatches || statusResult < 0 || isDisabled
             || (requireVisible && isHidden))
@@ -312,8 +334,10 @@ public static class SoftKeyboardTsfInputMode
                 + $"status=0x{status:X8}, disabled={isDisabled}, hidden={isHidden}, "
                 + $"requireVisible={requireVisible}."
             );
+
             ReleaseComObject(candidate);
             button = null;
+
             return false;
         }
 
@@ -322,7 +346,9 @@ public static class SoftKeyboardTsfInputMode
             + $"serviceId={serviceId}, status=0x{status:X8}, hidden={isHidden}, "
             + $"requireVisible={requireVisible}."
         );
+
         button = candidate;
+
         return true;
     }
 
@@ -359,12 +385,14 @@ public static class SoftKeyboardTsfInputMode
     {
         var stride = checked((source.PixelWidth * source.Format.BitsPerPixel + 7) / 8);
         var pixels = new byte[checked(stride * source.PixelHeight)];
+
         source.CopyPixels(pixels, stride, 0);
 
         const ulong offset = 14695981039346656037;
         const ulong prime  = 1099511628211;
 
         var hash = offset;
+
         foreach (var value in pixels)
         {
             hash ^= value;

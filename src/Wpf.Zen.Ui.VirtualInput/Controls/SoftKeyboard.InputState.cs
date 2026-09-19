@@ -38,5 +38,4 @@ public partial class SoftKeyboard
         get => (ISoftKeyboardInputModeAdapter?)GetValue(InputModeAdapterProperty);
         set => SetValue(InputModeAdapterProperty, value);
     }
-
 }

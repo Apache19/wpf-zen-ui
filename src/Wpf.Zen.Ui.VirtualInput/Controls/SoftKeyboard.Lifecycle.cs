@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -76,6 +76,7 @@ public partial class SoftKeyboard
         if (!IsVisible)
         {
             _inputOperationVersion++;
+
             ResetObservedPlatformState();
 
             _ = TryCancelActiveComposition();
@@ -120,6 +121,7 @@ public partial class SoftKeyboard
     private void OnWindowDeactivated(object? sender, EventArgs args)
     {
         _inputOperationVersion++;
+
         ResetObservedPlatformState();
 
         // SendInput targets the foreground thread. Ending every pending gesture here prevents a
@@ -136,6 +138,7 @@ public partial class SoftKeyboard
         if (!IsEnabled)
         {
             _inputOperationVersion++;
+
             ResetObservedPlatformState();
 
             _ = TryCancelActiveComposition();

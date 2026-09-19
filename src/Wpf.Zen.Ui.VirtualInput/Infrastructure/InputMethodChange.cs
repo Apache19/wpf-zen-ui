@@ -14,18 +14,22 @@ internal enum InputMethodChangeKind
     /// Requests discovery and presentation refresh without supplying a native state value.
     /// </summary>
     RefreshAll,
+
     /// <summary>
     /// Reports profile activation or deactivation and establishes observation ownership.
     /// </summary>
     Profile,
+
     /// <summary>
     /// Carries both state values read in response to an open notification.
     /// </summary>
     ImeOpen,
+
     /// <summary>
     /// Carries both state values read in response to a conversion notification.
     /// </summary>
     ImeConversion,
+
     /// <summary>
     /// Requests language-bar presentation refresh after its short icon readiness delay.
     /// </summary>
@@ -42,8 +46,8 @@ internal enum InputMethodChangeKind
 /// observation pipeline together; the kind identifies the trigger, not the only field read.
 /// </param>
 internal readonly record struct InputMethodChange(
-    InputMethodChangeKind Kind,
-    InputProcessorProfileChange Profile = default,
+    InputMethodChangeKind         Kind,
+    InputProcessorProfileChange   Profile = default,
     SoftKeyboardInputObservation? State = null
 );
 
@@ -51,11 +55,11 @@ internal readonly record struct InputMethodChange(
 /// Carries the identity supplied by <c>ITfInputProcessorProfileActivationSink</c>.
 /// </summary>
 internal readonly record struct InputProcessorProfileChange(
-    uint ProfileType,
-    ushort LanguageId,
-    Guid ClassId,
-    Guid CategoryId,
-    Guid ProfileId,
-    IntPtr KeyboardLayout,
-    bool IsActive
+    uint    ProfileType,
+    ushort  LanguageId,
+    Guid    ClassId,
+    Guid    CategoryId,
+    Guid    ProfileId,
+    IntPtr  KeyboardLayout,
+    bool    IsActive
 );

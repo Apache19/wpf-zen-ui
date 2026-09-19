@@ -29,11 +29,12 @@ public partial class SoftKeyboard
     private int _inputMethodObservationVersion;
 
     private readonly InputMethodObservationCoordinator _inputObservation;
-    private CultureInfo? _observedInputCulture;
-    private SoftKeyboardInputMethod? _observedModeProfile;
-    private IInputElement? _observationTarget;
-    private bool _observationInitialized;
-    private int _observationInputVersion;
+
+    private CultureInfo?                 _observedInputCulture;
+    private SoftKeyboardInputMethod?     _observedModeProfile;
+    private IInputElement?               _observationTarget;
+    private bool                         _observationInitialized;
+    private int                          _observationInputVersion;
     private ISoftKeyboardLayoutProvider? _observedLayoutProvider;
 
     #region DP: InputMethodSource
@@ -209,7 +210,9 @@ public partial class SoftKeyboard
             }
 
             var sourceChanged = sessionVersion != _inputMethodSessionVersion;
+
             _inputMethodOperationDepth--;
+
             PublishPendingInputMethodLayout();
 
             if (sourceChanged && !IsInputMethodOperationActive)
@@ -313,7 +316,9 @@ public partial class SoftKeyboard
             }
 
             var sourceChanged = sessionVersion != _inputMethodSessionVersion;
+
             _inputMethodOperationDepth--;
+
             PublishPendingInputMethodLayout();
 
             if (sourceChanged && !IsInputMethodOperationActive)
@@ -428,6 +433,7 @@ public partial class SoftKeyboard
         var platformButton = session is ISoftKeyboardInputModeButtonSession buttonSession
             ? buttonSession.GetInputModeButton(active)
             : null;
+
         var adapter = ResolveObservedInputModeAdapter(active, culture, target);
         if (adapter is not null && isCurrent()
             && InputMethodSource is WindowsSoftKeyboardInputMethodSource { StateBackend: { } stateBackend }
@@ -437,16 +443,18 @@ public partial class SoftKeyboard
             // Load, profile changes and window reactivation all settle through this path.
             // Sample only the current editor; interpretation is the extension's existing contract.
             _inputObservation.CompleteObservation(
-                useImm => stateBackend.ReadState(useImm, window.Handle),
-                state =>
+                read: useImm => stateBackend.ReadState(useImm, window.Handle),
+                canInterpret: state =>
                 {
                     var result = adapter.GetContribution(active, state);
                     return result.Button is not null || result.LayoutProvider is not null
                         || result.Transition is not null;
                 },
-                () => isCurrent() && ReferenceEquals(target, Keyboard.FocusedElement)
+                isCurrent: () => isCurrent()
+                    && ReferenceEquals(target, Keyboard.FocusedElement)
                     && !window.IsDisposed
-                    && ReferenceEquals(PresentationSource.FromDependencyObject(editor), window));
+                    && ReferenceEquals(PresentationSource.FromDependencyObject(editor), window)
+            );
         }
 
         if (!isCurrent())
@@ -456,10 +464,12 @@ public partial class SoftKeyboard
 
         var contribution = adapter?.GetContribution(active, _inputObservation.Observation)
             ?? SoftKeyboardInputModeContribution.Empty;
+
         var fallbackButton = contribution.Transition is not null ? contribution.Button : null;
+
         var button = contribution.OverridePlatformButton && contribution.Button is not null
-                ? contribution.Button
-                : platformButton ?? fallbackButton;
+            ? contribution.Button
+            : platformButton ?? fallbackButton;
 
         Debug.WriteLine(
             "[SoftKeyboard.InputMode.Presentation] BUTTON resolved; "
@@ -470,7 +480,9 @@ public partial class SoftKeyboard
             + $"conversionObserved={_inputObservation.Observation.ConversionObserved}, "
             + $"conversion={_inputObservation.Observation.ConversionValue?.ToString() ?? "<unavailable>"}, "
             + $"platform={platformButton is not null}, fallback={fallbackButton is not null}, "
-            + $"override={contribution.OverridePlatformButton}, button={button?.Id ?? "<none>"}.");
+            + $"override={contribution.OverridePlatformButton}, button={button?.Id ?? "<none>"}."
+        );
+
         return new InputModeObservation(button, contribution.LayoutProvider);
     }
 
@@ -529,10 +541,12 @@ public partial class SoftKeyboard
         var cultureChanged = _observedInputCulture?.Name != observation.Culture.Name;
 
         _observedLayoutProvider = observation.LayoutProvider;
+
         Debug.WriteLine(
             "[SoftKeyboard.InputMode.Presentation] Observation APPLIED; "
             + $"profileId={snapshot.ActiveInputMethod?.ProfileId}, "
-            + $"button={observation.Button?.Id ?? "<none>"}, layoutChanged={layoutChanged}.");
+            + $"button={observation.Button?.Id ?? "<none>"}, layoutChanged={layoutChanged}."
+        );
 
         if (catalogChanged)
         {
@@ -559,9 +573,9 @@ public partial class SoftKeyboard
             SetValue(InputModeButtonPropertyKey, observation.Button);
         }
 
-        _observedInputCulture     =  observation.Culture;
-        _inputMethodLayoutPending |= profileChanged || layoutChanged || buttonChanged
-            || cultureChanged;
+        _observedInputCulture = observation.Culture;
+
+        _inputMethodLayoutPending |= profileChanged || layoutChanged || buttonChanged || cultureChanged;
 
         if (!isCurrent())
         {
@@ -626,10 +640,10 @@ public partial class SoftKeyboard
                 SetValue(InputModeButtonPropertyKey, null);
             }
 
-            _observedLayoutProvider = null;
-
+            _observedLayoutProvider   = null;
             _observedInputCulture     = null;
             _inputMethodLayoutPending = true;
+
             ResetObservedPlatformState();
 
             if (!operationActive)
@@ -758,7 +772,7 @@ public partial class SoftKeyboard
         DependencyObject dependencyObject,
         DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
+        var keyboard        = (SoftKeyboard)dependencyObject;
         var operationActive = keyboard.IsInputMethodOperationActive;
 
         keyboard.ResetInputMethodSession();
@@ -814,10 +828,11 @@ public partial class SoftKeyboard
     /// </summary>
     private void BeginInputObservation(SoftKeyboardInputMethod? profile)
     {
-        _observedModeProfile = profile;
-        _observationTarget = ActiveTarget;
+        _observedModeProfile     = profile;
+        _observationTarget       = ActiveTarget;
         _observationInputVersion = _inputOperationVersion;
-        _observationInitialized = true;
+        _observationInitialized  = true;
+
         // Invalidate pending snapshots immediately; extension cleanup runs on the Dispatcher.
         _candidateRefreshVersion++;
         _inputObservation.Begin();
@@ -832,7 +847,9 @@ public partial class SoftKeyboard
             || _observationInputVersion != _inputOperationVersion))
         {
             Debug.WriteLine(
-                "[SoftKeyboard.InputMode.Observation] Publication REJECTED; reason=ExpiredTarget.");
+                "[SoftKeyboard.InputMode.Observation] Publication REJECTED; reason=ExpiredTarget."
+            );
+
             ResetObservedPlatformState();
             return;
         }
@@ -853,8 +870,9 @@ public partial class SoftKeyboard
     private void ResetObservedPlatformState()
     {
         _inputObservation.Cancel();
-        _observedModeProfile = null;
-        _observationTarget = null;
+
+        _observedModeProfile    = null;
+        _observationTarget      = null;
         _observationInitialized = false;
     }
 

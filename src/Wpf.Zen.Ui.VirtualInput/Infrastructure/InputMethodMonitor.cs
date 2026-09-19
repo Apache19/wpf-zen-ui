@@ -26,9 +26,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 [ClassInterface(ClassInterfaceType.None)]
 internal sealed class InputMethodMonitor
     : ISoftKeyboardTsfInputProcessorProfileActivationSink,
-      ISoftKeyboardTsfCompartmentEventSink,
-      ISoftKeyboardTsfLangBarItemSink,
-      IDisposable
+        ISoftKeyboardTsfCompartmentEventSink,
+        ISoftKeyboardTsfLangBarItemSink,
+        IDisposable
 {
     private const uint ActiveProfileFlag     = 0x00000001;
     private const uint LanguageBarIconFlag   = 0x00000001;
@@ -40,27 +40,27 @@ internal sealed class InputMethodMonitor
     private static readonly Guid KeyboardConversionId    = new("CCF05DD8-4A87-11D7-A6E2-00065B84435C");
     private static readonly Guid InputModeItemId         = new("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
 
-    private readonly Dispatcher _dispatcher;
+    private readonly Dispatcher                _dispatcher;
     private readonly Action<InputMethodChange> _changed;
 
-    private ITfSource?   _source;
-    private ITfSource?   _keyboardOpenSource;
-    private ITfSource?   _keyboardConversionSource;
-    private IntPtr       _profileActivationSinkPointer;
-    private IntPtr       _compartmentSinkPointer;
-    private IntPtr       _languageBarItemSinkPointer;
+    private ITfSource?         _source;
+    private ITfSource?         _keyboardOpenSource;
+    private ITfSource?         _keyboardConversionSource;
+    private IntPtr             _profileActivationSinkPointer;
+    private IntPtr             _compartmentSinkPointer;
+    private IntPtr             _languageBarItemSinkPointer;
     private ITfLangBarItemMgr? _languageBarItemManager;
-    private uint         _profileActivationCookie;
-    private uint         _keyboardOpenCookie;
-    private uint         _keyboardConversionCookie;
-    private uint         _languageBarItemCookie;
-    private bool         _disposed;
-    private HwndSource? _windowSource;
+    private uint               _profileActivationCookie;
+    private uint               _keyboardOpenCookie;
+    private uint               _keyboardConversionCookie;
+    private uint               _languageBarItemCookie;
+    private bool               _disposed;
+    private HwndSource?        _windowSource;
 
     internal InputMethodMonitor(Dispatcher dispatcher, Action<InputMethodChange> changed)
     {
-        _dispatcher  = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-        _changed     = changed ?? throw new ArgumentNullException(nameof(changed));
+        _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _changed    = changed ?? throw new ArgumentNullException(nameof(changed));
 
         _dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
         EnsureNotifications();
@@ -102,11 +102,11 @@ internal sealed class InputMethodMonitor
             );
 
             var profileActivationSinkId = ProfileActivationSinkId;
+
             if (source.AdviseSink(
                 ref profileActivationSinkId,
                 profileActivationPointer,
-                out var profileActivationCookie
-            ) < 0)
+                out var profileActivationCookie) < 0)
             {
                 return;
             }
@@ -193,14 +193,21 @@ internal sealed class InputMethodMonitor
         if (compartmentId == KeyboardOpenId || compartmentId == KeyboardConversionId)
         {
             var state = ReadTsfState();
+
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode.Monitor] TSF STATE pair observed; "
                 + $"trigger={(compartmentId == KeyboardOpenId ? "OPEN" : "CONVERSION")}, "
-                + $"open={FormatValue(state.OpenValue)}, conversion={FormatValue(state.ConversionValue)}.");
-            Publish(new InputMethodChange(
-                compartmentId == KeyboardOpenId
-                    ? InputMethodChangeKind.ImeOpen : InputMethodChangeKind.ImeConversion,
-                State: state));
+                + $"open={FormatValue(state.OpenValue)}, conversion={FormatValue(state.ConversionValue)}."
+            );
+
+            Publish(
+                new InputMethodChange(
+                    compartmentId == KeyboardOpenId
+                        ? InputMethodChangeKind.ImeOpen
+                        : InputMethodChangeKind.ImeConversion,
+                    State: state
+                )
+            );
         }
         else
         {
@@ -222,6 +229,7 @@ internal sealed class InputMethodMonitor
         var source = Keyboard.FocusedElement is DependencyObject target
             ? PresentationSource.FromDependencyObject(target) as HwndSource
             : null;
+
         if (ReferenceEquals(source, _windowSource))
         {
             return;
@@ -229,6 +237,7 @@ internal sealed class InputMethodMonitor
 
         DisconnectWindowNotifications();
         _windowSource = source;
+
         if (source is not null)
         {
             source.AddHook(WindowProcedure);
@@ -241,14 +250,14 @@ internal sealed class InputMethodMonitor
     /// These notification codes use wParam as the code and leave lParam unused.
     /// The hook leaves normal WPF and IME message processing intact.
     /// </summary>
-    private IntPtr WindowProcedure(
-        IntPtr window, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr WindowProcedure(IntPtr window, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int WmImeNotify = 0x0282;
-        const long ImnSetConversionMode = 0x0006;
-        const long ImnSetOpenStatus = 0x0008;
-        if (_disposed || message != WmImeNotify
-            || wParam.ToInt64() is not (ImnSetConversionMode or ImnSetOpenStatus)
+        const int  wmImeNotify          = 0x0282;
+        const long imnSetConversionMode = 0x0006;
+        const long imnSetOpenStatus     = 0x0008;
+
+        if (_disposed || message != wmImeNotify
+            || wParam.ToInt64() is not (imnSetConversionMode or imnSetOpenStatus)
             || Keyboard.FocusedElement is not DependencyObject target
             || PresentationSource.FromDependencyObject(target) is not HwndSource source
             || source.Handle != window)
@@ -256,16 +265,22 @@ internal sealed class InputMethodMonitor
             return IntPtr.Zero;
         }
 
-        var open = wParam.ToInt64() == ImnSetOpenStatus;
+        var open  = wParam.ToInt64() == imnSetOpenStatus;
         var state = ReadImmState(window);
+
         Debug.WriteLine(
             "[SoftKeyboard.InputMode.Monitor] IME MESSAGE observed; "
             + $"window=0x{window.ToInt64():X}, message=WM_IME_NOTIFY, "
             + $"notification={(open ? "IMN_SETOPENSTATUS" : "IMN_SETCONVERSIONMODE")}, "
-            + $"open={FormatValue(state.OpenValue)}, conversion={FormatValue(state.ConversionValue)}.");
-        Publish(new InputMethodChange(
-            open ? InputMethodChangeKind.ImeOpen : InputMethodChangeKind.ImeConversion,
-            State: state));
+            + $"open={FormatValue(state.OpenValue)}, conversion={FormatValue(state.ConversionValue)}."
+        );
+
+        Publish(
+            new InputMethodChange(
+                open ? InputMethodChangeKind.ImeOpen : InputMethodChangeKind.ImeConversion,
+                State: state
+            )
+        );
 
         return IntPtr.Zero;
     }
@@ -282,8 +297,9 @@ internal sealed class InputMethodMonitor
             return new SoftKeyboardInputObservation(true, null, true, null);
         }
 
-        var hwnd = new HWND(window);
+        var hwnd    = new HWND(window);
         var context = PInvoke.ImmGetContext(hwnd);
+
         if (context.IsNull)
         {
             return new SoftKeyboardInputObservation(true, null, true, null);
@@ -292,11 +308,14 @@ internal sealed class InputMethodMonitor
         try
         {
             var open = PInvoke.ImmGetOpenStatus(context) ? 1 : 0;
+
             IME_CONVERSION_MODE conversion;
-            IME_SENTENCE_MODE sentence;
+            IME_SENTENCE_MODE   sentence;
+
             int? conversionValue = PInvoke.ImmGetConversionStatus(context, &conversion, &sentence)
                 ? unchecked((int)conversion)
                 : null;
+
             return new SoftKeyboardInputObservation(true, open, true, conversionValue);
         }
         finally
@@ -312,7 +331,7 @@ internal sealed class InputMethodMonitor
     {
         if (_windowSource is { } source)
         {
-            _windowSource = null;
+            _windowSource   =  null;
             source.Disposed -= OnWindowDisposed;
             source.RemoveHook(WindowProcedure);
         }
@@ -333,7 +352,8 @@ internal sealed class InputMethodMonitor
     internal static SoftKeyboardInputObservation ReadTsfState()
     {
         return new SoftKeyboardInputObservation(
-            true, ReadCompartmentValue(open: true), true, ReadCompartmentValue(open: false));
+            true, ReadCompartmentValue(open: true), true, ReadCompartmentValue(open: false)
+        );
     }
 
     /// <summary>
@@ -343,7 +363,8 @@ internal sealed class InputMethodMonitor
     {
         try
         {
-            return open ? SoftKeyboardTsfInputMode.GetKeyboardOpenValue()
+            return open
+                ? SoftKeyboardTsfInputMode.GetKeyboardOpenValue()
                 : SoftKeyboardTsfInputMode.GetKeyboardConversionValue();
         }
         catch (Exception exception) when (IsUnavailable(exception))
@@ -383,11 +404,12 @@ internal sealed class InputMethodMonitor
         }
 
         _profileActivationCookie = 0;
+
         _source = null;
 
         if (_profileActivationSinkPointer != IntPtr.Zero)
         {
-            _ = Marshal.Release(_profileActivationSinkPointer);
+            _                             = Marshal.Release(_profileActivationSinkPointer);
             _profileActivationSinkPointer = IntPtr.Zero;
         }
     }
@@ -448,7 +470,7 @@ internal sealed class InputMethodMonitor
             && _keyboardConversionSource is null
             && _compartmentSinkPointer != IntPtr.Zero)
         {
-            _ = Marshal.Release(_compartmentSinkPointer);
+            _                       = Marshal.Release(_compartmentSinkPointer);
             _compartmentSinkPointer = IntPtr.Zero;
         }
     }
@@ -487,7 +509,7 @@ internal sealed class InputMethodMonitor
 
         if (_compartmentSinkPointer != IntPtr.Zero)
         {
-            _ = Marshal.Release(_compartmentSinkPointer);
+            _                       = Marshal.Release(_compartmentSinkPointer);
             _compartmentSinkPointer = IntPtr.Zero;
         }
     }
@@ -530,18 +552,18 @@ internal sealed class InputMethodMonitor
             );
 
             if (manager.AdviseItemSink(
-                sinkPointer,
-                out var cookie,
-                in InputModeItemId
-            ) < 0)
+                    sinkPointer,
+                    out var cookie,
+                    in InputModeItemId
+                ) < 0)
             {
                 return;
             }
 
-            _languageBarItemManager = manager;
+            _languageBarItemManager     = manager;
             _languageBarItemSinkPointer = sinkPointer;
-            _languageBarItemCookie = cookie;
-            sinkPointer = IntPtr.Zero;
+            _languageBarItemCookie      = cookie;
+            sinkPointer                 = IntPtr.Zero;
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -575,7 +597,7 @@ internal sealed class InputMethodMonitor
 
         if (_languageBarItemSinkPointer != IntPtr.Zero)
         {
-            _ = Marshal.Release(_languageBarItemSinkPointer);
+            _                           = Marshal.Release(_languageBarItemSinkPointer);
             _languageBarItemSinkPointer = IntPtr.Zero;
         }
     }
@@ -601,6 +623,7 @@ internal sealed class InputMethodMonitor
 
         DisconnectWindowNotifications();
         DisconnectProfileNotifications();
+
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;
     }
 
