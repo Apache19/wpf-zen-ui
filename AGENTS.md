@@ -1,9 +1,9 @@
 ## 项目结构
 
-- 控件库： `Wpf.Zen.Ui`
-- 软键盘控件核心库： `Wpf.Zen.Ui.VirtualInput`
-- 软键盘控件扩展库： `Wpf.Zen.Ui.VirtualInput.Extensions`
-- 图库应用： `Wpf.Zen.Ui.Gallery`
+- 控件库： `src\Wpf.Zen.Ui`
+- 软键盘控件核心库： `src\Wpf.Zen.Ui.VirtualInput`
+- 软键盘控件扩展库： `src\Wpf.Zen.Ui.VirtualInput.Extensions`
+- 图库应用： `src\Wpf.Zen.Ui.Gallery`
 
 ## 当前任务
 
