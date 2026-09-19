@@ -5,6 +5,13 @@
 - 软键盘控件扩展库： `Wpf.Zen.Ui.VirtualInput.Extensions`
 - 图库应用： `Wpf.Zen.Ui.Gallery`
 
+## 当前任务
+
+**专注完善软键盘控件**，目标是打造一个专业稳定、简单易用、扩展性强的 WPF 应用内软键盘控件。
+
+当前正在探索稳定的输入模式切换方案，现有实现尚不稳定，需要靠调试日志辅助，请在关键节点合理加入调试日志。
+例如在事件触发时、值被应用时。除非是重要细节，否则不要有过多中间过程日志，避免日志泛滥。
+
 ## 源码参考指南
 
 当遇到实现细节不明确、API 行为异常或需要理解底层逻辑时，**请优先查阅 WPF 官方源代码**。
@@ -14,8 +21,6 @@ CommunityToolkit: `E:\Repos\CommunityToolkit`
 Windows classic samples:`E:\Repos\Windows-classic-samples`
 
 通过阅读源码，可以获得最准确的实现依据，避免依赖猜测或不可靠的网络资料。这是解决复杂问题的首选途径。
-
-**当前正在专注软键盘控件**，Windows classic samples 官方源码包含了 IME、 TSF、 触摸键盘等示例，可作为参考。
 
 ## Win32 API 使用
 
@@ -74,28 +79,52 @@ Windows classic samples:`E:\Repos\Windows-classic-samples`
 
 ## 代码风格
 
+### 依赖属性和 CLR 包装属性
+
 原仓库在书写依赖属性时习惯把依赖属性标识定义与对应的 CLR 包装属性分开放置，这在浏览代码时极为不便。
 现不允许再使用这种风格，请把 CLR 包装属性与依赖属性定义放在一起，CLR 包装属性跟随依赖属性定义即可。
 
-### 注意事项
+### 花括号
 
-- 单行 if、for、foreach 等语句不得省略花括号。
-  - 反例：`if (a == 1) dosomething;`
-  - 正例：
-    ```
-    if (a == 1)
-    {
-        dosomething;
-    {
-    ```
+单行 if、for、foreach 等语句不得省略花括号。
+- 反例：`if (a == 1) dosomething;`
+- 正例：
+  ```
+  if (a == 1)
+  {
+      dosomething;
+  {
+  ```
+### 方法表达式
 
-- 单行方法不得写成表达式，必须写成完整方法体。
-  - 反例：`void Method() => DoSomething();`
-  - 正例：
-    ```
-    void Method()
-    {
-        DoSomething();
-    }
-    ```
-  **此事项只针对方法，单行属性和访问器仍可使用表达式形式**
+单行方法不得写成表达式，必须写成完整方法体。
+- 反例：`void Method() => DoSomething();`
+- 正例：
+  ```
+  void Method()
+  {
+      DoSomething();
+  }
+  ```
+**此事项只针对方法，单行属性和访问器仍可使用表达式形式**
+
+### 调试日志
+
+日志输出应符合以下结构化日志风格：
+
+`[Category] Message; key=value, key=value.`
+
+- 固定来源前缀：使用 `[Category.SubCategory]` 标识日志来源，例如 `[SoftKeyboard.InputMode.Monitor]`。
+- 消息部分：简单描述事件，简洁清晰；
+- 关键领域词使用大写突出；
+- 大写只用于“锚点词”：不是整句大写，而是只强调少量高价值关键词，这样既醒目，又不会降低整体可读性；
+- 属性统一使用 key=value：多个属性之间使用逗号分隔，格式稳定，便于人工阅读和程序解析。
+
+示例：
+```
+[SoftKeyboard.InputMode.Monitor] Profile activation observed; profileType=1, languageId=0x0804, classId=81d4e9c9-1d3b-41bc-9e6c-4b40bf79e35e, categoryId=34745c63-b2f0-4784-8b67-5e12c8701a31, profileId=fa550b04-5ad7-411f-a5ac-ca038ec515d7, keyboardLayout=0x0, flags=0x00000002, active=False.
+[SoftKeyboard.InputMode.Monitor] Applying observed change; kind=Profile, observationVersion=1.
+[SoftKeyboard.InputMode.Monitor] Profile deactivation processed; classId=81d4e9c9-1d3b-41bc-9e6c-4b40bf79e35e, profileId=fa550b04-5ad7-411f-a5ac-ca038ec515d7.
+[SoftKeyboard.InputMode.Monitor] TSF CONVERSION compartment notification; compartment=GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, conversionValue=1025 (0x00000401), readSucceeded=True.
+[SoftKeyboard.InputMode.Monitor] Applying observed change; kind=ImeConversion, conversionValue=1025 (0x00000401), observationVersion=2.
+```
