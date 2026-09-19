@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -215,68 +215,101 @@ public partial class SoftKeyboard
         SetValue(ShiftStatePropertyKey, next);
     }
 
+    /// <summary>
+    /// Captures the clicked key's physical anchor before asynchronously canceling composition.
+    /// </summary>
     private void SwitchInputMode()
     {
-        Debug.WriteLine(
-            "[SoftKeyboard.InputMode] Click received; requesting composition cancellation."
-        );
-        RunAfterActiveCompositionCancellation(SwitchInputModeCore);
+        if (_inputObservation.IsObserving)
+        {
+            Debug.WriteLine("[SoftKeyboard.InputMode.Command] Click ignored; reason=ActivationWindow.");
+            return;
+        }
+
+        var anchor = _inputMethodMenuAnchor as FrameworkElement ?? this;
+        var bounds = new Rect();
+        if (PresentationSource.FromVisual(anchor) is not null)
+        {
+            bounds = new Rect(anchor.PointToScreen(new Point()),
+                anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight)));
+        }
+
+        RunAfterActiveCompositionCancellation(() => SwitchInputModeCore(bounds));
     }
 
     /// <summary>
-    /// Invokes the transition selected by the last complete input-mode resolution pass.
+    /// Rediscovers the current command after focus preparation; never invokes two command routes.
     /// </summary>
-    private void SwitchInputModeCore()
+    private void SwitchInputModeCore(Rect screenBounds)
     {
-        if (!PrepareTargetForInput())
+        if (_inputObservation.IsObserving || !PrepareTargetForInput()
+            || _inputObservation.IsObserving || InputModeButton is null)
         {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] Command stopped: target preparation failed."
-            );
             return;
         }
 
-        var inputMethod = ActiveInputMethod;
-        var transitionRoute = _inputModeTransitionRoute;
-
-        if (inputMethod is null || InputModeButton is null || transitionRoute is null)
+        var attempted = false;
+        var sessionVersion = _inputMethodSessionVersion;
+        var inputVersion = _inputOperationVersion;
+        try
         {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] Command stopped: required resolved state is missing; "
-                + $"inputMethod={inputMethod is not null}, button={InputModeButton is not null}, "
-                + $"route={transitionRoute?.Description ?? "<null>"}."
-            );
-            return;
-        }
-
-        Debug.WriteLine(
-            "[SoftKeyboard.InputMode] Invoking resolved route; "
-            + $"profile='{inputMethod.DisplayName}', classId={inputMethod.ClassId}, "
-            + $"profileId={inputMethod.ProfileId}, route={transitionRoute.Description}."
-        );
-
-        var commandAccepted = RunInputMethodCommand((session, isCurrent) =>
-        {
-            if (!isCurrent())
+            RunInputMethodCommand((session, isCurrent) =>
             {
+                var actual = session.GetSnapshot().ActiveInputMethod;
+                if (!isCurrent() || !HaveSameInputMethod(actual, _observedModeProfile)
+                    || !HaveSameInputMethod(actual, ActiveInputMethod))
+                {
+                    if (isCurrent())
+                    {
+                        BeginInputObservation(actual);
+                    }
+                    return false;
+                }
+
+                if (actual is null || _inputObservation.IsObserving)
+                {
+                    return false;
+                }
+
+                attempted = true;
+                var result = session is ISoftKeyboardInputModeButtonSession platform
+                    ? platform.TryInvokeInputModeButton(actual, screenBounds)
+                    : SoftKeyboardInputModeCommandResult.Unavailable;
                 Debug.WriteLine(
-                    "[SoftKeyboard.InputMode] Command stopped: session became stale before invoke."
-                );
-                return false;
+                    "[SoftKeyboard.InputMode.Command] PLATFORM returned; "
+                    + $"profileId={actual.ProfileId}, result={result}.");
+                if (result != SoftKeyboardInputModeCommandResult.Unavailable || !isCurrent()
+                    || _inputObservation.IsObserving)
+                {
+                    return result == SoftKeyboardInputModeCommandResult.Accepted;
+                }
+
+                var adapter = ResolveObservedInputModeAdapter(actual,
+                    _observedInputCulture ?? InputLanguageManager.Current.CurrentInputLanguage,
+                    ActiveTarget);
+                var observation = _inputObservation.Observation;
+                var contribution = adapter?.GetContribution(actual, observation);
+                if (!isCurrent() || _inputObservation.IsObserving
+                    || contribution?.Transition is not { } transition)
+                {
+                    return false;
+                }
+
+                var accepted = adapter!.TrySwitchMode(actual, observation, transition);
+                Debug.WriteLine(
+                    "[SoftKeyboard.InputMode.Command] EXTENSION returned; "
+                    + $"profileId={actual.ProfileId}, transition={transition.Id}, accepted={accepted}.");
+                return accepted;
+            });
+        }
+        finally
+        {
+            if (attempted && sessionVersion == _inputMethodSessionVersion
+                && inputVersion == _inputOperationVersion && _observationInitialized)
+            {
+                _inputObservation.AfterClick();
             }
-
-            var invoked = transitionRoute.TryInvoke(session, inputMethod);
-            var remainsCurrent = isCurrent();
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] Route completed; "
-                + $"invoked={invoked}, sessionCurrent={remainsCurrent}."
-            );
-            return invoked && remainsCurrent;
-        });
-
-        Debug.WriteLine(
-            $"[SoftKeyboard.InputMode] Command pipeline completed; accepted={commandAccepted}."
-        );
+        }
 
         RequestSystemKeyboardHide();
     }

@@ -61,7 +61,7 @@ public sealed class NumberSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
         for (var row = 0; row < 4; row++)
         {
             keys.AddRow(row, values[row].Select(CreateTextKey),
-                columnSpans: row == 1 && !context.CanSwitchInputMode ? [5, 5, 10] : [5, 5, 5]);
+                columnSpans: row == 1 && !context.HasInputModeButton ? [5, 5, 10] : [5, 5, 5]);
         }
 
         // Numeric input uses the same four tracks as letters and symbols. Commands occupy a
@@ -79,7 +79,7 @@ public sealed class NumberSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvid
             )
         );
 
-        if (context.CanSwitchInputMode)
+        if (context.HasInputModeButton)
         {
             keys.Add(CreateInputModeKey(context).WithPlacement(1, 15, 5));
         }

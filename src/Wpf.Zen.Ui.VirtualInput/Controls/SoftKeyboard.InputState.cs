@@ -3,11 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Input;
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
-/// Synchronizes native input mode without transferring ownership of the editor document.
+/// Configures service-specific interpretation of the current observation.
 /// </summary>
 public partial class SoftKeyboard
 {
@@ -26,14 +25,13 @@ public partial class SoftKeyboard
         );
 
     /// <summary>
-    /// Gets or sets the adapter that interprets the active text service's input modes.
+    /// Gets or sets the adapter that contributes observed presentation and layout policies.
     /// </summary>
     /// <remarks>
-    /// The default is null, which uses the input-method source's standard TSF interpretation.
-    /// This property is not inherited or animated.
-    /// Changing it immediately performs a complete observation and may regenerate the layout.
-    /// Adapter read failures preserve the last valid mode. A failed adapter transition is never
-    /// followed by a second transition through another mechanism.
+    /// The default is null, which selects the first adapter from the configured extensions.
+    /// This property is not inherited or animated. Changes reinterpret existing observations,
+    /// respecting any activation window already in progress. Platform commands retain priority;
+    /// an adapter can explicitly override their button content without changing execution routing.
     /// </remarks>
     public ISoftKeyboardInputModeAdapter? InputModeAdapter
     {

@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -9,6 +9,7 @@ using System.Windows.Input;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
@@ -19,26 +20,20 @@ public class DefaultSoftKeyboardLayoutProviderTests
 {
     /// <summary>
     /// Every built-in surface removes unavailable mode switches and fills the released grid space.
-    /// Capability, selection, and observed state are tested independently of input language.
+    /// Profile selection and button presentation are tested independently of input language.
     /// </summary>
     [Theory]
-    [InlineData(false, false, false, false)]
-    [InlineData(false, true, true, false)]
-    [InlineData(true, false, false, false)]
-    [InlineData(true, false, true, true)]
-    [InlineData(true, true, false, false)]
-    [InlineData(true, true, true, true)]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, true)]
     public void ModeSwitch_RequiresActiveProfileAndPublishedCommand(
         bool selected,
-        bool hasMode,
         bool hasButton,
         bool visible)
     {
         var method = selected
             ? new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test", true)
-            : null;
-        var inputMode = hasMode
-            ? new SoftKeyboardInputMode("test", false)
             : null;
         var inputModeButton = hasButton
             ? new SoftKeyboardInputModeButton("test", "A", "Test mode")
@@ -50,12 +45,12 @@ public class DefaultSoftKeyboardLayoutProviderTests
             foreach (var page in SoftKeyboardPages.BuiltInPages)
             {
                 var context = new SoftKeyboardLayoutContext(CultureInfo.GetCultureInfo("en-US"),
-                    scope, page, SoftKeyboardShiftState.Off, inputMode, method,
+                    scope, page, SoftKeyboardShiftState.Off, method,
                     inputModeButton: inputModeButton);
                 var layout = Assert.IsType<SoftKeyboardLayout>(
                     DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context));
 
-                Assert.Equal(visible, context.CanSwitchInputMode);
+                Assert.Equal(visible, context.HasInputModeButton);
                 Assert.Equal(visible ? 1 : 0,
                     layout.Keys.Count(key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode));
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
@@ -110,8 +105,7 @@ public class DefaultSoftKeyboardLayoutProviderTests
                             DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
                                 new SoftKeyboardLayoutContext(
                                     CultureInfo.GetCultureInfo(culture), scope, mode, shift,
-                                    Mode(native),
-                                    new SoftKeyboardInputMethod(
+                                                            new SoftKeyboardInputMethod(
                                         Guid.NewGuid(),
                                         Guid.NewGuid(),
                                         0x0409,
@@ -291,15 +285,11 @@ public class DefaultSoftKeyboardLayoutProviderTests
             InputScopeNameValue.Default,
             SoftKeyboardPages.Letters,
             SoftKeyboardShiftState.Off,
-            Mode(true, "あ"),
             new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true),
             inputModeButton: Button(true, "あ")
         );
 
-        var provider = JapaneseSoftKeyboardExtensionProvider.Default
-            .GetExtensions(new SoftKeyboardExtensionContext(context))
-            .Select(extension => extension.LayoutProvider)
-            .First(layoutProvider => layoutProvider is not null)!;
+        var provider = JapaneseCompactLayoutProvider.Default;
 
         var layout = Assert.IsType<SoftKeyboardLayout>(provider.CreateLayout(context));
         var key    = Assert.Single(layout.Keys, key => key.Text == "ー");
@@ -316,17 +306,8 @@ public class DefaultSoftKeyboardLayoutProviderTests
             InputScopeNameValue.Default,
             mode,
             SoftKeyboardShiftState.Off,
-            Mode(native),
             new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Test IME", true),
             inputModeButton: Button(native)
-        );
-    }
-
-    private static SoftKeyboardInputMode Mode(bool native, string? label = null)
-    {
-        return new SoftKeyboardInputMode(
-            native ? "native" : "direct",
-            native
         );
     }
 

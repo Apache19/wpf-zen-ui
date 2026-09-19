@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -343,11 +343,13 @@ public partial class SoftKeyboard
 
         SetValue(CandidateErrorPropertyKey, null);
 
+        var observationGeneration = _inputObservation.Generation;
         try
         {
             var result = await operation(state.Session, execution.Token).ConfigureAwait(true);
 
             if (!IsCandidateSessionCurrent(state.Version, state.Session)
+                || observationGeneration != _inputObservation.Generation
                 || !execution.IsCurrent)
             {
                 return false;
@@ -384,7 +386,8 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Creates one source session and rejects registration completed after a reentrant source change.
+    /// Creates one source session and rejects registration completed after a reentrant source
+    /// change.
     /// </summary>
     private (ISoftKeyboardCandidateSession? Session, int Version) EnsureCandidateSession()
     {
@@ -443,7 +446,8 @@ public partial class SoftKeyboard
 
     /// <summary>
     /// Expires candidate work and independently releases presentation and session resources.
-    /// Both cleanup steps are attempted so a presentation failure cannot retain source registrations.
+    /// Both cleanup steps are attempted so a presentation failure cannot retain source
+    /// registrations.
     /// </summary>
     private void ResetCandidateSession()
     {
@@ -484,7 +488,8 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Releases presentation and registrations independently while keeping the detached host alive for cleanup.
+    /// Releases presentation and registrations independently while keeping the detached host alive
+    /// for cleanup.
     /// </summary>
     private void ReleaseCandidateSession(ISoftKeyboardCandidateSession? session, SoftKeyboardCandidateHost? host)
     {

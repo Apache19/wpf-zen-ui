@@ -9,6 +9,7 @@ using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
@@ -115,8 +116,7 @@ public class SoftKeyboardCompositionTests
                 CultureInfo.GetCultureInfo(culture),
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
-                SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("direct", false)
+                SoftKeyboardShiftState.Off
             )
         )!;
 
@@ -126,11 +126,12 @@ public class SoftKeyboardCompositionTests
 
     private static SoftKeyboardLayout CreateExtendedLayout(SoftKeyboardLayoutContext context)
     {
-        var extensionLayout = DefaultSoftKeyboardExtensionProvider.Default
-            .GetExtensions(new SoftKeyboardExtensionContext(context))
-            .Select(extension => extension.LayoutProvider)
-            .FirstOrDefault(provider => provider?.CreateLayout(context) is not null)
-            ?.CreateLayout(context);
+        var extensionLayout = context.Culture.TwoLetterISOLanguageName switch
+        {
+            "ja" => JapaneseCompactLayoutProvider.Default.CreateLayout(context),
+            "zh" => ChineseCompactLayoutProvider.Default.CreateLayout(context),
+            _ => null,
+        };
 
         return extensionLayout ?? DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context)!;
     }
@@ -192,8 +193,7 @@ public class SoftKeyboardCompositionTests
             CultureInfo.GetCultureInfo(culture),
             InputScopeNameValue.Default,
             page,
-            SoftKeyboardShiftState.Off,
-            new SoftKeyboardInputMode("native", true)
+            SoftKeyboardShiftState.Off
         );
     }
 

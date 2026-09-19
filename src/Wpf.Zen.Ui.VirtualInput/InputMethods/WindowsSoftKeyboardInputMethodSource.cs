@@ -1,9 +1,10 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
 using System.Collections.ObjectModel;
+
 namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 /// <summary>
@@ -12,6 +13,17 @@ namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMethodSource
 {
     private readonly ISoftKeyboardInputMethodBackend _backend;
+
+    /// <summary>
+    /// Gets whether the source belongs to the Dispatcher-wide native notification stream.
+    /// </summary>
+    internal bool UsesNativeNotifications => _backend is TsfInputMethodService;
+
+    /// <summary>
+    /// Gets the optional state sampler belonging to this source's backend.
+    /// Application and test backends without this capability never read ambient native state.
+    /// </summary>
+    internal ISoftKeyboardInputStateBackend? StateBackend => _backend as ISoftKeyboardInputStateBackend;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowsSoftKeyboardInputMethodSource"/> class.
@@ -43,6 +55,7 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
     {
         private bool _disposed;
 
+        /// <inheritdoc />
         public SoftKeyboardInputMethodSnapshot GetSnapshot()
         {
             ThrowIfDisposed();
@@ -53,6 +66,7 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
             return new SoftKeyboardInputMethodSnapshot(destination, active);
         }
 
+        /// <inheritdoc />
         public bool TryActivate(SoftKeyboardInputMethod inputMethod)
         {
             ThrowIfDisposed();
@@ -65,37 +79,7 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
             return backend.TryActivate(inputMethod);
         }
 
-        public SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod)
-        {
-            ThrowIfDisposed();
-
-            if (inputMethod is null)
-            {
-                throw new ArgumentNullException(nameof(inputMethod));
-            }
-
-            return backend.GetInputMode(inputMethod);
-        }
-
-        public bool TrySwitchInputMode(
-            SoftKeyboardInputMethod inputMethod,
-            SoftKeyboardInputMode currentMode)
-        {
-            ThrowIfDisposed();
-
-            if (inputMethod is null)
-            {
-                throw new ArgumentNullException(nameof(inputMethod));
-            }
-
-            if (currentMode is null)
-            {
-                throw new ArgumentNullException(nameof(currentMode));
-            }
-
-            return backend.TrySwitchInputMode(inputMethod, currentMode);
-        }
-
+        /// <inheritdoc />
         public SoftKeyboardInputModeButton? GetInputModeButton(
             SoftKeyboardInputMethod inputMethod)
         {
@@ -111,7 +95,9 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
                 : null;
         }
 
-        public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+        /// <inheritdoc />
+        public SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+            SoftKeyboardInputMethod inputMethod, Rect screenBounds)
         {
             ThrowIfDisposed();
 
@@ -121,9 +107,11 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
             }
 
             return backend is ISoftKeyboardInputModeButtonBackend buttonBackend
-                && buttonBackend.TryInvokeInputModeButton(inputMethod);
+                ? buttonBackend.TryInvokeInputModeButton(inputMethod, screenBounds)
+                : SoftKeyboardInputModeCommandResult.Unavailable;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             _disposed = true;

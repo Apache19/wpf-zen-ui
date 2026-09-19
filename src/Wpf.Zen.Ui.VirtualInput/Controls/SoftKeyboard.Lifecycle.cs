@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -40,6 +40,7 @@ public partial class SoftKeyboard
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
         _inputOperationVersion++;
+        ResetObservedPlatformState();
 
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
         // for a disappearing HWND would be intrusive and can target the next foreground window, so
@@ -75,6 +76,7 @@ public partial class SoftKeyboard
         if (!IsVisible)
         {
             _inputOperationVersion++;
+            ResetObservedPlatformState();
 
             _ = TryCancelActiveComposition();
 
@@ -93,6 +95,7 @@ public partial class SoftKeyboard
         // user to type another character.
         if (IsLoaded && IsOpen && ActiveTarget is not null)
         {
+            RefreshInputMethodState();
             RequestCandidateRefresh();
             RequestSystemKeyboardHide();
         }
@@ -117,6 +120,7 @@ public partial class SoftKeyboard
     private void OnWindowDeactivated(object? sender, EventArgs args)
     {
         _inputOperationVersion++;
+        ResetObservedPlatformState();
 
         // SendInput targets the foreground thread. Ending every pending gesture here prevents a
         // held key from continuing into another process during an Alt+Tab or tablet app switch.
@@ -132,6 +136,7 @@ public partial class SoftKeyboard
         if (!IsEnabled)
         {
             _inputOperationVersion++;
+            ResetObservedPlatformState();
 
             _ = TryCancelActiveComposition();
 
@@ -144,6 +149,7 @@ public partial class SoftKeyboard
         }
         else if (IsLoaded && IsOpen)
         {
+            RefreshInputMethodState();
             RequestCandidateRefresh();
             RequestSystemKeyboardHide();
         }

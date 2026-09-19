@@ -23,7 +23,7 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// The menu is anchored to the last invoked key and never takes keyboard focus from the
-    /// editor. It presents the current catalog snapshot without observing or changing input-mode
+    /// editor. It refreshes the catalog without reading or prematurely publishing input-mode
     /// state. Items remain disabled unless a valid editor currently owns keyboard focus.
     /// </remarks>
     public void ShowInputMethodMenu()
@@ -49,13 +49,37 @@ public partial class SoftKeyboard
     /// </summary>
     private void OpenInputMethodMenuCore(UIElement anchor, int requestVersion)
     {
-        if (requestVersion != _inputMethodMenuRequestVersion
+        if (IsInputMethodOperationActive || requestVersion != _inputMethodMenuRequestVersion
             || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible)
         {
             return;
         }
 
-        if (requestVersion != _inputMethodMenuRequestVersion
+        // Catalog discovery is independent of presentation settling. An explicit menu request may
+        // refresh available choices without exposing unfinished compartment/layout state.
+        var refreshed = RunInputMethodCommand((session, isCurrent) =>
+        {
+            var snapshot = session.GetSnapshot();
+            if (!isCurrent() || requestVersion != _inputMethodMenuRequestVersion)
+            {
+                return false;
+            }
+            if (!HaveSameCatalog(InputMethods, snapshot.InputMethods))
+            {
+                SetValue(InputMethodsPropertyKey, snapshot.InputMethods);
+            }
+            if (!isCurrent() || requestVersion != _inputMethodMenuRequestVersion)
+            {
+                return false;
+            }
+            if (!_observationInitialized
+                || !HaveSameInputMethod(_observedModeProfile, snapshot.ActiveInputMethod))
+            {
+                BeginInputObservation(snapshot.ActiveInputMethod);
+            }
+            return true;
+        });
+        if (!refreshed || requestVersion != _inputMethodMenuRequestVersion
             || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
         {
             return;

@@ -33,7 +33,7 @@ internal static class LetterKeyboardLayout
             new(SoftKeyboardKeyKind.ChangePage, "123", "Numbers and symbols", page: SoftKeyboardPages.Symbols),
             .. 
             // 输入法开关
-            context.CanSwitchInputMode
+            context.HasInputModeButton
                 ? new[] { CreateInputModeKey(context) }
                 : Array.Empty<SoftKeyboardKey>(),
 
@@ -69,7 +69,7 @@ internal static class LetterKeyboardLayout
 
         builder.AddRow(2, thirdRow, columnSpans: [2, 2, 2, 2, 2, 2, 2, 2, 4]);
 
-        builder.AddRow(3, bottom, columnSpans: context.CanSwitchInputMode
+        builder.AddRow(3, bottom, columnSpans: context.HasInputModeButton
             ? [2, 2, 2, 2, 4, 2, 2, 2, 2]
             : [2, 2, 2, 6, 2, 2, 2, 2]);
 

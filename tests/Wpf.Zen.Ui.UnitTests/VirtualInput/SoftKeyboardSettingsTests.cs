@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -136,17 +136,8 @@ public class SoftKeyboardSettingsTests
             scope,
             SoftKeyboardPages.Automatic,
             SoftKeyboardShiftState.Off,
-            native is null ? null : NativeMode(native.Value),
             profile,
             supplementalLayout: layout
-        );
-    }
-
-    private static SoftKeyboardInputMode NativeMode(bool native = true)
-    {
-        return new SoftKeyboardInputMode(
-            native ? "native" : "direct",
-            native
         );
     }
 

@@ -61,11 +61,6 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     }
 
     /// <summary>
-    /// Gets whether all system notification paths required for normal synchronization are active.
-    /// </summary>
-    internal bool HasReliableInputMethodNotifications => _inputMethodMonitor.HasReliableNotifications;
-
-    /// <summary>
     /// Retries profile monitoring after WPF creates a text-services host for a focused editor.
     /// </summary>
     internal void EnsureInputMethodMonitoring()
@@ -135,7 +130,14 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
 
     private void OnInputMethodStateInvalidated(InputMethodChange change)
     {
-        ForEachKeyboard(keyboard => keyboard.OnSessionInputMethodChanged(change));
+        ForEachKeyboard(keyboard =>
+        {
+            if (keyboard.InputMethodSource is WindowsSoftKeyboardInputMethodSource
+                { UsesNativeNotifications: true })
+            {
+                keyboard.OnSessionInputMethodChanged(change);
+            }
+        });
     }
 
     private void OnDispatcherShutdownStarted(object? sender, EventArgs eventArgs)

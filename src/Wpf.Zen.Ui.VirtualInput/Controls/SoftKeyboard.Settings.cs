@@ -392,8 +392,7 @@ public partial class SoftKeyboard
         // Replacing menu containers for those notifications can discard a queued MenuItem.Click.
         if (previous is null
             || previous.Page != context.Page
-            || !Equals(previous.InputMode, context.InputMode)
-            || previous.CanSwitchInputMode != context.CanSwitchInputMode
+            || previous.HasInputModeButton != context.HasInputModeButton
             || previous.InputScope != context.InputScope
             || previous.ShiftState != context.ShiftState
             || previous.Culture.Name != context.Culture.Name

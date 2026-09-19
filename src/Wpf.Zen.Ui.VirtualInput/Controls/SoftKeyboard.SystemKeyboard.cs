@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -103,7 +103,8 @@ public partial class SoftKeyboard
     /// the HWND input pane.
     /// </summary>
     /// <remarks>
-    /// IsVisible includes ancestor visibility. Requiring the target to remain keyboard-focused avoids
+    /// IsVisible includes ancestor visibility. Requiring the target to remain keyboard-focused
+    /// avoids
     /// hiding Windows input UI while focus is on a command, another form, or another application; a
     /// soft-key invocation can still restore the remembered editor before requesting suppression.
     /// </remarks>
@@ -177,13 +178,17 @@ public partial class SoftKeyboard
 
     /// <summary>
     /// Gets a value indicating whether the live editor and visible surface can own candidates.
-    /// Remembered targets may restore focus for a key, but must never capture another editor's IME UI.
+    /// Remembered targets may restore focus for a key, but must never capture another editor's IME
+    /// UI.
     /// </summary>
     internal bool CanPresentCandidates
     {
         get =>
-            InputMode?.IsNativeInput == true
+            _observationInitialized
+            && !_inputObservation.IsObserving
             && ActiveInputMethod is not null
+            && HaveSameInputMethod(_observedModeProfile, ActiveInputMethod)
+            && ReferenceEquals(_observationTarget, ActiveTarget)
             && IsSystemKeyboardSuppressionRequired;
     }
 }

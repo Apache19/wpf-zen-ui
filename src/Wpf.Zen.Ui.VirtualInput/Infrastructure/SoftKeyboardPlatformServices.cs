@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -9,8 +9,10 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// Collects replaceable platform boundaries used by one soft-keyboard instance.
 /// </summary>
 /// <remarks>
-/// The aggregate is internal because backend replacement is a test seam, not an application extension
-/// point. Keeping the four contracts separate prevents native input, input-pane, profile, and candidate
+/// The aggregate is internal because backend replacement is a test seam, not an application
+/// extension
+/// point. Keeping the four contracts separate prevents native input, input-pane, profile, and
+/// candidate
 /// responsibilities from becoming coupled merely because the control consumes all of them.
 /// </remarks>
 internal sealed class SoftKeyboardPlatformServices
@@ -26,13 +28,17 @@ internal sealed class SoftKeyboardPlatformServices
         ISoftKeyboardInputBackend input,
         ISoftKeyboardInputPaneBackend inputPane,
         ISoftKeyboardInputMethodBackend inputMethods,
-        ISoftKeyboardCandidateSource candidates)
+        ISoftKeyboardCandidateSource candidates,
+        IInputObservationScheduler? observationScheduler = null)
     {
+        ObservationScheduler = observationScheduler;
         Input        = input ?? throw new ArgumentNullException(nameof(input));
         InputPane    = inputPane ?? throw new ArgumentNullException(nameof(inputPane));
         InputMethods = inputMethods ?? throw new ArgumentNullException(nameof(inputMethods));
         Candidates   = candidates ?? throw new ArgumentNullException(nameof(candidates));
     }
+
+    internal IInputObservationScheduler? ObservationScheduler { get; }
 
     internal ISoftKeyboardInputBackend Input { get; }
 

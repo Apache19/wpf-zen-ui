@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -15,9 +15,6 @@ internal interface ISoftKeyboardInputMethodBackend
 
     bool TryActivate(SoftKeyboardInputMethod profile);
 
-    SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod);
-
-    bool TrySwitchInputMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode);
 }
 
 /// <summary>
@@ -27,5 +24,18 @@ internal interface ISoftKeyboardInputModeButtonBackend
 {
     SoftKeyboardInputModeButton? GetInputModeButton(SoftKeyboardInputMethod inputMethod);
 
-    bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod);
+    SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+        SoftKeyboardInputMethod inputMethod, Rect screenBounds);
+}
+
+/// <summary>
+/// Supplies optional settled state samples independently of profile discovery and commands.
+/// </summary>
+internal interface ISoftKeyboardInputStateBackend
+{
+    /// <summary>
+    /// Reads both values through TSF, or through IMM for the supplied focused editor HWND.
+    /// Missing contexts and failed reads remain explicitly unavailable.
+    /// </summary>
+    SoftKeyboardInputObservation ReadState(bool useImm, IntPtr window);
 }

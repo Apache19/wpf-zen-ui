@@ -67,7 +67,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        if (IsInputMethodOperationActive && !publishInputMethodState)
+        if ((_inputObservation.IsObserving || IsInputMethodOperationActive) && !publishInputMethodState)
         {
             // A complete input-method observation publishes all fields before one layout rebuild.
             _inputMethodLayoutPending = true;
@@ -98,7 +98,6 @@ public partial class SoftKeyboard
                 inputScope,
                 Page,
                 ShiftState,
-                InputMode,
                 ActiveInputMethod,
                 supplementalLayout: supplementalSelection,
                 inputModeButton: InputModeButton
@@ -112,7 +111,6 @@ public partial class SoftKeyboard
                 inputScope,
                 Page,
                 ShiftState,
-                InputMode,
                 ActiveInputMethod,
                 supplementalLayout: supplementalLayout.Id,
                 inputModeButton: InputModeButton
@@ -138,6 +136,18 @@ public partial class SoftKeyboard
                 try
                 {
                     layout = supplementalLayout.LayoutProvider.CreateLayout(context);
+                }
+                catch (Exception exception) when (exception is not OutOfMemoryException)
+                {
+                    ReportExtensionError(exception);
+                }
+            }
+
+            if (layout is null && _observedLayoutProvider is not null)
+            {
+                try
+                {
+                    layout = _observedLayoutProvider.CreateLayout(context);
                 }
                 catch (Exception exception) when (exception is not OutOfMemoryException)
                 {
@@ -177,8 +187,7 @@ public partial class SoftKeyboard
                     inputScope,
                     Page,
                     ShiftState,
-                    InputMode,
-                    ActiveInputMethod,
+                        ActiveInputMethod,
                     supplementalLayout: SoftKeyboardSupplementalLayouts.Standard,
                     inputModeButton: InputModeButton
                 );

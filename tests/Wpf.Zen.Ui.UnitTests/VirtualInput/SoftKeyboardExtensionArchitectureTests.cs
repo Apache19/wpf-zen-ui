@@ -12,6 +12,8 @@ using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.Candidates;
+using Wpf.Zen.Ui.VirtualInput.Extensions.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
@@ -94,7 +96,7 @@ public class SoftKeyboardExtensionArchitectureTests
             .ToArray();
 
         var extension = extensions.Single(item => item.InputModeAdapter is not null);
-        Assert.Same(JapaneseInputModeAdapter.Default, extension.InputModeAdapter);
+        Assert.Same(MicrosoftJapaneseInputModeAdapter.Default, extension.InputModeAdapter);
         Assert.Contains(extensions, item => item.CandidateBehavior is not null);
     }
 
@@ -128,7 +130,6 @@ public class SoftKeyboardExtensionArchitectureTests
                 InputScopeNameValue.Default,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("chinese", true),
                 inputMethod
             )
         );
@@ -139,7 +140,7 @@ public class SoftKeyboardExtensionArchitectureTests
 
         SoftKeyboardExtension[] extensions = provider.GetExtensions(context).ToArray();
 
-        Assert.NotNull(extensions[0].LayoutProvider);
+        Assert.NotNull(extensions[0].InputModeAdapter);
         Assert.Single(extensions);
     }
 

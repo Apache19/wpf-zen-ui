@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -12,7 +12,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
 /// Creates the complete built-in URL address entry page.
 /// </summary>
 /// <remarks>
-/// Owns every key and its placement. Physical letter keys and address literals are optional reusable
+/// Owns every key and its placement. Physical letter keys and address literals are optional
+/// reusable
 /// material, not a base layout to patch. Handles Automatic and Letters for its input scope; other
 /// pages are deliberately declined so the enclosing language composition can choose their layouts.
 /// This provider can also be reused independently in an application-defined composition.
@@ -59,7 +60,7 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
                 [
                     SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "Numbers and symbols"),
                     ..
-                    context.CanSwitchInputMode
+                    context.HasInputModeButton
                         ? new[] { CreateInputModeKey(context) }
                         : Array.Empty<SoftKeyboardKey>(),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "http", "http", text: "http", alternates: ["https"], alternateHint: "https"),
@@ -71,7 +72,7 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
                     new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
                     new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
                 ],
-                context.CanSwitchInputMode
+                context.HasInputModeButton
                     ? [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
                     : [2, 2, 2, 4, 2, 2, 2, 2, 2]
             )

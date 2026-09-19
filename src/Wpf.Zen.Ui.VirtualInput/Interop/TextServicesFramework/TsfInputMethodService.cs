@@ -20,7 +20,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 /// </remarks>
 internal sealed class TsfInputMethodService :
     ISoftKeyboardInputMethodBackend,
-    ISoftKeyboardInputModeButtonBackend
+    ISoftKeyboardInputModeButtonBackend,
+    ISoftKeyboardInputStateBackend
 {
     private const uint ProfileTypeInputProcessor = 0x0001;
     private const uint ProfileTypeKeyboardLayout = 0x0002;
@@ -28,6 +29,12 @@ internal sealed class TsfInputMethodService :
 
     private static readonly Guid ProfilesClassId    = new("33C53A50-F456-4884-B049-85FD643ECFED");
     private static readonly Guid KeyboardCategoryId = new("34745C63-B2F0-4784-8B67-5E12C8701A31");
+
+    /// <inheritdoc />
+    public SoftKeyboardInputObservation ReadState(bool useImm, IntPtr window)
+    {
+        return useImm ? InputMethodMonitor.ReadImmState(window) : InputMethodMonitor.ReadTsfState();
+    }
 
     /// <inheritdoc />
     public void Refresh(
@@ -134,25 +141,6 @@ internal sealed class TsfInputMethodService :
     }
 
     /// <inheritdoc />
-    public SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod)
-    {
-        // TSF compartment values have service-defined semantics. The Windows source deliberately
-        // publishes no interpreted state; an application or extension adapter may opt into a
-        // contract for a known input method.
-        return null;
-    }
-
-    /// <inheritdoc />
-    public bool TrySwitchInputMode(
-        SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardInputMode currentMode)
-    {
-        // This path remains available to custom sessions that publish an interpreted mode. The
-        // Windows source invokes its independent platform command through the button session.
-        return false;
-    }
-
-    /// <inheritdoc />
     public SoftKeyboardInputModeButton? GetInputModeButton(
         SoftKeyboardInputMethod inputMethod)
     {
@@ -160,9 +148,10 @@ internal sealed class TsfInputMethodService :
     }
 
     /// <inheritdoc />
-    public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+    public SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+        SoftKeyboardInputMethod inputMethod, Rect screenBounds)
     {
-        return SoftKeyboardTsfInputMode.TryInvokeInputModeButton(inputMethod);
+        return SoftKeyboardTsfInputMode.TryInvokeInputModeButton(inputMethod, screenBounds);
     }
 
     private static List<SoftKeyboardInputMethod> TryEnumerateProfiles()

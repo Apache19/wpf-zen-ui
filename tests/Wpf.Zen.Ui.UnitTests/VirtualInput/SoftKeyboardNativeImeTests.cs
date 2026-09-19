@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -126,7 +126,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
             SoftKeyboardInputMethod? pinyin = null;
-            SoftKeyboardInputMode? pinyinMode = null;
+            SoftKeyboardInputObservation? pinyinMode = null;
             try
             {
                 window.Show();
@@ -142,8 +142,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.True(PumpUntil(
                     () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId,
                     2000));
-                pinyinMode = backend.GetInputMode(pinyin);
-                var state = SoftKeyboardTsfInputMode.GetState(pinyin.ClassId);
+                pinyinMode = ReadNativeState(pinyin.ClassId);
+                var state = ReadNativeState(pinyin.ClassId);
                 Assert.NotNull(state?.ConversionValue);
                 if ((state!.ConversionValue!.Value & 1) == 0)
                 {
@@ -156,7 +156,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
                     ).Invoke();
                     Assert.True(PumpUntil(
-                        () => (SoftKeyboardTsfInputMode.GetState(pinyin.ClassId)?.ConversionValue & 1)
+                        () => (ReadNativeState(pinyin.ClassId)?.ConversionValue & 1)
                             != 0,
                         2000));
                 }
@@ -210,11 +210,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// The Microsoft Pinyin mode key uses the standard language-bar command when available and
-    /// otherwise toggles the native bit in the focused WPF editor's conversion compartment.
+    /// Exercises Pinyin's verified native/direct icon transition when this build exposes a button.
+    /// The Dispatcher wait allows notification delivery and the single 30ms icon recheck.
     /// </summary>
     [Fact]
-    public void Pinyin_ModeKeyChangesNativeConversionState()
+    public void Pinyin_LanguageBarModeKeyRefreshesIconAfterClick()
     {
         Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
             "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Microsoft Pinyin.");
@@ -249,18 +249,29 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.SkipUnless(pinyin is not null, "Microsoft Pinyin is not installed.");
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
                 Assert.True(PumpUntil(
-                    () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
-                        && keyboard.InputModeButton is not null
+                    () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId,
+                    2000), DescribeLanguageBar(keyboard));
+                var nativeButton = SoftKeyboardTsfInputMode.GetInputModeButton(pinyin.ClassId);
+                Assert.SkipUnless(nativeButton?.Content is System.Windows.Media.Imaging.BitmapSource,
+                    "This Pinyin build does not expose a language-bar icon. " + DescribeLanguageBar(keyboard));
+                Assert.True(PumpUntil(
+                    () => keyboard.InputModeButton is not null
                         && FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Any(
-                            cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
-                        ),
-                    2000));
+                            cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode),
+                    2000), DescribeLanguageBar(keyboard));
 
-                var originalState = SoftKeyboardTsfInputMode.GetState(pinyin.ClassId);
+                var originalState = ReadNativeState(pinyin.ClassId);
                 Assert.NotNull(originalState);
                 Assert.True(originalState.OpenValue is 0 or 1);
                 Assert.NotNull(originalState.ConversionValue);
                 originalNative = (originalState.ConversionValue & 1) != 0;
+                output.WriteLine($"Windows={Environment.OSVersion}; profile={pinyin.DisplayName}");
+                var imeFile = System.IO.Path.Combine(Environment.GetFolderPath(
+                    Environment.SpecialFolder.Windows), "System32", "InputMethod", "CHS", "ChsIME.exe");
+                if (System.IO.File.Exists(imeFile))
+                {
+                    output.WriteLine($"IME version={FileVersionInfo.GetVersionInfo(imeFile).FileVersion}");
+                }
                 var originalButtonId = keyboard.InputModeButton!.Id;
                 var modeKey = FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Single(
                     cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode
@@ -269,15 +280,19 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 modeKey.Invoke();
 
                 Assert.True(PumpUntil(
-                    () => SoftKeyboardTsfInputMode.GetState(pinyin.ClassId) is { } state
+                    () => ReadNativeState(pinyin.ClassId) is { } state
                         && ((state.ConversionValue & 1) != 0) != originalNative
                         && keyboard.InputModeButton is { } button
                         && button.Id != originalButtonId,
                     2000));
 
-                var currentState = SoftKeyboardTsfInputMode.GetState(pinyin.ClassId)!;
+                var currentState = ReadNativeState(pinyin.ClassId)!;
                 var currentNative = (currentState.ConversionValue & 1) != 0;
-                Assert.Equal(currentNative ? "中" : "英", keyboard.InputModeButton!.Content);
+                Assert.IsAssignableFrom<System.Windows.Media.Imaging.BitmapSource>(
+                    keyboard.InputModeButton!.Content);
+                Assert.Same(keyboard.InputModeButton.Content,
+                    FindVisualDescendants<SoftKeyboardKeyControl>(keyboard).Single(
+                        cap => cap.Key?.Kind == SoftKeyboardKeyKind.SwitchInputMode).Key!.Content);
 
                 Assert.True(keyboard.SendActionKey(Key.N, ModifierKeys.None));
                 Assert.True(keyboard.SendActionKey(Key.I, ModifierKeys.None));
@@ -289,7 +304,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             {
                 if (pinyin is not null
                     && originalNative is { } expected
-                    && SoftKeyboardTsfInputMode.GetState(pinyin.ClassId) is { } state
+                    && ReadNativeState(pinyin.ClassId) is { } state
                     && ((state.ConversionValue & 1) != 0) != expected)
                 {
                     _ = SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(
@@ -310,10 +325,10 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Returning to Microsoft Pinyin in direct mode publishes its current conversion state.
+    /// Returning to Microsoft Pinyin publishes its available language-bar presentation.
     /// </summary>
     [Fact]
-    public void Pinyin_ProfileActivationPublishesCurrentMode()
+    public void Pinyin_ProfileActivationPublishesPlatformPresentation()
     {
         Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
             "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise installed Microsoft Pinyin.");
@@ -352,10 +367,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
                 Assert.True(PumpUntil(
-                    () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
-                        && keyboard.InputModeButton is not null,
+                    () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId,
                     2000));
-                var pinyinState = SoftKeyboardTsfInputMode.GetState(pinyin.ClassId);
+                Assert.SkipUnless(SoftKeyboardTsfInputMode.GetInputModeButton(pinyin.ClassId) is not null,
+                    "This Pinyin build does not expose a usable language-bar button.");
+                var pinyinState = ReadNativeState(pinyin.ClassId);
                 Assert.NotNull(pinyinState?.ConversionValue);
                 originalNative = (pinyinState.ConversionValue & 1) != 0;
 
@@ -366,7 +382,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         pinyinState.ConversionValue!.Value & ~1
                     ));
                     Assert.True(PumpUntil(
-                        () => Equals(keyboard.InputModeButton?.Content, "英"),
+                        () => ReadNativeState(pinyin.ClassId).ConversionValue == 0,
                         2000));
                 }
 
@@ -379,7 +395,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.True(keyboard.TryActivateInputMethod(pinyin));
                 Assert.True(PumpUntil(
                     () => keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
-                        && Equals(keyboard.InputModeButton?.Content, "英"),
+                        && keyboard.InputModeButton is { } button
+                        && button.Equals(SoftKeyboardTsfInputMode.GetInputModeButton(pinyin.ClassId)),
                     2000));
             }
             finally
@@ -387,7 +404,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 if (pinyin is not null
                     && originalNative == true
                     && keyboard.ActiveInputMethod?.ClassId == pinyin.ClassId
-                    && SoftKeyboardTsfInputMode.GetState(pinyin.ClassId) is { } state
+                    && ReadNativeState(pinyin.ClassId) is { } state
                     && state.ConversionValue is int conversion
                     && (conversion & 1) == 0)
                 {
@@ -464,7 +481,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 menu.IsOpen = false;
                 PumpFor(600);
                 output.WriteLine(
-                    $"Menu activation: {keyboard.InputMode}, raw={SoftKeyboardTsfInputMode.GetKeyboardOpenValue()}"
+                    $"Menu activation: {keyboard.InputModeButton}, raw={SoftKeyboardTsfInputMode.GetKeyboardOpenValue()}"
                 );
                 Assert.Equal(iflytek.ClassId, keyboard.ActiveInputMethod?.ClassId);
                 // The TIP can remember English mode across activations. Verify the reported
@@ -482,7 +499,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 editor.Clear();
                 if (!initiallyNative)
                 {
-                    Assert.True(SoftKeyboardTsfInputMode.TrySwitchInputMode(iflytek.ClassId));
+                    Assert.True(SoftKeyboardTsfInputMode.TryInvokeInputModeButton(iflytek, new Rect()) == SoftKeyboardInputModeCommandResult.Accepted);
                     PumpFor(500);
                 }
 
@@ -574,7 +591,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 {
                     var previousButton = keyboard.InputModeButton!.Id;
                     typeof(SoftKeyboard).GetMethod(
-                        "SwitchInputModeCore",
+                        "SwitchInputMode",
                         BindingFlags.Instance | BindingFlags.NonPublic
                     )!
                         .Invoke(keyboard, null);
@@ -638,7 +655,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             };
             var backend = new TsfInputMethodService();
             SoftKeyboardInputMethod? original = null;
-            SoftKeyboardInputMode? originalMode = null;
+            SoftKeyboardInputObservation? originalMode = null;
             PreProcessInputEventHandler trace = (_, args) =>
             {
                 if (args.StagingItem.Input is KeyboardFocusChangedEventArgs focus &&
@@ -663,7 +680,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(400);
                 PumpUntil(() => keyboard.ActiveInputMethod is not null, 1500);
                 original = keyboard.ActiveInputMethod;
-                originalMode = original is null ? null : backend.GetInputMode(original);
+                originalMode = original is null ? null : ReadNativeState(original.ClassId);
                 output.WriteLine(string.Join(
                     Environment.NewLine,
                     keyboard.InputMethods.Select(p => $"{p.DisplayName}: {p.ClassId} / {p.LanguageId:X4}")));
@@ -677,7 +694,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 keyboard.OnSessionInputLanguageChanged();
                 PumpUntil(
                     () => keyboard.ActiveInputMethod?.ClassId == weasel.ClassId
-                        && keyboard.InputMode?.IsNativeInput == true,
+                        && IsKnownNative(keyboard.ActiveInputMethod, ReadNativeState(Guid.Empty)) == true,
                     2000
                 );
                 editor.SelectAll();
@@ -722,13 +739,71 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         });
     }
 
+    // Explicit diagnostic reads are used only to prepare/restore known native test scenarios.
+    /// <summary>
+    /// Captures provider identity and button flags when a real-IME assertion times out.
+    /// </summary>
+    private static string DescribeLanguageBar(SoftKeyboard keyboard)
+    {
+        var description = $"profile={keyboard.ActiveInputMethod?.ClassId}, "
+            + $"button={keyboard.InputModeButton?.Id}, error={keyboard.InputMethodError}, "
+            + $"focused={keyboard.ActiveTarget == Keyboard.FocusedElement}.";
+        if (WpfTextServicesAccessor.TryGetThreadManager() is not ITfLangBarItemMgr manager)
+        {
+            return description + " No language-bar manager.";
+        }
+
+        var itemId = new Guid("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
+        var result = manager.GetItem(in itemId, out var item);
+        try
+        {
+            if (item is ITfLangBarItemButton button)
+            {
+                var infoResult = button.GetInfo(out var info);
+                var statusResult = button.GetStatus(out var status);
+                return description + $" itemResult=0x{result:X8}, infoResult=0x{infoResult:X8}, "
+                    + $"service={info.ServiceId}, item={info.ItemId}, style=0x{info.Style:X8}, "
+                    + $"statusResult=0x{statusResult:X8}, status=0x{status:X8}.";
+            }
+
+            return description + $" itemResult=0x{result:X8}, hasItem={item is not null}.";
+        }
+        finally
+        {
+            if (item is not null && Marshal.IsComObject(item))
+            {
+                Marshal.ReleaseComObject(item);
+            }
+        }
+    }
+
+    private static SoftKeyboardInputObservation ReadNativeState(Guid serviceId)
+    {
+        return new SoftKeyboardInputObservation(true, SoftKeyboardTsfInputMode.GetKeyboardOpenValue(),
+            true, SoftKeyboardTsfInputMode.GetKeyboardConversionValue());
+    }
+
+    private static bool? IsKnownNative(SoftKeyboardInputMethod? profile, SoftKeyboardInputObservation state)
+    {
+        if (profile?.ClassId == new Guid("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E"))
+        {
+            return state.OpenValue == 1 && state.ConversionValue is { } conversion
+                ? conversion == 1025 : null;
+        }
+        if (profile?.ClassId == new Guid("03B5835F-F03C-411B-9CE2-AA23E1171E36"))
+        {
+            return state.OpenValue is { } open ? open == 1 : null;
+        }
+        return null;
+    }
+
     private static bool EnsureNativeInput(
         TsfInputMethodService backend,
         SoftKeyboardInputMethod inputMethod)
     {
-        var mode = backend.GetInputMode(inputMethod);
+        var mode = ReadNativeState(inputMethod.ClassId);
         return mode is not null
-            && (mode.IsNativeInput || backend.TrySwitchInputMode(inputMethod, mode));
+            && (IsKnownNative(inputMethod, mode) == true || SoftKeyboardTsfInputMode.TryInvokeInputModeButton(inputMethod, new Rect()) == SoftKeyboardInputModeCommandResult.Accepted);
     }
 
     /// <summary>
@@ -764,10 +839,6 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                     typeof(SoftKeyboard)
                 ),
                 DependencyPropertyDescriptor.FromProperty(
-                    SoftKeyboard.InputModeProperty,
-                    typeof(SoftKeyboard)
-                ),
-                DependencyPropertyDescriptor.FromProperty(
                     SoftKeyboard.InputModeButtonProperty,
                     typeof(SoftKeyboard)
                 ),
@@ -775,13 +846,13 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
             void TraceState(object? sender, EventArgs args)
             {
-                var raw = SoftKeyboardTsfInputMode.GetState(
+                var raw = ReadNativeState(
                     keyboard.ActiveInputMethod?.ClassId ?? Guid.Empty
                 );
                 output.WriteLine(
                     $"{stopwatch.ElapsedMilliseconds,4} ms: "
                     + $"profile={keyboard.ActiveInputMethod?.DisplayName}, "
-                    + $"mode={keyboard.InputMode?.Id}, button={keyboard.InputModeButton?.Content}, "
+                    + $"buttonId={keyboard.InputModeButton?.Id}, content={keyboard.InputModeButton?.Content}, "
                     + $"open={raw?.OpenValue}, conversion={raw?.ConversionValue}, "
                     + $"wpf={InputMethod.Current.ImeConversionMode}"
                 );
@@ -821,7 +892,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                         2000));
                 }
 
-                var chineseState = SoftKeyboardTsfInputMode.GetState(chinese.ClassId);
+                var chineseState = ReadNativeState(chinese.ClassId);
                 var chineseConversion = chineseState?.ConversionValue;
                 Assert.SkipUnless(chineseConversion is not null,
                     "The active Chinese TIP does not expose conversion state.");
@@ -848,15 +919,15 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 PumpFor(1500);
                 TraceState(null, EventArgs.Empty);
 
-                var japaneseState = Assert.IsType<SoftKeyboardTsfInputModeState>(
-                    SoftKeyboardTsfInputMode.GetState(japanese.ClassId)
+                var japaneseState = Assert.IsType<SoftKeyboardInputObservation>(
+                    ReadNativeState(japanese.ClassId)
                 );
                 Assert.NotNull(japaneseState.ConversionValue);
-                Assert.NotNull(keyboard.InputMode);
+                Assert.NotNull(keyboard.InputModeButton);
 
                 editor.Clear();
                 Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
-                if (keyboard.InputMode?.IsNativeInput == true)
+                if (IsKnownNative(keyboard.ActiveInputMethod, ReadNativeState(Guid.Empty)) == true)
                 {
                     Assert.True(PumpUntil(
                         () => editor.Text.Any(IsJapaneseCharacter),
@@ -898,21 +969,25 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         TsfInputMethodService backend,
         SoftKeyboardInputMethod inputMethod)
     {
-        var mode = backend.GetInputMode(inputMethod);
+        var mode = ReadNativeState(inputMethod.ClassId);
         return mode is not null
-            && (!mode.IsNativeInput || backend.TrySwitchInputMode(inputMethod, mode));
+            && (IsKnownNative(inputMethod, mode) == false || SoftKeyboardTsfInputMode.TryInvokeInputModeButton(inputMethod, new Rect()) == SoftKeyboardInputModeCommandResult.Accepted);
     }
 
     private static void RestoreInputMode(
         TsfInputMethodService backend,
         SoftKeyboardInputMethod inputMethod,
-        SoftKeyboardInputMode expected)
+        SoftKeyboardInputObservation expected)
     {
-        var current = backend.GetInputMode(inputMethod);
-        if (current is not null && current.IsNativeInput != expected.IsNativeInput)
+        if (expected.OpenValue is { } open)
         {
-            _ = backend.TrySwitchInputMode(inputMethod, current);
+            _ = SoftKeyboardTsfInputMode.TrySetKeyboardOpenValue(inputMethod, open);
         }
+        if (expected.ConversionValue is { } conversion)
+        {
+            _ = SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(inputMethod, conversion);
+        }
+
     }
 
     private static bool IsNativeCandidateShown()

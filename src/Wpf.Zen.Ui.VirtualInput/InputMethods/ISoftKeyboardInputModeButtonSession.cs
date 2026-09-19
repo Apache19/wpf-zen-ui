@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -25,9 +25,19 @@ public interface ISoftKeyboardInputModeButtonSession
     SoftKeyboardInputModeButton? GetInputModeButton(SoftKeyboardInputMethod inputMethod);
 
     /// <summary>
-    /// Invokes the active profile's platform mode command.
+    /// Rediscovers and invokes the active profile's platform mode command.
     /// </summary>
     /// <param name="inputMethod">The active profile obtained from the current snapshot.</param>
-    /// <returns>True when the platform command accepted the invocation; otherwise false.</returns>
-    bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod);
+    /// <param name="screenBounds">
+    /// The invoked key's rectangle in physical screen coordinates.
+    /// </param>
+    /// <returns>
+    /// Whether discovery failed, invocation was accepted, or an invoked command failed.
+    /// </returns>
+    /// <remarks>
+    /// Return Unavailable only before invocation. Once a command is invoked, failures must return
+    /// Failed or throw, so the keyboard cannot execute a second transition through an extension.
+    /// </remarks>
+    SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+        SoftKeyboardInputMethod inputMethod, Rect screenBounds);
 }

@@ -5,16 +5,22 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Threading;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.Input.Ime;
 
 namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 
 /// <summary>
-/// Observes dispatcher-wide TSF input-method changes independently of candidate UI.
+/// Observes Dispatcher-wide TSF changes and supplemental IME messages for the focused HWND.
 /// </summary>
 /// <remarks>
-/// Each native callback reports only the state category that TSF has completed changing. This
-/// preserves the ordering of independent TSF sources without constructing a mixed snapshot.
+/// Each native callback reads its own subsystem at the notification boundary and publishes
+/// one shared open/conversion pair. Existing observations never suppress a native read.
+/// Presentation, duplicate-value detection and scheduling run through the observation coordinator.
 /// </remarks>
 [ComVisible(true)]
 [ClassInterface(ClassInterfaceType.None)]
@@ -49,6 +55,7 @@ internal sealed class InputMethodMonitor
     private uint         _keyboardConversionCookie;
     private uint         _languageBarItemCookie;
     private bool         _disposed;
+    private HwndSource? _windowSource;
 
     internal InputMethodMonitor(Dispatcher dispatcher, Action<InputMethodChange> changed)
     {
@@ -58,13 +65,6 @@ internal sealed class InputMethodMonitor
         _dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
         EnsureNotifications();
     }
-
-    /// <summary>
-    /// Gets whether the profile and input-mode TSF sinks are connected.
-    /// </summary>
-    internal bool HasReliableNotifications => _source is not null
-        && _keyboardOpenSource is not null
-        && _keyboardConversionSource is not null;
 
     /// <summary>
     /// Connects the TSF notification sinks after WPF has created its text-services host.
@@ -77,6 +77,8 @@ internal sealed class InputMethodMonitor
         {
             return;
         }
+
+        ConnectWindowNotifications();
 
         if (_source is not null)
         {
@@ -167,7 +169,7 @@ internal sealed class InputMethodMonitor
 
     int ISoftKeyboardTsfLangBarItemSink.OnUpdate(uint flags)
     {
-        var relevantFlags = flags & (LanguageBarIconFlag | LanguageBarStatusFlag);
+        var relevantFlags = flags & (LanguageBarIconFlag | LanguageBarStatusFlag | 0x2u | 0x4u);
 
         Debug.WriteLine(
             "[SoftKeyboard.InputMode.Monitor] Language-bar item update observed; "
@@ -188,48 +190,17 @@ internal sealed class InputMethodMonitor
 
     int ISoftKeyboardTsfCompartmentEventSink.OnChange(ref Guid compartmentId)
     {
-        if (compartmentId == KeyboardOpenId)
+        if (compartmentId == KeyboardOpenId || compartmentId == KeyboardConversionId)
         {
-            var openValue = SoftKeyboardTsfInputMode.GetKeyboardOpenValue();
-
+            var state = ReadTsfState();
             Debug.WriteLine(
-                "[SoftKeyboard.InputMode.Monitor] TSF OPEN/CLOSE compartment notification; "
-                + "compartment=GUID_COMPARTMENT_KEYBOARD_OPENCLOSE, "
-                + $"openValue={FormatValue(openValue)}, "
-                + $"published={openValue is not null}."
-            );
-
-            if (openValue is null)
-            {
-                return 0;
-            }
-
-            Publish(
-                new InputMethodChange(InputMethodChangeKind.ImeOpen, StateValue: openValue.Value)
-            );
-        }
-        else if (compartmentId == KeyboardConversionId)
-        {
-            var conversionValue = SoftKeyboardTsfInputMode.GetKeyboardConversionValue();
-
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode.Monitor] TSF CONVERSION compartment notification; "
-                + "compartment=GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, "
-                + $"conversionValue={FormatValue(conversionValue)}, "
-                + $"published={conversionValue is not null}."
-            );
-
-            if (conversionValue is null)
-            {
-                return 0;
-            }
-
-            Publish(
-                new InputMethodChange(
-                    InputMethodChangeKind.ImeConversion,
-                    StateValue: conversionValue.Value
-                )
-            );
+                "[SoftKeyboard.InputMode.Monitor] TSF STATE pair observed; "
+                + $"trigger={(compartmentId == KeyboardOpenId ? "OPEN" : "CONVERSION")}, "
+                + $"open={FormatValue(state.OpenValue)}, conversion={FormatValue(state.ConversionValue)}.");
+            Publish(new InputMethodChange(
+                compartmentId == KeyboardOpenId
+                    ? InputMethodChangeKind.ImeOpen : InputMethodChangeKind.ImeConversion,
+                State: state));
         }
         else
         {
@@ -240,6 +211,145 @@ internal sealed class InputMethodMonitor
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Follows the focused editor's HWND so supplementary IME messages belong to the same
+    /// input context as the Dispatcher-wide TSF observations.
+    /// </summary>
+    private void ConnectWindowNotifications()
+    {
+        var source = Keyboard.FocusedElement is DependencyObject target
+            ? PresentationSource.FromDependencyObject(target) as HwndSource
+            : null;
+        if (ReferenceEquals(source, _windowSource))
+        {
+            return;
+        }
+
+        DisconnectWindowNotifications();
+        _windowSource = source;
+        if (source is not null)
+        {
+            source.AddHook(WindowProcedure);
+            source.Disposed += OnWindowDisposed;
+        }
+    }
+
+    /// <summary>
+    /// Captures IMM state for mode-change messages using the sending window's input context.
+    /// These notification codes use wParam as the code and leave lParam unused.
+    /// The hook leaves normal WPF and IME message processing intact.
+    /// </summary>
+    private IntPtr WindowProcedure(
+        IntPtr window, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WmImeNotify = 0x0282;
+        const long ImnSetConversionMode = 0x0006;
+        const long ImnSetOpenStatus = 0x0008;
+        if (_disposed || message != WmImeNotify
+            || wParam.ToInt64() is not (ImnSetConversionMode or ImnSetOpenStatus)
+            || Keyboard.FocusedElement is not DependencyObject target
+            || PresentationSource.FromDependencyObject(target) is not HwndSource source
+            || source.Handle != window)
+        {
+            return IntPtr.Zero;
+        }
+
+        var open = wParam.ToInt64() == ImnSetOpenStatus;
+        var state = ReadImmState(window);
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode.Monitor] IME MESSAGE observed; "
+            + $"window=0x{window.ToInt64():X}, message=WM_IME_NOTIFY, "
+            + $"notification={(open ? "IMN_SETOPENSTATUS" : "IMN_SETCONVERSIONMODE")}, "
+            + $"open={FormatValue(state.OpenValue)}, conversion={FormatValue(state.ConversionValue)}.");
+        Publish(new InputMethodChange(
+            open ? InputMethodChangeKind.ImeOpen : InputMethodChangeKind.ImeConversion,
+            State: state));
+
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Borrows one HWND's IMM context and reads both state fields from that same context.
+    /// Missing contexts and failed conversion queries remain unavailable; every borrowed
+    /// context is released even if querying it fails.
+    /// </summary>
+    internal static unsafe SoftKeyboardInputObservation ReadImmState(IntPtr window)
+    {
+        if (window == IntPtr.Zero)
+        {
+            return new SoftKeyboardInputObservation(true, null, true, null);
+        }
+
+        var hwnd = new HWND(window);
+        var context = PInvoke.ImmGetContext(hwnd);
+        if (context.IsNull)
+        {
+            return new SoftKeyboardInputObservation(true, null, true, null);
+        }
+
+        try
+        {
+            var open = PInvoke.ImmGetOpenStatus(context) ? 1 : 0;
+            IME_CONVERSION_MODE conversion;
+            IME_SENTENCE_MODE sentence;
+            int? conversionValue = PInvoke.ImmGetConversionStatus(context, &conversion, &sentence)
+                ? unchecked((int)conversion)
+                : null;
+            return new SoftKeyboardInputObservation(true, open, true, conversionValue);
+        }
+        finally
+        {
+            _ = PInvoke.ImmReleaseContext(hwnd, context);
+        }
+    }
+
+    /// <summary>
+    /// Releases the old editor window when focus moves or the HWND is disposed.
+    /// </summary>
+    private void DisconnectWindowNotifications()
+    {
+        if (_windowSource is { } source)
+        {
+            _windowSource = null;
+            source.Disposed -= OnWindowDisposed;
+            source.RemoveHook(WindowProcedure);
+        }
+    }
+
+    /// <summary>
+    /// Drops the hook when its native window closes before the Dispatcher shuts down.
+    /// </summary>
+    private void OnWindowDisposed(object? sender, EventArgs args)
+    {
+        DisconnectWindowNotifications();
+    }
+
+    /// <summary>
+    /// Samples both TSF compartments at a notification or an explicit settled fallback boundary.
+    /// Each field can fail independently. The pair is published as a single observation update.
+    /// </summary>
+    internal static SoftKeyboardInputObservation ReadTsfState()
+    {
+        return new SoftKeyboardInputObservation(
+            true, ReadCompartmentValue(open: true), true, ReadCompartmentValue(open: false));
+    }
+
+    /// <summary>
+    /// Reads one raw compartment on the owning Dispatcher, preserving failure as null.
+    /// </summary>
+    private static int? ReadCompartmentValue(bool open)
+    {
+        try
+        {
+            return open ? SoftKeyboardTsfInputMode.GetKeyboardOpenValue()
+                : SoftKeyboardTsfInputMode.GetKeyboardConversionValue();
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -476,7 +586,7 @@ internal sealed class InputMethodMonitor
     }
 
     /// <summary>
-    /// Releases all TSF subscriptions. Repeated calls are safe.
+    /// Releases the focused window hook and all TSF subscriptions. Repeated calls are safe.
     /// </summary>
     public void Dispose()
     {
@@ -489,6 +599,7 @@ internal sealed class InputMethodMonitor
 
         _disposed = true;
 
+        DisconnectWindowNotifications();
         DisconnectProfileNotifications();
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;
     }

@@ -51,7 +51,7 @@ internal static class SymbolKeyboardLayout
 
             ..
 
-            context.CanSwitchInputMode
+            context.HasInputModeButton
                 ? new[] { CreateInputModeKey(context) }
                 : Array.Empty<SoftKeyboardKey>(),
 
@@ -111,7 +111,7 @@ internal static class SymbolKeyboardLayout
             keys: bottom,
             row: 3,
             startColumn: 0,
-            columnSpans: context.CanSwitchInputMode
+            columnSpans: context.HasInputModeButton
                 ? [2, 2, 2, 6, 2, 2, 2, 2]
                 : [2, 2, 8, 2, 2, 2, 2]
         );

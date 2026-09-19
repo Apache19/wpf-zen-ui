@@ -29,24 +29,4 @@ public interface ISoftKeyboardInputMethodSession : IDisposable
     /// <returns>True when the native activation request was accepted.</returns>
     bool TryActivate(SoftKeyboardInputMethod inputMethod);
 
-    /// <summary>
-    /// Reads the active profile's current input mode from the focused document.
-    /// </summary>
-    /// <param name="inputMethod">The active profile obtained from the current snapshot.</param>
-    /// <returns>
-    /// The interpreted mode, or null when the state or switch contract is unavailable.
-    /// </returns>
-    /// <remarks>
-    /// The default Windows session returns null because TSF compartment values do not define a
-    /// service-independent mode. Implementations should publish a value only for a known contract.
-    /// </remarks>
-    SoftKeyboardInputMode? GetInputMode(SoftKeyboardInputMethod inputMethod);
-
-    /// <summary>
-    /// Invokes the active profile's input-mode switch command for the focused document.
-    /// </summary>
-    /// <param name="inputMethod">The active profile obtained from the current snapshot.</param>
-    /// <param name="currentMode">The last mode observed for that profile.</param>
-    /// <returns>True when the transition request was accepted.</returns>
-    bool TrySwitchInputMode(SoftKeyboardInputMethod inputMethod, SoftKeyboardInputMode currentMode);
 }

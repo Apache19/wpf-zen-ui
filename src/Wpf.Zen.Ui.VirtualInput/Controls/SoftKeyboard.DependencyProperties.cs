@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -470,38 +470,6 @@ public partial class SoftKeyboard
 
     #endregion
 
-    #region Read-Only DP: InputMode
-
-    private static readonly DependencyPropertyKey InputModePropertyKey
-        = DependencyProperty.RegisterReadOnly(
-            nameof(InputMode),
-            typeof(SoftKeyboardInputMode),
-            typeof(SoftKeyboard),
-            new PropertyMetadata(null, OnLayoutContextChanged)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="InputMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty InputModeProperty
-        = InputModePropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets the active input method's interpreted mode, or null when no coherent mode is available.
-    /// </summary>
-    /// <remarks>
-    /// This is distinct from <see cref="ActiveInputMethod"/>: a profile can remain active while its
-    /// internal mode changes among direct, native, Hiragana, Katakana, full-width, or
-    /// vendor-defined states. The value is supplied by an input-mode adapter and is never inferred
-    /// from <see cref="SoftKeyboardInputMethod.IsActive"/>.
-    /// </remarks>
-    public SoftKeyboardInputMode? InputMode
-    {
-        get => (SoftKeyboardInputMode?)GetValue(InputModeProperty);
-    }
-
-    #endregion
-
     #region Read-Only DP: InputModeButton
 
     private static readonly DependencyPropertyKey InputModeButtonPropertyKey
@@ -522,9 +490,9 @@ public partial class SoftKeyboard
     /// Gets the active input method's mode-command presentation, or null when unavailable.
     /// </summary>
     /// <remarks>
-    /// This property describes a platform command or extension-defined cap. It does not publish a
-    /// service-specific conversion mode; interpreted state remains available through
-    /// <see cref="InputMode"/>.
+    /// This property describes the last committed platform command or extension-defined cap.
+    /// During profile observation its appearance is retained and mode clicks are ignored.
+    /// A visible button does not guarantee that the input method will accept a command.
     /// </remarks>
     public SoftKeyboardInputModeButton? InputModeButton
     {
@@ -778,6 +746,7 @@ public partial class SoftKeyboard
         else
         {
             keyboard._inputOperationVersion++;
+            keyboard.ResetObservedPlatformState();
 
             _ = keyboard.TryCancelActiveComposition();
 
@@ -810,6 +779,7 @@ public partial class SoftKeyboard
         _ = keyboard.TryCancelActiveComposition();
 
         keyboard._inputOperationVersion++;
+        keyboard.ResetObservedPlatformState();
 
         keyboard.ResolveTarget();
 
@@ -841,6 +811,7 @@ public partial class SoftKeyboard
         var keyboard = (SoftKeyboard)d;
 
         keyboard._inputOperationVersion++;
+        keyboard.ResetObservedPlatformState();
 
         // A gesture belongs to the editor that was active when it started. Never let a held
         // Backspace or an unselected variant continue into a newly focused document.
@@ -855,6 +826,11 @@ public partial class SoftKeyboard
             // point injecting Escape would target the new editor, so discard only our observation;
             // WPF and TSF own composition cleanup for an external focus transition.
             keyboard.ClearActiveComposition();
+        }
+
+        if (args.NewValue is not null)
+        {
+            keyboard.RefreshInputMethodState();
         }
 
         // A different editor starts with its semantic input scope; explicit navigation applies

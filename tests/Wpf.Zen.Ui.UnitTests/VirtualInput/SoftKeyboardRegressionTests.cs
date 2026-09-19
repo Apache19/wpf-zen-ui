@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -29,17 +29,18 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class SoftKeyboardRegressionTests
 {
-    private static readonly SoftKeyboardInputMode NativeMode =
-        new("native", true);
+    private static readonly SoftKeyboardInputModeButton NativeMode =
+        new("native", "中", "Native command");
 
-    private static readonly SoftKeyboardInputMode DirectMode =
-        new("direct", false);
+    private static readonly SoftKeyboardInputModeButton DirectMode =
+        new("direct", "A", "Direct command");
 
     private static SoftKeyboardInputModeContribution ModeContribution(
-        SoftKeyboardInputMode mode)
+        SoftKeyboardInputModeButton mode)
     {
         return new SoftKeyboardInputModeContribution(
-            mode: SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode)
+            button: mode, transition: new SoftKeyboardInputModeTransition("toggle"),
+            overridePlatformButton: true
         );
     }
 
@@ -60,6 +61,7 @@ public class SoftKeyboardRegressionTests
             var keyboard = scope.Keyboard;
             var source = CreateSource(scope.Method, out var session);
             keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             await scope.DrainAsync();
             keyboard.ShowInputMethodMenu();
             await scope.DrainAsync();
@@ -105,10 +107,11 @@ public class SoftKeyboardRegressionTests
             var active = scope.Method;
             session.GetSnapshot().Returns(_ => new SoftKeyboardInputMethodSnapshot([scope.Method, next], active));
             scope.Keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             var firstAdapter = Substitute.For<ISoftKeyboardInputModeAdapter>();
             var nextAdapter = Substitute.For<ISoftKeyboardInputModeAdapter>();
-            firstAdapter.GetContribution(scope.Method).Returns(ModeContribution(DirectMode));
-            nextAdapter.GetContribution(next).Returns(ModeContribution(NativeMode));
+            firstAdapter.GetContribution(scope.Method, Arg.Any<SoftKeyboardInputObservation>()).Returns(ModeContribution(DirectMode));
+            nextAdapter.GetContribution(next, Arg.Any<SoftKeyboardInputObservation>()).Returns(ModeContribution(NativeMode));
             var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
             provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(call =>
                 new[]
@@ -118,18 +121,18 @@ public class SoftKeyboardRegressionTests
                             ? nextAdapter : firstAdapter)
                 });
             scope.Keyboard.ExtensionProvider = provider;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
 
             active = next;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
             Assert.Same(next, scope.Keyboard.ActiveInputMethod);
-            Assert.Same(NativeMode, scope.Keyboard.InputMode);
-            firstAdapter.DidNotReceive().GetContribution(next);
+            Assert.Same(NativeMode, scope.Keyboard.InputModeButton);
+            firstAdapter.DidNotReceive().GetContribution(next, Arg.Any<SoftKeyboardInputObservation>());
 
             active = scope.Method;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
-            nextAdapter.DidNotReceive().GetContribution(scope.Method);
+            Assert.True(RefreshSettled(scope));
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
+            nextAdapter.DidNotReceive().GetContribution(scope.Method, Arg.Any<SoftKeyboardInputObservation>());
         });
     }
 
@@ -157,7 +160,7 @@ public class SoftKeyboardRegressionTests
                 new SoftKeyboardInputMethodSnapshot([scope.Method, next], active));
 
             var adapter = Substitute.For<ISoftKeyboardInputModeAdapter>();
-            adapter.GetContribution(Arg.Any<SoftKeyboardInputMethod>())
+            adapter.GetContribution(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<SoftKeyboardInputObservation>())
                 .Returns(ModeContribution(NativeMode));
             var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
             provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
@@ -165,20 +168,21 @@ public class SoftKeyboardRegressionTests
             );
 
             scope.Keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             scope.Keyboard.ExtensionProvider = provider;
             await scope.DrainAsync();
             Assert.Same(scope.Method, scope.Keyboard.ActiveInputMethod);
 
-            adapter.GetContribution(scope.Method).Returns(_ =>
+            adapter.GetContribution(scope.Method, Arg.Any<SoftKeyboardInputObservation>()).Returns(_ =>
             {
                 active = next;
                 return ModeContribution(DirectMode);
             });
-            adapter.GetContribution(next).Returns(ModeContribution(DirectMode));
+            adapter.GetContribution(next, Arg.Any<SoftKeyboardInputObservation>()).Returns(ModeContribution(DirectMode));
 
             Assert.True(scope.Keyboard.RefreshInputMethods());
             Assert.Same(scope.Method, scope.Keyboard.ActiveInputMethod);
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
         });
     }
 
@@ -199,8 +203,9 @@ public class SoftKeyboardRegressionTests
                 BindingFlags.Instance | BindingFlags.NonPublic
             )!.Invoke(scope.Keyboard, null);
 
-            Assert.Null(GetPrivateField(scope.Keyboard, "_observedImeOpenValue"));
-            Assert.Null(GetPrivateField(scope.Keyboard, "_observedImeConversionValue"));
+            var coordinator = Assert.IsType<Wpf.Zen.Ui.VirtualInput.Infrastructure.InputMethodObservationCoordinator>(
+                GetPrivateField(scope.Keyboard, "_inputObservation"));
+            Assert.Same(SoftKeyboardInputObservation.Empty, coordinator.Observation);
         });
     }
 
@@ -216,16 +221,17 @@ public class SoftKeyboardRegressionTests
             await scope.DrainAsync();
             var keyboard = scope.Keyboard;
             var source = CreateSource(scope.Method, out var session);
-            session.GetInputMode(scope.Method).Returns(DirectMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
             keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             var next = new SoftKeyboardInputMethod(
                 Guid.NewGuid(), Guid.NewGuid(), 0x0804, "Chinese", false);
             var active = scope.Method;
             var mode = DirectMode;
             session.GetSnapshot().Returns(_ =>
                 new SoftKeyboardInputMethodSnapshot([scope.Method, next], active));
-            session.GetInputMode(Arg.Any<SoftKeyboardInputMethod>()).Returns(_ => mode);
-            Assert.True(keyboard.RefreshInputMethods());
+            ButtonSession(session).GetInputModeButton(Arg.Any<SoftKeyboardInputMethod>()).Returns(_ => mode);
+            Assert.True(RefreshSettled(scope));
             session.TryActivate(next).Returns(_ =>
             {
                 keyboard.OnSessionInputLanguageChanged();
@@ -245,13 +251,12 @@ public class SoftKeyboardRegressionTests
 
             Assert.True(keyboard.TryActivateInputMethod(next));
             session.Received(1).TryActivate(next);
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
+            ButtonSession(session.DidNotReceive()).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>());
+            Assert.Empty(contexts);
+            await scope.DrainAsync();
             var context = Assert.Single(contexts);
             Assert.Same(next, context.InputMethod);
-            Assert.Same(DirectMode, context.InputMode);
+            Assert.Same(DirectMode, context.InputModeButton);
         });
     }
 
@@ -267,12 +272,13 @@ public class SoftKeyboardRegressionTests
             await scope.DrainAsync();
             var keyboard = scope.Keyboard;
             var source = CreateSource(scope.Method, out var session);
-            session.GetInputMode(scope.Method).Returns(DirectMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
             keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
             provider.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(call =>
             {
-                if (call.Arg<SoftKeyboardLayoutContext>().InputMode?.IsNativeInput == true)
+                if (call.Arg<SoftKeyboardLayoutContext>().InputModeButton?.Id == "native")
                 {
                     Assert.False(keyboard.TryActivateInputMethod(scope.Method));
                     keyboard.Target = scope.OtherEditor;
@@ -281,7 +287,7 @@ public class SoftKeyboardRegressionTests
                 return null;
             });
             keyboard.LayoutProvider = provider;
-            session.GetInputMode(scope.Method).Returns(NativeMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(NativeMode);
 
             Assert.False(keyboard.RefreshInputMethods());
             session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
@@ -299,19 +305,20 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
-            session.GetInputMode(scope.Method).Returns(NativeMode);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(NativeMode);
+            Assert.True(RefreshSettled(scope));
             scope.Keyboard.ShowInputMethodMenu();
             var menu = Assert.IsType<ContextMenu>(GetMenu(scope.Keyboard));
             Assert.False(menu.Focus());
             Assert.Same(scope.Editor, Keyboard.FocusedElement);
-            session.GetInputMode(scope.Method).Returns(DirectMode);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
+            Assert.True(RefreshSettled(scope));
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
 
             menu.IsOpen = false;
             await scope.DrainAsync();
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
             Assert.Same(scope.Editor, Keyboard.FocusedElement);
         });
     }
@@ -355,19 +362,17 @@ public class SoftKeyboardRegressionTests
             await scope.DrainAsync();
             var method = new SoftKeyboardInputMethod(Guid.Empty, Guid.Empty, 0x0409, "English", true);
             scope.Keyboard.InputMethodSource = CreateSource(method, out var session);
-            session.GetInputMode(method).Returns((SoftKeyboardInputMode?)null);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
-            Assert.Null(scope.Keyboard.InputMode);
+            await scope.DrainAsync();
+            ButtonSession(session).GetInputModeButton(method).Returns((SoftKeyboardInputModeButton?)null);
+            Assert.True(RefreshSettled(scope));
+            Assert.Null(scope.Keyboard.InputModeButton);
             Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
 
             Assert.True(scope.Keyboard.TryActivateInputMethod(method));
             session.Received(1).TryActivate(method);
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
-            Assert.Null(scope.Keyboard.InputMode);
+            ButtonSession(session.DidNotReceive()).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>());
+            Assert.Null(scope.Keyboard.InputModeButton);
         });
     }
 
@@ -383,26 +388,27 @@ public class SoftKeyboardRegressionTests
             await scope.DrainAsync();
             var method = scope.Method;
             scope.Keyboard.InputMethodSource = CreateSource(method, out var session);
-            session.GetInputMode(method).Returns(DirectMode);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            ButtonSession(session).GetInputModeButton(method).Returns(DirectMode);
+            Assert.True(RefreshSettled(scope));
             Assert.Equal("A", Assert.Single(scope.Keyboard.CurrentLayout.Keys,
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode).Content);
 
             var buttonSession = Assert.IsAssignableFrom<ISoftKeyboardInputModeButtonSession>(session);
             buttonSession.GetInputModeButton(method).Returns((SoftKeyboardInputModeButton?)null);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
             Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
 
-            session.GetInputMode(method).Returns(_ => throw new InvalidOperationException("State unavailable"));
+            ButtonSession(session).GetInputModeButton(method).Returns(_ => throw new InvalidOperationException("State unavailable"));
             Assert.False(scope.Keyboard.RefreshInputMethods());
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            Assert.Null(scope.Keyboard.InputModeButton);
 
-            session.Configure().GetInputMode(method).Returns(DirectMode);
+            ButtonSession(session.Configure()).GetInputModeButton(method).Returns(DirectMode);
             buttonSession.GetInputModeButton(method).Returns(
                 new SoftKeyboardInputModeButton("default", "A", "Input mode")
             );
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
             Assert.Equal("A", Assert.Single(scope.Keyboard.CurrentLayout.Keys,
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode).Content);
         });
@@ -425,6 +431,7 @@ public class SoftKeyboardRegressionTests
             await scope.DrainAsync();
             var keyboard = scope.Keyboard;
             keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             var next = session;
             session.TryActivate(scope.Method).Returns(_ =>
             {
@@ -452,10 +459,7 @@ public class SoftKeyboardRegressionTests
             });
 
             Assert.False(keyboard.TryActivateInputMethod(scope.Method));
-            next.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
+            ButtonSession(next.DidNotReceive()).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>());
             if (transition == "source")
             {
                 session.Received(1).Dispose();
@@ -477,6 +481,7 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             session.TryActivate(scope.Method).Returns(_ =>
             {
                 Assert.False(scope.Keyboard.TryActivateInputMethod(scope.Method));
@@ -486,10 +491,7 @@ public class SoftKeyboardRegressionTests
 
             Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
             session.Received(1).TryActivate(scope.Method);
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
+            ButtonSession(session.DidNotReceive()).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>());
         });
     }
 
@@ -504,20 +506,15 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
-            session.TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            ).Returns(_ =>
+            await scope.DrainAsync();
+            ButtonSession(session).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>()).Returns(_ =>
             {
                 scope.Keyboard.IsOpen = false;
-                return true;
+                return SoftKeyboardInputModeCommandResult.Accepted;
             });
 
             Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
+            ButtonSession(session.DidNotReceive()).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>());
         });
     }
 
@@ -532,24 +529,23 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             var source = CreateSource(scope.Method, out var session);
-            session.GetInputMode(scope.Method).Returns(DirectMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
             scope.Keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             session.ClearReceivedCalls();
-            session.GetInputMode(scope.Method).Returns(NativeMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(NativeMode);
             Assert.True(scope.Keyboard.TryActivateInputMethod(scope.Method));
             session.Received(1).TryActivate(scope.Method);
             session.DidNotReceive().GetSnapshot();
-            session.DidNotReceive().GetInputMode(scope.Method);
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            ButtonSession(session.DidNotReceive()).GetInputModeButton(scope.Method);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
 
             scope.Keyboard.OnSessionInputMethodStateInvalidated();
+            await scope.DrainAsync();
             session.Received(1).GetSnapshot();
-            session.Received(1).GetInputMode(scope.Method);
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
-            Assert.Same(NativeMode, scope.Keyboard.InputMode);
+            ButtonSession(session.Received(1)).GetInputModeButton(scope.Method);
+            ButtonSession(session.DidNotReceive()).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>());
+            Assert.Same(NativeMode, scope.Keyboard.InputModeButton);
         });
     }
 
@@ -564,30 +560,29 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            Assert.True(RefreshSettled(scope));
+            var originalButton = scope.Keyboard.InputModeButton;
             session.ClearReceivedCalls();
-            session.GetInputMode(scope.Method).Returns(DirectMode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
 
             typeof(SoftKeyboard).GetMethod(
-                "SwitchInputModeCore",
+                "SwitchInputMode",
                 BindingFlags.Instance | BindingFlags.NonPublic
             )!.Invoke(scope.Keyboard, null);
 
             var buttonSession = Assert.IsAssignableFrom<ISoftKeyboardInputModeButtonSession>(session);
-            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method);
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>());
             session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
-            session.DidNotReceive().GetSnapshot();
-            session.DidNotReceive().GetInputMode(scope.Method);
-            Assert.Same(NativeMode, scope.Keyboard.InputMode);
+            session.Received(1).GetSnapshot();
+            ButtonSession(session.DidNotReceive()).GetInputModeButton(scope.Method);
+            Assert.Same(originalButton, scope.Keyboard.InputModeButton);
 
             scope.Keyboard.OnSessionInputMethodStateInvalidated();
-            session.Received(1).GetSnapshot();
-            session.Received(1).GetInputMode(scope.Method);
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            scope.Clock.Advance(0);
+            session.Received(2).GetSnapshot();
+            ButtonSession(session.Received(1)).GetInputModeButton(scope.Method);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
         });
     }
 
@@ -603,24 +598,26 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             var buttonSession = Assert.IsAssignableFrom<ISoftKeyboardInputModeButtonSession>(session);
-            session.GetInputMode(scope.Method).Returns(DirectMode);
-            buttonSession.TryInvokeInputModeButton(scope.Method).Returns(_ =>
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
+            buttonSession.TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>()).Returns(_ =>
             {
                 scope.Keyboard.OnSessionInputMethodStateInvalidated();
-                return true;
+                return SoftKeyboardInputModeCommandResult.Accepted;
             });
             session.ClearReceivedCalls();
 
             typeof(SoftKeyboard).GetMethod(
-                "SwitchInputModeCore",
+                "SwitchInputMode",
                 BindingFlags.Instance | BindingFlags.NonPublic
             )!.Invoke(scope.Keyboard, null);
 
-            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method);
-            session.Received(1).GetSnapshot();
-            session.Received(1).GetInputMode(scope.Method);
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            scope.Clock.Advance(0);
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>());
+            session.Received(2).GetSnapshot();
+            ButtonSession(session.Received(1)).GetInputModeButton(scope.Method);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
         });
     }
 
@@ -653,14 +650,16 @@ public class SoftKeyboardRegressionTests
             session.GetSnapshot().Returns(
                 new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
             );
-            session.GetInputMode(scope.Method).Returns((SoftKeyboardInputMode?)null);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns((SoftKeyboardInputModeButton?)null);
             buttonSession.GetInputModeButton(scope.Method).Returns(presentation);
-            buttonSession.TryInvokeInputModeButton(scope.Method).Returns(true);
+            buttonSession.TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>())
+                .Returns(SoftKeyboardInputModeCommandResult.Accepted);
+            buttonSession.TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>()).Returns(SoftKeyboardInputModeCommandResult.Accepted);
 
             scope.Keyboard.InputMethodSource = source;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            Assert.True(RefreshSettled(scope));
 
-            Assert.Null(scope.Keyboard.InputMode);
             Assert.Equal(presentation, scope.Keyboard.InputModeButton);
             Assert.Equal(
                 "icon",
@@ -672,24 +671,19 @@ public class SoftKeyboardRegressionTests
 
             session.ClearReceivedCalls();
             typeof(SoftKeyboard).GetMethod(
-                "SwitchInputModeCore",
+                "SwitchInputMode",
                 BindingFlags.Instance | BindingFlags.NonPublic
             )!.Invoke(scope.Keyboard, null);
 
-            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method);
-            session.DidNotReceive().TrySwitchInputMode(
-                Arg.Any<SoftKeyboardInputMethod>(),
-                Arg.Any<SoftKeyboardInputMode>()
-            );
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>());
         });
     }
 
     /// <summary>
-    /// An adapter can contribute semantic state while leaving presentation and invocation to the
-    /// platform-default provider.
+    /// An adapter without explicit override preserves the platform button and invocation priority.
     /// </summary>
     [Fact]
-    public Task InputModeAdapter_UnhandledFacetsUsePlatformDefaults()
+    public Task InputModeAdapter_DefaultContributionUsesPlatformButton()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -716,26 +710,30 @@ public class SoftKeyboardRegressionTests
                 new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
             );
             buttonSession.GetInputModeButton(scope.Method).Returns(presentation);
-            buttonSession.TryInvokeInputModeButton(scope.Method).Returns(true);
-            adapter.GetContribution(scope.Method).Returns(ModeContribution(NativeMode));
+            buttonSession.TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>())
+                .Returns(SoftKeyboardInputModeCommandResult.Accepted);
+            buttonSession.TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>()).Returns(SoftKeyboardInputModeCommandResult.Accepted);
+            adapter.GetContribution(scope.Method, Arg.Any<SoftKeyboardInputObservation>()).Returns(new SoftKeyboardInputModeContribution(
+                button: NativeMode, transition: new SoftKeyboardInputModeTransition("toggle")));
 
             scope.Keyboard.InputModeAdapter = adapter;
             scope.Keyboard.InputMethodSource = source;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            Assert.True(RefreshSettled(scope));
 
-            Assert.Same(NativeMode, scope.Keyboard.InputMode);
             Assert.Equal(presentation, scope.Keyboard.InputModeButton);
 
             session.ClearReceivedCalls();
             adapter.ClearReceivedCalls();
             typeof(SoftKeyboard).GetMethod(
-                "SwitchInputModeCore",
+                "SwitchInputMode",
                 BindingFlags.Instance | BindingFlags.NonPublic
             )!.Invoke(scope.Keyboard, null);
 
-            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method);
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>());
             adapter.DidNotReceive().TrySwitchMode(
                 Arg.Any<SoftKeyboardInputMethod>(),
+                Arg.Any<SoftKeyboardInputObservation>(),
                 Arg.Any<SoftKeyboardInputModeTransition>()
             );
         });
@@ -746,7 +744,7 @@ public class SoftKeyboardRegressionTests
     /// semantic or transition facets.
     /// </summary>
     [Fact]
-    public Task InputModeAdapter_ExplicitNoneStopsPresentationFallback()
+    public Task InputModeAdapter_EmptyOverrideRetainsPlatformButton()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -770,20 +768,19 @@ public class SoftKeyboardRegressionTests
             buttonSession.GetInputModeButton(scope.Method).Returns(
                 new SoftKeyboardInputModeButton("platform", "icon", "Platform input mode")
             );
-            adapter.GetContribution(scope.Method).Returns(
+            adapter.GetContribution(scope.Method, Arg.Any<SoftKeyboardInputObservation>()).Returns(
                 new SoftKeyboardInputModeContribution(
-                    mode: SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(NativeMode),
-                    presentation: SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.None
+                    overridePlatformButton: true
                 )
             );
 
             scope.Keyboard.InputModeAdapter = adapter;
             scope.Keyboard.InputMethodSource = source;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            Assert.True(RefreshSettled(scope));
 
-            Assert.Same(NativeMode, scope.Keyboard.InputMode);
-            Assert.Null(scope.Keyboard.InputModeButton);
-            Assert.DoesNotContain(
+            Assert.Equal("platform", scope.Keyboard.InputModeButton?.Id);
+            Assert.Contains(
                 scope.Keyboard.CurrentLayout.Keys,
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode
             );
@@ -817,7 +814,7 @@ public class SoftKeyboardRegressionTests
                 "extension-icon",
                 "Extension input mode"
             );
-            var mode = new SoftKeyboardInputMode("vendor-native", true);
+            var mode = new SoftKeyboardInputModeButton("vendor-native", "中", "Vendor command");
             var transition = new SoftKeyboardInputModeTransition("extension-transition");
             var presentation = new SoftKeyboardInputModeButton(
                 "native-command",
@@ -832,26 +829,21 @@ public class SoftKeyboardRegressionTests
                 new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
             );
             buttonSession.GetInputModeButton(scope.Method).Returns(presentation);
-            adapter.GetContribution(scope.Method).Returns(
+            buttonSession.TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>())
+                .Returns(SoftKeyboardInputModeCommandResult.Accepted);
+            adapter.GetContribution(scope.Method, Arg.Any<SoftKeyboardInputObservation>()).Returns(
                 new SoftKeyboardInputModeContribution(
-                    SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(mode),
-                    replaceButton
-                        ? SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.FromValue(
-                            replacement
-                        )
-                        : SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.Unhandled,
-                    SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(
-                        transition
-                    )
+                    button: replacement, transition: transition,
+                    overridePlatformButton: replaceButton
                 )
             );
-            adapter.TrySwitchMode(scope.Method, transition).Returns(true);
+            adapter.TrySwitchMode(scope.Method, Arg.Any<SoftKeyboardInputObservation>(), transition).Returns(true);
 
             scope.Keyboard.InputModeAdapter = adapter;
             scope.Keyboard.InputMethodSource = source;
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            Assert.True(RefreshSettled(scope));
 
-            Assert.Same(mode, scope.Keyboard.InputMode);
             Assert.Equal(replaceButton ? replacement : presentation, scope.Keyboard.InputModeButton);
             Assert.Equal(
                 expectedContent,
@@ -864,12 +856,12 @@ public class SoftKeyboardRegressionTests
             session.ClearReceivedCalls();
             adapter.ClearReceivedCalls();
             typeof(SoftKeyboard).GetMethod(
-                "SwitchInputModeCore",
+                "SwitchInputMode",
                 BindingFlags.Instance | BindingFlags.NonPublic
             )!.Invoke(scope.Keyboard, null);
 
-            adapter.Received(1).TrySwitchMode(scope.Method, transition);
-            buttonSession.DidNotReceive().TryInvokeInputModeButton(scope.Method);
+            adapter.DidNotReceive().TrySwitchMode(scope.Method, Arg.Any<SoftKeyboardInputObservation>(), transition);
+            buttonSession.Received(1).TryInvokeInputModeButton(scope.Method, Arg.Any<System.Windows.Rect>());
         });
     }
 
@@ -884,10 +876,11 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out _);
+            await scope.DrainAsync();
             var catalog = scope.Keyboard.InputMethods;
             var layout = scope.Keyboard.CurrentLayout;
 
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
 
             Assert.Same(catalog, scope.Keyboard.InputMethods);
             Assert.Same(layout, scope.Keyboard.CurrentLayout);
@@ -898,14 +891,14 @@ public class SoftKeyboardRegressionTests
     /// Every custom-source invalidation is observed before its event handler returns.
     /// </summary>
     [Fact]
-    public Task ObservableInputMethodSource_RefreshesEveryInvalidationImmediately()
+    public Task ObservableInputMethodSource_CoalescesInvalidationsOutsideCallbacks()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             var source = Substitute.For<ISoftKeyboardInputMethodSource>();
-            var session = Substitute.For<ISoftKeyboardInputMethodObservableSession>();
+            var session = Substitute.For<ISoftKeyboardInputMethodObservableSession, ISoftKeyboardInputModeButtonSession>();
 #pragma warning disable IDISP004 // The control owns and disposes the configured session.
             source.CreateSession().Returns(session);
 #pragma warning restore IDISP004
@@ -913,16 +906,19 @@ public class SoftKeyboardRegressionTests
             session.GetSnapshot().Returns(
                 new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method)
             );
-            session.GetInputMode(scope.Method).Returns(_ => mode);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(_ => mode);
             scope.Keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             session.ClearReceivedCalls();
             mode = DirectMode;
 
             session.StateInvalidated += Raise.Event<EventHandler>(session, EventArgs.Empty);
             session.StateInvalidated += Raise.Event<EventHandler>(session, EventArgs.Empty);
-            session.Received(2).GetSnapshot();
-            session.Received(2).GetInputMode(scope.Method);
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            session.DidNotReceive().GetSnapshot();
+            scope.Clock.Advance(0);
+            session.Received(1).GetSnapshot();
+            ButtonSession(session.Received(1)).GetInputModeButton(scope.Method);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
         });
     }
 
@@ -937,6 +933,7 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             var next = new SoftKeyboardInputMethod(
                 Guid.NewGuid(), Guid.NewGuid(), 0x0411, "Japanese", true
             );
@@ -952,7 +949,7 @@ public class SoftKeyboardRegressionTests
                 return new SoftKeyboardInputMethodSnapshot([next], next);
             });
 
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
             Assert.Same(next, scope.Keyboard.ActiveInputMethod);
         });
     }
@@ -968,20 +965,21 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
-            session.GetInputMode(scope.Method).Returns(DirectMode);
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            await scope.DrainAsync();
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(DirectMode);
+            Assert.True(RefreshSettled(scope));
             var catalog = scope.Keyboard.InputMethods;
             var profile = scope.Keyboard.ActiveInputMethod;
             var layout = scope.Keyboard.CurrentLayout;
             var error = new InvalidOperationException("temporary state failure");
-            session.GetInputMode(scope.Method).Returns(_ => throw error);
+            ButtonSession(session).GetInputModeButton(scope.Method).Returns(_ => throw error);
 
             Assert.False(scope.Keyboard.RefreshInputMethods());
 
             Assert.Same(error, scope.Keyboard.InputMethodError);
             Assert.Same(catalog, scope.Keyboard.InputMethods);
             Assert.Same(profile, scope.Keyboard.ActiveInputMethod);
-            Assert.Same(DirectMode, scope.Keyboard.InputMode);
+            Assert.Same(DirectMode, scope.Keyboard.InputModeButton);
             Assert.Same(layout, scope.Keyboard.CurrentLayout);
             Assert.Contains(scope.Keyboard.CurrentLayout.Keys,
                 key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
@@ -999,6 +997,7 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             var previous = scope.Keyboard.InputMethods;
             var observer = new TextBlock();
             observer.SetBinding(
@@ -1006,7 +1005,7 @@ public class SoftKeyboardRegressionTests
                 new System.Windows.Data.Binding(nameof(SoftKeyboard.InputMethods)) { Source = scope.Keyboard });
             var fresh = new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "fresh", true);
             session.GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([fresh], fresh));
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
             Assert.Same(scope.Method, Assert.Single(previous));
             Assert.Same(fresh, Assert.Single(scope.Keyboard.InputMethods));
             Assert.Same(scope.Keyboard.InputMethods, observer.Tag);
@@ -1024,12 +1023,13 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             var error = new InvalidOperationException("catalog failed");
             session.GetSnapshot().Returns(_ => throw error);
             Assert.False(scope.Keyboard.RefreshInputMethods());
             Assert.Same(error, scope.Keyboard.InputMethodError);
             session.Configure().GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([scope.Method], scope.Method));
-            Assert.True(scope.Keyboard.RefreshInputMethods());
+            Assert.True(RefreshSettled(scope));
             Assert.Null(scope.Keyboard.InputMethodError);
         });
     }
@@ -1055,6 +1055,7 @@ public class SoftKeyboardRegressionTests
             });
 #pragma warning restore IDISP004
             scope.Keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             obsolete.Received(1).Dispose();
             obsolete.DidNotReceive().GetSnapshot();
             await scope.DrainAsync();
@@ -1145,7 +1146,7 @@ public class SoftKeyboardRegressionTests
 #pragma warning restore IDISP004
                 });
                 scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out _);
-                Assert.True(scope.Keyboard.RefreshInputMethods());
+                Assert.True(RefreshSettled(scope));
                 current.DidNotReceive().Dispose();
                 Assert.Null(scope.Keyboard.InputMethodError);
             }
@@ -1262,6 +1263,7 @@ public class SoftKeyboardRegressionTests
             }
 
             scope.Keyboard.InputMethodSource = source;
+            await scope.DrainAsync();
             var fresh = new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "fresh", true);
             session.GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([fresh], fresh));
             scope.Keyboard.ShowInputMethodMenu();
@@ -1287,6 +1289,7 @@ public class SoftKeyboardRegressionTests
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
             scope.Keyboard.InputMethodSource = CreateSource(scope.Method, out var session);
+            await scope.DrainAsync();
             session.GetSnapshot().Returns(call =>
             {
                 if (transition == "close")
@@ -1358,19 +1361,28 @@ public class SoftKeyboardRegressionTests
         source.CreateSession().Returns(session);
 #pragma warning restore IDISP004
         session.GetSnapshot().Returns(new SoftKeyboardInputMethodSnapshot([method], method));
-        session.GetInputMode(method).Returns(NativeMode);
+        ButtonSession(session).GetInputModeButton(method).Returns(NativeMode);
         buttonSession.GetInputModeButton(method).Returns(
             method.ClassId == Guid.Empty
                 ? null
                 : new SoftKeyboardInputModeButton("default", "A", "Input mode")
         );
-        buttonSession.TryInvokeInputModeButton(method).Returns(true);
-        session.TrySwitchInputMode(
-            Arg.Any<SoftKeyboardInputMethod>(),
-            Arg.Any<SoftKeyboardInputMode>()
-        ).Returns(true);
+        buttonSession.TryInvokeInputModeButton(method, Arg.Any<System.Windows.Rect>()).Returns(SoftKeyboardInputModeCommandResult.Accepted);
+        ButtonSession(session).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>()).Returns(SoftKeyboardInputModeCommandResult.Accepted);
         session.TryActivate(Arg.Any<SoftKeyboardInputMethod>()).Returns(true);
         return source;
+    }
+
+    private static bool RefreshSettled(SoftKeyboardRegressionScope scope)
+    {
+        scope.Keyboard.RefreshInputMethods();
+        scope.Clock.Advance(100);
+        return scope.Keyboard.RefreshInputMethods();
+    }
+
+    private static ISoftKeyboardInputModeButtonSession ButtonSession(ISoftKeyboardInputMethodSession session)
+    {
+        return (ISoftKeyboardInputModeButtonSession)session;
     }
 
     private static ContextMenu? GetMenu(SoftKeyboard keyboard)

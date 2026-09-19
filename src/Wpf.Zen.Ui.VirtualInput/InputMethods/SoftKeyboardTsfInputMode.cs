@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -25,51 +25,12 @@ public static class SoftKeyboardTsfInputMode
     private const uint ButtonHidden   = 0x00000001;
     private const uint ButtonDisabled = 0x00000002;
     private const uint LeftClick      = 2;
+    // Both push-button and toggle-button styles route a primary press to OnClick.
+    private const uint ButtonClickStyles = 0x00010000 | 0x00040000;
 
     private static readonly Guid KeyboardOpenId       = new("58273AAD-01BB-4164-95C6-755BA0B5162D");
     private static readonly Guid KeyboardConversionId = new("CCF05DD8-4A87-11D7-A6E2-00065B84435C");
     private static readonly Guid InputModeItemId      = new("2C77A81E-41CC-4178-A3A7-5F8A987568E6");
-
-    /// <summary>
-    /// Reads the raw TSF input-mode compartments and discovers the active service's standard
-    /// input-mode command.
-    /// </summary>
-    /// <param name="serviceId">The expected active TIP.</param>
-    /// <returns>
-    /// A snapshot when open or conversion state is readable; otherwise null. Missing compartments
-    /// remain unavailable. Command discovery remains false when the service does not publish
-    /// <c>GUID_LBI_INPUTMODE</c>.
-    /// </returns>
-    public static SoftKeyboardTsfInputModeState? GetState(Guid serviceId)
-    {
-        var open       = GetCompartmentInteger(KeyboardOpenId);
-        var conversion = GetCompartmentInteger(KeyboardConversionId);
-
-        if (open is null && conversion is null)
-        {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] TSF state read failed: open and conversion "
-                + $"compartments are unavailable; serviceId={serviceId}."
-            );
-            return null;
-        }
-
-        var canSwitch = TryGetInputModeButton(
-            serviceId,
-            requireVisible: false,
-            out var button
-        );
-
-        Debug.WriteLine(
-            "[SoftKeyboard.InputMode] TSF state read; "
-            + $"serviceId={serviceId}, openValue={FormatValue(open)}, "
-            + $"conversionValue={FormatValue(conversion)}, inputModeCommand={canSwitch}."
-        );
-
-        ReleaseComObject(button);
-
-        return new SoftKeyboardTsfInputModeState(open, conversion, canSwitch);
-    }
 
     /// <summary>
     /// Reads the active service's standard TSF input-mode button and copies its current icon.
@@ -77,7 +38,7 @@ public static class SoftKeyboardTsfInputMode
     /// <param name="serviceId">The expected active TIP.</param>
     /// <returns>
     /// A button descriptor when the item is visible, enabled, owned by the service, and supplies an
-    /// icon; otherwise null.
+    /// icon or text; otherwise null.
     /// </returns>
     /// <remarks>
     /// The descriptor represents the language-bar command, not a decoded keyboard state. The icon
@@ -85,24 +46,22 @@ public static class SoftKeyboardTsfInputMode
     /// </remarks>
     public static SoftKeyboardInputModeButton? GetInputModeButton(Guid serviceId)
     {
-        if (!TryGetInputModeButton(serviceId, requireVisible: true, out var button))
-        {
-            return null;
-        }
-
+        ITfLangBarItemButton? button = null;
         IntPtr icon = default;
 
         try
         {
+            if (!TryGetInputModeButton(serviceId, requireVisible: true, out button))
+            {
+                return null;
+            }
             var iconResult = button!.GetIcon(out icon);
             if (iconResult < 0 || icon == IntPtr.Zero)
             {
-                Debug.WriteLine(
-                    "[SoftKeyboard.InputMode] Input-mode presentation unavailable: "
-                    + $"icon lookup failed; serviceId={serviceId}, "
-                    + $"hresult=0x{iconResult:X8}, iconHandle=0x{icon.ToInt64():X}."
-                );
-                return null;
+                return button.GetText(out var text) >= 0 && !string.IsNullOrWhiteSpace(text)
+                    ? new SoftKeyboardInputModeButton(
+                        $"tsf:{serviceId:D}:text:{text}", text!, GetAutomationName(button))
+                    : null;
             }
 
             var source = Imaging.CreateBitmapSourceFromHIcon(
@@ -145,41 +104,18 @@ public static class SoftKeyboardTsfInputMode
     /// <returns>
     /// The native integer, or null when the host or compartment value is unavailable.
     /// </returns>
-    public static int? GetKeyboardOpenValue()
+    internal static int? GetKeyboardOpenValue()
     {
         return GetCompartmentInteger(KeyboardOpenId);
     }
 
     /// <summary>
-    /// Reads the integer keyboard conversion compartment at its TSF notification boundary.
+    /// Reads raw conversion flags for a TSF notification or settled fallback sample.
     /// </summary>
     /// <returns>The raw TSF bit field, or null when the value is unavailable.</returns>
     internal static int? GetKeyboardConversionValue()
     {
         return GetCompartmentInteger(KeyboardConversionId);
-    }
-
-    /// <summary>
-    /// Gets whether the expected service currently publishes an enabled input-mode command.
-    /// </summary>
-    internal static bool CanInvokeInputModeButton(Guid serviceId)
-    {
-        var available = TryGetInputModeButton(
-            serviceId,
-            requireVisible: false,
-            out var button
-        );
-
-        ReleaseComObject(button);
-        return available;
-    }
-
-    /// <summary>
-    /// Invokes only the active service's standard language-bar command.
-    /// </summary>
-    internal static bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
-    {
-        return TrySwitchInputMode(inputMethod.ClassId);
     }
 
     /// <summary>
@@ -226,50 +162,65 @@ public static class SoftKeyboardTsfInputMode
             }
 
             object replacement = value;
-            return compartment.SetValue(0, ref replacement) >= 0;
+            var result = compartment.SetValue(0, ref replacement);
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Command] COMPARTMENT write returned; "
+                + $"profileId={inputMethod.ProfileId}, compartment={compartmentId}, "
+                + $"value={value}, hresult=0x{result:X8}.");
+            return result >= 0;
         }
         catch (Exception exception) when (exception is InvalidOperationException
             or COMException or PlatformNotSupportedException)
         {
-            Debug.WriteLine($"[SoftKeyboard.InputMode] Compartment write failed: {exception.Message}");
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Command] COMPARTMENT write failed; "
+                + $"compartment={compartmentId}, exception={exception.GetType().Name}.");
             return false;
         }
     }
 
     /// <summary>
-    /// Invokes the current TSF language bar's standard input-mode button once.
+    /// Rediscovers and invokes the current service's command with the actual screen anchor.
     /// </summary>
-    /// <param name="serviceId">
-    /// The expected active TIP, whose language-bar item may be invoked.
-    /// </param>
-    /// <returns>True when an enabled button accepted the invocation; otherwise false.</returns>
-    /// <remarks>
-    /// This invokes the service-defined transition rather than setting an absolute Boolean state.
-    /// An adapter must first read its native mode and determine whether the command applies. The
-    /// keyboard restores editor focus and finishes composition before requesting the transition.
-    /// </remarks>
-    public static bool TrySwitchInputMode(Guid serviceId)
+    internal static SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+        SoftKeyboardInputMethod inputMethod, Rect screenBounds)
     {
-        if (!TryGetInputModeButton(serviceId, requireVisible: false, out var button))
-        {
-            Debug.WriteLine(
-                "[SoftKeyboard.InputMode] TSF command lookup failed; "
-                + $"serviceId={serviceId}."
-            );
-            return false;
-        }
-
+        ITfLangBarItemButton? button = null;
+        var invoked = false;
         try
         {
-            // GUID_LBI_INPUTMODE is the TSF input-mode command, even when the language bar itself
-            // is hidden. The left-click action does not need a menu anchor or a synthesized hotkey.
-            var rectangle = new TfInputModeRectangle();
-            var result = button!.OnClick(LeftClick, default, in rectangle);
+            if (!TryGetInputModeButton(inputMethod.ClassId, requireVisible: false, out button))
+            {
+                return SoftKeyboardInputModeCommandResult.Unavailable;
+            }
+
+            var rectangle = new TfInputModeRectangle
+            {
+                Left = (int)screenBounds.Left,
+                Top = (int)screenBounds.Top,
+                Right = (int)screenBounds.Right,
+                Bottom = (int)screenBounds.Bottom,
+            };
+            var point = new TfInputModePoint
+            {
+                X = (int)(screenBounds.Left + screenBounds.Width / 2),
+                Y = (int)(screenBounds.Top + screenBounds.Height / 2),
+            };
+            invoked = true;
+            var result = button!.OnClick(LeftClick, point, in rectangle);
             Debug.WriteLine(
-                "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE OnClick completed; "
-                + $"serviceId={serviceId}, hresult=0x{result:X8}."
-            );
-            return result >= 0;
+                "[SoftKeyboard.InputMode.Command] GUID_LBI_INPUTMODE invoked; "
+                + $"serviceId={inputMethod.ClassId}, hresult=0x{result:X8}.");
+            return result >= 0 ? SoftKeyboardInputModeCommandResult.Accepted
+                : SoftKeyboardInputModeCommandResult.Failed;
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Command] Command failed; "
+                + $"invoked={invoked}, exception={exception.GetType().Name}.");
+            return invoked ? SoftKeyboardInputModeCommandResult.Failed
+                : SoftKeyboardInputModeCommandResult.Unavailable;
         }
         finally
         {
@@ -341,9 +292,12 @@ public static class SoftKeyboardTsfInputMode
             return false;
         }
 
+        // Transfer ownership before querying provider code so the caller releases on exceptions.
+        button = candidate;
         var infoResult = candidate.GetInfo(out var info);
         var statusResult = candidate.GetStatus(out var status);
-        var serviceMatches = infoResult >= 0 && info.ServiceId == serviceId;
+        var serviceMatches = infoResult >= 0 && info.ServiceId == serviceId
+            && info.ItemId == InputModeItemId && (info.Style & ButtonClickStyles) != 0;
         var isDisabled = statusResult >= 0 && (status & ButtonDisabled) != 0;
         var isHidden = statusResult >= 0 && (status & ButtonHidden) != 0;
 
@@ -359,6 +313,7 @@ public static class SoftKeyboardTsfInputMode
                 + $"requireVisible={requireVisible}."
             );
             ReleaseComObject(candidate);
+            button = null;
             return false;
         }
 
@@ -369,14 +324,6 @@ public static class SoftKeyboardTsfInputMode
         );
         button = candidate;
         return true;
-    }
-
-    /// <summary>
-    /// Formats a nullable TSF integer as both its decimal value and native hexadecimal bit field.
-    /// </summary>
-    private static string FormatValue(int? value)
-    {
-        return value is { } integer ? $"{integer} (0x{integer:X8})" : "<unavailable>";
     }
 
     /// <summary>

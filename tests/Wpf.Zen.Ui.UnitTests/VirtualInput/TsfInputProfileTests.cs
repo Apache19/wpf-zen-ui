@@ -22,22 +22,9 @@ public class TsfInputProfileTests
     [Fact]
     public void WindowsBackend_PublishesNoGenericInputMode()
     {
-        var service = new TsfInputMethodService();
-        var inputMethod = new SoftKeyboardInputMethod(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            0x0804,
-            "Test IME",
-            true
-        );
+        Assert.Null(typeof(ISoftKeyboardInputMethodSession).GetMethod("GetInputMode"));
+        Assert.Null(typeof(ISoftKeyboardInputMethodSession).GetMethod("TrySwitchInputMode"));
 
-        Assert.Null(service.GetInputMode(inputMethod));
-        Assert.False(
-            service.TrySwitchInputMode(
-                inputMethod,
-                new SoftKeyboardInputMode("native", true)
-            )
-        );
     }
 
     /// <summary>

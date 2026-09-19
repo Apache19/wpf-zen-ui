@@ -6,38 +6,37 @@
 namespace Wpf.Zen.Ui.VirtualInput.Input;
 
 /// <summary>
-/// Contributes independently resolvable mode capabilities for a particular text service.
+/// Interprets observed data for explicitly supported input services.
 /// </summary>
 /// <remarks>
-/// TSF standardizes the compartments that carry open and conversion values, but a text service can
-/// use additional values or expose service-specific transitions. The adapter owns that
-/// interpretation. Each state, presentation, and transition facet can either stop resolution or
-/// allow the platform default to supply that facet. Calls run on the keyboard Dispatcher, must not
-/// block, and must not activate another profile or change focus.
+/// Calls run on the keyboard Dispatcher and must return promptly without changing focus or profile.
+/// Missing data must remain unknown. Interpretation must not read compartments to fill missing
+/// data.
 /// </remarks>
 public interface ISoftKeyboardInputModeAdapter
 {
     /// <summary>
-    /// Reads one coherent native snapshot and contributes any facets understood by the adapter.
+    /// Produces presentation and layout capabilities from the current generation's observations.
     /// </summary>
-    /// <param name="inputMethod">The active input-method profile.</param>
-    /// <returns>
-    /// Independently handled state, presentation, and transition facets. Unhandled facets continue
-    /// through the platform-default resolver.
-    /// </returns>
-    SoftKeyboardInputModeContribution GetContribution(SoftKeyboardInputMethod inputMethod);
+    /// <param name="inputMethod">The profile associated with the observation.</param>
+    /// <param name="observation">
+    /// Raw notification or settled fallback data, with missing values explicitly represented.
+    /// Unsupported combinations should contribute no capabilities. A decodable combination
+    /// does not guarantee freshness when the service supplies stale but otherwise legal values.
+    /// </param>
+    /// <returns>The optional capabilities understood by this adapter.</returns>
+    SoftKeyboardInputModeContribution GetContribution(
+        SoftKeyboardInputMethod inputMethod, SoftKeyboardInputObservation observation);
 
     /// <summary>
-    /// Requests a transition using the text service's mode-switch contract.
+    /// Executes a freshly resolved fallback only when no platform command is available.
     /// </summary>
-    /// <param name="inputMethod">The active input-method profile.</param>
-    /// <param name="transition">The transition descriptor returned by this adapter.</param>
-    /// <returns>Whether the mode-switch request was accepted.</returns>
-    /// <remarks>
-    /// The displayed state is always read back after the request. The method is called only for a
-    /// transition facet returned by the same adapter and published for the same active profile.
-    /// </remarks>
+    /// <param name="inputMethod">The still-current profile after editor preparation.</param>
+    /// <param name="observation">The latest observation used to resolve the command.</param>
+    /// <param name="transition">The command returned by this adapter during this click.</param>
+    /// <returns>Whether the request was accepted; this does not confirm a mode change.</returns>
     bool TrySwitchMode(
         SoftKeyboardInputMethod inputMethod,
+        SoftKeyboardInputObservation observation,
         SoftKeyboardInputModeTransition transition);
 }

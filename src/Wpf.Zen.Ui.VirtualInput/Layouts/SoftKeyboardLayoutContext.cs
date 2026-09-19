@@ -19,7 +19,6 @@ public sealed class SoftKeyboardLayoutContext
     /// <param name="inputScope">The semantic input scope requested by the active editor.</param>
     /// <param name="page">The surface requested by the keyboard.</param>
     /// <param name="shiftState">The current virtual Shift state.</param>
-    /// <param name="inputMode">The interpreted input-method mode, or null when unavailable.</param>
     /// <param name="inputMethod">
     /// The active profile, allowing language- and vendor-specific layouts.
     /// </param>
@@ -37,7 +36,6 @@ public sealed class SoftKeyboardLayoutContext
         InputScopeNameValue inputScope,
         string page,
         SoftKeyboardShiftState shiftState,
-        SoftKeyboardInputMode? inputMode = null,
         SoftKeyboardInputMethod? inputMethod = null,
         IntPtr keyboardLayoutHandle = default,
         string supplementalLayout = SoftKeyboardSupplementalLayouts.Automatic,
@@ -62,7 +60,6 @@ public sealed class SoftKeyboardLayoutContext
             : throw new ArgumentException("A page identifier is required.", nameof(page));
 
         ShiftState         = shiftState;
-        InputMode          = inputMode;
         InputMethod        = inputMethod;
         SupplementalLayout = supplementalLayout;
         InputModeButton    = inputModeButton;
@@ -98,14 +95,9 @@ public sealed class SoftKeyboardLayoutContext
     public SoftKeyboardShiftState ShiftState { get; }
 
     /// <summary>
-    /// Gets the interpreted input-method mode, never an optimistic transition request.
+    /// Gets whether the committed surface includes an input-method command button.
     /// </summary>
-    public SoftKeyboardInputMode? InputMode { get; }
-
-    /// <summary>
-    /// Gets whether a reliable mode command is available for the active input method.
-    /// </summary>
-    public bool CanSwitchInputMode => InputMethod is not null && InputModeButton is not null;
+    public bool HasInputModeButton => InputMethod is not null && InputModeButton is not null;
 
     /// <summary>
     /// Gets the mode-command presentation independently from the interpreted mode state.

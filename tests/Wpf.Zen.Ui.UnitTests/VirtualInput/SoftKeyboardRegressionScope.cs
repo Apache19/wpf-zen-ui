@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -13,6 +13,8 @@ using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Infrastructure;
 using Wpf.Zen.Ui.VirtualInput.Input;
 
+using Wpf.Zen.Ui.VirtualInput.InputMethods;
+
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
@@ -26,7 +28,7 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         Method = new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test IME", true);
         Input = new RecordingInput();
         Keyboard = new SoftKeyboard(new SoftKeyboardPlatformServices(
-            Input, new InputPane(), new InputMethods(Method), new BackendSoftKeyboardCandidateSource(new Candidates())
+            Input, new InputPane(), new InputMethods(Method), new BackendSoftKeyboardCandidateSource(new Candidates()), Clock
         ));
         Panel = new StackPanel();
         Editor = new TextBox();
@@ -42,6 +44,8 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         Window.UpdateLayout();
     }
 
+    internal ManualInputObservationScheduler Clock { get; } = new();
+
     internal SoftKeyboardInputMethod Method { get; }
     internal RecordingInput Input { get; }
     internal SoftKeyboard Keyboard { get; }
@@ -56,6 +60,7 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
     /// </summary>
     internal async Task DrainAsync()
     {
+        Clock.Advance(100);
         await Dispatcher.CurrentDispatcher.InvokeAsync(static () => { }, DispatcherPriority.ApplicationIdle);
     }
 
@@ -123,20 +128,6 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         }
 
         /// <inheritdoc />
-        public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
-        {
-            return new SoftKeyboardInputMode("native", true);
-        }
-
-        /// <inheritdoc />
-        public bool TrySwitchInputMode(
-            SoftKeyboardInputMethod inputMethod,
-            SoftKeyboardInputMode currentMode)
-        {
-            return true;
-        }
-
-        /// <inheritdoc />
         public SoftKeyboardInputModeButton GetInputModeButton(
             SoftKeyboardInputMethod inputMethod)
         {
@@ -144,9 +135,10 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         }
 
         /// <inheritdoc />
-        public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+        public SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+            SoftKeyboardInputMethod inputMethod, System.Windows.Rect screenBounds)
         {
-            return true;
+            return SoftKeyboardInputModeCommandResult.Accepted;
         }
     }
 

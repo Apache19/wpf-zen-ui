@@ -8,6 +8,7 @@ using System.Linq;
 using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
@@ -159,7 +160,6 @@ public class SoftKeyboardRoutingTests
                 InputScopeNameValue.Url,
                 SoftKeyboardPages.Symbols,
                 SoftKeyboardShiftState.Off,
-                new SoftKeyboardInputMode("native", true),
                 new SoftKeyboardInputMethod(classId, id, 0x0411, "Test profile", true)
             );
         }
@@ -220,8 +220,7 @@ public class SoftKeyboardRoutingTests
             CultureInfo.GetCultureInfo(culture),
             scope,
             page,
-            SoftKeyboardShiftState.Off,
-            new SoftKeyboardInputMode("native", true)
+            SoftKeyboardShiftState.Off
         );
 
     private static SoftKeyboardLayout Layout(string marker, int columns, int rows)
@@ -238,11 +237,7 @@ public class SoftKeyboardRoutingTests
 
         public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
         {
-            return JapaneseSoftKeyboardExtensionProvider.Default
-                .GetExtensions(new SoftKeyboardExtensionContext(context))
-                .Select(extension => extension.LayoutProvider)
-                .FirstOrDefault(provider => provider is not null)
-                ?.CreateLayout(context);
+            return JapaneseCompactLayoutProvider.Default.CreateLayout(context);
         }
     }
 
@@ -252,11 +247,7 @@ public class SoftKeyboardRoutingTests
 
         public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
         {
-            return ChineseSoftKeyboardExtensionProvider.Default
-                .GetExtensions(new SoftKeyboardExtensionContext(context))
-                .Select(extension => extension.LayoutProvider)
-                .FirstOrDefault(provider => provider is not null)
-                ?.CreateLayout(context);
+            return ChineseCompactLayoutProvider.Default.CreateLayout(context);
         }
     }
 }

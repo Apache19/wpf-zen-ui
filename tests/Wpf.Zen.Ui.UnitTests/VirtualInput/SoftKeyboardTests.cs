@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -23,11 +23,14 @@ using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Infrastructure;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
+
+using Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
@@ -111,8 +114,10 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
 
                 Assert.True(editor.Focus());
+                PumpDispatcher();
 
                 var composition = new TextComposition(
                     InputManager.Current, editor, string.Empty, TextCompositionAutoComplete.Off
@@ -137,6 +142,7 @@ public class SoftKeyboardTests
                         {
                             keyboard.Target = editor;
                             Assert.True(editor.Focus());
+                PumpDispatcher();
                         }
 
                         break;
@@ -155,7 +161,7 @@ public class SoftKeyboardTests
                 }
 
                 PumpDispatcher();
-                Assert.True(keyboard.InputMode?.IsNativeInput);
+                Assert.True(keyboard.InputModeButton?.Id == "native");
             }
             finally
             {
@@ -187,7 +193,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 InputScopeNameValue? scope = null;
                 keyboard.LayoutProvider = new SoftKeyboardLayoutRule(_ => true, context =>
                 {
@@ -242,7 +250,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 invoke.Invoke(keyboard, [key]);
                 Assert.Equal(1, action.Calls);
                 Assert.Contains("Text:custom", input.Operations);
@@ -297,7 +307,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 InvokeKey(keyboard, SoftKeyboardKey.FromAction(action, "Async", "Async action"));
                 SoftKeyboardActionContext context = Assert.IsType<SoftKeyboardActionContext>(action.Context);
                 ModifierKeys modifiers = ModifierKeys.Control
@@ -349,7 +361,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 typeof(SoftKeyboard)
                     .GetMethod("ExecuteCustomAction", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, [action, "variant"]);
@@ -448,7 +462,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 foreach (var selectedIndex in new[]
                     {
                         19, 0
@@ -508,6 +524,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
                 PumpDispatcher();
                 window.UpdateLayout();
@@ -611,6 +628,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
 
                 Assert.Single(
@@ -684,6 +702,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 keyboard.ReplaceCandidates(
                     [new SoftKeyboardCandidate(40, "first"), new SoftKeyboardCandidate(41, "second")],
                     SoftKeyboardCandidatePresentationState.Embedded,
@@ -788,7 +807,9 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
             Assert.Equal(SoftKeyboardShiftState.Once, keyboard.ShiftState);
@@ -836,7 +857,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
                 if (locked)
                 {
@@ -899,7 +922,9 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             window.UpdateLayout();
             var cap = FindCap(keyboard, Key.Left);
@@ -938,8 +963,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             SoftKeyboardKey letter = FindKey(keyboard, Key.A);
             SoftKeyboardKeyControl button = Assert.Single(
@@ -998,6 +1025,7 @@ public class SoftKeyboardTests
                 Assert.True(keyboard.IsLoaded);
                 Assert.Null(Window.GetWindow(keyboard));
                 Assert.True(editor.Focus());
+                PumpDispatcher();
 
                 InvokeKey(
                     keyboard,
@@ -1080,9 +1108,11 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             Assert.True(window.Activate());
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
             Assert.True(
                 (bool)typeof(SoftKeyboard)
                     .GetMethod("IsWindowForeground", BindingFlags.Instance | BindingFlags.NonPublic)!
@@ -1126,6 +1156,7 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             Assert.True(window.Activate());
             window.UpdateLayout();
             PumpDispatcher();
@@ -1140,11 +1171,12 @@ public class SoftKeyboardTests
             }
 
             Assert.True(editor.Focus());
+            PumpDispatcher();
             typeof(SoftKeyboard)
                 .GetMethod("ActivateInputMethod", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(keyboard, [pinyin]);
             PumpDispatcher();
-            if (keyboard.InputMode?.IsNativeInput == false)
+            if (keyboard.InputModeButton?.Id == "direct")
             {
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
@@ -1152,8 +1184,7 @@ public class SoftKeyboardTests
 
             InvokeKey(keyboard, FindKey(keyboard, Key.N));
             InvokeKey(keyboard, FindKey(keyboard, Key.I));
-            PumpDispatcher();
-            PumpDispatcher();
+                PumpDispatcher();
 
             object? textEditor = typeof(TextBoxBase)
                 .GetField("_textEditor", BindingFlags.Instance | BindingFlags.NonPublic)!
@@ -1165,7 +1196,7 @@ public class SoftKeyboardTests
             Assert.True(
                 keyboard.CandidatePresentationState == SoftKeyboardCandidatePresentationState.Embedded,
                 $"Candidate state was {keyboard.CandidatePresentationState}; text was '{editor.Text}'; "
-                + $"Input mode was {keyboard.InputMode}; conversion was {InputMethod.Current.ImeConversionMode}; "
+                + $"Input mode was {keyboard.InputModeButton}; conversion was {InputMethod.Current.ImeConversionMode}; "
                 + $"language was {InputLanguageManager.Current.CurrentInputLanguage.Name}; "
                 + $"active profile was {keyboard.ActiveInputMethod?.DisplayName ?? "<none>"}; "
                 + $"WPF TextStore was {(textStore is null ? "missing" : "attached")}."
@@ -1173,8 +1204,7 @@ public class SoftKeyboardTests
             Assert.NotEmpty(keyboard.Candidates);
 
             keyboard.ShowPage(SoftKeyboardPages.Symbols);
-            PumpDispatcher();
-            PumpDispatcher();
+                PumpDispatcher();
             Assert.Equal(string.Empty, editor.Text);
             Assert.False(keyboard.HasCandidates);
 
@@ -1185,8 +1215,7 @@ public class SoftKeyboardTests
             keyboard.ShowPage(SoftKeyboardPages.Letters);
             InvokeKey(keyboard, FindKey(keyboard, Key.N));
             InvokeKey(keyboard, FindKey(keyboard, Key.I));
-            PumpDispatcher();
-            PumpDispatcher();
+                PumpDispatcher();
 
             Assert.Equal(SoftKeyboardCandidatePresentationState.Embedded, keyboard.CandidatePresentationState);
             Assert.NotEmpty(keyboard.Candidates);
@@ -1257,9 +1286,11 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
-            Assert.True(keyboard.InputMode?.IsNativeInput);
+            PumpDispatcher();
+            Assert.True(keyboard.InputModeButton?.Id == "native");
 
             SoftKeyboardKeyControl button = Assert.Single(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
@@ -1267,16 +1298,16 @@ public class SoftKeyboardTests
             );
             button.Invoke();
             PumpDispatcher();
-            keyboard.OnSessionInputMethodStateInvalidated();
+            keyboard.OnSessionInputMethodStateInvalidated();            PumpDispatcher();
 
-            Assert.False(keyboard.InputMode?.IsNativeInput);
+            Assert.False(keyboard.InputModeButton?.Id == "native");
             Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
             Assert.Same(editor, Keyboard.FocusedElement);
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
             PumpDispatcher();
-            keyboard.OnSessionInputMethodStateInvalidated();
-            Assert.True(keyboard.InputMode?.IsNativeInput);
+            keyboard.OnSessionInputMethodStateInvalidated();            PumpDispatcher();
+            Assert.True(keyboard.InputModeButton?.Id == "native");
             window.Close();
         });
     }
@@ -1306,8 +1337,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             Assert.DoesNotContain(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
@@ -1319,7 +1352,7 @@ public class SoftKeyboardTests
             );
 
             Assert.Equal(0, inputMethods.ActivationCount);
-            Assert.Null(keyboard.InputMode);
+            Assert.Null(keyboard.InputModeButton);
             Assert.Null(keyboard.ActiveInputMethod);
             Assert.Same(editor, Keyboard.FocusedElement);
             window.Close();
@@ -1345,6 +1378,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
                 var cap = FindCap(keyboard, Key.A);
                 cap.BeginPress();
@@ -1374,6 +1408,7 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             keyboard.TargetScope = scope;
             keyboard.Target = external;
 
@@ -1407,6 +1442,7 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
 
             keyboard.OnSessionFocusChanged(editor, touchOrPenInitiated: false);
             Assert.True(keyboard.IsOpen);
@@ -1463,8 +1499,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
             candidates.Publish(keyboard, 2, 3, "first", "second");
             window.UpdateLayout();
             PumpDispatcher();
@@ -1515,8 +1553,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             var candidateBar = Assert.IsType<DockPanel>(keyboard.Template.FindName("CandidateBar", keyboard));
             var previous = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
@@ -1572,7 +1612,9 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             Assert.True(editor.Focus());
+            PumpDispatcher();
             candidates.Publish(keyboard, 1, 1, "first", "second");
             window.UpdateLayout();
             SoftKeyboardCandidate firstItem = keyboard.Candidates[0];
@@ -1583,6 +1625,7 @@ public class SoftKeyboardTests
             );
 
             Assert.True(editor.Focus());
+            PumpDispatcher();
             candidates.Publish(keyboard, 1, 1, "first", "second");
             window.UpdateLayout();
 
@@ -1662,6 +1705,7 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             candidates.Publish(keyboard, 1, 1, "candidate");
             int releasesBeforeHide = candidates.ReleasePresentationCount;
@@ -1703,11 +1747,12 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             int refreshCountBeforeFocus = candidates.RefreshCount;
 
             Assert.True(editor.Focus());
-            PumpDispatcher();
+                PumpDispatcher();
 
             Assert.Same(editor, keyboard.ActiveTarget);
             Assert.True(candidates.RefreshCount > refreshCountBeforeFocus);
@@ -1759,8 +1804,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             Assert.Equal(
                 SoftKeyboardSystemKeyboardSuppressionState.Unavailable,
@@ -1806,8 +1853,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
 
             Assert.True(pane.HideCount > 0);
             Assert.Equal(SoftKeyboardSystemKeyboardSuppressionState.Hidden, keyboard.SystemKeyboardSuppressionState);
@@ -1876,8 +1925,10 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
             Assert.True(editor.Focus());
+            PumpDispatcher();
             Assert.True(pane.HideCount >= 2);
 
             firstKeyboard.IsOpen = false;
@@ -1923,6 +1974,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
                 Assert.True(firstEditor.Focus());
                 int immediateHideCount = pane.HideCount;
@@ -1946,9 +1998,7 @@ public class SoftKeyboardTests
                 keyboard.IsOpen = false;
                 int finalHideCount = pane.HideCount;
                 pane.IsVisible = true;
-                PumpDispatcher();
-                PumpDispatcher();
-                PumpDispatcher();
+                    PumpDispatcher();
                 Assert.True(pane.IsVisible);
                 Assert.Equal(finalHideCount, pane.HideCount);
             }
@@ -1986,14 +2036,14 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 Assert.True(outsideEditor.Focus());
                 int hideCount = pane.HideCount;
                 pane.IsVisible = true;
-                PumpDispatcher();
-                PumpDispatcher();
-                PumpDispatcher();
+                    PumpDispatcher();
                 Assert.True(pane.IsVisible);
                 Assert.Equal(hideCount, pane.HideCount);
                 Assert.Equal(0, pane.ShowCount);
@@ -2020,6 +2070,7 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false,
             };
             window.Show();
+            PumpDispatcher();
             window.UpdateLayout();
 
             Assert.Equal(0d, keyboard.ActualHeight);
@@ -2057,6 +2108,7 @@ public class SoftKeyboardTests
                 ShowInTaskbar = false
             };
             window.Show();
+            PumpDispatcher();
 
             // Focusing first lets WPF acquire its own cached InputPane activation factory. The
             // keyboard must not manually release that shared COM identity when requesting TryHide.
@@ -2091,9 +2143,9 @@ public class SoftKeyboardTests
                             context.InputScope,
                             context.Page,
                             context.ShiftState,
-                            context.InputMode,
                             context.InputMethod,
-                            context.KeyboardLayoutHandle
+                            context.KeyboardLayoutHandle,
+                            inputModeButton: context.InputModeButton
                         )
                     )
             );
@@ -2108,6 +2160,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 keyboard.ShowPage(SoftKeyboardPages.MoreSymbols);
                 window.UpdateLayout();
                 double height = keyboard.ActualHeight;
@@ -2158,6 +2211,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 editor.Focus();
                 window.UpdateLayout();
                 double height = keyboard.ActualHeight;
@@ -2210,6 +2264,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
 
                 var layout = keyboard.CurrentLayout;
@@ -2301,7 +2356,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
                 Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => key.Key == Key.A);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ChangePage));
@@ -2341,7 +2398,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 candidates.Publish(keyboard, 1, 1, "candidate");
                 int released = candidates.ReleasePresentationCount;
                 keyboard.ShowPage(mode);
@@ -2349,7 +2408,7 @@ public class SoftKeyboardTests
                 Assert.True(keyboard.CanPresentCandidates);
                 Assert.True(keyboard.HasCandidates);
                 Assert.Equal(released, candidates.ReleasePresentationCount);
-                SoftKeyboardInputMode? inputMode = keyboard.InputMode;
+                SoftKeyboardInputModeButton? inputMode = keyboard.InputModeButton;
                 int activations = inputMethods.ActivationCount;
                 var back = Assert.Single(
                     Descendants<SoftKeyboardKeyControl>(keyboard),
@@ -2359,7 +2418,7 @@ public class SoftKeyboardTests
                     });
                 back.Invoke();
                 Assert.Equal(SoftKeyboardPages.Letters, keyboard.Page);
-                Assert.Equal(inputMode, keyboard.InputMode);
+                Assert.Equal(inputMode, keyboard.InputModeButton);
                 Assert.Equal(activations, inputMethods.ActivationCount);
                 Assert.Same(editor, Keyboard.FocusedElement);
 
@@ -2401,7 +2460,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 window.UpdateLayout();
                 var cap = FindCap(keyboard, Key.Back);
                 cap.BeginPress();
@@ -2459,7 +2520,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 Assert.True(keyboard.CanPresentCandidates);
                 candidates.Publish(keyboard, 1, 1, "candidate");
                 SoftKeyboardCandidate stale = keyboard.Candidates[0];
@@ -2478,13 +2541,14 @@ public class SoftKeyboardTests
     }
 
     private static SoftKeyboardLayout? CreateExtensionLayout(
-        ISoftKeyboardExtensionProvider extensionProvider,
-        SoftKeyboardLayoutContext context)
+        ISoftKeyboardExtensionProvider provider, SoftKeyboardLayoutContext context)
     {
-        return extensionProvider.GetExtensions(new SoftKeyboardExtensionContext(context))
-            .Select(extension => extension.LayoutProvider)
-            .FirstOrDefault(provider => provider is not null)
-            ?.CreateLayout(context);
+        // This fixture's fake platform names its two button states; production layout decoding
+        // belongs to service-specific observation adapters.
+        return context.InputModeButton?.Id == "native"
+            ? ChineseCompactLayoutProvider.Default.CreateLayout(context)
+            : DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context);
+
     }
 
     [Fact]
@@ -2578,6 +2642,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 window.UpdateLayout();
                 SoftKeyboardKey backspace = FindKey(keyboard, Key.Back);
                 SoftKeyboardKeyControl button = Assert.Single(
@@ -2621,7 +2686,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 var composition = new TextComposition(
                     InputManager.Current,
                     editor,
@@ -2667,7 +2734,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 keyboard.ShowPage(SoftKeyboardPages.Symbols);
                 input.Operations.Clear();
                 var composition = new TextComposition(
@@ -2722,7 +2791,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 var composition = new TextComposition(
                     InputManager.Current,
                     editor,
@@ -2768,8 +2839,10 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
-                Assert.True(keyboard.InputMode?.IsNativeInput);
+                PumpDispatcher();
+                Assert.True(keyboard.InputModeButton?.Id == "native");
                 var composition = new TextComposition(
                     InputManager.Current,
                     editor,
@@ -2784,11 +2857,11 @@ public class SoftKeyboardTests
                 );
 
                 Assert.Contains((Key.Escape, false), input.VirtualKeys);
-                Assert.True(keyboard.InputMode?.IsNativeInput);
+                Assert.True(keyboard.InputModeButton?.Id == "native");
                 composition.Complete();
                 PumpDispatcher();
-                keyboard.OnSessionInputMethodStateInvalidated();
-                Assert.False(keyboard.InputMode?.IsNativeInput);
+                keyboard.OnSessionInputMethodStateInvalidated();                PumpDispatcher();
+                Assert.False(keyboard.InputModeButton?.Id == "native");
             }
             finally
             {
@@ -2850,36 +2923,38 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 Observe(TextCompositionManager.PreviewTextInputStartEvent, editor);
                 Observe(TextCompositionManager.PreviewTextInputUpdateEvent, editor);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 Assert.Contains((Key.Escape, false), input.VirtualKeys);
-                Assert.True(keyboard.InputMode?.IsNativeInput);
+                Assert.True(keyboard.InputModeButton?.Id == "native");
 
                 if (unrelatedCompletion)
                 {
                     // A final event from another editor must not release the pending cancellation.
                     Observe(TextCompositionManager.PreviewTextInputEvent, new System.Windows.Controls.RichTextBox());
                     PumpDispatcher();
-                    Assert.True(keyboard.InputMode?.IsNativeInput);
+                    Assert.True(keyboard.InputModeButton?.Id == "native");
                     InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 }
 
                 Observe(TextCompositionManager.PreviewTextInputEvent, editor);
                 PumpDispatcher();
-                keyboard.OnSessionInputMethodStateInvalidated();
-                Assert.False(keyboard.InputMode?.IsNativeInput);
+                keyboard.OnSessionInputMethodStateInvalidated();                PumpDispatcher();
+                Assert.False(keyboard.InputModeButton?.Id == "native");
                 Assert.Same(editor, Keyboard.FocusedElement);
 
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
-                keyboard.OnSessionInputMethodStateInvalidated();
-                Assert.True(keyboard.InputMode?.IsNativeInput);
+                keyboard.OnSessionInputMethodStateInvalidated();                PumpDispatcher();
+                Assert.True(keyboard.InputModeButton?.Id == "native");
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
                 PumpDispatcher();
-                keyboard.OnSessionInputMethodStateInvalidated();
-                Assert.False(keyboard.InputMode?.IsNativeInput);
+                keyboard.OnSessionInputMethodStateInvalidated();                PumpDispatcher();
+                Assert.False(keyboard.InputModeButton?.Id == "native");
             }
             finally
             {
@@ -2912,7 +2987,9 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 Assert.True(editor.Focus());
+                PumpDispatcher();
                 typeof(SoftKeyboard).GetMethod("OnWindowDeactivated", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, [window, EventArgs.Empty]);
                 int refreshesBeforeActivation = candidates.RefreshCount;
@@ -2968,6 +3045,7 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 editor.Focus();
                 PumpDispatcher();
                 window.UpdateLayout();
@@ -3027,7 +3105,7 @@ public class SoftKeyboardTests
     {
         var frame = new System.Windows.Threading.DispatcherFrame();
         var timer = new System.Windows.Threading.DispatcherTimer(
-            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(150),
             System.Windows.Threading.DispatcherPriority.ApplicationIdle,
             (_, _) => frame.Continue = false,
             System.Windows.Threading.Dispatcher.CurrentDispatcher
@@ -3123,21 +3201,22 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
+                PumpDispatcher();
                 editor.Focus();
                 PumpDispatcher();
-                Assert.Equal("direct", keyboard.InputMode?.Id);
+                Assert.Equal("direct", keyboard.InputModeButton?.Id);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.SwitchInputMode));
-                Assert.True(adapter.SwitchRequested);
-                Assert.Equal("direct", keyboard.InputMode?.Id);
+                Assert.False(adapter.SwitchRequested);
+                Assert.Equal("direct", keyboard.InputModeButton?.Id);
                 adapter.ThrowOnRead = true;
                 typeof(SoftKeyboard).GetMethod("RefreshInputMode", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(keyboard, null);
                 PumpDispatcher();
-                Assert.Equal("direct", keyboard.InputMode?.Id);
+                Assert.Equal("direct", keyboard.InputModeButton?.Id);
                 Assert.IsType<InvalidOperationException>(keyboard.InputMethodError);
                 keyboard.InputModeAdapter = null;
                 PumpDispatcher();
-                Assert.True(keyboard.InputMode?.IsNativeInput);
+                Assert.Equal("direct", keyboard.InputModeButton?.Id);
             }
             finally
             {
@@ -3155,7 +3234,7 @@ public class SoftKeyboardTests
         internal bool SwitchRequested { get; private set; }
 
         public SoftKeyboardInputModeContribution GetContribution(
-            SoftKeyboardInputMethod inputMethod)
+            SoftKeyboardInputMethod inputMethod, SoftKeyboardInputObservation observation)
         {
             if (ThrowOnRead)
             {
@@ -3163,18 +3242,14 @@ public class SoftKeyboardTests
             }
 
             return new SoftKeyboardInputModeContribution(
-                SoftKeyboardInputModeFacet<SoftKeyboardInputMode>.FromValue(
-                    new SoftKeyboardInputMode("direct", false)
-                ),
-                SoftKeyboardInputModeFacet<SoftKeyboardInputModeButton>.FromValue(
-                    new SoftKeyboardInputModeButton("test", "A", "Direct input")
-                ),
-                SoftKeyboardInputModeFacet<SoftKeyboardInputModeTransition>.FromValue(Transition)
-            );
+                new SoftKeyboardInputModeButton("direct", "A", "Direct input"),
+                Transition, overridePlatformButton: true);
+
         }
 
         public bool TrySwitchMode(
             SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputObservation observation,
             SoftKeyboardInputModeTransition transition)
         {
             SwitchRequested = true;
@@ -3188,7 +3263,7 @@ public class SoftKeyboardTests
     {
         private static readonly Guid FakeClassId = new("D9400B6B-9E48-4D79-90A6-62A3C085B3C2");
         private static readonly Guid FakeProfileId = new("451C2C15-CE41-49D1-A05E-D6474366F501");
-        private SoftKeyboardInputMode _inputMode = new("native", true);
+        private bool _native = true;
         private bool _profileActive = true;
 
         internal int ActivationCount { get; private set; }
@@ -3211,46 +3286,31 @@ public class SoftKeyboardTests
             return true;
         }
 
-        public SoftKeyboardInputMode GetInputMode(SoftKeyboardInputMethod inputMethod)
-        {
-            return _inputMode;
-        }
-
         public SoftKeyboardInputModeButton GetInputModeButton(
             SoftKeyboardInputMethod inputMethod)
         {
             return new SoftKeyboardInputModeButton(
-                $"fake:{_inputMode.Id}",
-                _inputMode.IsNativeInput ? "中" : "A",
-                _inputMode.IsNativeInput ? "Native input" : "Direct input"
+                _native ? "native" : "direct",
+                _native ? "中" : "A",
+                _native ? "Native input" : "Direct input"
             );
         }
 
-        public bool TryInvokeInputModeButton(SoftKeyboardInputMethod inputMethod)
+        public SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
+            SoftKeyboardInputMethod inputMethod, Rect screenBounds)
         {
-            return TrySwitchInputMode(inputMethod, _inputMode);
-        }
-
-        public bool TrySwitchInputMode(
-            SoftKeyboardInputMethod inputMethod,
-            SoftKeyboardInputMode currentMode)
-        {
-            _inputMode = currentMode.IsNativeInput
-                ? new SoftKeyboardInputMode("direct", false)
-                : new SoftKeyboardInputMode("native", true);
-            return true;
+            _native = !_native;
+            return SoftKeyboardInputModeCommandResult.Accepted;
         }
 
         internal void SetNativeInput(bool native)
         {
-            _inputMode = native
-                ? new SoftKeyboardInputMode("native", true)
-                : new SoftKeyboardInputMode("direct", false);
+            _native = native;
         }
 
         internal void UseDirectKeyboardLayout()
         {
-            _inputMode = new SoftKeyboardInputMode("direct", false);
+            _native = false;
             _profileActive = false;
         }
     }
