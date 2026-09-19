@@ -3,8 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using Expression = System.Linq.Expressions.Expression;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop;
 
@@ -20,14 +21,15 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop;
 /// </remarks>
 internal static class SystemInputPaneController
 {
-    private static readonly Lazy<Func<HwndSource, bool, bool>?> InvokeInputPane = new(CreateInvoker);
+    private static readonly Lazy<Func<HwndSource, bool, bool>?> InvokeInputPane =
+        WpfReflectionBridge.Create("InputPane", CreateInvoker);
 
     /// <summary>
     /// Asks Windows to hide its input pane for the specified WPF window.
     /// </summary>
     /// <returns>
-    /// Unavailable when the host or WPF bridge cannot be used; otherwise Hidden or Rejected according
-    /// to WPF's result. WPF also reports COM failures during the hide operation as a rejected request.
+    /// Unavailable when the host or WPF bridge cannot be used; otherwise Hidden or Rejected
+    /// according to WPF's result. WPF reports COM failures during hiding as a rejected request.
     /// </returns>
     internal static SoftKeyboardSystemKeyboardSuppressionState TryHide(IntPtr window)
     {
@@ -44,11 +46,13 @@ internal static class SystemInputPaneController
     /// <summary>
     /// Asks Windows to restore its input pane after this control previously hid it.
     /// </summary>
-    /// <param name="window">The HWND whose focused editor may require the system input pane.</param>
-    /// <returns><see langword="true"/> when Windows accepted the advisory show request.</returns>
+    /// <param name="window">The HWND whose focused editor may need the system input pane.</param>
+    /// <returns>
+    /// <see langword="true"/> when Windows accepted the advisory show request.
+    /// </returns>
     /// <remarks>
     /// The caller performs the same foreground and focused-editor checks used by the suppression
-    /// lifecycle. Windows remains authoritative and can reject the request when a physical keyboard,
+    /// lifecycle. Windows may reject the request when a physical keyboard,
     /// user setting, or input policy says the touch keyboard is inappropriate.
     /// </remarks>
     internal static bool TryShow(IntPtr window)
@@ -57,7 +61,7 @@ internal static class SystemInputPaneController
     }
 
     /// <summary>
-    /// Resolves the live WPF host and contains failures at the optional framework integration boundary.
+    /// Resolves the live WPF host and contains optional framework integration failures.
     /// </summary>
     private static bool TryInvoke(IntPtr window, bool show, out bool accepted)
     {
@@ -85,14 +89,14 @@ internal static class SystemInputPaneController
             accepted = invoke(source, show);
             return true;
         }
-        catch (Exception exception) when (IsUnavailable(exception))
+        catch (Exception exception) when (WpfReflectionBridge.IsUnavailable(exception))
         {
             return false;
         }
     }
 
     /// <summary>
-    /// Caches the internal method contract without retaining a window or a thread-affine WinRT object.
+    /// Resolves the runtime contract without retaining a window or a thread-affine WinRT object.
     /// </summary>
     private static Func<HwndSource, bool, bool>? CreateInvoker()
     {
@@ -100,6 +104,15 @@ internal static class SystemInputPaneController
             "MS.Internal.WindowsRuntime.Windows.UI.ViewManagement.InputPane"
         );
 
+        return CreateInvoker(paneType);
+    }
+
+    /// <summary>
+    /// Compiles the complete pane contract once, adapting its private type to IDisposable.
+    /// Each invocation acquires and releases one wrapper on the calling dispatcher.
+    /// </summary>
+    internal static Func<HwndSource, bool, bool>? CreateInvoker(Type? paneType)
+    {
         var getForWindow = paneType?.GetMethod(
             "GetForWindow",
             BindingFlags.Static | BindingFlags.NonPublic,
@@ -133,38 +146,66 @@ internal static class SystemInputPaneController
             return null;
         }
 
+        var sourceParameter = Expression.Parameter(typeof(HwndSource), "source");
+        var paneParameter = Expression.Parameter(typeof(IDisposable), "pane");
+        var showParameter = Expression.Parameter(typeof(bool), "show");
+        var typedPane = Expression.Convert(paneParameter, paneType);
+
+        var acquire = Expression.Lambda<Func<HwndSource, IDisposable?>>(
+            Expression.Convert(Expression.Call(getForWindow, sourceParameter), typeof(IDisposable)),
+            sourceParameter
+        ).Compile();
+        var request = Expression.Lambda<Func<IDisposable, bool, bool>>(
+            Expression.Condition(
+                showParameter,
+                Expression.Call(typedPane, tryShow),
+                Expression.Call(typedPane, tryHide)),
+            paneParameter,
+            showParameter
+        ).Compile();
+
         return (source, show) =>
         {
+#if DEBUG
+            var started = Stopwatch.GetTimestamp();
+            long acquired;
+            long requested;
+#endif
+            bool accepted;
+
             // Match WPF's TipTsfHelper: acquire and dispose one wrapper per request. InputPane
             // releases its pane RCW itself; never release its shared activation factory or cache
             // the wrapper across HWND lifetimes or dispatcher threads.
-            using var pane = (IDisposable?)getForWindow.Invoke(null, [source]);
-
-            if (pane is null)
+            using (var pane = acquire(source))
             {
-                throw new PlatformNotSupportedException();
+                if (pane is null)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+
+#if DEBUG
+                acquired = Stopwatch.GetTimestamp();
+#endif
+                accepted = request(pane, show);
+#if DEBUG
+                requested = Stopwatch.GetTimestamp();
+#endif
             }
 
-            return (bool)(show ? tryShow : tryHide).Invoke(pane, null)!;
+#if DEBUG
+            var completed = Stopwatch.GetTimestamp();
+            var totalMilliseconds = (completed - started) * 1000.0 / Stopwatch.Frequency;
+            if (totalMilliseconds >= 16)
+            {
+                Debug.WriteLine(
+                    $"[SoftKeyboard.SystemInputPane] Slow INPUT PANE request; show={show}, "
+                    + $"accepted={accepted}, "
+                    + $"acquireMs={(acquired - started) * 1000.0 / Stopwatch.Frequency:F3}, "
+                    + $"requestMs={(requested - acquired) * 1000.0 / Stopwatch.Frequency:F3}, "
+                    + $"disposeMs={(completed - requested) * 1000.0 / Stopwatch.Frequency:F3}.");
+            }
+#endif
+            return accepted;
         };
-    }
-
-    private static bool IsUnavailable(Exception exception)
-    {
-        // Reflection wraps activation and invocation failures. Keep them inside this optional
-        // service so a framework/platform change cannot interrupt editor focus processing.
-        return exception is TargetInvocationException
-            or TypeInitializationException
-            or MemberAccessException
-            or ArgumentException
-            or InvalidOperationException
-            or System.Security.SecurityException
-            or System.IO.IOException
-            or COMException
-            or DllNotFoundException
-            or EntryPointNotFoundException
-            or InvalidCastException
-            or PlatformNotSupportedException
-            or TypeLoadException;
     }
 }

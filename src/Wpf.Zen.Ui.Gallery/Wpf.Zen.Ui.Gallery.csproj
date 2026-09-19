@@ -15,6 +15,7 @@
 
   <!-- Share the passive TSF interop contracts without exposing library internals. -->
   <ItemGroup>
+    <Compile Include="..\Wpf.Zen.Ui.VirtualInput\Interop\WpfReflectionBridge.cs" Link="Diagnostics\Interop\WpfReflectionBridge.cs" />
     <Compile Include="..\Wpf.Zen.Ui.VirtualInput\Interop\TextServicesFramework\ITfLangBarItemMgr.cs" Link="Diagnostics\Interop\ITfLangBarItemMgr.cs" />
     <Compile Include="..\Wpf.Zen.Ui.VirtualInput\Interop\TextServicesFramework\ITfSource.cs" Link="Diagnostics\Interop\ITfSource.cs" />
     <Compile Include="..\Wpf.Zen.Ui.VirtualInput\Interop\TextServicesFramework\ITfCompartment.cs" Link="Diagnostics\Interop\ITfCompartment.cs" />

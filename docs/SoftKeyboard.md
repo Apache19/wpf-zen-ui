@@ -1,4 +1,4 @@
-﻿# SoftKeyboard
+# SoftKeyboard
 
 `SoftKeyboard` 是可参与 WPF 布局、保持编辑器焦点的软键盘控件，适合平板、电子触控互动设备、POS
 和需要让键盘稳定占据 Page、ContentDialog 或表单指定区域的应用。

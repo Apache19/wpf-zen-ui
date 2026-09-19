@@ -30,6 +30,11 @@ internal sealed class TsfInputMethodService :
     private static readonly Guid ProfilesClassId    = new("33C53A50-F456-4884-B049-85FD643ECFED");
     private static readonly Guid KeyboardCategoryId = new("34745C63-B2F0-4784-8B67-5E12C8701A31");
 
+    // Cache COM type resolution only. Each operation still owns a fresh apartment-bound RCW;
+    // Activator performs COM activation here, not reflected managed-constructor dispatch.
+    private static readonly Lazy<Type?> ProfilesType = new(
+        () => Type.GetTypeFromCLSID(ProfilesClassId, throwOnError: false));
+
     /// <inheritdoc />
     public SoftKeyboardInputObservation ReadState(bool useImm, IntPtr window)
     {
@@ -405,9 +410,13 @@ internal sealed class TsfInputMethodService :
         }
     }
 
+    /// <summary>
+    /// Activates a profiles object on the calling apartment using cached COM type metadata.
+    /// The caller must release the returned RCW when enumeration or activation completes.
+    /// </summary>
     private static ITfInputProcessorProfiles? CreateProfiles()
     {
-        var profilesType = Type.GetTypeFromCLSID(ProfilesClassId, throwOnError: false);
+        var profilesType = ProfilesType.Value;
         return profilesType is null
             ? null
             : Activator.CreateInstance(profilesType) as ITfInputProcessorProfiles;
