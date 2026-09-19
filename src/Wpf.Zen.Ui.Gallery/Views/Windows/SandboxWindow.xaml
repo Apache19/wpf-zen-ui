@@ -6,7 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     x:Name="RootWindow"
-    Title="IME Window Message Lab"
+    Title="IME / TSF Event Lab"
     Width="1450"
     Height="850"
     MinWidth="900"
@@ -26,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <ui:TitleBar
-            Title="WPF Zen UI Gallery - IME Window Message Lab"
+            Title="WPF Zen UI Gallery - IME / TSF Event Lab"
             Grid.Row="0"
             IsIconInteractionEnabled="True">
             <ui:TitleBar.Icon>
@@ -44,11 +44,14 @@
                 <TextBlock
                     FontSize="20"
                     FontWeight="SemiBold"
-                    Text="Windows 输入法消息实验" />
+                    Text="Windows 输入法事件实验" />
                 <TextBlock Margin="0,8,0,0" TextWrapping="Wrap">
                     请把焦点留在下面的输入框，然后从其它输入法切换到微软日语。日志会记录窗口实际收到的
                     WM_INPUTLANGCHANGE、WM_IME_* 和焦点消息，并在每条激活或状态消息后立即、10、50、100、
-                    250、500 ms 查询窗口 HIMC 的 open/conversion。观察器不会处理或拦截消息。
+                    250、500 ms 查询窗口 HIMC 的 open/conversion。TSF 页记录当前 UI 线程的配置激活、
+                    OPEN/CLOSE、CONVERSION、UI 元素事件及 GUID_LBI_INPUTMODE 按钮的 OnUpdate 通知
+                    （取决于输入法支持）。按钮通知记录原始标志、各变化位及回调时的 compartment 值，
+                    可用于对照模式切换、焦点变化与输入操作的事件顺序。两个页面同时监听，分别控制记录。
                 </TextBlock>
                 <TextBox
                     x:Name="ImeProbeTextBox"
@@ -62,62 +65,102 @@
             </StackPanel>
         </Border>
 
-        <DockPanel Grid.Row="2" Margin="24,0,24,12">
-            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                <CheckBox
-                    x:Name="CaptureToggle"
-                    Margin="0,0,18,0"
-                    VerticalAlignment="Center"
-                    Click="OnCaptureToggleClick"
-                    Content="记录消息"
-                    Focusable="False"
-                    IsChecked="True" />
-                <CheckBox
-                    x:Name="AutoScrollToggle"
-                    Margin="0,0,18,0"
-                    VerticalAlignment="Center"
-                    Content="自动滚动"
-                    Focusable="False"
-                    IsChecked="True" />
-                <Button
-                    Margin="0,0,8,0"
-                    Click="OnCaptureSnapshotClick"
-                    Content="读取当前状态"
-                    Focusable="False" />
-                <Button
-                    Margin="0,0,8,0"
-                    Click="OnCopyLogClick"
-                    Content="复制日志"
-                    Focusable="False" />
-                <Button
-                    Click="OnClearLogClick"
-                    Content="清空"
-                    Focusable="False" />
-            </StackPanel>
-            <TextBlock
-                Margin="16,0,0,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                Foreground="{ui:DynamicBrush TextFillSecondary}"
-                Text="open 为 IMM 布尔值；conversion 同时显示十进制、十六进制和标志名" />
-        </DockPanel>
+        <ui:TabControl Grid.Row="2" Grid.RowSpan="2" Margin="24,0,24,24">
+            <TabItem Header="Windows 消息">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,12,0,12">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                            <CheckBox
+                                x:Name="CaptureToggle"
+                                Margin="0,0,18,0"
+                                VerticalAlignment="Center"
+                                Click="OnCaptureToggleClick"
+                                Content="记录消息"
+                                Focusable="False"
+                                IsChecked="True" />
+                            <CheckBox
+                                x:Name="AutoScrollToggle"
+                                Margin="0,0,18,0"
+                                VerticalAlignment="Center"
+                                Content="自动滚动"
+                                Focusable="False"
+                                IsChecked="True" />
+                            <Button
+                                Margin="0,0,8,0"
+                                Click="OnCaptureSnapshotClick"
+                                Content="读取当前状态"
+                                Focusable="False" />
+                            <Button
+                                Margin="0,0,8,0"
+                                Click="OnCopyLogClick"
+                                Content="复制日志"
+                                Focusable="False" />
+                            <Button
+                                Click="OnClearLogClick"
+                                Content="清空"
+                                Focusable="False" />
+                        </StackPanel>
+                        <TextBlock
+                            Margin="16,0,0,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Foreground="{ui:DynamicBrush TextFillSecondary}"
+                            Text="open 为 IMM 布尔值；conversion 同时显示十进制、十六进制和标志名" />
+                    </DockPanel>
 
-        <Border
-            Grid.Row="3"
-            Margin="24,0,24,24"
-            BorderBrush="{ui:DynamicBrush ControlStrokeDefault}"
-            BorderThickness="1"
-            CornerRadius="6">
-            <ListBox
-                x:Name="MessageLogList"
-                Padding="8"
-                FontFamily="Consolas"
-                FontSize="12"
-                ItemsSource="{Binding MessageRecords, ElementName=RootWindow}"
-                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                VirtualizingPanel.IsVirtualizing="True"
-                VirtualizingPanel.VirtualizationMode="Recycling" />
-        </Border>
+                    <Border
+                        Grid.Row="1"
+                        Margin="0"
+                        BorderBrush="{ui:DynamicBrush ControlStrokeDefault}"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <ListBox
+                            x:Name="MessageLogList"
+                            Padding="8"
+                            FontFamily="Consolas"
+                            FontSize="12"
+                            ItemsSource="{Binding MessageRecords, ElementName=RootWindow}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling" />
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="TSF 事件">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="0,12,0,12" Orientation="Horizontal">
+                        <CheckBox x:Name="TsfCaptureToggle" Margin="0,0,18,0"
+                            VerticalAlignment="Center" Content="记录事件" IsChecked="True"
+                            Focusable="False" Click="OnTsfCaptureToggleClick" />
+                        <CheckBox x:Name="TsfAutoScrollToggle" Margin="0,0,18,0"
+                            VerticalAlignment="Center" Content="自动滚动" IsChecked="True"
+                            Focusable="False" />
+                        <Button Margin="0,0,8,0" Content="读取当前状态" Focusable="False"
+                            Click="OnTsfCaptureSnapshotClick" />
+                        <Button Margin="0,0,8,0" Content="复制日志" Focusable="False"
+                            Click="OnTsfCopyLogClick" />
+                        <Button Content="清空" Focusable="False" Click="OnTsfClearLogClick" />
+                    </StackPanel>
+                    <Border Grid.Row="1" BorderBrush="{ui:DynamicBrush ControlStrokeDefault}"
+                        BorderThickness="1" CornerRadius="6">
+                        <ListBox x:Name="TsfLogList" Padding="8" FontFamily="Consolas" FontSize="12"
+                            ItemsSource="{Binding TsfRecords, ElementName=RootWindow}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling" />
+                    </Border>
+                </Grid>
+            </TabItem>
+        </ui:TabControl>
     </Grid>
 </ui:FluentWindow>
