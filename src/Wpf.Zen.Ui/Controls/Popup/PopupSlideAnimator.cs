@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -837,16 +838,20 @@ public static class PopupSlideAnimator
         }
     }
 
+    /// <summary>
+    /// Resolves the native popup animation surface and computes its slide distance and duration.
+    /// Leaves the reference outputs null when the native animation structure is unavailable.
+    /// </summary>
     private static bool TryGetSlideAnimationState(
         Popup popup,
         PopupAnimationSettings settings,
-        out UIElement popupRoot,
-        out TranslateTransform translateTransform,
+        [NotNullWhen(true)] out UIElement? popupRoot,
+        [NotNullWhen(true)] out TranslateTransform? translateTransform,
         out double startOffset,
         out TimeSpan duration)
     {
-        popupRoot          = null!;
-        translateTransform = null!;
+        popupRoot          = null;
+        translateTransform = null;
         startOffset        = 0D;
         duration           = TimeSpan.Zero;
 
@@ -881,9 +886,13 @@ public static class PopupSlideAnimator
         return true;
     }
 
-    private static bool TryGetNativeAnimationLayer(UIElement popupRoot, out UIElement animationLayer)
+    /// <summary>
+    /// Finds WPF's native animation layer, returning null when the expected structure is absent.
+    /// </summary>
+    private static bool TryGetNativeAnimationLayer(
+        UIElement popupRoot, [NotNullWhen(true)] out UIElement? animationLayer)
     {
-        animationLayer = null!;
+        animationLayer = null;
 
         // PopupRoot is internal, but its public visual structure mirrors the WPF source: a clipping Decorator whose
         // child is the AdornerDecorator animated by SetupTranslateAnimations. If this contract changes, leave the

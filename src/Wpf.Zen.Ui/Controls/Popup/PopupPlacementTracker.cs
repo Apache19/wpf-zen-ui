@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Security;
 using System.Windows.Controls.Primitives;
@@ -414,7 +415,11 @@ public static class PopupPlacementTracker
             }
         }
 
-        private static bool TryRead<T>(Popup popup, PropertyInfo? property, out T value)
+        /// <summary>
+        /// Reads optional native placement state, returning the default value when unavailable.
+        /// </summary>
+        private static bool TryRead<T>(
+            Popup popup, PropertyInfo? property, [MaybeNullWhen(false)] out T value)
         {
             try
             {
@@ -445,7 +450,7 @@ public static class PopupPlacementTracker
                 // Unavailable private state is handled by the geometric fallback.
             }
 
-            value = default!;
+            value = default;
             return false;
         }
 

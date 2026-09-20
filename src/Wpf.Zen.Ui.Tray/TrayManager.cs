@@ -48,6 +48,10 @@ internal static class TrayManager
         return Register(notifyIcon, (HwndSource)PresentationSource.FromVisual(parentWindow));
     }
 
+    /// <summary>
+    /// Creates the message window and shell data for an icon with an available parent source.
+    /// Returns false when the parent source cannot host registration.
+    /// </summary>
     public static bool Register(INotifyIcon notifyIcon, HwndSource? parentSource)
     {
         if (parentSource is null)
@@ -82,7 +86,7 @@ internal static class TrayManager
             ElementId = notifyIcon.Id,
         };
 
-        notifyIcon.ShellIconData = new Interop.Shell32.NOTIFYICONDATA
+        var shellIconData = new Interop.Shell32.NOTIFYICONDATA
         {
             uID = notifyIcon.Id,
             uFlags = Interop.Shell32.NIF.MESSAGE,
@@ -91,17 +95,19 @@ internal static class TrayManager
             dwState = 0x2,
         };
 
+        notifyIcon.ShellIconData = shellIconData;
+
         if (!string.IsNullOrEmpty(notifyIcon.TooltipText))
         {
-            notifyIcon.ShellIconData.szTip = notifyIcon.TooltipText;
-            notifyIcon.ShellIconData.uFlags |= Interop.Shell32.NIF.TIP;
+            shellIconData.szTip = notifyIcon.TooltipText;
+            shellIconData.uFlags |= Interop.Shell32.NIF.TIP;
         }
 
-        ReloadHicon(notifyIcon);
+        ReloadHicon(notifyIcon, shellIconData);
 
         notifyIcon.HookWindow.AddHook(notifyIcon.WndProc);
 
-        _ = Interop.Shell32.Shell_NotifyIcon(Interop.Shell32.NIM.ADD, notifyIcon.ShellIconData);
+        _ = Interop.Shell32.Shell_NotifyIcon(Interop.Shell32.NIM.ADD, shellIconData);
 
         TrayData.NotifyIcons.Add(notifyIcon);
 
@@ -110,29 +116,37 @@ internal static class TrayManager
         return true;
     }
 
+    /// <summary>
+    /// Updates a registered icon's image; an icon without registration data requires no update.
+    /// </summary>
     public static bool ModifyIcon(INotifyIcon notifyIcon)
     {
-        if (!notifyIcon.IsRegistered)
+        var shellIconData = notifyIcon.ShellIconData;
+        if (!notifyIcon.IsRegistered || shellIconData is null)
         {
             return true;
         }
 
-        ReloadHicon(notifyIcon);
+        ReloadHicon(notifyIcon, shellIconData);
 
-        return Interop.Shell32.Shell_NotifyIcon(Interop.Shell32.NIM.MODIFY, notifyIcon.ShellIconData);
+        return Interop.Shell32.Shell_NotifyIcon(Interop.Shell32.NIM.MODIFY, shellIconData);
     }
 
+    /// <summary>
+    /// Updates a registered icon's tooltip; an icon without registration data requires no update.
+    /// </summary>
     public static bool ModifyToolTip(INotifyIcon notifyIcon)
     {
-        if (!notifyIcon.IsRegistered)
+        var shellIconData = notifyIcon.ShellIconData;
+        if (!notifyIcon.IsRegistered || shellIconData is null)
         {
             return true;
         }
 
-        notifyIcon.ShellIconData.szTip = notifyIcon.TooltipText;
-        notifyIcon.ShellIconData.uFlags |= Interop.Shell32.NIF.TIP;
+        shellIconData.szTip = notifyIcon.TooltipText;
+        shellIconData.uFlags |= Interop.Shell32.NIF.TIP;
 
-        return Interop.Shell32.Shell_NotifyIcon(Interop.Shell32.NIM.MODIFY, notifyIcon.ShellIconData);
+        return Interop.Shell32.Shell_NotifyIcon(Interop.Shell32.NIM.MODIFY, shellIconData);
     }
 
     /// <summary>
@@ -167,7 +181,10 @@ internal static class TrayManager
         return (HwndSource)PresentationSource.FromVisual(mainWindow);
     }
 
-    private static void ReloadHicon(INotifyIcon notifyIcon)
+    /// <summary>
+    /// Writes the configured image or application icon into the current registration's shell data.
+    /// </summary>
+    private static void ReloadHicon(INotifyIcon notifyIcon, Interop.Shell32.NOTIFYICONDATA shellIconData)
     {
         IntPtr hIcon = IntPtr.Zero;
 
@@ -183,8 +200,8 @@ internal static class TrayManager
 
         if (hIcon != IntPtr.Zero)
         {
-            notifyIcon.ShellIconData.hIcon = hIcon;
-            notifyIcon.ShellIconData.uFlags |= Interop.Shell32.NIF.ICON;
+            shellIconData.hIcon = hIcon;
+            shellIconData.uFlags |= Interop.Shell32.NIF.ICON;
         }
     }
 }

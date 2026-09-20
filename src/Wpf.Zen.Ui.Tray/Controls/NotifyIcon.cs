@@ -70,13 +70,24 @@ public class NotifyIcon : System.Windows.FrameworkElement, IDisposable
         new PropertyMetadata(true, OnMenuOnRightClickChanged)
     );
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="Icon"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
         typeof(ImageSource),
         typeof(NotifyIcon),
-        new PropertyMetadata((ImageSource)null!, OnIconChanged)
+        new PropertyMetadata(null, OnIconChanged)
     );
+
+    /// <summary>
+    /// Gets or sets the tray image. The default is null, which uses the application icon.
+    /// </summary>
+    public ImageSource? Icon
+    {
+        get => (ImageSource?)GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
 
     /// <summary>Identifies the <see cref="Menu"/> dependency property.</summary>
     public static readonly DependencyProperty MenuProperty = DependencyProperty.Register(
@@ -116,12 +127,6 @@ public class NotifyIcon : System.Windows.FrameworkElement, IDisposable
     {
         get => (bool)GetValue(FocusOnLeftClickProperty);
         set => SetValue(FocusOnLeftClickProperty, value);
-    }
-
-    public ImageSource Icon
-    {
-        get => (ImageSource)GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     /// <summary>

@@ -18,7 +18,10 @@ public class NotifyIconService : INotifyIconService
 {
     private readonly Internal.InternalNotifyIconManager internalNotifyIconManager;
 
-    public Window ParentWindow { get; internal set; } = null!;
+    /// <summary>
+    /// Gets the explicitly assigned parent window, or null when registration uses the main window.
+    /// </summary>
+    public Window? ParentWindow { get; internal set; }
 
     public int Id => internalNotifyIconManager.Id;
 

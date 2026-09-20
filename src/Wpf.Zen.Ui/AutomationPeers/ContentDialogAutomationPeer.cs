@@ -86,7 +86,7 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
     }
 
     /// <inheritdoc/>
-    protected override string? GetNameCore()
+    protected override string GetNameCore()
     {
         if (Owner is ContentDialog dialog)
         {

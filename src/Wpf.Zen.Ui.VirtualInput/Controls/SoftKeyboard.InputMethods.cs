@@ -166,7 +166,7 @@ public partial class SoftKeyboard
                 inputVersion
             );
 
-            if (session is null || !IsCurrent())
+            if (!IsCurrent())
             {
                 return false;
             }
@@ -296,7 +296,7 @@ public partial class SoftKeyboard
                 inputVersion
             );
 
-            return session is not null && IsCurrent() && command(session, IsCurrent) && IsCurrent();
+            return IsCurrent() && command(session, IsCurrent) && IsCurrent();
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
@@ -328,9 +328,17 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Creates and attaches a session only while its source and target context remain current.
+    /// Reuses an existing session or creates one, attaching it only while its context remains
+    /// current.
     /// </summary>
-    private ISoftKeyboardInputMethodSession? GetOrCreateInputMethodSession(
+    /// <returns>
+    /// A non-null session. The caller must check whether its context is still current and dispose
+    /// a session that was not attached.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// The input-method source returned a null session.
+    /// </exception>
+    private ISoftKeyboardInputMethodSession GetOrCreateInputMethodSession(
         ISoftKeyboardInputMethodSession? session,
         int sessionVersion,
         int inputVersion)

@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Wpf.Zen.Ui;
 
@@ -433,19 +434,21 @@ public sealed class NavigationMap :
         NotifyChanged();
     }
 
-    /// <summary>Attempts to get a placement by its exact route key.</summary>
+    /// <summary>
+    /// Attempts to get a placement by its exact route key.
+    /// </summary>
     /// <param name="key">The route key to find.</param>
-    /// <param name="node">Receives the registered node when found.</param>
+    /// <param name="node">Receives the registered node when found, or null on failure.</param>
     /// <returns><see langword="true"/> when the key is registered.</returns>
-    public bool TryGetNode(string key, out NavigationMapNode node)
+    public bool TryGetNode(string key, [NotNullWhen(true)] out NavigationMapNode? node)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
-            node = null!;
+            node = null;
             return false;
         }
 
-        return _nodes.TryGetValue(key, out node!);
+        return _nodes.TryGetValue(key, out node);
     }
 
     /// <summary>Determines whether this map owns the specified placement instance.</summary>

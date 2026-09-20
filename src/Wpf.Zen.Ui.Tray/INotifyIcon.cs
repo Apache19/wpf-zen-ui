@@ -15,9 +15,9 @@ namespace Wpf.Zen.Ui.Tray;
 internal interface INotifyIcon
 {
     /// <summary>
-    /// Gets or sets the notify icon shell data.
+    /// Gets or sets the notify icon shell data, or null before registration creates it.
     /// </summary>
-    public Interop.Shell32.NOTIFYICONDATA ShellIconData { get; set; }
+    public Interop.Shell32.NOTIFYICONDATA? ShellIconData { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the icon is currently registered in the tray area.
@@ -40,9 +40,9 @@ internal interface INotifyIcon
     ImageSource? Icon { get; set; }
 
     /// <summary>
-    /// Gets or sets the hWnd that will receive messages for the icon.
+    /// Gets or sets the window that receives icon messages, or null before registration creates it.
     /// </summary>
-    HwndSource HookWindow { get; set; }
+    HwndSource? HookWindow { get; set; }
 
     /// <summary>
     /// Gets or sets the menu displayed when the icon is right-clicked.

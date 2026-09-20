@@ -31,13 +31,13 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
     public string TooltipText { get; set; } = string.Empty;
 
     /// <inheritdoc />
-    public ImageSource? Icon { get; set; } = default!;
+    public ImageSource? Icon { get; set; }
 
     /// <inheritdoc />
-    public HwndSource HookWindow { get; set; } = default!;
+    public HwndSource? HookWindow { get; set; }
 
     /// <inheritdoc />
-    public ContextMenu? ContextMenu { get; set; } = default!;
+    public ContextMenu? ContextMenu { get; set; }
 
     /// <inheritdoc />
     public bool FocusOnLeftClick { get; set; } = true;
@@ -58,9 +58,9 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
     public event NotifyIconEventHandler? MiddleDoubleClick;
 
     /// <summary>
-    /// Gets or sets a set of information for Shell32 to manipulate the icon.
+    /// Gets or sets the shell data created during registration, or null before registration.
     /// </summary>
-    public Interop.Shell32.NOTIFYICONDATA ShellIconData { get; set; } = default!;
+    public Interop.Shell32.NOTIFYICONDATA? ShellIconData { get; set; }
 
     public InternalNotifyIconManager()
     {
@@ -172,7 +172,7 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
             "Wpf.Zen.Ui.NotifyIcon"
         );
 
-        if (ContextMenu is null)
+        if (ContextMenu is null || HookWindow is null)
         {
             return;
         }

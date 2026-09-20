@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -88,8 +89,8 @@ internal static class ListItemTemplateManager
     /// </summary>
     internal static bool TryFindOwner(
         DependencyObject origin,
-        out ItemsControl owner,
-        out DependencyObject itemContainer
+        [NotNullWhen(true)] out ItemsControl? owner,
+        [NotNullWhen(true)] out DependencyObject? itemContainer
     )
     {
         DependencyObject? current = origin;
@@ -108,8 +109,8 @@ internal static class ListItemTemplateManager
             current = templatedParent ?? GetVisualOrLogicalParent(current);
         }
 
-        owner = null!;
-        itemContainer = null!;
+        owner         = null;
+        itemContainer = null;
         return false;
     }
 

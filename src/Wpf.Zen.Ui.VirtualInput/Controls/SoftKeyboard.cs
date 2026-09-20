@@ -118,7 +118,8 @@ public partial class SoftKeyboard : Control
                 ReleaseCandidatePresentation();
             });
 
-        InitializeSettings();
+        SettingsItems = [with(_settingsItems)];
+        SettingsMenu  = InitializeSettings();
 
         Candidates = [with(_candidates)];
 
@@ -256,7 +257,7 @@ public partial class SoftKeyboard : Control
 
         CancelKeyInteraction();
 
-        SettingsMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+        SettingsMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (_inputMethodMenu is not null)
         {

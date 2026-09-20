@@ -87,8 +87,8 @@ public sealed class ListItemTemplateSelector : DataTemplateSelector
         if (
             !ListItemTemplateManager.TryFindOwner(
                 container,
-                out ItemsControl owner,
-                out DependencyObject itemContainer
+                out ItemsControl? owner,
+                out DependencyObject? itemContainer
             )
         )
         {

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -148,7 +149,7 @@ public static class PopupDismissal
         if (
             sender is not Popup { IsOpen: true, StaysOpen: false } popup
             || popup.GetValue(PopupGestureControllerProperty) is PopupGestureController
-            || !TryGetOwnerUnderPointer(popup, popup.PlacementTarget, out UIElement owner)
+            || !TryGetOwnerUnderPointer(popup, popup.PlacementTarget, out UIElement? owner)
         )
         {
             return;
@@ -169,7 +170,7 @@ public static class PopupDismissal
             || (e.ChangedButton != MouseButton.Left && e.ChangedButton != MouseButton.Right)
             || contextMenu.GetValue(ContextMenuGestureControllerProperty)
                 is ContextMenuGestureController
-            || !TryGetContextMenuOwnerUnderPointer(contextMenu, out UIElement owner)
+            || !TryGetContextMenuOwnerUnderPointer(contextMenu, out UIElement? owner)
         )
         {
             return;
@@ -194,9 +195,13 @@ public static class PopupDismissal
         );
     }
 
+    /// <summary>
+    /// Resolves the context menu's current or captured owner when it is under the pointer.
+    /// Returns a null owner when the pointer is outside that element or no owner is available.
+    /// </summary>
     private static bool TryGetContextMenuOwnerUnderPointer(
         ContextMenu contextMenu,
-        out UIElement owner
+        [NotNullWhen(true)] out UIElement? owner
     )
     {
         UIElement? candidate = GetExcludedElement(contextMenu);
@@ -219,7 +224,7 @@ public static class PopupDismissal
             contextMenu.ReadLocalValue(ContextMenu.PlacementTargetProperty) as UIElement;
         if (candidate is null || !IsPointerWithin(candidate))
         {
-            owner = null!;
+            owner = null;
             return false;
         }
 
@@ -227,16 +232,19 @@ public static class PopupDismissal
         return true;
     }
 
+    /// <summary>
+    /// Resolves the excluded element or placement target under the pointer, or null on failure.
+    /// </summary>
     private static bool TryGetOwnerUnderPointer(
         DependencyObject popupSurface,
         UIElement? placementTarget,
-        out UIElement owner
+        [NotNullWhen(true)] out UIElement? owner
     )
     {
         UIElement? candidate = GetExcludedElement(popupSurface) ?? placementTarget;
         if (candidate is null || !IsPointerWithin(candidate))
         {
-            owner = null!;
+            owner = null;
             return false;
         }
 

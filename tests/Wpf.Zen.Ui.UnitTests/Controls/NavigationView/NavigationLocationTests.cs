@@ -159,7 +159,7 @@ public class NavigationLocationTests
 
             navigationView.NavigationMap.Update(map =>
             {
-                Assert.True(map.TryGetNode("d", out NavigationMapNode destination));
+                Assert.True(map.TryGetNode("d", out NavigationMapNode? destination));
                 destination.ParentKey = "b";
                 destination.Content = "Renamed";
             });
@@ -277,7 +277,7 @@ public class NavigationLocationTests
             var map = Assert.IsType<NavigationMap>(XamlReader.Parse(xaml));
 
             Assert.Equal(2, map.Count);
-            Assert.True(map.TryGetNode("destination", out NavigationMapNode destination));
+            Assert.True(map.TryGetNode("destination", out NavigationMapNode? destination));
             Assert.Equal("root", destination.ParentKey);
             Assert.Equal(typeof(Border), destination.PageType);
             Assert.False(destination.IsBreadcrumbVisible);
@@ -305,9 +305,9 @@ public class NavigationLocationTests
         initialization.EndInit();
 
         Assert.Equal(2, map.Count);
-        Assert.True(map.TryGetNode("first", out NavigationMapNode registeredFirst));
+        Assert.True(map.TryGetNode("first", out NavigationMapNode? registeredFirst));
         Assert.Same(first, registeredFirst);
-        Assert.True(map.TryGetNode("second", out NavigationMapNode registeredSecond));
+        Assert.True(map.TryGetNode("second", out NavigationMapNode? registeredSecond));
         Assert.Same(second, registeredSecond);
     }
 

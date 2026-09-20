@@ -113,10 +113,11 @@ public partial class SoftKeyboard
     /// <summary>
     /// Gets the current data-driven settings tree, usable by application-owned menu templates.
     /// </summary>
-    public ReadOnlyObservableCollection<SoftKeyboardSetting> SettingsItems { get; private set; } = null!;
+    public ReadOnlyObservableCollection<SoftKeyboardSetting> SettingsItems { get; }
 
     /// <summary>
-    /// Gets the default ContextMenu for the template's DropDownButton.Flyout.
+    /// Gets the default ContextMenu created during construction for the template's
+    /// DropDownButton.Flyout.
     /// </summary>
     /// <remarks>
     /// Each keyboard owns its menu. Items have the corresponding SoftKeyboardSetting as
@@ -126,23 +127,25 @@ public partial class SoftKeyboard
     /// template may omit PART_SettingsButton; programmatic settings and layout selection remain
     /// available.
     /// </remarks>
-    public ContextMenu SettingsMenu { get; private set; } = null!;
+    public ContextMenu SettingsMenu { get; }
 
-    private void InitializeSettings()
+    /// <summary>
+    /// Creates the settings menu during construction and wires refresh and focus restoration.
+    /// </summary>
+    /// <returns>The menu owned by this keyboard for its lifetime.</returns>
+    private ContextMenu InitializeSettings()
     {
-        SettingsItems = [with(_settingsItems)];
-
         // The keyboard is a pointer-operated input surface. Its settings must not switch WPF's
         // TSF document or reset the editor's per-document conversion mode merely by being opened.
-        SettingsMenu = new ContextMenu
+        var menu = new ContextMenu
         {
             Placement = PlacementMode.Top,
             Focusable = false
         };
 
-        SettingsMenu.Opened += (_, _) => RefreshSettings();
+        menu.Opened += (_, _) => RefreshSettings();
 
-        SettingsMenu.Closed += (_, _) =>
+        menu.Closed += (_, _) =>
         {
             // ContextMenu owns a temporary focus scope. Restore only while our host remains active;
             // clicking another editor/window must never pull its focus back to this keyboard.
@@ -163,6 +166,8 @@ public partial class SoftKeyboard
                 )
             );
         };
+
+        return menu;
     }
 
     /// <summary>
@@ -173,8 +178,7 @@ public partial class SoftKeyboard
     {
         VerifyAccess();
 
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (_refreshingSettings || _settingsLayoutContext is null || SettingsMenu is null)
+        if (_refreshingSettings || _settingsLayoutContext is null)
         {
             return;
         }
@@ -300,6 +304,10 @@ public partial class SoftKeyboard
         );
     }
 
+    /// <summary>
+    /// Builds a settings node's menu container and children, accepting clicks only for the current
+    /// settings version while the keyboard is enabled.
+    /// </summary>
     private object CreateSettingsMenuItem(SoftKeyboardSetting node, int version, string groupScope)
     {
         if (node.IsSeparator)

@@ -318,7 +318,10 @@ public class GridViewColumn : NativeGridViewColumn
         column.LayoutPropertyChanged?.Invoke(column, EventArgs.Empty);
     }
 
-    private static object? CoerceMaxWidth(DependencyObject d, object? baseValue)
+    /// <summary>
+    /// Keeps the maximum width at least as large as the minimum and returns the boxed width.
+    /// </summary>
+    private static object CoerceMaxWidth(DependencyObject d, object? baseValue)
     {
         var column = (GridViewColumn)d;
         return Math.Max(column.MinWidth, (double)baseValue!);

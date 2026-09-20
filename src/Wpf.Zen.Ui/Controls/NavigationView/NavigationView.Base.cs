@@ -6,6 +6,7 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
@@ -702,7 +703,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </summary>
     internal bool OnNavigationViewItemClick(NavigationViewItem navigationViewItem)
     {
-        if (!TryGetNavigationEntry(navigationViewItem, out NavigationEntry entry))
+        if (!TryGetNavigationEntry(navigationViewItem, out NavigationEntry? entry))
         {
             return false;
         }
@@ -1209,9 +1210,13 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         return false;
     }
 
+    /// <summary>
+    /// Resolves a container's semantic entry, creating one for a directly supplied navigation item.
+    /// Returns a null entry when the container cannot be associated with a navigation item.
+    /// </summary>
     internal bool TryGetNavigationEntry(
         NavigationViewItem container,
-        out NavigationEntry entry)
+        [NotNullWhen(true)] out NavigationEntry? entry)
     {
         if (container.NavigationEntry is { } containerEntry)
         {
@@ -1222,7 +1227,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         object? sourceItem = container.Header;
         if (sourceItem is null)
         {
-            entry = null!;
+            entry = null;
             return false;
         }
 
@@ -1241,7 +1246,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             return true;
         }
 
-        entry = null!;
+        entry = null;
         return false;
     }
 

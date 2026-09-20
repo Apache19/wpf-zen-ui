@@ -64,7 +64,7 @@ public sealed class OverlayModeToIntegerConverter : MarkupExtension, IValueConve
     /// Converts a <see cref="ScrollViewerOverlayMode"/> value to an <see cref="int"/>.
     /// Returns <see cref="OverlayValue"/> if the value is not a recognized mode.
     /// </summary>
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is ScrollViewerOverlayMode mode)
         {

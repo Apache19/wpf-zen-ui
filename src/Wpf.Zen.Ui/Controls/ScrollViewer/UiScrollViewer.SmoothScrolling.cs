@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -670,9 +671,13 @@ public partial class UiScrollViewer
         }
     }
 
+    /// <summary>
+    /// Finds the source's nearest scrollbar and succeeds only for this viewer's template scrollbar.
+    /// The output is null when the source has no scrollbar ancestor.
+    /// </summary>
     private bool TryFindOwningTemplateScrollBar(
         DependencyObject source,
-        out ScrollBar scrollBar)
+        [NotNullWhen(true)] out ScrollBar? scrollBar)
     {
         var current = source;
 
@@ -689,7 +694,7 @@ public partial class UiScrollViewer
             current = VisualTreeHelper.GetParent(current);
         }
 
-        scrollBar = null!;
+        scrollBar = null;
         return false;
     }
 

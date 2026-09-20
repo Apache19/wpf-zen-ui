@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
@@ -17,7 +16,7 @@ public partial class SoftKeyboard
 {
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
     {
-        if (_inputMethodMenu?.IsOpen == true || SettingsMenu?.IsOpen == true)
+        if (_inputMethodMenu?.IsOpen == true || SettingsMenu.IsOpen)
         {
             return;
         }

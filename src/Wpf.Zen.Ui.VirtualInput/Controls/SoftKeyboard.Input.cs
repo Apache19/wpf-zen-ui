@@ -96,7 +96,7 @@ public partial class SoftKeyboard
 
         _inputMethodMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
-        SettingsMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+        SettingsMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (!IsOpen || !IsEnabled || !IsVisible)
         {

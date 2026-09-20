@@ -45,7 +45,7 @@ public sealed class SoftKeyboardCandidateItemAutomationPeer : FrameworkElementAu
     }
 
     /// <inheritdoc />
-    protected override string? GetNameCore()
+    protected override string GetNameCore()
     {
         // The generated candidate identity remains authoritative even when a style replaces Content.
         string name = AutomationProperties.GetName(Owner);

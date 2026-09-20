@@ -291,7 +291,7 @@ internal class NavigationViewItemAutomationPeer
                 return false;
             }
 
-            return navigationView.TryGetNavigationEntry(_owner, out NavigationEntry entry)
+            return navigationView.TryGetNavigationEntry(_owner, out NavigationEntry? entry)
                 && ReferenceEquals(navigationView.SelectedItem, entry.Item);
         }
     }
@@ -324,7 +324,7 @@ internal class NavigationViewItemAutomationPeer
         }
 
         if (
-            !navigationView.TryGetNavigationEntry(_owner, out NavigationEntry entry)
+            !navigationView.TryGetNavigationEntry(_owner, out NavigationEntry? entry)
             || !ReferenceEquals(navigationView.SelectedItem, entry.Item)
         )
         {

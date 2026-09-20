@@ -61,19 +61,22 @@ public partial class NavigationView
     /// <summary>
     /// Gets or sets the template slot that displays the control-owned navigation frame. Every
     /// built-in template provides this required part; it is cleared before a new template is
-    /// attached because a WPF element cannot simultaneously have two visual parents.
+    /// attached because a WPF element cannot simultaneously have two visual parents. The slot is
+    /// null until the first template is applied.
     /// </summary>
-    protected ContentControl NavigationFrameHost { get; set; } = null!;
+    protected ContentControl? NavigationFrameHost { get; set; }
 
     /// <summary>
     /// Gets or sets the required list that hosts the primary navigation menu.
+    /// Null until the first template is applied.
     /// </summary>
-    protected NavigationViewList MenuItemsList { get; set; } = null!;
+    protected NavigationViewList? MenuItemsList { get; set; }
 
     /// <summary>
     /// Gets or sets the required list that hosts the footer navigation menu.
+    /// Null until the first template is applied.
     /// </summary>
-    protected NavigationViewList FooterMenuItemsList { get; set; } = null!;
+    protected NavigationViewList? FooterMenuItemsList { get; set; }
 
     /// <summary>
     /// Gets or sets the control located at the top of the pane with left arrow icon.

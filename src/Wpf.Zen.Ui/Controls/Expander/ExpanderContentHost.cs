@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -509,16 +510,20 @@ internal sealed class ExpanderContentHost : ContentControl
         ApplyTranslation();
     }
 
+    /// <summary>
+    /// Obtains the template surface and its owned translation, creating animation state on demand.
+    /// Both outputs are null when the template has no animation surface.
+    /// </summary>
     private bool TryGetAnimationState(
-        out UIElement          surface,
-        out TranslateTransform translation)
+        [NotNullWhen(true)] out UIElement? surface,
+        [NotNullWhen(true)] out TranslateTransform? translation)
     {
         if (_animatedSurface is null)
         {
             if (GetTemplateChild(ContentSurfacePartName) is not UIElement currentSurface)
             {
-                surface = null!;
-                translation = null!;
+                surface     = null;
+                translation = null;
                 return false;
             }
 
