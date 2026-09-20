@@ -45,14 +45,11 @@ public class SoftKeyboardRegressionTests
     }
 
     /// <summary>
-    /// Menu activation runs after popup teardown and expires when its source or keyboard lifetime
-    /// changes.
+    /// Menu selection closes the popup and activates the profile before returning to the caller.
+    /// Draining the Dispatcher must not issue another activation.
     /// </summary>
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    public Task ProfileMenuSelection_WaitsForCloseAndRejectsStaleRequests(int invalidation)
+    [Fact]
+    public Task ProfileMenuSelection_ActivatesImmediatelyAfterClose()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -77,18 +74,10 @@ public class SoftKeyboardRegressionTests
 
             SoftKeyboardCommands.ActivateInputMethod.Execute(scope.Method, keyboard);
             Assert.False(menu.IsOpen);
-            session.DidNotReceive().TryActivate(Arg.Any<SoftKeyboardInputMethod>());
-            if (invalidation == 1)
-            {
-                keyboard.InputMethodSource = CreateSource(scope.Method, out _);
-            }
-            else if (invalidation == 2)
-            {
-                keyboard.IsOpen = false;
-            }
+            session.Received(1).TryActivate(scope.Method);
 
             await scope.DrainAsync();
-            session.Received(invalidation == 0 ? 1 : 0).TryActivate(scope.Method);
+            session.Received(1).TryActivate(scope.Method);
         });
     }
 

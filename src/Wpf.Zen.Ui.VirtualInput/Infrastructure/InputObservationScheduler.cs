@@ -27,6 +27,11 @@ internal interface IInputObservationScheduler
 /// <summary>
 /// Schedules observation work outside native callbacks. Shutdown releases outstanding timers.
 /// </summary>
+/// <remarks>
+/// The requested delay merges notifications. Once due, callbacks run at Normal priority so
+/// pending mouse or keyboard input does not defer publication until the input queue is empty.
+/// Callbacks still wait for the Dispatcher thread to finish its current work.
+/// </remarks>
 internal sealed class DispatcherInputObservationScheduler(Dispatcher dispatcher) : IInputObservationScheduler
 {
     /// <inheritdoc />
@@ -50,7 +55,7 @@ internal sealed class DispatcherInputObservationScheduler(Dispatcher dispatcher)
             _dispatcher = dispatcher;
             _callback   = callback;
 
-            _timer = new DispatcherTimer(DispatcherPriority.Background, dispatcher)
+            _timer = new DispatcherTimer(DispatcherPriority.Normal, dispatcher)
             {
                 Interval = TimeSpan.FromMilliseconds(milliseconds),
             };

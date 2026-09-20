@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
 using Wpf.Zen.Ui.VirtualInput.Extensions.InputMethods;
@@ -22,10 +23,30 @@ using Wpf.Zen.Ui.VirtualInput.Layouts;
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Verifies observation timing and real WPF presentation with a deterministic scheduler.
+/// Verifies observation timing, Dispatcher scheduling, and real WPF presentation.
 /// </summary>
 public class InputMethodObservationTests
 {
+    /// <summary>
+    /// Due observation work remains asynchronous but runs ahead of queued input processing.
+    /// </summary>
+    [Fact]
+    public Task DuePublication_PrecedesPendingInput()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            var scheduler = new DispatcherInputObservationScheduler(dispatcher);
+            var published = false;
+            var input = dispatcher.InvokeAsync(() => Assert.True(published), DispatcherPriority.Input);
+
+            using var scheduled = scheduler.Schedule(0, () => published = true);
+            Assert.False(published);
+
+            await input;
+        });
+    }
+
     /// <summary>
     /// Either notification supplies a pair; only a change in that pair extends activation.
     /// </summary>

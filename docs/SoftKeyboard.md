@@ -284,7 +284,8 @@ Windows IME Message 保留在 Gallery 诊断工具中，其 IMM 值不混入核�
 键盘 Profile 激活后创建空观察记录，等待 **100ms 静默期，最长 500ms**。
 open、conversion、语言栏相关通知会重置静默计时；普通按键和候选通知不延长窗口。
 新 Profile、目标或来源替换会使旧观察过期。卸载、目标失效和 Dispatcher 关闭取消延迟任务。
-500ms 是调度上限，Dispatcher 忙碌仍可能推迟执行，不是输入法就绪保证。
+计时到期后以 `DispatcherPriority.Normal` 执行观察结束和刷新，不等待鼠标、键盘输入队列清空。
+500ms 是调度上限，UI 线程正在执行的工作仍可能推迟回调，不是输入法就绪保证。
 
 观察期间保持已提交布局和按钮外观，忽略模式键点击，普通字符输入继续处理。
 旧 Profile 的候选操作失效，不能借旧候选操作新输入法。观察结束才查询
@@ -575,6 +576,9 @@ bool refreshed = keyboard.RefreshInputMethods();
 输入法激活使用 `TryActivateInputMethod(profile)`，只向系统发送 profile 激活请求，不写 open 或
 conversion，也不根据返回值提前发布界面状态。请求失败或调用期间发生源、目标、生命周期变化时
 返回 false；重入操作直接返回 false。返回 true 只表示原生请求被接受，后续状态由系统通知发布。
+
+菜单选择会先关闭菜单，再同步发起激活；若有未完成的组合输入，则先等待取消确认。
+激活后的通知合并和界面提交由观察期控制。
 
 `InputMethods` 是只读依赖属性，每次发布完整的 `IReadOnlyList<SoftKeyboardInputMethod>` 快照。
 使用属性绑定观察替换；已持有的旧列表保持不变。替换来源时立即清空旧目录。

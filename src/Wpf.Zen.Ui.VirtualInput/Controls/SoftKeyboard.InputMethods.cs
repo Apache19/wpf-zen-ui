@@ -5,7 +5,6 @@
 
 using System.Diagnostics;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
@@ -697,6 +696,12 @@ public partial class SoftKeyboard
     /// <summary>
     /// Closes the focusless selector and activates a profile only for its still-focused editor.
     /// </summary>
+    /// <remarks>
+    /// Activation starts synchronously after closing the menu. An active composition must first
+    /// acknowledge cancellation; the deferred continuation validates the original request.
+    /// Subsequent profile notifications settle through the observation window before publication.
+    /// </remarks>
+    /// <param name="inputMethod">The profile selected from the current input-method menu.</param>
     private void ActivateInputMethod(SoftKeyboardInputMethod inputMethod)
     {
         if (!IsInputMethodMenuAvailable)
@@ -711,10 +716,7 @@ public partial class SoftKeyboard
         var requestVersion   = _inputMethodMenuRequestVersion;
         var target           = ActiveTarget;
 
-        // Let the popup click and teardown finish before entering native profile code. The menu
-        // never changes keyboard focus, so a different focus owner means the request has expired;
-        // it must not be corrected by focusing the remembered target.
-        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+        RunAfterActiveCompositionCancellation(() =>
         {
             if (operationVersion != _inputOperationVersion
                 || sessionVersion != _inputMethodSessionVersion
@@ -725,8 +727,13 @@ public partial class SoftKeyboard
                 return;
             }
 
-            RunAfterActiveCompositionCancellation(() => TryActivateInputMethod(inputMethod));
-        }));
+            Debug.WriteLine(
+                "[SoftKeyboard.InputMode.Activation] Menu ACTIVATION requested; "
+                + $"classId={inputMethod.ClassId}, profileId={inputMethod.ProfileId}."
+            );
+
+            TryActivateInputMethod(inputMethod);
+        });
     }
 
     /// <summary>
