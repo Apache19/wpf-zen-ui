@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -123,7 +123,6 @@ public partial class SoftKeyboard : Control
 
         Candidates = [with(_candidates)];
 
-        // todo: 按钮事件是哪些按钮的事件？
         AddHandler(
             ButtonBase.ClickEvent,
             new RoutedEventHandler(OnButtonClick)
@@ -265,8 +264,14 @@ public partial class SoftKeyboard : Control
         }
     }
 
+    /// <summary>
+    /// Identifies physical character keys that consume one-shot Shift after successful delivery.
+    /// Digits and OEM punctuation also produce shifted characters or small Kana under an IME.
+    /// </summary>
     private static bool IsCharacterKey(Key key)
     {
-        return key is >= Key.A and <= Key.Z;
+        return key is >= Key.A and <= Key.Z or >= Key.D0 and <= Key.D9
+            or Key.Oem1 or Key.OemPlus or Key.OemComma or Key.OemMinus or Key.OemPeriod
+            or Key.Oem2 or Key.Oem3 or Key.Oem4 or Key.Oem5 or Key.Oem6 or Key.Oem7 or Key.Oem102;
     }
 }

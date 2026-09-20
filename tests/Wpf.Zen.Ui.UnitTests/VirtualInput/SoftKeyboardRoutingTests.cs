@@ -128,7 +128,7 @@ public class SoftKeyboardRoutingTests
             )
         );
 
-        Assert.Contains(nativeText.Keys, key => key.Text == "ー");
+        Assert.Contains(nativeText.Keys, key => key.Key == System.Windows.Input.Key.OemMinus);
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public class SoftKeyboardRoutingTests
 
         public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
         {
-            return JapaneseCompactLayoutProvider.Default.CreateLayout(context);
+            return JapaneseSoftKeyboardLayoutProvider.Default.CreateLayout(context);
         }
     }
 

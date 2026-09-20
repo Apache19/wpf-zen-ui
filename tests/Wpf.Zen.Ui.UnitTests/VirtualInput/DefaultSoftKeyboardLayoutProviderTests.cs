@@ -277,8 +277,11 @@ public class DefaultSoftKeyboardLayoutProviderTests
         }
     }
 
+    /// <summary>
+    /// Japanese character keys remain IME input rather than standalone Unicode insertions.
+    /// </summary>
     [Fact]
-    public void JapaneseNativeLayout_ExposesLongVowelVariantWithoutAddingRows()
+    public void JapaneseNativeLayout_KeepsLongVowelAndPunctuationInTheImeKeyStream()
     {
         var context = new SoftKeyboardLayoutContext(
             CultureInfo.GetCultureInfo("ja-JP"),
@@ -289,14 +292,15 @@ public class DefaultSoftKeyboardLayoutProviderTests
             inputModeButton: Button(true, "あ")
         );
 
-        var provider = JapaneseCompactLayoutProvider.Default;
+        var provider = JapaneseSoftKeyboardLayoutProvider.Default;
 
         var layout = Assert.IsType<SoftKeyboardLayout>(provider.CreateLayout(context));
-        var key    = Assert.Single(layout.Keys, key => key.Text == "ー");
-
-        Assert.Equal(1, key.Row);
-        Assert.Contains("・", key.Alternates);
-        Assert.Equal(10, layout.Keys.Count(k => k.Row == 1));
+        Assert.Single(layout.Keys, key => key.Key == Key.OemMinus);
+        Assert.Single(layout.Keys, key => key.Key == Key.Oem2);
+        Assert.Single(layout.Keys, key => key.Key == Key.OemComma);
+        Assert.Single(layout.Keys, key => key.Key == Key.OemPeriod);
+        Assert.DoesNotContain(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.Text);
+        Assert.Equal(6, layout.Keys.Select(key => key.Row).Distinct().Count());
     }
 
     private static SoftKeyboardLayoutContext Context(string mode, bool native = false)

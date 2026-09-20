@@ -1186,6 +1186,145 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
         });
     }
 
+    /// <summary>
+    /// Exercises the actual Japanese surface through SendInput while an IME owns composition.
+    /// Uses the installed input style, checking digits, OEM marks and function conversions.
+    /// </summary>
+    [Fact]
+    public void Japanese_PhysicalSurfacePreservesRomajiAndKanaComposition()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise the installed Microsoft Japanese IME.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox();
+            var keyboard = new SoftKeyboard
+            {
+                Target = editor,
+                IsOpen = true,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
+            };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 1000, Height = 550 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            SoftKeyboardInputMethod? japanese = null;
+            SoftKeyboardInputObservation? originalMode = null;
+            var invoke = typeof(SoftKeyboard).GetMethod("InvokeKey",
+                BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            // Invoke the published caps rather than bypassing layout selection or Shift handling.
+            void Press(Key key)
+            {
+                var cap = Assert.Single(keyboard.CurrentLayout.Keys,
+                    cap => cap.Kind == SoftKeyboardKeyKind.VirtualKey && cap.Key == key);
+                invoke.Invoke(keyboard, [cap]);
+                PumpFor(100);
+            }
+
+            void Shift()
+            {
+                invoke.Invoke(keyboard, [Assert.Single(keyboard.CurrentLayout.Keys,
+                    cap => cap.Kind == SoftKeyboardKeyKind.Shift)]);
+                PumpFor(100);
+            }
+
+            void Kana(string label)
+            {
+                var cap = keyboard.CurrentLayout.Keys.FirstOrDefault(cap => cap.AlternateHint == label);
+                if (cap is null)
+                {
+                    Shift();
+                    cap = keyboard.CurrentLayout.Keys.First(cap => cap.AlternateHint == label);
+                }
+
+                Press(cap.Key);
+            }
+
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                Assert.True(editor.Focus());
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+                japanese = keyboard.InputMethods.FirstOrDefault(
+                    profile => profile.ClassId == KnownTextServices.MicrosoftJapanese);
+                Assert.SkipUnless(japanese is not null, "Microsoft Japanese IME is not installed.");
+                Assert.True(keyboard.TryActivateInputMethod(japanese));
+                Assert.True(PumpUntil(
+                    () => keyboard.ActiveInputMethod?.ClassId == japanese.ClassId, 2000));
+                PumpFor(500);
+                originalMode = ReadNativeState(japanese.ClassId);
+                Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardOpenValue(japanese, 1));
+                Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(japanese, 0x19));
+                Assert.True(PumpUntil(() => Equals(keyboard.InputModeButton?.Content, "あ")
+                    && keyboard.CurrentLayout.Keys.Any(cap => cap.Key == Key.D3 && Equals(cap.Content, "3")),
+                    2000));
+
+                // Probe the installed preference: accepted ROMAN compartment writes do not
+                // necessarily change the modern IME's configured Romaji/Kana input style.
+                Press(Key.A);
+                Press(Key.F6);
+                Press(Key.Enter);
+                Assert.True(PumpUntil(() => editor.Text is "あ" or "ち", 2000), editor.Text);
+                var roman = editor.Text == "あ";
+                editor.Clear();
+
+                if (roman)
+                {
+                    foreach (var key in new[] { Key.S, Key.U, Key.P, Key.A, Key.OemMinus })
+                    {
+                        Press(key);
+                    }
+
+                    Press(Key.F7);
+                    Press(Key.Enter);
+                    Assert.True(PumpUntil(() => editor.Text == "スーパー", 2000), editor.Text);
+                    output.WriteLine($"Romaji composition committed: {editor.Text}");
+                }
+                else
+                {
+                    Press(Key.D1);
+                    Kana("ろ");
+                    Kana("か");
+                    var voiced = keyboard.CurrentLayout.Keys.First(cap => cap.AlternateHint is "゙" or "゛");
+                    Press(voiced.Key);
+                    Kana("ぁ");
+                    Assert.Equal(SoftKeyboardShiftState.Off, keyboard.ShiftState);
+                    Kana("ー");
+                    Press(Key.F7);
+                    Press(Key.Enter);
+                    Assert.True(PumpUntil(() => editor.Text == "ヌロガァー", 2000), editor.Text);
+                    output.WriteLine($"Kana composition committed: {editor.Text}");
+                }
+            }
+            finally
+            {
+                if (window.IsVisible)
+                {
+                    keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
+                    PumpFor(100);
+                    if (japanese is not null && originalMode is not null)
+                    {
+                        RestoreInputMode(backend, japanese, originalMode);
+                    }
+                }
+
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                }
+
+                window.Close();
+            }
+        });
+    }
+
     private static bool IsJapaneseCharacter(char character)
     {
         return character is >= '\u3040' and <= '\u30FF';

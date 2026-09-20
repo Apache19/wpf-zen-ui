@@ -4,12 +4,14 @@
 // All Rights Reserved.
 
 using Wpf.Zen.Ui.VirtualInput.Extensions.InputMethods;
+using Wpf.Zen.Ui.VirtualInput.Extensions.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Extensions.Routing;
 
 namespace Wpf.Zen.Ui.VirtualInput.Extensions;
 
 /// <summary>
-/// Registers the Japanese input-method adapter for matching profile or culture contexts.
+/// Registers a complete physical keyboard and the Japanese input-method adapter.
+/// Physical keys remain available while the IME is closed or its mode is still unknown.
 /// </summary>
 public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensionProvider
 {
@@ -27,7 +29,9 @@ public sealed class JapaneseSoftKeyboardExtensionProvider : ISoftKeyboardExtensi
         }
 
         return ProfileLanguage.IsJapanese(context.Layout)
-            ? [new SoftKeyboardExtension(inputModeAdapter: MicrosoftJapaneseInputModeAdapter.Default)]
+            ? [new SoftKeyboardExtension(
+                layoutProvider: JapaneseSoftKeyboardLayoutProvider.Default,
+                inputModeAdapter: MicrosoftJapaneseInputModeAdapter.Default)]
             : [];
     }
 }

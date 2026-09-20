@@ -128,7 +128,7 @@ public class SoftKeyboardCompositionTests
     {
         var extensionLayout = context.Culture.TwoLetterISOLanguageName switch
         {
-            "ja" => JapaneseCompactLayoutProvider.Default.CreateLayout(context),
+            "ja" => JapaneseSoftKeyboardLayoutProvider.Default.CreateLayout(context),
             "zh" => ChineseCompactLayoutProvider.Default.CreateLayout(context),
             _ => null,
         };

@@ -782,8 +782,21 @@ public class SoftKeyboardTests
         });
     }
 
-    [Fact]
-    public void ShiftOnce_IsConsumedByOneCharacterAndCapsLockPersists()
+    /// <summary>
+    /// Every physical character family consumes one-shot Shift but preserves locked Shift.
+    /// </summary>
+    /// <param name="character">
+    /// A letter, digit or OEM character key sent through the control.
+    /// </param>
+    [Theory]
+    [InlineData(Key.A)]
+    [InlineData(Key.D3)]
+    [InlineData(Key.D0)]
+    [InlineData(Key.OemMinus)]
+    [InlineData(Key.OemComma)]
+    [InlineData(Key.Oem7)]
+    [InlineData(Key.Oem102)]
+    public void ShiftOnce_IsConsumedByOneCharacterAndCapsLockPersists(Key character)
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -813,15 +826,17 @@ public class SoftKeyboardTests
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
             Assert.Equal(SoftKeyboardShiftState.Once, keyboard.ShiftState);
-            InvokeKey(keyboard, FindKey(keyboard, Key.A));
+            var characterKey = new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey, character.ToString(), character.ToString(), character);
+            InvokeKey(keyboard, characterKey);
 
-            Assert.Equal((Key.A, true), Assert.Single(input.VirtualKeys));
+            Assert.Equal((character, true), Assert.Single(input.VirtualKeys));
             Assert.Equal(SoftKeyboardShiftState.Off, keyboard.ShiftState);
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
             Assert.Equal(SoftKeyboardShiftState.Locked, keyboard.ShiftState);
-            InvokeKey(keyboard, FindKey(keyboard, Key.B));
+            InvokeKey(keyboard, characterKey);
             Assert.Equal(SoftKeyboardShiftState.Locked, keyboard.ShiftState);
 
             window.Close();

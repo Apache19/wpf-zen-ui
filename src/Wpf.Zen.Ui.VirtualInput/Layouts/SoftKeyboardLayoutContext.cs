@@ -115,6 +115,10 @@ public sealed class SoftKeyboardLayoutContext
     /// Resolves a virtual key's display label using the captured Windows layout and Shift state.
     /// </summary>
     /// <param name="key">The WPF virtual key whose label is requested.</param>
+    /// <param name="kana">
+    /// Whether to translate with the Kana toggle set; defaults to false. This can supply a second
+    /// legend on a physical key. The native layout determines the available mappings.
+    /// </param>
     /// <returns>
     /// The printable single-character translation, or the key name when translation is unavailable.
     /// Fallback names are uppercase when Shift is active and lowercase otherwise.
@@ -123,10 +127,10 @@ public sealed class SoftKeyboardLayoutContext
     /// Intended for custom layout providers. Translation preserves the Windows dead-key buffer and
     /// uses this snapshot's layout for every call. The label is presentation text, not IME output.
     /// </remarks>
-    public string GetKeyLabel(Key key)
+    public string GetKeyLabel(Key key, bool kana = false)
     {
         var shifted = ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
-        return KeyboardLayoutLabels.GetLabel(key, shifted, KeyboardLayoutHandle);
+        return KeyboardLayoutLabels.GetLabel(key, shifted, KeyboardLayoutHandle, kana);
     }
 
     /// <summary>

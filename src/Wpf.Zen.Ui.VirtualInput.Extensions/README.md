@@ -7,7 +7,7 @@
 | --- | --- | --- |
 | `Providers/` | 按语言注册能力，组合默认扩展 | `DefaultSoftKeyboardExtensionProvider`、中日扩展入口 |
 | `InputMethods/` | 解释服务原始观察、生成按钮和执行描述、执行服务专用写入 | `ChineseInputModeAdapter`、`MicrosoftJapaneseInputModeAdapter` |
-| `Layouts/` | 定义语言符号表，生成满足 InputScope 和页面约束的布局 | 中日 `CompactLayoutProvider`、共享的 `LanguageCompactLayoutProvider` |
+| `Layouts/` | 定义语言键位与符号表，生成满足 InputScope 和页面约束的布局 | `JapaneseSoftKeyboardLayoutProvider`、`ChineseCompactLayoutProvider` |
 | `Candidates/` | 按服务选择候选呈现策略 | `WindowsCandidatePresentationBehavior` |
 | `Routing/` | 根据活动 Profile 语言或备用 Culture 匹配语言能力 | `ProfileLanguage` |
 | `Properties/` | 程序集元数据 | `AssemblyInfo` |
@@ -19,7 +19,7 @@
 `IFlytek`、`WeChat` 本身已明确厂商或产品。
 
 语言层与服务层分别命名：`ChineseInputModeAdapter` 汇集多个已知中文服务的精确匹配规则，
-`MicrosoftJapaneseInputModeAdapter` 专用于微软日语输入法；`JapaneseCompactLayoutProvider`
+`MicrosoftJapaneseInputModeAdapter` 专用于微软日语输入法；`JapaneseSoftKeyboardLayoutProvider`
 和日文扩展注册入口仍按语言命名。匹配语言只选择能力集合，实际解释还必须匹配服务标识。
 
 ## 依赖与职责
@@ -27,8 +27,9 @@
 - `Providers` 只负责注册；中文、日文入口按 `Routing` 匹配语言，默认入口再追加候选策略。
 - `InputMethods` 各自拥有服务值解释、键帽、回退命令，并引用 `Layouts` 的共享实例。
   日文适配器在可解释时设置 `OverridePlatformButton`；中文适配器提供回退按钮。
-- `Layouts` 只依赖布局上下文和语言匹配。共享基类按网址、邮箱、数字、紧凑布局的顺序委托核心提供器；
-  中日子类各自保存符号表，不负责读取输入法状态。
+- `Layouts` 只依赖布局上下文和语言匹配。中文紧凑布局按网址、邮箱、数字、紧凑布局的顺序委托核心提供器。
+  日语提供独立六行物理布局，包含数字、完整 OEM 符号键、转换及编辑键，字母／符号与假名采用双标注。
+  两种语言各自保存独立符号页；日语布局在直接输入及未知模式下也保持可用。
 - `Candidates` 独立维护支持内嵌候选的服务集合；候选策略和模式解释共享 `KnownTextServices` 中的身份常量，
   各自决定支持范围。身份常量不代表服务具备某项能力。
 - 核心拥有观察计时、语言栏查询、最终呈现优先级、点击路由与 30ms 延迟复查；

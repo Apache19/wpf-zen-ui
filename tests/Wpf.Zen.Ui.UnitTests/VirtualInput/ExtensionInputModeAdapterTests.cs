@@ -97,12 +97,12 @@ public class ExtensionInputModeAdapterTests
     }
 
     /// <summary>
-    /// Japanese textual overrides distinguish conversion modes independently of compact layout.
+    /// Japanese textual overrides distinguish character mode from physical input style.
     /// </summary>
     /// <param name="open">The observed Japanese open integer.</param>
     /// <param name="conversion">The observed conversion integer, or an unavailable field.</param>
     /// <param name="cap">The expected textual key cap.</param>
-    /// <param name="compact">Whether this conversion selects the Japanese compact layout.</param>
+    /// <param name="native">Whether this conversion selects native Japanese input.</param>
     [Theory]
     [InlineData(0, null, "A", false)]
     [InlineData(0, 0x19, "A", false)]
@@ -117,7 +117,7 @@ public class ExtensionInputModeAdapterTests
     [InlineData(1, 0x00, "A", false)]
     [InlineData(1, 0x10, "A", false)]
     public void JapaneseContracts_PreserveTextOverrideAndIndependentLayout(
-        int open, int? conversion, string cap, bool compact)
+        int open, int? conversion, string cap, bool native)
     {
         var profile = new SoftKeyboardInputMethod(
             Guid.Parse("03B5835F-F03C-411B-9CE2-AA23E1171E36"),
@@ -128,7 +128,7 @@ public class ExtensionInputModeAdapterTests
 
         Assert.Equal(cap, contribution.Button?.Content);
         Assert.Equal(open == 1 ? "disable" : "enable", contribution.Transition?.Id);
-        Assert.Same(compact ? JapaneseCompactLayoutProvider.Default : null,
+        Assert.Same(native ? JapaneseSoftKeyboardLayoutProvider.Default : null,
             contribution.LayoutProvider);
         Assert.True(contribution.OverridePlatformButton);
         Assert.Same(SoftKeyboardInputModeContribution.Empty,
@@ -285,7 +285,7 @@ public class ExtensionInputModeAdapterTests
     /// <param name="characterMode">The language, script and width bits.</param>
     /// <param name="cap">The effective character-mode cap.</param>
     /// <param name="name">The base accessibility description.</param>
-    /// <param name="compact">Whether the character mode uses the Japanese compact layout.</param>
+    /// <param name="native">Whether the character mode uses native Japanese input.</param>
     [Theory]
     [InlineData(0x00, "A", "字母数字输入", false)]
     [InlineData(0x02, "A", "字母数字输入", false)]
@@ -296,7 +296,7 @@ public class ExtensionInputModeAdapterTests
     [InlineData(0x03, "ｶ", "半角片假名输入", true)]
     [InlineData(0x0B, "カ", "全角片假名输入", true)]
     public void JapaneseFlags_SeparateCharacterModeStyleAndBehavior(
-        int characterMode, string cap, string name, bool compact)
+        int characterMode, string cap, string name, bool native)
     {
         var profile = new SoftKeyboardInputMethod(
             KnownTextServices.MicrosoftJapanese, Guid.NewGuid(), 0x0411, "Japanese", true);
@@ -317,7 +317,7 @@ public class ExtensionInputModeAdapterTests
                 Assert.Equal(name + suffix, contribution.Button?.AutomationName);
                 Assert.Equal("disable", contribution.Transition?.Id);
                 Assert.True(contribution.OverridePlatformButton);
-                Assert.Same(compact ? JapaneseCompactLayoutProvider.Default : null,
+                Assert.Same(native ? JapaneseSoftKeyboardLayoutProvider.Default : null,
                     contribution.LayoutProvider);
             }
         }

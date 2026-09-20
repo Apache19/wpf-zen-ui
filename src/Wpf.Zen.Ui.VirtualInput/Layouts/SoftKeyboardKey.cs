@@ -16,7 +16,9 @@ public sealed class SoftKeyboardKey
     /// <summary>
     /// Creates an unpositioned literal key suitable for adding to a layout builder row.
     /// </summary>
-    /// <param name="text">The literal text, also used for the visible cap and automation name.</param>
+    /// <param name="text">
+    /// The literal text, also used for the visible cap and automation name.
+    /// </param>
     /// <returns>A text key using the keyboard's guarded Unicode input pipeline.</returns>
     public static SoftKeyboardKey FromText(string text)
     {
@@ -56,29 +58,39 @@ public sealed class SoftKeyboardKey
     /// as <see cref="Wpf.Zen.Ui.Controls.IconSource"/> are resolved through WPF data templates.
     /// </param>
     /// <param name="automationName">The descriptive name exposed to UI Automation.</param>
-    /// <param name="key">The WPF virtual key for <see cref="SoftKeyboardKeyKind.VirtualKey"/>.</param>
+    /// <param name="key">
+    /// The WPF virtual key for <see cref="SoftKeyboardKeyKind.VirtualKey"/>.
+    /// </param>
     /// <param name="text">The Unicode value for <see cref="SoftKeyboardKeyKind.Text"/>.</param>
     /// <param name="page">The destination for <see cref="SoftKeyboardKeyKind.ChangePage"/>.</param>
     /// <param name="row">
-    /// The nonnegative logical row identifier. Identifiers group and order keys; skipped identifiers
-    /// do not reserve empty visual rows.
+    /// The nonnegative logical row identifier. Identifiers group and order keys;
+    /// skipped identifiers do not reserve empty visual rows.
     /// </param>
     /// <param name="column">The zero-based logical column at which the key begins.</param>
-    /// <param name="columnSpan">The positive number of logical columns occupied by the key.</param>
+    /// <param name="columnSpan">
+    /// The positive number of logical columns occupied by the key.
+    /// </param>
     /// <param name="alternates">Optional long-press Unicode alternatives.</param>
     /// <param name="isRepeatEnabled">
-    /// Whether holding this key repeats its primary action. Defaults to false; alternatives take precedence.
+    /// Whether holding this key repeats its primary action. Defaults to false;
+    /// alternatives take precedence.
     /// </param>
     /// <param name="alternateHint">
-    /// Optional key-cap text previewing selected alternatives; null hides the hint. This is presentation only and does
-    /// not define selectable values.
+    /// Optional secondary legend or preview of selected alternatives; null hides the hint.
+    /// This is presentation only and does not define selectable values.
     /// </param>
     /// <param name="action">
-    /// Required for a Custom key and forbidden for other kinds. Must not retain an editor or execution context.
+    /// Required for a Custom key and forbidden for other kinds.
+    /// Must not retain an editor or execution context.
     /// </param>
-    /// <exception cref="ArgumentException">The key lacks presentation, accessible naming or input data,
-    /// or an alternative is null or empty. Whitespace is valid input when its cap has a descriptive label.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">The kind, virtual key or placement is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    /// The key lacks presentation, accessible naming or input data, or an alternative is null
+    /// or empty. Whitespace is valid input when its cap has a descriptive label.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// The kind, virtual key or placement is invalid.
+    /// </exception>
     public SoftKeyboardKey(
         SoftKeyboardKeyKind kind,
         object content,
@@ -195,7 +207,8 @@ public sealed class SoftKeyboardKey
     /// Gets the custom action, or null for a built-in key kind.
     /// </summary>
     /// <remarks>
-    /// The action is reusable behavior, not mutable per-keyboard state. Execution receives a short-lived context.
+    /// The action is reusable behavior, not mutable per-keyboard state.
+    /// Execution receives a short-lived context.
     /// </remarks>
     public ISoftKeyboardAction? Action { get; }
 
@@ -204,8 +217,8 @@ public sealed class SoftKeyboardKey
     /// </summary>
     /// <remarks>
     /// This slot is designed for reusable presentation data rather than a shared visual element.
-    /// Values such as <see cref="Wpf.Zen.Ui.Controls.FluentIconSource"/> allow the keyboard's content presenter to
-    /// create an independent visual for every key. Custom layout providers may supply their own
+    /// Values such as <see cref="Wpf.Zen.Ui.Controls.FluentIconSource"/> create an independent
+    /// visual for every key. Custom providers may supply their own
     /// data objects together with an implicit <see cref="System.Windows.DataTemplate"/>.
     /// </remarks>
     public object Content { get; }
@@ -231,13 +244,13 @@ public sealed class SoftKeyboardKey
     public string Page { get; }
 
     /// <summary>
-    /// Gets the nonnegative logical row identifier consumed by the default keyboard item-container style.
+    /// Gets the nonnegative logical row consumed by the default keyboard item-container style.
     /// </summary>
     public int Row { get; }
 
     /// <summary>
-    /// Gets the zero-based logical column at which the key begins. Keys are not automatically flowed
-    /// after one another; layout providers assign this coordinate explicitly.
+    /// Gets the zero-based logical column at which the key begins. Layout providers assign
+    /// this coordinate explicitly; keys are not automatically flowed after one another.
     /// </summary>
     public int Column { get; }
 
@@ -252,13 +265,13 @@ public sealed class SoftKeyboardKey
     public IReadOnlyList<string> Alternates { get; }
 
     /// <summary>
-    /// Gets the optional preview displayed above the primary key content; defaults to null.
+    /// Gets the optional secondary legend above the primary key content; defaults to null.
     /// </summary>
     /// <remarks>
-    /// Providers may preview only a subset of alternatives to keep caps readable. The default template
-    /// reserves a separate text row when this hint is present, so it cannot overlap the primary content.
-    /// The hint never changes the primary action or the complete long-press list in <see cref="Alternates"/>.
-    /// Whitespace-only hints are normalized to null. Custom templates may omit this presentation slot.
+    /// Providers may show a physical key's Kana mapping, a function description, or a subset of
+    /// alternatives. The default template reserves a separate text row to keep both legends clear.
+    /// The hint does not change the primary action or add entries to <see cref="Alternates"/>.
+    /// Whitespace-only hints become null. Custom templates may omit this presentation slot.
     /// </remarks>
     public string? AlternateHint { get; }
 

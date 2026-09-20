@@ -912,13 +912,14 @@ public class InputMethodObservationTests
                 new Guid("03B5835F-F03C-411B-9CE2-AA23E1171E36"), Guid.NewGuid(), 0x0411,
                 "Japanese", true);
             var backend = new Backend(profile) { Button = Icon("native", 30) };
+            scope.Keyboard.ExtensionProvider = JapaneseSoftKeyboardExtensionProvider.Default;
             scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
             scope.Keyboard.InputModeAdapter = MicrosoftJapaneseInputModeAdapter.Default;
             Notify(scope.Keyboard, InputMethodChangeKind.ImeOpen, 1);
             Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 0x19);
             await scope.DrainAsync();
             Assert.Equal("あ", scope.Keyboard.InputModeButton?.Content);
-            Assert.Contains(scope.Keyboard.CurrentLayout.Keys, key => key.Text == "ー");
+            Assert.Contains(scope.Keyboard.CurrentLayout.Keys, key => key.Key == Key.OemMinus);
             Click(scope.Keyboard);
             Assert.Equal(1, backend.Invocations);
             backend.Button = Icon("changed-native", 200);
@@ -930,6 +931,11 @@ public class InputMethodObservationTests
             Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 12345);
             scope.Clock.Advance(0);
             Assert.Same(backend.Button, scope.Keyboard.InputModeButton);
+            Assert.Contains(scope.Keyboard.CurrentLayout.Keys, key => key.Key == Key.D1);
+            Notify(scope.Keyboard, InputMethodChangeKind.ImeOpen, 0);
+            scope.Clock.Advance(0);
+            Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
+            Assert.Contains(scope.Keyboard.CurrentLayout.Keys, key => key.Key == Key.Oem102);
         });
     }
 

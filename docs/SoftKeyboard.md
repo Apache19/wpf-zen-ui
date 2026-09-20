@@ -113,9 +113,10 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 
 标准布局使用四行；附加语言面板可以采用自己的行列结构。标准字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
 底行包含符号切换、输入模式、逗号、左右方向、空格、句号、输入法菜单和 Enter。
-符号面提供 `Symbols` / `MoreSymbols` 两页。核心只提供通用符号；中文和日文符号规则由对应扩展
-按语言及 IME 状态贡献，韩文及未知语言不会套用中文标点。
-数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー` 键，键帽提示并可长按选择 `・`。
+符号面提供 `Symbols` / `MoreSymbols` 两页。核心只提供通用符号；中文规则由扩展根据 IME 状态贡献，
+日语规则由语言扩展注册，韩文及未知语言不会套用中文标点。
+数字键面把命令安排在右侧，也保持四行。日语主页面独立使用六行物理键布局，数字和 OEM 符号键
+常驻，并显示字母／符号与假名双标注；长音、中点等由对应物理键及 Shift 交给 IME 处理。
 符号面也保留地球菜单键，以便在任何默认布局中直接选择输入法。
 
 `Automatic` 根据当前编辑器的 `InputScope` 选择字母、网址、邮箱或数字布局。
@@ -254,8 +255,26 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 这是这两个内置实现的策略，不是地址场景的接口限制。它们分别组装所有四行，只复用未定位的字母键与少量字面快捷键。
 即使默认页面恰好共享四行形状，也可以独立修改 URL 的首行、邮箱的命令键或整个网格，不需要修改普通字母布局。
 
-日语扩展的符号页包含 `「」`、`『』`、`・`、`※`、`〒` 等独立数据。这是扩展包的紧凑布局，
-不声称逐键复刻 Win11 触摸键盘；附加假名面板独立实现，滑行输入和候选算法不由布局层实现。
+日语扩展的 Automatic/Letters 主页面采用六行物理键布局：功能转换行、数字行、三行字母／OEM
+符号键和底部编辑行。十个数字、26 个字母以及十二个 OEM 符号键同时可用，包括假名输入所需的
+浊音、半浊音、长音、小假名和「ろ」对应键。字符键全部发送虚拟键，交由 IME 继续处理当前组合；
+输入长音、标点或数字无需先切换到会取消组合的符号页。
+
+主键帽与上方假名标注均按当前 Windows 键盘布局（HKL）及 Shift 状态翻译，采用字母／符号与
+假名双标注。假名标注统一为便于阅读的平假名，实际输出的文字种类、宽度和输入方式由 IME 决定。
+JIS 与英文键盘配置使用各自的 OEM 排列；原生布局不提供映射时保留键名，不伪造假名对应关系。
+单次 Shift 在字母、数字或 OEM 字符键成功发送后释放，锁定 Shift 则保持；方向键和功能键不消耗它。
+
+主页面还提供 Esc、Tab、Delete、四向箭头、変換、無変換及 F6–F10。
+其中 F6–F10 的标注对应微软 IME 默认的平假名、全角片假名、半角片假名、全角英数和半角英数转换，
+实际动作遵循输入法当前键位设置，参见 [微软日语 IME 快捷键说明](https://support.microsoft.com/en-us/windows/hardware/input-devices/microsoft-japanese-ime)。
+输入模式按钮仍走现有观察和命令机制。关闭 IME、直接输入或暂未识别模式时也保留完整物理键布局。
+
+日语扩展的独立「記号」页包含 `「」`、`『』`、`・`、`※`、`〒` 等字面文本，适合独立插入符号；
+切页和字面文本插入仍遵守组合取消边界。网址、邮箱、数字场景继续使用各自的专用布局。
+这些能力由 `JapaneseSoftKeyboardExtensionProvider` 注册，图库使用默认扩展集合即可获得。
+布局创建日志使用 `[SoftKeyboard.Layout.Japanese]`，记录 HKL、OEM 排列及 Shift 状态。
+六行页面需要比四行紧凑页面更多的垂直空间，宿主宜使用自动高度；默认键高下键区至少需要 332 DIP。
 需要不同网格、更多页面或不同功能时，直接注册独立提供器，无需修改公共符号网格或核心控件。
 
 普通键优先使用内置 `VirtualKey`、`Text`、`ChangePage` 等语义。特有功能实现
@@ -834,8 +853,9 @@ public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
 布局查询使用 `ITfFnGetPreferredTouchKeyboardLayout.GetLayout`，只获取布局类型及标识，不获取系统面板的几何和行为。
 查询失败或输入法不实现接口时，`TouchLayoutPreference` 为 null；未知标识保留给自定义策略，不伪造系统支持。
 
-微软日语扩展只解释本代已观察到的服务契约：已识别的 open/conversion 组合决定文字键帽及
-日语紧凑布局。`OverridePlatformButton` 保留文字键帽覆盖能力；缺项或未知组合回退平台呈现。
+微软日语扩展只解释本代已观察到的服务契约：已识别的 open/conversion 组合决定模式按钮文字。
+完整日语物理布局由语言扩展注册，Romaji／Kana 使用同一套双标注键帽。
+`OverridePlatformButton` 保留模式按钮文字覆盖能力；缺项或未知组合回退平台呈现。
 点击优先重新发现语言栏命令；不可用时，扩展按观察决定关闭或显式选择平假名。
 写入被接受不等于模式已改变，实际输入、组合与候选仍由当前输入法负责。
 
@@ -865,6 +885,11 @@ Remove-Item Env:WPF_ZEN_NATIVE_IME_TESTS
 
 各原生用例独立进程执行，隔离输入法在文档关闭和配置切换后的状态。当前同进程连续切换用例
 曾出现延迟输入进入后续编辑器的失败，不能将其结果当作独立会话的验证结果。
+
+`Japanese_PhysicalSurfacePreservesRomajiAndKanaComposition` 按本机实际 Romaji／Kana 设置测试
+已发布的键帽，覆盖组合中的 OEM 输入及 F7 转换；假名分支同时检查数字、浊音、小假名与长音。
+`JapaneseSoftKeyboardLayoutTests` 检查完整键位、Shift、语言与页面路由，以及默认模板的六行几何。
+可设置 `WPF_ZEN_LAYOUT_PREVIEW_DIRECTORY` 输出未按 Shift／已按 Shift 的 PNG，便于排版复核。
 
 可控时钟回归覆盖观察合并、来源与目标失效、按钮及实际键帽更新、日文覆盖和命令回退。
 真实语言栏图标测试要求当前服务确实提供按钮；例如 `GetItem` 返回 `S_FALSE` 且没有对象时，

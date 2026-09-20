@@ -94,7 +94,7 @@ internal sealed class MicrosoftJapaneseInputModeAdapter : ISoftKeyboardInputMode
         return new SoftKeyboardInputModeContribution(
             CreateJapanesePresentation(inputMethod.ClassId, mode.Id, observation.ConversionValue),
             transition,
-            mode.Compact ? JapaneseCompactLayoutProvider.Default : null,
+            mode.Native ? JapaneseSoftKeyboardLayoutProvider.Default : null,
             overridePlatformButton: true
         );
     }
@@ -165,7 +165,7 @@ internal sealed class MicrosoftJapaneseInputModeAdapter : ISoftKeyboardInputMode
     /// Input style and conversion behavior are independent of the base character mode.
     /// Special input modes and undefined bits remain unknown; missing values never become zero.
     /// </summary>
-    private static (string Id, bool Compact)? DecodeJapaneseMode(bool enabled, int? conversion)
+    private static (string Id, bool Native)? DecodeJapaneseMode(bool enabled, int? conversion)
     {
         if (!enabled)
         {
