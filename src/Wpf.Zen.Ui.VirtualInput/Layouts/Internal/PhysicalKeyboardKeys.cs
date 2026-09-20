@@ -47,7 +47,7 @@ internal static class PhysicalKeyboardKeys
         {
             var keys = keyRow.Select(key =>
             {
-                var label = KeyboardLayoutLabels.GetLabel(key, shifted, context.KeyboardLayoutHandle);
+                var label = context.GetKeyLabel(key);
 
                 IEnumerable<string>? alternates = null;
 

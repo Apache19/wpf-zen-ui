@@ -305,17 +305,23 @@ internal sealed class TsfInputMethodService :
                     LanguageId = native.langid,
                 };
 
+                var displayName = isLayout
+                    ? KeyboardLayoutNames.GetDisplayName(native.hkl, native.langid)
+                    : GetDescription(profiles, in legacy);
+
+                var touchLayoutPreference = !isLayout && isActive
+                    ? TsfTouchLayoutQuery.Query(native.clsid)
+                    : null;
+
                 destination.Add(
                     new SoftKeyboardInputMethod(
-                        isLayout ? Guid.Empty : native.clsid,
-                        isLayout ? Guid.Empty : native.guidProfile,
-                        native.langid,
-                        isLayout
-                            ? KeyboardLayoutNames.GetDisplayName((IntPtr)native.hkl, native.langid)
-                            : GetDescription(profiles, in legacy),
-                        isActive,
-                        !isLayout && isActive ? TsfTouchLayoutQuery.Query(native.clsid) : null,
-                        keyboardLayout: isLayout ? (IntPtr)native.hkl : IntPtr.Zero
+                        classId               : isLayout ? Guid.Empty : native.clsid,
+                        profileId             : isLayout ? Guid.Empty : native.guidProfile,
+                        languageId            : native.langid,
+                        displayName           : displayName,
+                        isActive              : isActive,
+                        keyboardLayout        : isLayout ? native.hkl : IntPtr.Zero,
+                        touchLayoutPreference : touchLayoutPreference
                     )
                 );
             }

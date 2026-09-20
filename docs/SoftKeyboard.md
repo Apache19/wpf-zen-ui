@@ -76,9 +76,9 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 
 - 输入法菜单通过 `ITfInputProcessorProfileMgr.EnumProfiles` 同时枚举启用的 TIP 和键盘布局，
   普通键盘还需存在于 `GetKeyboardLayoutList` 的实际加载列表，排除未加载及被 TIP 替代的布局。
-  枚举失败时不再将语言配置合成为输入法条目。同语言的不同布局以
-  `SoftKeyboardInputMethod.KeyboardLayout` 区分，
-  激活时传递精确 HKL；该句柄只用于当前 Windows 会话，不应持久化。
+  枚举失败时不再将语言配置合成为输入法条目。同语言的不同布局在内部通过精确 HKL 区分和激活；
+  该句柄只用于当前 Windows 会话，不应持久化。应用从 `SoftKeyboard.InputMethods` 选择条目，
+  将该 `SoftKeyboardInputMethod` 实例传给 `TryActivateInputMethod` 即可激活对应输入法或布局。
 - 菜单第一行显示按当前 UI 语言本地化的语言和地区，第二行显示输入法或键盘名称。
   同语言下的多个 profile 分别呈现，命令参数仍是各自的完整 profile。
 - 候选开始通知提供真实元素 ID；枚举发现的候选没有 ID，读取、翻页、提交和轮询时必须确认其
@@ -138,10 +138,11 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 `SoftKeyboardLayoutRule` 将匹配条件与构建函数组合成一个小提供器，适合只扩展一个页面或一种输入法。
 
 上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`InputMethod`、
-独立的 `InputModeButton`，以及一次性捕获的借用 `KeyboardLayoutHandle` 和独立于 Page 的
-`SupplementalLayout`。
+独立的 `InputModeButton` 和独立于 Page 的 `SupplementalLayout`。
+自定义提供器可通过 `context.GetKeyLabel(Key.A)` 获取键帽文字；该方法使用上下文创建时捕获的
+Windows 键盘布局和虚拟 Shift 状态，句柄由内部管理。`Culture` 描述输入语言，不负责选择键盘布局。
 `InputMethod` 提供 ClassId、ProfileId、LanguageId 和可空的 `TouchLayoutPreference`，
-可精确匹配输入法厂商与 profile。默认键帽按这个 HKL 解码，不应把显示文字当成输入法组合文本。
+可精确匹配输入法厂商与 profile。默认键帽也通过 `GetKeyLabel` 解码，不应把显示文字当成输入法组合文本。
 提供器不得在构建中更改焦点、输入语言或控件状态，也不要缓存编辑器；应用自己的数据变化后调用 `RefreshLayout()`。
 
 `SoftKeyboardPages` 提供内置页面常量，页面集合不是封闭枚举。自定义页面使用如 `sample:kaomoji` 的

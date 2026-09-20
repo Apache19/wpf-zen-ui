@@ -105,16 +105,6 @@ public sealed class SoftKeyboardActionContext
     public SoftKeyboardInputMethod? InputMethod => GetKeyboard().ActiveInputMethod;
 
     /// <summary>
-    /// Gets the current Windows keyboard-layout handle.
-    /// </summary>
-    public IntPtr KeyboardLayoutHandle => GetKeyboard().CurrentKeyboardLayoutHandle;
-
-    /// <summary>
-    /// Gets the containing window handle, or zero when the keyboard has no WPF window.
-    /// </summary>
-    public IntPtr HostWindowHandle => GetKeyboard().HostWindowHandle;
-
-    /// <summary>
     /// Requests a built-in or custom page, preserving the normal composition guard.
     /// </summary>
     /// <param name="page">

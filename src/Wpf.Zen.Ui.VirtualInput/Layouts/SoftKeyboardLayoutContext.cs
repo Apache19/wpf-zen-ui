@@ -15,15 +15,16 @@ public sealed class SoftKeyboardLayoutContext
     /// <summary>
     /// Initializes a new instance of the <see cref="SoftKeyboardLayoutContext"/> class.
     /// </summary>
+    /// <remarks>
+    /// Captures the current thread's Windows keyboard layout for <see cref="GetKeyLabel"/>.
+    /// The culture describes the input language; it does not select a Windows keyboard layout.
+    /// </remarks>
     /// <param name="culture">The culture associated with the active input language.</param>
     /// <param name="inputScope">The semantic input scope requested by the active editor.</param>
     /// <param name="page">The surface requested by the keyboard.</param>
     /// <param name="shiftState">The current virtual Shift state.</param>
     /// <param name="inputMethod">
     /// The active profile, allowing language- and vendor-specific layouts.
-    /// </param>
-    /// <param name="keyboardLayoutHandle">
-    /// Borrowed Windows HKL used for key labels; zero captures the current thread's layout.
     /// </param>
     /// <param name="supplementalLayout">
     /// The user's supplemental letter surface, independent of the requested page.
@@ -37,7 +38,38 @@ public sealed class SoftKeyboardLayoutContext
         string page,
         SoftKeyboardShiftState shiftState,
         SoftKeyboardInputMethod? inputMethod = null,
-        IntPtr keyboardLayoutHandle = default,
+        string supplementalLayout = SoftKeyboardSupplementalLayouts.Automatic,
+        SoftKeyboardInputModeButton? inputModeButton = null
+    )
+        : this(culture, inputScope, page, shiftState, inputMethod, IntPtr.Zero,
+            supplementalLayout, inputModeButton)
+    {
+    }
+
+    /// <summary>
+    /// Creates a layout snapshot using an existing native layout identity when supplied.
+    /// </summary>
+    /// <param name="culture">The culture associated with the active input language.</param>
+    /// <param name="inputScope">The semantic input scope requested by the active editor.</param>
+    /// <param name="page">The surface requested by the keyboard.</param>
+    /// <param name="shiftState">The current virtual Shift state.</param>
+    /// <param name="inputMethod">The active profile, or null when unavailable.</param>
+    /// <param name="keyboardLayoutHandle">
+    /// Borrowed Windows HKL used for key labels; zero captures the current thread's layout.
+    /// </param>
+    /// <param name="supplementalLayout">
+    /// The user's supplemental letter surface, independent of the requested page.
+    /// </param>
+    /// <param name="inputModeButton">
+    /// The mode-command presentation, or null when unavailable.
+    /// </param>
+    internal SoftKeyboardLayoutContext(
+        CultureInfo culture,
+        InputScopeNameValue inputScope,
+        string page,
+        SoftKeyboardShiftState shiftState,
+        SoftKeyboardInputMethod? inputMethod,
+        IntPtr keyboardLayoutHandle,
         string supplementalLayout = SoftKeyboardSupplementalLayouts.Automatic,
         SoftKeyboardInputModeButton? inputModeButton = null
     )
@@ -71,13 +103,31 @@ public sealed class SoftKeyboardLayoutContext
     public CultureInfo Culture { get; }
 
     /// <summary>
-    /// Gets the borrowed Windows HKL captured for this snapshot; providers must not unload it.
+    /// Gets the borrowed Windows HKL captured for this snapshot; it must not be unloaded.
     /// </summary>
     /// <remarks>
-    /// Key labels and scan-code mapping must use this handle rather than re-reading ambient thread
-    /// state per key.
+    /// Key-label decoding uses this identity for every key in the snapshot. Internal copies retain
+    /// it so that changing presentation data does not sample a different thread layout.
     /// </remarks>
-    public IntPtr KeyboardLayoutHandle { get; }
+    internal IntPtr KeyboardLayoutHandle { get; }
+
+    /// <summary>
+    /// Resolves a virtual key's display label using the captured Windows layout and Shift state.
+    /// </summary>
+    /// <param name="key">The WPF virtual key whose label is requested.</param>
+    /// <returns>
+    /// The printable single-character translation, or the key name when translation is unavailable.
+    /// Fallback names are uppercase when Shift is active and lowercase otherwise.
+    /// </returns>
+    /// <remarks>
+    /// Intended for custom layout providers. Translation preserves the Windows dead-key buffer and
+    /// uses this snapshot's layout for every call. The label is presentation text, not IME output.
+    /// </remarks>
+    public string GetKeyLabel(Key key)
+    {
+        var shifted = ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
+        return KeyboardLayoutLabels.GetLabel(key, shifted, KeyboardLayoutHandle);
+    }
 
     /// <summary>
     /// Gets the WPF input scope requested by the active target.

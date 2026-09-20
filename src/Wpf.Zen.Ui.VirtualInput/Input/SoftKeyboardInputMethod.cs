@@ -8,16 +8,21 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// <summary>
 /// Describes one enabled Windows input method or keyboard layout.
 /// </summary>
+/// <remarks>
+/// To activate an enumerated input method, pass this instance to
+/// <see cref="Controls.SoftKeyboard.TryActivateInputMethod"/>. Windows input-method sources retain
+/// the native identity needed to select an exact keyboard layout within the same language.
+/// </remarks>
 public sealed class SoftKeyboardInputMethod
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="SoftKeyboardInputMethod"/> class.
+    /// Creates a TSF profile or language-only input-method description for a custom source.
     /// </summary>
     /// <param name="classId">
-    /// The TSF service identifier, or empty for a keyboard layout or language-only entry.
+    /// The TSF service identifier, or empty for a language-only entry.
     /// </param>
     /// <param name="profileId">
-    /// The TSF profile identifier, or empty for a keyboard layout or language-only entry.
+    /// The TSF profile identifier, or empty for a language-only entry.
     /// </param>
     /// <param name="languageId">The nonzero Windows language identifier.</param>
     /// <param name="displayName">The nonempty localized presentation name.</param>
@@ -27,18 +32,40 @@ public sealed class SoftKeyboardInputMethod
     /// <param name="touchLayoutPreference">
     /// The optional touch-layout capability reported by the profile.
     /// </param>
-    /// <param name="keyboardLayout">
-    /// The exact Windows keyboard-layout handle, or zero for a TIP or language-only fallback.
-    /// Layout handles distinguish multiple keyboard layouts within the same language.
-    /// </param>
     public SoftKeyboardInputMethod(
         Guid classId,
         Guid profileId,
         ushort languageId,
         string displayName,
         bool isActive,
-        SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null,
-        IntPtr keyboardLayout = default)
+        SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null)
+        : this(classId, profileId, languageId, displayName, isActive, IntPtr.Zero, touchLayoutPreference)
+    {
+    }
+
+    /// <summary>
+    /// Creates a description retaining the native identity supplied by Windows profile discovery.
+    /// </summary>
+    /// <param name="classId">The TSF service identifier, or empty for a non-TIP entry.</param>
+    /// <param name="profileId">The TSF profile identifier, or empty for a non-TIP entry.</param>
+    /// <param name="languageId">The nonzero Windows language identifier.</param>
+    /// <param name="displayName">The nonempty localized presentation name.</param>
+    /// <param name="isActive">Whether the profile was active when its source was refreshed.</param>
+    /// <param name="keyboardLayout">
+    /// The exact Windows keyboard-layout handle, or zero for a TIP or language-only entry.
+    /// Layout handles distinguish multiple keyboard layouts within the same language.
+    /// </param>
+    /// <param name="touchLayoutPreference">
+    /// The optional touch-layout capability reported by the profile.
+    /// </param>
+    internal SoftKeyboardInputMethod(
+        Guid classId,
+        Guid profileId,
+        ushort languageId,
+        string displayName,
+        bool isActive,
+        IntPtr keyboardLayout,
+        SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null)
     {
         if (languageId == 0)
         {
@@ -89,10 +116,13 @@ public sealed class SoftKeyboardInputMethod
 
     /// <summary>
     /// Gets the exact Windows keyboard-layout handle, or zero for a TIP or language-only entry.
-    /// The handle is valid in the current Windows session and must not be persisted as a
-    /// preference.
     /// </summary>
-    public IntPtr KeyboardLayout { get; }
+    /// <remarks>
+    /// Used by profile activation and identity comparison to distinguish layouts in one language.
+    /// This borrowed handle is valid in the current Windows session; it must not be released or
+    /// persisted as a preference.
+    /// </remarks>
+    internal IntPtr KeyboardLayout { get; }
 
     /// <summary>
     /// Gets the localized profile name.

@@ -17,8 +17,9 @@ public partial class SoftKeyboard
 {
     private readonly SoftKeyboardOperationSlot _actionOperation = new();
 
-    internal IntPtr CurrentKeyboardLayoutHandle => KeyboardLayoutLabels.GetCurrentLayout();
-
+    /// <summary>
+    /// Gets the current presentation source's HWND for host integration diagnostics.
+    /// </summary>
     internal IntPtr HostWindowHandle
     {
         get => GetHostWindowHandle();
