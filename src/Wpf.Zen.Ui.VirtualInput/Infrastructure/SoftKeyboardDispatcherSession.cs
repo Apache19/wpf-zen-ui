@@ -28,6 +28,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
 
     private int _lastTouchOrPenTick;
 
+    /// <summary>
+    /// Attaches one input pipeline observer and native monitor for the dispatcher lifetime.
+    /// </summary>
     private SoftKeyboardDispatcherSession(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
@@ -39,6 +42,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
     }
 
+    /// <summary>
+    /// Returns the shared session for the calling UI dispatcher, creating its observers once.
+    /// </summary>
     internal static SoftKeyboardDispatcherSession GetForCurrentDispatcher()
     {
         return Sessions.GetValue(
@@ -47,6 +53,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         );
     }
 
+    /// <summary>
+    /// Adds a weak control registration and retries native monitoring after WPF initialization.
+    /// </summary>
     internal void Register(SoftKeyboard keyboard)
     {
         RemoveDeadReferences();
@@ -68,6 +77,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         _inputMethodMonitor.EnsureNotifications();
     }
 
+    /// <summary>
+    /// Removes a control while retaining shared observation for later loads on this dispatcher.
+    /// </summary>
     internal void Unregister(SoftKeyboard keyboard)
     {
         _keyboards.RemoveAll(reference => !reference.IsAlive || ReferenceEquals(reference.Target, keyboard));
@@ -92,6 +104,10 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         );
     }
 
+    /// <summary>
+    /// Routes editor composition and focus events, retaining recent touch or pen intent for
+    /// opening.
+    /// </summary>
     private void OnPreProcessInput(object sender, PreProcessInputEventArgs args)
     {
         var input = args.StagingItem.Input;
@@ -128,6 +144,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         );
     }
 
+    /// <summary>
+    /// Delivers native evidence only to sources that opt into the Windows notification pipeline.
+    /// </summary>
     private void OnInputMethodStateInvalidated(InputMethodChange change)
     {
         ForEachKeyboard(keyboard =>
@@ -140,6 +159,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         });
     }
 
+    /// <summary>
+    /// Releases shared observers when their owning dispatcher begins shutdown.
+    /// </summary>
     private void OnDispatcherShutdownStarted(object? sender, EventArgs eventArgs)
     {
         Dispose();
@@ -159,6 +181,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         _keyboards.Clear();
     }
 
+    /// <summary>
+    /// Visits a registration snapshot so callbacks can load or unload controls during delivery.
+    /// </summary>
     private void ForEachKeyboard(Action<SoftKeyboard> action)
     {
         foreach (var reference in _keyboards.ToArray())
@@ -172,6 +197,9 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         RemoveDeadReferences();
     }
 
+    /// <summary>
+    /// Prunes collected controls without extending page or template lifetimes.
+    /// </summary>
     private void RemoveDeadReferences()
     {
         _keyboards.RemoveAll(static reference => !reference.IsAlive);

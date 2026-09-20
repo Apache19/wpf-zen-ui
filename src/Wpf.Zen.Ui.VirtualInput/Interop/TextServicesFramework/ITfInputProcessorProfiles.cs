@@ -9,6 +9,12 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
 // Every member is declared in native vtable order even though only enumeration, description,
 // activation, and language switching are used. Removing an unused slot would redirect later calls.
+/// <summary>
+/// Provides language-profile descriptions and legacy profile activation for the input catalog.
+/// </summary>
+/// <remarks>
+/// Native slot order includes registration methods before the discovery operations used here.
+/// </remarks>
 [Guid("1F02B6C5-7842-4EE6-8A0B-9A24183A95CA")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 [ComImport]
@@ -50,6 +56,9 @@ internal interface ITfInputProcessorProfiles
     [PreserveSig]
     int GetActiveLanguageProfile(in Guid classId, out ushort languageId, out Guid profileId);
 
+    /// <summary>
+    /// Reads the localized description used to label a language profile in the catalog.
+    /// </summary>
     [PreserveSig]
     int GetLanguageProfileDescription(
         in Guid classId,
@@ -67,6 +76,9 @@ internal interface ITfInputProcessorProfiles
     [PreserveSig]
     int GetLanguageList(out IntPtr languageIds, out uint count);
 
+    /// <summary>
+    /// Acquires the language-specific enumerator used by the legacy catalog discovery path.
+    /// </summary>
     [PreserveSig]
     int EnumLanguageProfiles(ushort languageId, out IEnumTfLanguageProfiles enumerator);
 

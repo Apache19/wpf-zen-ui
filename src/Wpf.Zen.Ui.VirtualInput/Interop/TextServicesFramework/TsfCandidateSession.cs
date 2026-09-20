@@ -66,6 +66,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         dispatcher.ShutdownStarted += OnDispatcherShutdown;
     }
 
+    /// <summary>
+    /// Adds a weak candidate consumer and attempts connection to the existing WPF TSF host.
+    /// </summary>
     internal void Register(SoftKeyboard keyboard)
     {
         if (!_keyboards.Any(reference => ReferenceEquals(reference.Target, keyboard)))
@@ -76,6 +79,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         EnsureConnected();
     }
 
+    /// <summary>
+    /// Validates host ownership before sharing the dispatcher candidate bridge with a source
+    /// session.
+    /// </summary>
     internal void Register(SoftKeyboard keyboard, SoftKeyboardCandidateHost host)
     {
         if (!ReferenceEquals(host.Keyboard, keyboard))
@@ -89,6 +96,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         Register(keyboard);
     }
 
+    /// <summary>
+    /// Refreshes the existing owner first, then discovers an eligible focused-document candidate.
+    /// </summary>
     internal void Refresh(SoftKeyboard keyboard)
     {
         if (keyboard.IsInputMethodOperationActive)
@@ -117,6 +127,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         TryCaptureExistingCandidate();
     }
 
+    /// <summary>
+    /// Returns native presentation for this owner and clears its embedded snapshot on the
+    /// dispatcher.
+    /// </summary>
     internal void ReleasePresentation(SoftKeyboard keyboard)
     {
         _dispatcher.VerifyAccess();
@@ -134,6 +148,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         ClearActiveCandidate();
     }
 
+    /// <summary>
+    /// Removes a consumer and disconnects native observation after the final registration leaves.
+    /// </summary>
     internal void Unregister(SoftKeyboard keyboard)
     {
         _keyboards.RemoveAll(
@@ -152,6 +169,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Borrows WPF interfaces and advises one candidate sink; a missing host can be retried.
+    /// An incompatible or failed bridge is marked unavailable for this session.
+    /// </summary>
     internal void EnsureConnected()
     {
         _dispatcher.VerifyAccess();
@@ -419,6 +440,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Offers page navigation to extensions before applying native selection-based navigation.
+    /// Each fallback remains tied to the original element and candidate snapshot.
+    /// </summary>
     internal async Task<SoftKeyboardCandidateOperationResult> TryMovePageAsync(
         SoftKeyboard keyboard,
         int delta,
@@ -1207,6 +1232,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         return false;
     }
 
+    /// <summary>
+    /// Returns presentation to the active native element before embedded ownership is released.
+    /// </summary>
     private void RestoreNativeCandidate()
     {
         try
@@ -1359,6 +1387,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         _activePageStarts = [];
         _activePageNumber = 0;
 
+        // Publishing and cancellation can both reenter application code. The element identity
+        // and generation have already been detached before either callback boundary.
         keyboard?.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
 
         try
@@ -1375,6 +1405,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Publishes discovery failure to registered keyboards when the TSF bridge cannot connect.
+    /// </summary>
     private void SetUnavailableState()
     {
         foreach (var keyboard in _keyboards.Select(reference => reference.Target as SoftKeyboard))
@@ -1383,6 +1416,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Restores native UI, expires candidate work and releases this session's sink registration.
+    /// WPF retains ownership of the borrowed thread manager and its activation.
+    /// </summary>
     private void Disconnect()
     {
         RestoreNativeCandidate();
@@ -1485,6 +1522,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Disposes subscriptions and candidate work on their owning COM apartment.
+    /// </summary>
     private void OnDispatcherShutdown(object? sender, EventArgs eventArgs)
     {
         Dispose();
@@ -1535,6 +1575,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Recognizes native and reflection failures that make candidate integration unavailable.
+    /// </summary>
     private static bool IsUnavailable(Exception exception)
     {
         return exception is ArgumentException

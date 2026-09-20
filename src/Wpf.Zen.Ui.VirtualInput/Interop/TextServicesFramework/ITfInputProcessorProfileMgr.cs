@@ -10,11 +10,20 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
 // Every member is declared in SDK vtable order. Activation and current-profile discovery share
 // this interface; preserving every slot keeps dispatch consistent with msctf.idl.
+/// <summary>
+/// Enumerates, activates and identifies exact TSF or keyboard-layout profiles.
+/// </summary>
+/// <remarks>
+/// Preserved HRESULTs let the service distinguish unavailable native operations from success.
+/// </remarks>
 [Guid("71C6E74C-0F28-11D8-A82A-00065B84435C")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 [ComImport]
 internal interface ITfInputProcessorProfileMgr
 {
+    /// <summary>
+    /// Requests activation using the complete profile identity rather than language alone.
+    /// </summary>
     [PreserveSig]
     int ActivateProfile(
         uint profileType,
@@ -70,6 +79,9 @@ internal interface ITfInputProcessorProfileMgr
     [PreserveSig]
     int UnregisterProfile(in Guid classId, ushort languageId, in Guid profileId, uint flags);
 
+    /// <summary>
+    /// Writes the active category profile into caller-allocated native profile storage.
+    /// </summary>
     [PreserveSig]
     int GetActiveProfile(in Guid categoryId, IntPtr profile);
 }

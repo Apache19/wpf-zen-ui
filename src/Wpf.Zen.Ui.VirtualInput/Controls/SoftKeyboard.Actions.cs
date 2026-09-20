@@ -145,6 +145,8 @@ public partial class SoftKeyboard
                 return false;
             }
 
+            // Escape injection only requests cancellation. Yield for WPF composition events
+            // before testing acknowledgement and sending literal text to the original editor.
             await Dispatcher.InvokeAsync(static () => { }, DispatcherPriority.ContextIdle);
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -187,6 +189,9 @@ public partial class SoftKeyboard
         return sent;
     }
 
+    /// <summary>
+    /// Revokes action ownership before invoking cancellation callbacks from extension code.
+    /// </summary>
     private void CancelAsyncAction()
     {
         _actionOperation.Cancel(ReportExtensionError);

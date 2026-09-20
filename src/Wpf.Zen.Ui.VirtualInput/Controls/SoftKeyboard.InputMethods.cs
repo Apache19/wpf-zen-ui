@@ -836,12 +836,18 @@ public partial class SoftKeyboard
         QueueCandidateBridgeRefresh();
     }
 
+    /// <summary>
+    /// Processes source invalidation on the owning dispatcher through the shared refresh path.
+    /// </summary>
     private void OnInputMethodSourceStateInvalidated(object? sender, EventArgs eventArgs)
     {
         VerifyAccess();
         OnSessionInputMethodStateInvalidated();
     }
 
+    /// <summary>
+    /// Expires the old session and refreshes immediately when no input-method operation is active.
+    /// </summary>
     private static void OnInputMethodSourceChanged(
         DependencyObject dependencyObject,
         DependencyPropertyChangedEventArgs args)

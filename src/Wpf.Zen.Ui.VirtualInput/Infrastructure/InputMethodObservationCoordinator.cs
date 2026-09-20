@@ -192,6 +192,9 @@ internal sealed class InputMethodObservationCoordinator(
             );
 
             var accepted = canInterpret(candidate);
+
+            // Supplement missing fields first. Replace the whole pair only when the retained
+            // combination was uninterpretable, so a fallback cannot overwrite valid evidence.
             if (!accepted && !interpreted)
             {
                 candidate = sample;

@@ -16,6 +16,8 @@ public partial class SoftKeyboard
     /// </summary>
     internal Func<bool> CaptureInputLifetime()
     {
+        // A target can survive unload/reload or a source replacement. Capture all generations
+        // as well as object identity so that returning to the same editor cannot revive old work.
         var inputVersion   = _inputOperationVersion;
         var sessionVersion = _inputMethodSessionVersion;
         var generation     = _inputObservation.Generation;

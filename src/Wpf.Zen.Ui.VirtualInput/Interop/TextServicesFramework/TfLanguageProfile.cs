@@ -7,6 +7,12 @@ using System.Runtime.InteropServices;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
+/// <summary>
+/// Carries the native TF_LANGUAGEPROFILE record returned by language-profile enumeration.
+/// </summary>
+/// <remarks>
+/// Sequential field order and the integer BOOL preserve the COM enumeration buffer layout.
+/// </remarks>
 [StructLayout(LayoutKind.Sequential)]
 internal struct TfLanguageProfile
 {

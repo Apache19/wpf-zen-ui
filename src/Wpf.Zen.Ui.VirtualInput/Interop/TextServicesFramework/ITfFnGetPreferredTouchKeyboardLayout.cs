@@ -7,6 +7,12 @@ using System.Runtime.InteropServices;
 
 namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
+/// <summary>
+/// Reads the active text service's preferred touch-keyboard layout type and identifier.
+/// </summary>
+/// <remarks>
+/// The inherited function slot precedes GetLayout; callers treat failed queries as unavailable.
+/// </remarks>
 [ComImport]
 [Guid("5F309A41-590A-4ACC-A97F-D8EFFF13FDFC")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -16,6 +22,9 @@ internal interface ITfFnGetPreferredTouchKeyboardLayout
     [PreserveSig]
     int GetDisplayName([MarshalAs(UnmanagedType.BStr)] out string name);
 
+    /// <summary>
+    /// Returns the service's preferred layout category and service-defined layout identifier.
+    /// </summary>
     [PreserveSig]
     int GetLayout(out SoftKeyboardTouchLayoutType type, out ushort id);
 }

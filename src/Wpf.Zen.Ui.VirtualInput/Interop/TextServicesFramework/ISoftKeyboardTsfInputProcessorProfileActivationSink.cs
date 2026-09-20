@@ -23,6 +23,17 @@ public interface ISoftKeyboardTsfInputProcessorProfileActivationSink
     /// <summary>
     /// Receives one exact input-processor profile activation or deactivation.
     /// </summary>
+    /// <param name="profileType">
+    /// Distinguishes a text-service profile from a keyboard layout.
+    /// </param>
+    /// <param name="languageId">The native language identifier associated with the profile.</param>
+    /// <param name="classId">The text-service class identifier for a TSF profile.</param>
+    /// <param name="categoryId">The category whose active profile is changing.</param>
+    /// <param name="profileId">The profile identifier within the text service.</param>
+    /// <param name="keyboardLayout">The native keyboard-layout handle carried by TSF.</param>
+    /// <param name="flags">
+    /// Activation flags, including whether this profile is becoming active.
+    /// </param>
     /// <returns>An HRESULT value. TSF ignores this return value.</returns>
     [PreserveSig]
     int OnActivated(

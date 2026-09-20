@@ -225,11 +225,17 @@ public partial class SoftKeyboard
         );
     }
 
+    /// <summary>
+    /// Starts a refresh whose task handles cancellation and reports source failures to the control.
+    /// </summary>
     internal void RequestCandidateRefresh()
     {
         _ = RefreshCandidatesAsync();
     }
 
+    /// <summary>
+    /// Asks the active source to return presentation ownership and reports cleanup failure.
+    /// </summary>
     internal void ReleaseCandidatePresentation()
     {
         try
@@ -242,6 +248,9 @@ public partial class SoftKeyboard
         }
     }
 
+    /// <summary>
+    /// Revokes refresh publications and candidate input together before cancellation callbacks run.
+    /// </summary>
     internal void CancelCandidateOperations()
     {
         _candidateRefreshVersion++;
@@ -318,6 +327,10 @@ public partial class SoftKeyboard
         );
     }
 
+    /// <summary>
+    /// Waits for publication beyond a captured snapshot version; timeout returns false.
+    /// Caller cancellation is propagated so a compound candidate operation can stop immediately.
+    /// </summary>
     internal async Task<bool> WaitForCandidateSnapshotChangeAsync(
         int version,
         TimeSpan timeout,
@@ -330,6 +343,8 @@ public partial class SoftKeyboard
             return true;
         }
 
+        // Capture the current signal after checking the version on the dispatcher; publication
+        // replaces this signal, so a later page update wakes precisely these waiters.
         var signal = _candidateSnapshotChanged.Task;
 
         using var timeoutCancellation = new CancellationTokenSource(timeout);
@@ -476,6 +491,8 @@ public partial class SoftKeyboard
         var host = new SoftKeyboardCandidateHost(this);
         _candidateHost = host;
 
+        // Source creation may publish or replace the source synchronously. Install the host and
+        // generation first, then accept the returned session only if both still belong here.
         var version = ++_candidateSessionVersion;
 
         try
@@ -601,16 +618,25 @@ public partial class SoftKeyboard
         }
     }
 
+    /// <summary>
+    /// Checks both generation and session identity after source callbacks or asynchronous work.
+    /// </summary>
     private bool IsCandidateSessionCurrent(int version, ISoftKeyboardCandidateSession session)
     {
         return version == _candidateSessionVersion && ReferenceEquals(session, _candidateSession);
     }
 
+    /// <summary>
+    /// Creates a change signal whose waiters resume outside the snapshot publication call stack.
+    /// </summary>
     private static TaskCompletionSource<int> CreateCandidateSnapshotSignal()
     {
         return new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
+    /// <summary>
+    /// Expires the old source and rediscovers candidates when this control can present them.
+    /// </summary>
     private static void OnCandidateSourceChanged(
         DependencyObject dependencyObject,
         DependencyPropertyChangedEventArgs args)

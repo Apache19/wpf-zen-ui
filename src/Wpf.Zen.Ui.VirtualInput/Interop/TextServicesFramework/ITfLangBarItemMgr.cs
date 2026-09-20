@@ -18,6 +18,9 @@ internal interface ITfLangBarItemMgr
     [PreserveSig]
     int EnumItems(out IntPtr enumerator);
 
+    /// <summary>
+    /// Acquires a language-bar item by identifier for input-mode button discovery.
+    /// </summary>
     [PreserveSig]
     int GetItem(in Guid id, [MarshalAs(UnmanagedType.IUnknown)] out object? item);
 
@@ -27,9 +30,15 @@ internal interface ITfLangBarItemMgr
     [PreserveSig]
     int RemoveItem([MarshalAs(UnmanagedType.IUnknown)] object item);
 
+    /// <summary>
+    /// Subscribes to one item's presentation changes and returns the unsubscription cookie.
+    /// </summary>
     [PreserveSig]
     int AdviseItemSink(IntPtr sink, out uint cookie, in Guid itemId);
 
+    /// <summary>
+    /// Removes the item subscription before its retained callback pointer is released.
+    /// </summary>
     [PreserveSig]
     int UnadviseItemSink(uint cookie);
 }

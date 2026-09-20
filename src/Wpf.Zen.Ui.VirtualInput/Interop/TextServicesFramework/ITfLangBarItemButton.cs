@@ -21,12 +21,18 @@ internal interface ITfLangBarItemButton
     [PreserveSig]
     int GetStatus(out uint status);
 
+    /// <summary>
+    /// Requests native surface visibility using a Win32 BOOL.
+    /// </summary>
     [PreserveSig]
     int Show(int show);
 
     [PreserveSig]
     int GetTooltipString([MarshalAs(UnmanagedType.BStr)] out string? tooltip);
 
+    /// <summary>
+    /// Invokes the native language-bar action using its click kind and screen-space anchor.
+    /// </summary>
     [PreserveSig]
     int OnClick(uint click, TfInputModePoint point, in TfInputModeRectangle rectangle);
 
@@ -36,9 +42,15 @@ internal interface ITfLangBarItemButton
     [PreserveSig]
     int OnMenuSelect(uint menuItemId);
 
+    /// <summary>
+    /// Acquires the native icon used to create the input-mode button image.
+    /// </summary>
     [PreserveSig]
     int GetIcon(out IntPtr icon);
 
+    /// <summary>
+    /// Reads the item's textual presentation when provided by the active service.
+    /// </summary>
     [PreserveSig]
     int GetText([MarshalAs(UnmanagedType.BStr)] out string? text);
 }

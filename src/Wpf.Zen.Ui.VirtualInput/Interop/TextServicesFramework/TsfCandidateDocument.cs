@@ -50,6 +50,8 @@ internal sealed class TsfCandidateDocument : IDisposable
                 throw new InvalidOperationException("The candidate has no accessible TSF document.");
             }
 
+            // Match FrameworkTextComposition: the editor owns the base context even when the
+            // TIP has pushed another context on top of the document stack.
             manager.GetBase(out context);
             return new TsfCandidateDocument(document, context);
         }

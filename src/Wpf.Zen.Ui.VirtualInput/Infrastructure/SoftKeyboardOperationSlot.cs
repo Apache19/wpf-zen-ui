@@ -38,6 +38,8 @@ internal sealed class SoftKeyboardOperationSlot
         _current = operation;
 #pragma warning restore IDISP003
 
+        // Cancellation runs arbitrary extension callbacks synchronously. Publish the replacement
+        // first so those callbacks already see the previous operation as obsolete.
         previous?.Cancel(reportError);
         return operation;
     }
@@ -133,6 +135,8 @@ internal sealed class SoftKeyboardOperationSlot
                 _owner._current = null;
             }
 
+            // Keep the slot generation unchanged on normal completion: an already queued snapshot
+            // may still publish. Replacement or cancellation advances the generation instead.
             _cancellation.Dispose();
         }
 

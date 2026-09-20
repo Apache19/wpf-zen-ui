@@ -15,9 +15,16 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 internal interface ITfCompartment
 {
+    /// <summary>
+    /// Writes a native VARIANT under the supplied TSF client identity and preserves the HRESULT.
+    /// </summary>
     [PreserveSig]
     int SetValue(uint clientId, [In, MarshalAs(UnmanagedType.Struct)] ref object value);
 
+    /// <summary>
+    /// Reads the native VARIANT; callers validate both HRESULT and value type before
+    /// interpretation.
+    /// </summary>
     [PreserveSig]
     int GetValue([MarshalAs(UnmanagedType.Struct)] out object? value);
 }

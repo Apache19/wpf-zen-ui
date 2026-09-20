@@ -192,6 +192,9 @@ public partial class SoftKeyboard
         );
     }
 
+    /// <summary>
+    /// Resolves explicit selection or automatic preference, falling back to the first registration.
+    /// </summary>
     private SoftKeyboardSupplementalLayout ResolveSupplementalLayout(string selection)
     {
         if (selection != SoftKeyboardSupplementalLayouts.Automatic)
@@ -204,6 +207,9 @@ public partial class SoftKeyboard
             ?? _supplementalLayouts[0];
     }
 
+    /// <summary>
+    /// Prefers the control-level adapter, then the first adapter in resolved extension order.
+    /// </summary>
     private ISoftKeyboardInputModeAdapter? ResolveInputModeAdapter()
     {
         if (InputModeAdapter is not null)
@@ -215,6 +221,9 @@ public partial class SoftKeyboard
             .FirstOrDefault(static adapter => adapter is not null);
     }
 
+    /// <summary>
+    /// Preserves previous extension failures when reporting another callback or cleanup error.
+    /// </summary>
     private void ReportExtensionError(Exception exception)
     {
         if (GetValue(ExtensionErrorProperty) is Exception previous)
@@ -230,6 +239,9 @@ public partial class SoftKeyboard
         }
     }
 
+    /// <summary>
+    /// Releases candidate work before rebuilding layout, mode and settings from new registrations.
+    /// </summary>
     private static void OnExtensionProviderChanged(
         DependencyObject dependencyObject,
         DependencyPropertyChangedEventArgs args)

@@ -27,24 +27,36 @@ internal interface ITfKeystrokeMgr
     [PreserveSig]
     int GetForeground(out Guid classId);
 
+    /// <summary>
+    /// Asks whether the active text service would consume the key-down event.
+    /// </summary>
     [PreserveSig]
     int TestKeyDown(
         int virtualKey,
         int keyData,
         [MarshalAs(UnmanagedType.Bool)] out bool eaten);
 
+    /// <summary>
+    /// Asks whether the active text service would consume the key-up event.
+    /// </summary>
     [PreserveSig]
     int TestKeyUp(
         int virtualKey,
         int keyData,
         [MarshalAs(UnmanagedType.Bool)] out bool eaten);
 
+    /// <summary>
+    /// Delivers the key-down event and reports whether the text service consumed it.
+    /// </summary>
     [PreserveSig]
     int KeyDown(
         int virtualKey,
         int keyData,
         [MarshalAs(UnmanagedType.Bool)] out bool eaten);
 
+    /// <summary>
+    /// Delivers the key-up event and reports whether the text service consumed it.
+    /// </summary>
     [PreserveSig]
     int KeyUp(
         int virtualKey,

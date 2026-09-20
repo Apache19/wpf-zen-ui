@@ -53,6 +53,8 @@ internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCan
         SoftKeyboardCandidate candidate,
         CancellationToken cancellationToken)
     {
+        // This policy selects presentation; NotHandled continues through the bridge's native
+        // selection and finalization path, including its composition-completion checks.
         return Task.FromResult(SoftKeyboardCandidateOperationResult.NotHandled);
     }
 
@@ -62,6 +64,7 @@ internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCan
         int delta,
         CancellationToken cancellationToken)
     {
+        // Let the bridge apply its page metadata and snapshot guards to native navigation.
         return Task.FromResult(SoftKeyboardCandidateOperationResult.NotHandled);
     }
 

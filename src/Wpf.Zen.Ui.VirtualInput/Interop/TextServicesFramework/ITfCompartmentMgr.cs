@@ -15,6 +15,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 internal interface ITfCompartmentMgr
 {
+    /// <summary>
+    /// Acquires the compartment identified by a GUID for raw state access or sink registration.
+    /// </summary>
     [PreserveSig]
     int GetCompartment(in Guid id, out ITfCompartment compartment);
 }

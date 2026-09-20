@@ -397,11 +397,17 @@ internal sealed class InputMethodMonitor
         return value is { } integer ? $"{integer} (0x{integer:X8})" : "<unavailable>";
     }
 
+    /// <summary>
+    /// Forwards raw native evidence synchronously; the keyboard owns settling and interpretation.
+    /// </summary>
     private void Publish(InputMethodChange change)
     {
         _changed(change);
     }
 
+    /// <summary>
+    /// Releases dependent item and compartment subscriptions before the profile sink pointer.
+    /// </summary>
     private void DisconnectProfileNotifications()
     {
         DisconnectLanguageBarItemNotifications();
@@ -491,6 +497,9 @@ internal sealed class InputMethodMonitor
         }
     }
 
+    /// <summary>
+    /// Returns a source/cookie pair only after the requested compartment accepts the shared sink.
+    /// </summary>
     private static bool TryConnectCompartment(
         ITfCompartmentMgr        manager,
         Guid                     compartmentId,
@@ -518,6 +527,9 @@ internal sealed class InputMethodMonitor
         return true;
     }
 
+    /// <summary>
+    /// Unadvises both compartments before releasing their shared COM callback acquisition.
+    /// </summary>
     private void DisconnectCompartmentNotifications()
     {
         DisconnectCompartment(ref _keyboardOpenSource, ref _keyboardOpenCookie);
@@ -530,6 +542,9 @@ internal sealed class InputMethodMonitor
         }
     }
 
+    /// <summary>
+    /// Attempts to unadvise one source and clears its cookie even if TSF has already shut down.
+    /// </summary>
     private static void DisconnectCompartment(ref ITfSource? source, ref uint cookie)
     {
         if (source is not null)
@@ -576,6 +591,8 @@ internal sealed class InputMethodMonitor
                 return;
             }
 
+            // Transfer this acquisition into the subscription only after Advise succeeds.
+            // Until then, finally owns releasing the temporary callback pointer.
             _languageBarItemManager     = manager;
             _languageBarItemSinkPointer = sinkPointer;
             _languageBarItemCookie      = cookie;
@@ -594,6 +611,9 @@ internal sealed class InputMethodMonitor
         }
     }
 
+    /// <summary>
+    /// Releases the item subscription and its callback pointer so later discovery can reconnect.
+    /// </summary>
     private void DisconnectLanguageBarItemNotifications()
     {
         if (_languageBarItemManager is not null)
@@ -618,6 +638,9 @@ internal sealed class InputMethodMonitor
         }
     }
 
+    /// <summary>
+    /// Ends managed and native observation on the dispatcher that owns the subscriptions.
+    /// </summary>
     private void OnDispatcherShutdownStarted(object? sender, EventArgs eventArgs)
     {
         Dispose();
@@ -645,6 +668,9 @@ internal sealed class InputMethodMonitor
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;
     }
 
+    /// <summary>
+    /// Recognizes unavailable COM or platform capabilities that monitoring can safely abandon.
+    /// </summary>
     private static bool IsUnavailable(Exception exception)
     {
         return exception is COMException
