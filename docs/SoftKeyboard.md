@@ -291,6 +291,24 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 本次点击不执行模式写入。原生命令执行失败不会再尝试扩展命令，避免一次点击走两条执行路径。
 执行成功后仍以读取和通知结果更新显示，不预先显示推测的切换结果。
 
+微软日语扩展按 `open=0` 显示直接字母数字输入；`open=1` 时解析 conversion，
+基础字符模式由 `NATIVE`、`KATAKANA`、`FULLSHAPE` 三个位决定。`KATAKANA` 仅在
+`NATIVE` 开启时有效；平假名不区分全／半角键帽。Roman 和 SoftKeyboard 标志不改变
+字符模式，例如 `0x09`、`0x19`、`0x99` 均显示平假名“あ”。NoConversion、Fixed
+保留基础字符显示，并在辅助说明中标出“不转换”或“固定转换”。字符代码、Hanja、EUDC、
+符号等特殊模式以及未定义位不推测普通字符模式，回退平台呈现或中性图标。
+扩展切换从关闭状态先写 `open=1`，再明确选择正常平假名转换，保留有效观察中的
+Roman、SoftKeyboard 输入偏好并清除其它转换标志；
+从已开启模式切换时只写 `open=0`，保留 conversion。两次开启写入分别报告结果，
+任一步失败都返回失败，最终显示仍由实际状态通知决定。
+只要已知 `open=1`，即使具体 conversion 尚不能解释，扩展仍可执行关闭；
+此时不提供推测的字符模式显示。`open` 本身未知时仍需补读以确定方向。
+
+上述规则复用 CsWin32 已生成的 `IME_CONVERSION_MODE`，不重复定义 Windows 常量。
+标志含义参考 [IMM 定义](https://learn.microsoft.com/windows/win32/intl/ime-conversion-mode-values)
+及 [TSF 定义](https://learn.microsoft.com/windows/win32/tsf/flags-for-conversion-mode)。
+仅在扩展实际需要且 CsWin32 缺少定义时补充互操作声明。
+
 ### Profile 激活观察
 
 原生监视器捕获 TSF Profile、open、conversion、语言栏通知和当前焦点 HWND 的 IMM 通知。
@@ -815,7 +833,7 @@ public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
 
 微软日语扩展只解释本代已观察到的服务契约：已识别的 open/conversion 组合决定文字键帽及
 日语紧凑布局。`OverridePlatformButton` 保留文字键帽覆盖能力；缺项或未知组合回退平台呈现。
-点击优先重新发现语言栏命令；不可用时，扩展按最新观察生成精确 open 写入请求。
+点击优先重新发现语言栏命令；不可用时，扩展按观察决定关闭或显式选择平假名。
 写入被接受不等于模式已改变，实际输入、组合与候选仍由当前输入法负责。
 
 ### 验证入口

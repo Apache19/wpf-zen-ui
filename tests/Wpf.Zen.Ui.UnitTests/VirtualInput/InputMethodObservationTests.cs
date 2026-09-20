@@ -915,7 +915,7 @@ public class InputMethodObservationTests
             scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
             scope.Keyboard.InputModeAdapter = MicrosoftJapaneseInputModeAdapter.Default;
             Notify(scope.Keyboard, InputMethodChangeKind.ImeOpen, 1);
-            Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 9);
+            Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 0x19);
             await scope.DrainAsync();
             Assert.Equal("あ", scope.Keyboard.InputModeButton?.Content);
             Assert.Contains(scope.Keyboard.CurrentLayout.Keys, key => key.Text == "ー");
@@ -924,7 +924,7 @@ public class InputMethodObservationTests
             backend.Button = Icon("changed-native", 200);
             scope.Clock.Advance(30);
             Assert.Equal("あ", scope.Keyboard.InputModeButton?.Content);
-            Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 11);
+            Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 0x1B);
             scope.Clock.Advance(0);
             Assert.Equal("カ", scope.Keyboard.InputModeButton?.Content);
             Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 12345);

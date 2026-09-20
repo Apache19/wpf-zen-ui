@@ -887,7 +887,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
     /// <summary>
     /// Switching from a Chinese TIP publishes the state read from the newly active Japanese
-    /// profile instead of fabricating direct-input defaults for the new generation.
+    /// profile. Subsequent mode clicks select Hiragana from retained modes and preserve
+    /// conversion on close, including Roman-key input.
     /// </summary>
     [Fact]
     public void Japanese_ProfileActivationPublishesObservedGenerationState()
@@ -1003,6 +1004,44 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 );
                 Assert.NotNull(japaneseState.ConversionValue);
                 Assert.NotNull(keyboard.InputModeButton);
+
+                try
+                {
+                    foreach (var retainedConversion in new[] { 0x19, 0x0B, 0x08, 0x03 })
+                    {
+                        Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardOpenValue(japanese, 1));
+                        Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardConversionMode(
+                            japanese, retainedConversion));
+                        PumpFor(150);
+                        Assert.True(SoftKeyboardTsfInputMode.TrySetKeyboardOpenValue(japanese, 0));
+                        Assert.True(PumpUntil(
+                            () => keyboard.InputModeButton?.Id.EndsWith(":direct") == true, 2000));
+
+                        typeof(SoftKeyboard).GetMethod("SwitchInputMode",
+                            BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, null);
+                        Assert.True(PumpUntil(
+                            () => Equals(keyboard.InputModeButton?.Content, "あ"), 2000));
+                        PumpFor(150);
+                        Assert.Equal("あ", keyboard.InputModeButton?.Content);
+                        var enabledConversion = SoftKeyboardTsfInputMode.GetKeyboardConversionValue();
+                        Assert.NotNull(enabledConversion);
+                        Assert.Equal(0x09, enabledConversion.Value & ~0x10);
+                        output.WriteLine($"Retained conversion={retainedConversion:X2}; "
+                            + $"enabled conversion={enabledConversion:X2}, button=あ.");
+
+                        typeof(SoftKeyboard).GetMethod("SwitchInputMode",
+                            BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, null);
+                        Assert.True(PumpUntil(
+                            () => keyboard.InputModeButton?.Id.EndsWith(":direct") == true, 2000));
+                        Assert.Equal(enabledConversion,
+                            SoftKeyboardTsfInputMode.GetKeyboardConversionValue());
+                    }
+                }
+                finally
+                {
+                    RestoreInputMode(backend, japanese, japaneseState);
+                    PumpFor(150);
+                }
 
                 editor.Clear();
                 Assert.True(keyboard.SendActionKey(Key.A, ModifierKeys.None));
