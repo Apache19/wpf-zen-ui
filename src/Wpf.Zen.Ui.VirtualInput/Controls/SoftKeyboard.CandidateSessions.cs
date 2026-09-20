@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -36,7 +36,8 @@ public partial class SoftKeyboard
             nameof(CandidateSource),
             typeof(ISoftKeyboardCandidateSource),
             typeof(SoftKeyboard),
-            new PropertyMetadata(TsfSoftKeyboardCandidateSource.Default, OnCandidateSourceChanged)
+            new PropertyMetadata(TsfSoftKeyboardCandidateSource.Default, OnCandidateSourceChanged),
+            static value => value is ISoftKeyboardCandidateSource
         );
 
     /// <summary>
@@ -45,15 +46,13 @@ public partial class SoftKeyboard
     /// <remarks>
     /// Replacing the source cancels all work from its previous session. The default uses the
     /// dispatcher-scoped Windows Text Services Framework session.
+    /// Null values are rejected by dependency-property validation. Clear the local value to
+    /// restore the value supplied by a style or the default source.
     /// </remarks>
     public ISoftKeyboardCandidateSource CandidateSource
     {
         get => (ISoftKeyboardCandidateSource)GetValue(CandidateSourceProperty);
-        set => SetValue(
-            CandidateSourceProperty,
-            // todo: 改成用依赖属性的校验器回调来防止 null 如何？
-            value ?? throw new ArgumentNullException(nameof(value))
-        );
+        set => SetValue(CandidateSourceProperty, value);
     }
 
     #endregion

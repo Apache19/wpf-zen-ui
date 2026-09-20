@@ -50,6 +50,11 @@ public partial class SoftKeyboard
     /// Gets or sets the settings-tree policy. Changes refresh the menu; this property does not
     /// inherit or animate.
     /// </summary>
+    /// <remarks>
+    /// The default is <see cref="DefaultSoftKeyboardSettingsProvider.Default"/>.
+    /// Null values are rejected by dependency-property validation. Clear the local value to
+    /// restore the value supplied by a style or the default provider.
+    /// </remarks>
     public ISoftKeyboardSettingsProvider SettingsProvider
     {
         get => (ISoftKeyboardSettingsProvider)GetValue(SettingsProviderProperty);

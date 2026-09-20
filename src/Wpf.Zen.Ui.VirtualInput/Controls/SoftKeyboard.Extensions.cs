@@ -22,7 +22,8 @@ public partial class SoftKeyboard
             nameof(ExtensionProvider),
             typeof(ISoftKeyboardExtensionProvider),
             typeof(SoftKeyboard),
-            new PropertyMetadata(EmptySoftKeyboardExtensionProvider.Default, OnExtensionProviderChanged)
+            new PropertyMetadata(EmptySoftKeyboardExtensionProvider.Default, OnExtensionProviderChanged),
+            static value => value is ISoftKeyboardExtensionProvider
         );
 
     /// <summary>
@@ -31,14 +32,13 @@ public partial class SoftKeyboard
     /// <remarks>
     /// The core default contributes no language or vendor behavior. Applications may use a
     /// composite provider to apply several independent extension packages in declaration order.
+    /// Null values are rejected by dependency-property validation. Clear the local value to
+    /// restore the value supplied by a style or the default empty provider.
     /// </remarks>
     public ISoftKeyboardExtensionProvider ExtensionProvider
     {
         get => (ISoftKeyboardExtensionProvider)GetValue(ExtensionProviderProperty);
-        set => SetValue(
-            ExtensionProviderProperty,
-            value ?? throw new ArgumentNullException(nameof(value))
-        );
+        set => SetValue(ExtensionProviderProperty, value);
     }
 
     private static readonly DependencyPropertyKey ExtensionErrorPropertyKey

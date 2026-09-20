@@ -58,19 +58,22 @@ public partial class SoftKeyboard
             nameof(InputMethodSource),
             typeof(ISoftKeyboardInputMethodSource),
             typeof(SoftKeyboard),
-            new PropertyMetadata(WindowsSoftKeyboardInputMethodSource.Default, OnInputMethodSourceChanged)
+            new PropertyMetadata(WindowsSoftKeyboardInputMethodSource.Default, OnInputMethodSourceChanged),
+            static value => value is ISoftKeyboardInputMethodSource
         );
 
     /// <summary>
     /// Gets or sets the source used to enumerate, activate, and control input methods.
     /// </summary>
+    /// <remarks>
+    /// The default is <see cref="WindowsSoftKeyboardInputMethodSource.Default"/>.
+    /// Null values are rejected by dependency-property validation. Clear the local value to
+    /// restore the value supplied by a style or the default source.
+    /// </remarks>
     public ISoftKeyboardInputMethodSource InputMethodSource
     {
         get => (ISoftKeyboardInputMethodSource)GetValue(InputMethodSourceProperty);
-        set => SetValue(
-            InputMethodSourceProperty,
-            value ?? throw new ArgumentNullException(nameof(value))
-        );
+        set => SetValue(InputMethodSourceProperty, value);
     }
 
     #endregion
