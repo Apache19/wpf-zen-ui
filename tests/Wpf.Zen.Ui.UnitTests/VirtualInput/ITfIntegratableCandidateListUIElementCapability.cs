@@ -5,16 +5,12 @@
 
 using System.Runtime.InteropServices;
 
-namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
+namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
 /// <summary>
-/// Identifies candidate elements that support the TSF integrated-candidate contract.
+/// Advertises the optional TSF integration interface to verify that interface availability alone
+/// never permits embedded candidate presentation.
 /// </summary>
-/// <remarks>
-/// Only interface identity is required during presentation negotiation. Candidate operations
-/// continue through <see cref="ITfCandidateListUIElementBehavior"/> after this capability has
-/// been established.
-/// </remarks>
 [ComImport]
 [Guid("C7A6F54F-B180-416F-B2BF-7BF2E4683D7B")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

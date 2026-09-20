@@ -11,12 +11,14 @@ namespace Wpf.Zen.Ui.VirtualInput.Candidates;
 public enum SoftKeyboardTsfCandidatePresentation
 {
     /// <summary>
-    /// Uses the core capability and document ownership checks.
+    /// Defers to the next candidate behavior. If no extension makes an explicit decision,
+    /// the input method keeps its native candidate surface.
     /// </summary>
     Default,
 
     /// <summary>
-    /// Requests candidate presentation inside the soft keyboard.
+    /// Explicitly permits candidate presentation inside the soft keyboard for this input method.
+    /// The core still requires controllable candidates belonging to the focused TSF document.
     /// </summary>
     Embedded,
 

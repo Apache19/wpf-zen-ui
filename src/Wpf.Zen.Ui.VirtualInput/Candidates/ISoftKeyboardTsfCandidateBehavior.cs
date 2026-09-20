@@ -14,18 +14,26 @@ public interface ISoftKeyboardTsfCandidateBehavior
     /// Chooses whether a matching TSF element should use embedded or native presentation.
     /// </summary>
     /// <param name="context">Safe metadata for the active TSF candidate element.</param>
-    /// <returns>A decision, or Default to delegate to the next behavior and core policy.</returns>
+    /// <returns>
+    /// An explicit decision, or Default to consult the next behavior. Without an explicit decision,
+    /// the native candidate surface remains visible.
+    /// </returns>
     SoftKeyboardTsfCandidatePresentation GetPresentation(SoftKeyboardTsfCandidateContext context);
 
     /// <summary>
     /// Attempts to commit a candidate using input-method-specific behavior.
     /// </summary>
-    /// <param name="context">Safe metadata and input operations for the active candidate element.</param>
+    /// <param name="context">
+    /// Safe metadata and input operations for the active candidate element.
+    /// </param>
     /// <param name="candidate">The currently published candidate to commit.</param>
     /// <param name="cancellationToken">
-    /// Cancels the caller's operation. Element end expires context input but permits pending commit acknowledgement.
+    /// Cancels the caller's operation. Element end expires context input but permits pending
+    /// commit acknowledgement.
     /// </param>
-    /// <returns>An operation result; NotHandled delegates to the next behavior and standard TSF.</returns>
+    /// <returns>
+    /// An operation result; NotHandled delegates to the next behavior and standard TSF.
+    /// </returns>
     Task<SoftKeyboardCandidateOperationResult> CommitAsync(
         SoftKeyboardTsfCandidateContext context,
         SoftKeyboardCandidate candidate,
@@ -34,12 +42,19 @@ public interface ISoftKeyboardTsfCandidateBehavior
     /// <summary>
     /// Attempts to move the candidate page using input-method-specific behavior.
     /// </summary>
-    /// <param name="context">Safe metadata and input operations for the active candidate element.</param>
-    /// <param name="delta">A negative value for the previous page or a positive value for the next page.</param>
-    /// <param name="cancellationToken">
-    /// Cancels the caller's operation. Element end expires context input but permits pending commit acknowledgement.
+    /// <param name="context">
+    /// Safe metadata and input operations for the active candidate element.
     /// </param>
-    /// <returns>An operation result; NotHandled delegates to the next behavior and standard TSF.</returns>
+    /// <param name="delta">
+    /// A negative value for the previous page or a positive value for the next page.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Cancels the caller's operation. Element end expires context input but permits pending
+    /// commit acknowledgement.
+    /// </param>
+    /// <returns>
+    /// An operation result; NotHandled delegates to the next behavior and standard TSF.
+    /// </returns>
     Task<SoftKeyboardCandidateOperationResult> MovePageAsync(
         SoftKeyboardTsfCandidateContext context,
         int delta,

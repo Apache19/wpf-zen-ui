@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
@@ -213,6 +214,14 @@ public partial class SoftKeyboard
                 if (args.RoutedEvent == TextCompositionManager.PreviewTextInputStartEvent)
                 {
                     _compositionStartVersion++;
+
+                    CompositionIdentity = new object();
+                    QueueCandidateBridgeRefresh();
+
+                    Debug.WriteLine(
+                        "[SoftKeyboard.Candidates.Composition] WPF START observed; "
+                        + $"compositionVersion={_compositionStartVersion}."
+                    );
                 }
 
                 _activeTextComposition = composition;
@@ -235,6 +244,11 @@ public partial class SoftKeyboard
                 || (composition is FrameworkTextComposition
                     && _activeTextComposition is FrameworkTextComposition)))
         {
+            Debug.WriteLine(
+                "[SoftKeyboard.Candidates.Composition] WPF END observed; "
+                + $"compositionVersion={_compositionStartVersion}."
+            );
+
             ClearActiveComposition();
         }
     }

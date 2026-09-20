@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -66,6 +67,12 @@ public partial class SoftKeyboard
         CommandManager.InvalidateRequerySuggested();
 
         CandidateSnapshotVersion++;
+
+        Debug.WriteLine(
+            $"[SoftKeyboard.Candidates.Presentation] SNAPSHOT applied; version={CandidateSnapshotVersion}, "
+            + $"state={presentationState}, count={snapshot.Length}, page={pageNumber}, "
+            + $"pageCount={pageCount}, selection={selectedCandidateIndex}."
+        );
 
         var previous = _candidateSnapshotChanged;
         _candidateSnapshotChanged = CreateCandidateSnapshotSignal();

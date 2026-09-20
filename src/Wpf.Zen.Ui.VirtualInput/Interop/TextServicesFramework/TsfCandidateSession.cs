@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
@@ -37,10 +38,16 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     private CancellationTokenSource?           _activeCandidateCancellation;
     private bool                               _reflectionUnavailable;
 
+    // Some TIPs keep an element in the manager after its composition has verifiably ended.
+    // Remember that identity across ordinary refreshes; a new Begin or WPF composition permits
+    // reuse. Keeping only the composition token avoids extending the editor/control lifetime.
+    private ITfCandidateListUIElementBehavior? _retiredBehavior;
+    private object?                            _retiredCompositionIdentity;
+
     /// <summary>
     /// Creates the candidate bridge and its bounded polling cadence on the TSF Dispatcher.
     /// </summary>
-    /// <param name="dispatcher">The Dispatcher that owns the WPF text services and candidates.</param>
+    /// <param name="dispatcher">The Dispatcher that owns WPF text services and candidates.</param>
     internal TsfCandidateSession(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
@@ -201,6 +208,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <summary>
+    /// Submits the selected item and retires presentation only after native completion is observed.
+    /// Reentrant replacements retain their lifetime.
+    /// </summary>
     internal async Task<SoftKeyboardCandidateOperationResult> TryCommitAsync(
         SoftKeyboard keyboard,
         SoftKeyboardCandidate candidate,
@@ -212,7 +223,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             return SoftKeyboardCandidateOperationResult.NotHandled;
         }
 
-        var version = _activeCandidateVersion;
+        var version             = _activeCandidateVersion;
+        var compositionIdentity = keyboard.CompositionIdentity;
+        var target              = keyboard.ActiveTarget;
 
         using var operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken, _activeCandidateCancellation.Token
@@ -231,7 +244,25 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 return SoftKeyboardCandidateOperationResult.NotHandled;
             }
 
-            var context = CreateBehaviorContext(keyboard, nativeBehavior, operationToken, cancellationToken);
+            TsfCandidateDocument composition;
+            try
+            {
+                composition = TsfCandidateDocument.Capture(nativeBehavior);
+            }
+            catch (Exception exception) when (IsUnavailable(exception))
+            {
+                // No submission has happened yet. Keep presentation available and surface the
+                // missing native boundary instead of pretending that a local reset completes it.
+                keyboard.SetCandidateError(exception);
+                return SoftKeyboardCandidateOperationResult.Failure(exception);
+            }
+
+            using var compositionLease = composition;
+
+            var context = CreateBehaviorContext(
+                keyboard, nativeBehavior, operationToken, cancellationToken
+            );
+
             if (context is not null)
             {
                 foreach (var behavior in keyboard.GetTsfCandidateBehaviors())
@@ -268,8 +299,16 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                     }
 
                     cancellationToken.ThrowIfCancellationRequested();
+
                     if (result?.Handled == true)
                     {
+                        if (result.Succeeded)
+                        {
+                            return ConfirmSubmittedCandidate(
+                                keyboard, nativeBehavior, version, compositionIdentity, target, composition
+                            );
+                        }
+
                         return result;
                     }
                 }
@@ -279,14 +318,41 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             // SetSelection can synchronously end this UI element and begin another in the same
             // document. Only finalize the captured element if its generation survived selection.
-            var succeeded = ValidateCandidateOperation(keyboard, nativeBehavior, version)
-                && nativeBehavior.SetSelection(candidate.Index) >= 0
-                && ValidateCandidateOperation(keyboard, nativeBehavior, version)
-                && nativeBehavior.FinalizeCandidate() >= 0;
+            if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
 
-            return succeeded
-                ? SoftKeyboardCandidateOperationResult.Success
-                : SoftKeyboardCandidateOperationResult.NotHandled;
+            var selectionResult = nativeBehavior.SetSelection(candidate.Index);
+
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] SELECTION applied; version={version}, "
+                + $"index={candidate.Index}, result=0x{selectionResult:X8}."
+            );
+
+            if (selectionResult < 0 || !ValidateCandidateOperation(keyboard, nativeBehavior, version))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
+            var finalizeResult = nativeBehavior.FinalizeCandidate();
+
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] FINALIZE returned; version={version}, "
+                + $"index={candidate.Index}, result=0x{finalizeResult:X8}, "
+                + $"elementCurrent={IsCandidateOperationCurrent(keyboard, nativeBehavior, version)}."
+            );
+
+            // S_OK acknowledges the candidate action, but some TIPs leave their pre-edit active.
+            // Observe native composition state before hiding its list; pending edit sessions must run.
+            if (finalizeResult == 0)
+            {
+                return ConfirmSubmittedCandidate(
+                    keyboard, nativeBehavior, version, compositionIdentity, target, composition
+                );
+            }
+
+            return SoftKeyboardCandidateOperationResult.NotHandled;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -436,8 +502,13 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         }
     }
 
+    /// <inheritdoc />
     int ISoftKeyboardTsfUIElementSink.BeginUIElement(uint elementId, ref int show)
     {
+        Debug.WriteLine(
+            $"[SoftKeyboard.Candidates.Tsf] BEGIN observed; elementId={elementId}."
+        );
+
         ITfCandidateListUIElement? candidate = null;
 
         var retained = false;
@@ -456,11 +527,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             if (candidate is not ITfCandidateListUIElementBehavior behavior
                 || !MatchesFocusedDocument(candidate)
-                || !ShouldEmbedCandidate(
-                    keyboard,
-                    behavior,
-                    candidate is ITfIntegratableCandidateListUIElementCapability
-                ))
+                || !ShouldEmbedCandidate(keyboard, behavior))
             {
                 show = 1;
                 keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
@@ -469,6 +536,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             RestoreNativeCandidate();
             ClearActiveCandidate();
+
+            _retiredBehavior            = null;
+            _retiredCompositionIdentity = null;
 
             _activeKeyboard  = keyboard;
             _activeBehavior  = behavior;
@@ -501,8 +571,14 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         return 0;
     }
 
+    /// <inheritdoc />
     int ISoftKeyboardTsfUIElementSink.UpdateUIElement(uint elementId)
     {
+        Debug.WriteLine(
+            $"[SoftKeyboard.Candidates.Tsf] UPDATE observed; elementId={elementId}, "
+            + $"activeElementId={_activeElementId}, version={_activeCandidateVersion}."
+        );
+
         if (_activeBehavior is not null && elementId == _activeElementId)
         {
             _candidatePollTimer.Start();
@@ -512,8 +588,14 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         return 0;
     }
 
+    /// <inheritdoc />
     int ISoftKeyboardTsfUIElementSink.EndUIElement(uint elementId)
     {
+        Debug.WriteLine(
+            $"[SoftKeyboard.Candidates.Tsf] END observed; elementId={elementId}, "
+            + $"activeElementId={_activeElementId}, version={_activeCandidateVersion}."
+        );
+
         if (elementId == _activeElementId)
         {
             ClearActiveCandidate();
@@ -608,15 +690,19 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                         continue;
                     }
 
+                    if (ReferenceEquals(_retiredCompositionIdentity, keyboard.CompositionIdentity)
+                        && HaveSameComIdentity(_retiredBehavior, element))
+                    {
+                        // Neither polling nor an unrelated refresh can revive a finalized list.
+                        // IsShown is unsuitable here because embedding itself calls Show(false).
+                        continue;
+                    }
+
                     if (!MatchesFocusedDocument(candidate)
                         || element is not ITfCandidateListUIElementBehavior behavior
-                        // Enumeration must use the same capability boundary as BeginUIElement;
+                        // Enumeration must use the same extension policy as BeginUIElement;
                         // otherwise callback timing could change the presentation decision.
-                        || !ShouldEmbedCandidate(
-                            keyboard,
-                            behavior,
-                            element is ITfIntegratableCandidateListUIElementCapability
-                        ))
+                        || !ShouldEmbedCandidate(keyboard, behavior))
                     {
                         keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
                         continue;
@@ -635,6 +721,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                     // Enumeration exposes COM identity but no UI-element id. Such elements are
                     // validated against a fresh manager enumeration before every read or operation.
                     _activeElementId = null;
+
+                    _retiredBehavior            = null;
+                    _retiredCompositionIdentity = null;
 
                     retained = true;
 
@@ -907,10 +996,13 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         return keyboard?.CanPresentCandidates == true;
     }
 
+    /// <summary>
+    /// Requires an explicit extension decision before taking ownership of candidate presentation.
+    /// Undecided or missing extensions leave the input method's native surface visible.
+    /// </summary>
     private static bool ShouldEmbedCandidate(
         SoftKeyboard keyboard,
-        ITfCandidateListUIElementBehavior behavior,
-        bool supportsIntegratedCandidate)
+        ITfCandidateListUIElementBehavior behavior)
     {
         if (behavior.GetGuid(out var elementType) < 0)
         {
@@ -937,9 +1029,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             }
         }
 
-        // The optional integration interface is the strongest public TSF capability signal.
-        // Extension policy can make a more specific decision for known platform or vendor TIPs.
-        return supportsIntegratedCandidate;
+        return false;
     }
 
     /// <summary>
@@ -1081,13 +1171,104 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     }
 
     /// <summary>
+    /// Confirms completion only while the same editor and document still own input.
+    /// EndUIElement may arrive before composition end, so an ended UI element alone is not proof
+    /// that the TIP reset. Failures retain presentation and never replay the candidate submission.
+    /// </summary>
+    private SoftKeyboardCandidateOperationResult ConfirmSubmittedCandidate(
+        SoftKeyboard keyboard,
+        ITfCandidateListUIElementBehavior behavior,
+        int version,
+        object compositionIdentity,
+        IInputElement? target,
+        TsfCandidateDocument composition)
+    {
+        bool IsCurrent()
+        {
+            return ReferenceEquals(compositionIdentity, keyboard.CompositionIdentity)
+                && ReferenceEquals(target, keyboard.ActiveTarget)
+                && keyboard.CanPresentCandidates
+                && _elementManager is not null
+                && (_activeBehavior is null || IsCandidateOperationCurrent(keyboard, behavior, version));
+        }
+
+        bool CanConfirm()
+        {
+            return IsCurrent()
+                && _threadManager is not null
+                && composition.MatchesFocus(_threadManager)
+                && IsCurrent();
+        }
+
+        try
+        {
+            if (CanConfirm() && composition.IsCompositionCompleted() && CanConfirm())
+            {
+                RetireCommittedCandidate(keyboard, behavior, version, compositionIdentity);
+            }
+
+            return SoftKeyboardCandidateOperationResult.Success;
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] COMPOSITION verification failed; version={version}, "
+                + $"result=0x{exception.HResult:X8}."
+            );
+
+            keyboard.SetCandidateError(exception);
+            return SoftKeyboardCandidateOperationResult.Failure(exception);
+        }
+    }
+
+    /// <summary>
+    /// Closes presentation after native completion and excludes the retained native element
+    /// from discovery until a fresh composition or Begin establishes another candidate lifetime.
+    /// </summary>
+    private void RetireCommittedCandidate(
+        SoftKeyboard keyboard,
+        ITfCandidateListUIElementBehavior behavior,
+        int version,
+        object compositionIdentity)
+    {
+        if (!ReferenceEquals(compositionIdentity, keyboard.CompositionIdentity))
+        {
+            return;
+        }
+
+        var current = IsCandidateOperationCurrent(keyboard, behavior, version);
+        if (!current && (_activeBehavior is not null || _elementManager is null))
+        {
+            return;
+        }
+
+        // EndUIElement can arrive inside Finalize before the manager removes the element.
+        // Remember that completed identity too, while leaving any replacement generation alone.
+        _retiredBehavior            = behavior;
+        _retiredCompositionIdentity = compositionIdentity;
+
+        if (current)
+        {
+            ClearActiveCandidate("CompositionCompleted");
+        }
+    }
+
+    /// <summary>
     /// Detaches the current element and cancels its pending extension work before
     /// a later element takes ownership.
     /// </summary>
-    private void ClearActiveCandidate()
+    private void ClearActiveCandidate(string reason = "ElementReleased")
     {
         var keyboard     = _activeKeyboard;
         var cancellation = _activeCandidateCancellation;
+
+        if (_activeBehavior is not null)
+        {
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] Candidate RESET applied; reason={reason}, "
+                + $"elementId={_activeElementId}, version={_activeCandidateVersion}."
+            );
+        }
 
         _activeCandidateVersion++;
         _activeCandidateCancellation = null;
@@ -1150,9 +1331,11 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             _sinkPointer = IntPtr.Zero;
         }
 
-        _source         = null;
-        _elementManager = null;
-        _threadManager  = null;
+        _source                     = null;
+        _elementManager             = null;
+        _threadManager              = null;
+        _retiredBehavior            = null;
+        _retiredCompositionIdentity = null;
 
         // The thread manager is borrowed from WPF. Its activation and COM lifetime remain
         // owned by WPF's TextServicesHost.
@@ -1241,7 +1424,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         _dispatcher.ShutdownStarted -= OnDispatcherShutdown;
     }
 
-    private static bool HaveSameComIdentity(object? left, object? right)
+    /// <summary>
+    /// Compares TSF object identity across interface projections without retaining native pointers.
+    /// </summary>
+    internal static bool HaveSameComIdentity(object? left, object? right)
     {
         if (left is null || right is null)
         {

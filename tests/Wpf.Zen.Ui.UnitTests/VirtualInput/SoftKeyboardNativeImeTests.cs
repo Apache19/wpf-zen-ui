@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -32,6 +32,107 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// Verifies that installed WeChat Input keeps its native candidate window for consecutive
+    /// compositions and commits through its own selection handling.
+    /// </summary>
+    [Fact]
+    public void WeChat_NativeCandidatesOwnSelectionAndReset()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_WECHAT_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_WECHAT_TESTS=1 to exercise installed WeChat Input in the foreground.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox();
+            var keyboard = new SoftKeyboard
+            {
+                Target = editor,
+                IsOpen = true,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
+            };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 450 };
+            var backend = new TsfInputMethodService();
+            SoftKeyboardInputMethod? original = null;
+            SoftKeyboardInputMethod? wechat = null;
+            SoftKeyboardInputObservation? originalMode = null;
+            var preedit = string.Empty;
+            TextCompositionManager.AddPreviewTextInputUpdateHandler(editor, (_, args) =>
+            {
+                preedit = args.TextComposition.CompositionText;
+            });
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                Assert.True(editor.Focus());
+                PumpFor(400);
+                keyboard.RefreshInputMethods();
+                original = keyboard.ActiveInputMethod;
+                wechat = keyboard.InputMethods.FirstOrDefault(p => p.ClassId == KnownTextServices.WeChat);
+                Assert.SkipUnless(wechat is not null, "WeChat Input is not installed.");
+                Assert.True(keyboard.TryActivateInputMethod(wechat));
+                Assert.True(PumpUntil(() => keyboard.ActiveInputMethod?.ClassId == wechat.ClassId, 2000));
+                originalMode = ReadNativeState(wechat.ClassId);
+                Assert.True(EnsureNativeInput(backend, wechat));
+                Assert.True(PumpUntil(
+                    () => IsKnownNative(keyboard.ActiveInputMethod, ReadNativeState(wechat.ClassId)) == true,
+                    2000));
+
+                Assert.True(keyboard.SendActionKey(Key.H, ModifierKeys.None));
+                Assert.True(keyboard.SendActionKey(Key.F, ModifierKeys.None));
+                Assert.True(PumpUntil(() => IsNativeCandidateShown(null), 3000),
+                    "WeChat must keep its native candidate window visible.");
+                Assert.Equal(SoftKeyboardCandidatePresentationState.NativeFallback,
+                    keyboard.CandidatePresentationState);
+                Assert.Empty(keyboard.Candidates);
+                Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
+                Assert.True(PumpUntil(() => !IsNativeCandidateShown(null), 3000));
+                var first = editor.Text;
+                Assert.NotEmpty(first);
+                Assert.DoesNotContain("hf", first, StringComparison.OrdinalIgnoreCase);
+
+                preedit = string.Empty;
+                Assert.True(keyboard.SendActionKey(Key.C, ModifierKeys.None));
+                Assert.True(keyboard.SendActionKey(Key.S, ModifierKeys.None));
+                Assert.True(PumpUntil(() => IsNativeCandidateShown(null), 3000));
+                Assert.Equal(SoftKeyboardCandidatePresentationState.NativeFallback,
+                    keyboard.CandidatePresentationState);
+                Assert.Empty(keyboard.Candidates);
+                Assert.NotEmpty(preedit);
+                Assert.DoesNotContain("hf", preedit.Replace("'", string.Empty), StringComparison.OrdinalIgnoreCase);
+                Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
+                Assert.True(PumpUntil(() => !IsNativeCandidateShown(null)
+                    && editor.Text.Length > first.Length, 3000));
+                Assert.StartsWith(first, editor.Text);
+                Assert.DoesNotContain("cs", editor.Text, StringComparison.OrdinalIgnoreCase);
+
+            }
+            finally
+            {
+                if (window.IsVisible)
+                {
+                    keyboard.SendActionKey(Key.Escape, ModifierKeys.None);
+                    PumpFor(100);
+                    if (wechat is not null && originalMode is not null)
+                    {
+                        RestoreInputMode(backend, wechat, originalMode);
+                    }
+                }
+
+                if (original is not null)
+                {
+                    backend.TryActivate(original);
+                }
+
+                window.Close();
+            }
+        });
+    }
+
     /// <summary>
     /// Reads the initial Microsoft Pinyin presentation without focusing any scoped editor or
     /// issuing a profile or mode command. Run alone to exercise a fresh WPF text-services host.
@@ -264,7 +365,9 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.True(PumpUntil(() => commit.IsCompleted, 2000));
                 Assert.True(commit.GetAwaiter().GetResult());
                 Assert.True(PumpUntil(() => editor.Text == "★" + candidate.Text
-                    && !keyboard.HasCandidates, 2000));
+                    && !keyboard.HasCandidates, 2000),
+                    $"Expected=★{candidate.Text}, actual={editor.Text}, candidates={keyboard.HasCandidates}, "
+                    + $"error={keyboard.CandidateError}");
             }
             finally
             {
@@ -791,7 +894,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 Assert.False(keyboard.HasCandidates);
                 Assert.Equal(
                     SoftKeyboardCandidatePresentationState.NativeFallback, keyboard.CandidatePresentationState);
-                Assert.True(IsNativeCandidateShown(), "Weasel must retain its own candidate/reading surface.");
+                Assert.True(IsNativeCandidateShown(new Guid("36C3C795-7159-45AA-AB12-30229A51DBD3")), "Weasel must retain its own candidate/reading surface.");
                 Assert.True(keyboard.SendActionKey(Key.Space, ModifierKeys.None));
                 Assert.True(PumpUntil(() => !string.IsNullOrWhiteSpace(editor.Text), 1500));
             }
@@ -864,6 +967,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
     private static bool? IsKnownNative(SoftKeyboardInputMethod? profile, SoftKeyboardInputObservation state)
     {
+        if (profile?.ClassId == KnownTextServices.WeChat && state.ConversionValue == 0)
+        {
+            return state.OpenValue is 0 or 1 ? state.OpenValue == 1 : null;
+        }
+
         if (profile?.ClassId == new Guid("81D4E9C9-1D3B-41BC-9E6C-4B40BF79E35E"))
         {
             return state.OpenValue == 1 && state.ConversionValue is { } conversion
@@ -1108,7 +1216,11 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 
     }
 
-    private static bool IsNativeCandidateShown()
+    /// <summary>
+    /// Observes the native visibility reported by active TSF candidate elements.
+    /// </summary>
+    /// <param name="elementType">An optional element type filter for a specific provider.</param>
+    private static bool IsNativeCandidateShown(Guid? elementType)
     {
         var manager = WpfTextServicesAccessor.TryGetThreadManager() as ITfUIElementMgr;
         if (manager is null || manager.EnumUIElements(out var value) < 0)
@@ -1124,8 +1236,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 try
                 {
                     if (element is ITfCandidateListUIElementBehavior candidate
-                        && candidate.GetGuid(out var guid) >= 0 &&
-                        guid == new Guid("36C3C795-7159-45AA-AB12-30229A51DBD3")
+                        && candidate.GetGuid(out var guid) >= 0
+                        && (!elementType.HasValue || guid == elementType.Value)
                         && candidate.IsShown(out var shown) >= 0 && shown != 0)
                     {
                         return true;

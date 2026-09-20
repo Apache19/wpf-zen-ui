@@ -3,7 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Windows.Win32.Foundation;
+extern alias UiNative;
+
+using RECT = UiNative::Windows.Win32.Foundation.RECT;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.FluentWindow;

@@ -16,6 +16,9 @@ public sealed class SoftKeyboardTsfCandidateContext
     private readonly CancellationToken _cancellationToken;
     private readonly CancellationToken _callerCancellationToken;
 
+    /// <summary>
+    /// Captures the current page and the cancellation boundaries of its candidate operation.
+    /// </summary>
     internal SoftKeyboardTsfCandidateContext(
         SoftKeyboardCandidateHost host,
         Guid elementType,
@@ -91,8 +94,8 @@ public sealed class SoftKeyboardTsfCandidateContext
     /// Waits for the candidate source to publish a newer snapshot.
     /// </summary>
     /// <remarks>
-    /// Ending the original element can acknowledge a successful injected commit. This wait observes caller
-    /// cancellation and the supplied token independently of the element's input lifetime.
+    /// Ending the original element can acknowledge a successful injected commit. The wait observes
+    /// caller cancellation and the supplied token independently of the element's input lifetime.
     /// Input through this context still expires as soon as the original element ends.
     /// </remarks>
     /// <param name="timeout">The maximum acknowledgement interval.</param>

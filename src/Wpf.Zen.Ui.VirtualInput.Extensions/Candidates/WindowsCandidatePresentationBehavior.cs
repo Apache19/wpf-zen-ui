@@ -12,16 +12,16 @@ namespace Wpf.Zen.Ui.VirtualInput.Extensions.Candidates;
 /// </summary>
 internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCandidateBehavior
 {
+    // Embed only services whose page metadata and selection lifecycle fit the TSF bridge.
     private static readonly HashSet<Guid> EmbeddedInputMethodIds =
     [
-        KnownTextServices.MicrosoftJapanese, // Microsoft Japanese IME
-        KnownTextServices.MicrosoftCangjie, // Microsoft Cangjie
-        KnownTextServices.MicrosoftPinyin, // Microsoft Pinyin and Wubi
-        KnownTextServices.WeChat, // WeChat Input Method (WeType)
-        KnownTextServices.MicrosoftKorean, // Microsoft Korean IME
+        KnownTextServices.MicrosoftJapanese,  // Microsoft Japanese IME
+        KnownTextServices.MicrosoftCangjie,   // Microsoft Cangjie
+        KnownTextServices.MicrosoftPinyin,    // Microsoft Pinyin and Wubi
+        KnownTextServices.MicrosoftKorean,    // Microsoft Korean IME
         KnownTextServices.MicrosoftOldHangul, // Microsoft Old Hangul IME
-        KnownTextServices.MicrosoftBopomofo, // Microsoft Bopomofo
-        KnownTextServices.WindowsTable, // Windows table text service
+        KnownTextServices.MicrosoftBopomofo,  // Microsoft Bopomofo
+        KnownTextServices.WindowsTable,       // Windows table text service
     ];
 
     private WindowsCandidatePresentationBehavior()
@@ -66,7 +66,7 @@ internal sealed class WindowsCandidatePresentationBehavior : ISoftKeyboardTsfCan
     }
 
     /// <summary>
-    /// Determines whether the soft keyboard should embed the candidate UI of a TSF service.
+    /// Determines whether a TSF service is explicitly allowed to use embedded candidates.
     /// </summary>
     /// <param name="classId">The active TSF text service class identifier.</param>
     /// <returns>

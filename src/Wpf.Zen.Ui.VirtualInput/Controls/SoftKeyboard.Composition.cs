@@ -16,6 +16,12 @@ public partial class SoftKeyboard
     private int _compositionStartVersion;
 
     /// <summary>
+    /// Identifies the current observed composition stream for candidate lifetime checks. A new
+    /// start changes this token even when the TIP reuses its native candidate element and text.
+    /// </summary>
+    internal object CompositionIdentity { get; private set; } = new();
+
+    /// <summary>
     /// Asks the active TIP to discard its mutable pre-edit transaction by sending Escape to the
     /// editor that originated the matching WPF composition.
     /// </summary>

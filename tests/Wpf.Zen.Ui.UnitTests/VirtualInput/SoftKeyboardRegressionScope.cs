@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -23,9 +23,13 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 internal sealed class SoftKeyboardRegressionScope : IDisposable
 {
-    internal SoftKeyboardRegressionScope()
+    /// <summary>
+    /// Creates a focused editor with a simulated input method for routing and lifetime tests.
+    /// </summary>
+    /// <param name="classId">Optional service identity for testing vendor policies.</param>
+    internal SoftKeyboardRegressionScope(Guid? classId = null)
     {
-        Method = new SoftKeyboardInputMethod(Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test IME", true);
+        Method = new SoftKeyboardInputMethod(classId ?? Guid.NewGuid(), Guid.NewGuid(), 0x0409, "Test IME", true);
         Input = new RecordingInput();
         Keyboard = new SoftKeyboard(new SoftKeyboardPlatformServices(
             Input, new InputPane(), new InputMethods(Method), new BackendSoftKeyboardCandidateSource(new Candidates()), Clock

@@ -16,3 +16,5 @@ ImmReleaseContext
 ImmGetOpenStatus
 ImmGetConversionStatus
 DestroyIcon
+ITfDocumentMgr
+ITfContextComposition

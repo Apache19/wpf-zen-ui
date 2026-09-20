@@ -15,6 +15,7 @@ using Wpf.Zen.Ui.VirtualInput.Candidates;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensibility;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 
@@ -27,9 +28,512 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class TsfCandidateLifetimeTests
 {
     /// <summary>
+    /// Neither discovery path may embed an unknown service based on optional COM capabilities.
+    /// Missing, undecided, empty, and failing extension policies all preserve native candidates.
+    /// </summary>
+    /// <param name="enumerated">Whether discovery starts through enumeration.</param>
+    /// <param name="policy">The extension configuration under test.</param>
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 1)]
+    [InlineData(true, 1)]
+    [InlineData(false, 2)]
+    [InlineData(true, 2)]
+    [InlineData(false, 3)]
+    [InlineData(true, 3)]
+    [InlineData(false, 4)]
+    [InlineData(true, 4)]
+    public Task Candidates_RequireExplicitExtensionAdmission(bool enumerated, int policy)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            if (policy == 1)
+            {
+                scope.Keyboard.ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default;
+            }
+            else if (policy >= 2)
+            {
+                var extension = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+                extension.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(_ =>
+                {
+                    if (policy == 4)
+                    {
+                        throw new InvalidOperationException("Candidate policy failed.");
+                    }
+
+                    return SoftKeyboardTsfCandidatePresentation.Default;
+                });
+                var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
+                provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
+                    policy == 2 ? [] : new[] { new SoftKeyboardExtension(candidateBehavior: extension) });
+                scope.Keyboard.ExtensionProvider = provider;
+            }
+
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => native.First;
+            var sink = (ISoftKeyboardTsfUIElementSink)native.Session;
+            if (!enumerated)
+            {
+                var show = 0;
+                Assert.Equal(0, sink.BeginUIElement(1, ref show));
+                Assert.Equal(1, show);
+            }
+
+            for (var update = 0; update < 3; update++)
+            {
+                sink.UpdateUIElement(1);
+                native.Session.Refresh(scope.Keyboard);
+                Assert.Equal(SoftKeyboardCandidatePresentationState.NativeFallback,
+                    scope.Keyboard.CandidatePresentationState);
+                Assert.Empty(scope.Keyboard.Candidates);
+                Assert.Equal(0, native.First.ContentReads);
+                Assert.DoesNotContain(0, native.First.ShowCalls);
+            }
+
+            Assert.Empty(native.First.Selections);
+            Assert.Equal(0, native.First.Finalizations);
+            sink.EndUIElement(1);
+        });
+    }
+
+    /// <summary>
+    /// WeChat retains its native candidate surface through both sink callbacks and enumeration,
+    /// even when it advertises the optional integrated-candidate interface.
+    /// </summary>
+    /// <param name="enumerated">Whether discovery starts through enumeration.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task WeChatCandidates_KeepNativePresentation(bool enumerated)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope(KnownTextServices.WeChat);
+            await scope.DrainAsync();
+            scope.Keyboard.ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default;
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => native.First;
+            var sink = (ISoftKeyboardTsfUIElementSink)native.Session;
+            if (!enumerated)
+            {
+                var show = 0;
+                Assert.Equal(0, sink.BeginUIElement(1, ref show));
+                Assert.Equal(1, show);
+            }
+
+            for (var update = 0; update < 3; update++)
+            {
+                sink.UpdateUIElement(1);
+                native.Session.Refresh(scope.Keyboard);
+                Assert.Equal(SoftKeyboardCandidatePresentationState.NativeFallback,
+                    scope.Keyboard.CandidatePresentationState);
+                Assert.Empty(scope.Keyboard.Candidates);
+                Assert.Equal(0, native.First.ContentReads);
+                Assert.DoesNotContain(0, native.First.ShowCalls);
+            }
+
+            var result = await native.Session.TryMovePageAsync(
+                scope.Keyboard, 1, CancellationToken.None);
+            Assert.False(result.Handled);
+            Assert.Empty(native.First.Selections);
+            Assert.Equal(0, native.First.Finalizations);
+            sink.EndUIElement(1);
+        });
+    }
+
+    /// <summary>
+    /// An accepted Finalize can schedule a native edit session. Preserve that transaction until
+    /// its callback commits the selected word; forced termination here would commit raw pre-edit.
+    /// </summary>
+    /// <param name="endUi">Whether the TIP ends candidate UI before its edit session runs.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task Finalize_DoesNotInterruptDeferredNativeCommit(bool endUi)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            var composition = native.Document.Context;
+            composition.Type("hf");
+            native.Begin(1);
+            var committed = string.Empty;
+            native.First.OnFinalize = () =>
+            {
+                if (endUi)
+                {
+                    native.End(1);
+                }
+
+                scope.Keyboard.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Assert.Equal("hf", composition.Preedit);
+                    committed = "恢复";
+                    composition.Current = null;
+                    composition.Preedit = string.Empty;
+                    if (!endUi)
+                    {
+                        native.End(1);
+                    }
+                }));
+            };
+
+            var result = await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None);
+            Assert.True(result.Succeeded);
+            Assert.Empty(committed);
+            Assert.Equal("hf", composition.Preedit);
+            if (!endUi)
+            {
+                Assert.NotEmpty(scope.Keyboard.Candidates);
+            }
+
+            await scope.DrainAsync();
+            Assert.Equal("恢复", committed);
+            Assert.Equal(1, native.First.Finalizations);
+            Assert.Empty(scope.Keyboard.Candidates);
+            composition.Type("cs");
+            Assert.Equal("cs", composition.Preedit);
+        });
+    }
+
+    /// <summary>
+    /// Native Finalize can already end the composition. Verification then permits UI cleanup.
+    /// </summary>
+    [Fact]
+    public Task Finalize_AlreadyEndedCompositionPermitsCleanup()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Document.Context.Type("hf");
+            native.Begin(1);
+            native.First.OnFinalize = () => native.Document.Context.Current = null;
+
+            Assert.True((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+            Assert.Empty(scope.Keyboard.Candidates);
+        });
+    }
+
+    /// <summary>
+    /// A new composition must retain its candidates even when its WPF Start has not arrived yet.
+    /// </summary>
+    [Fact]
+    public Task Finalize_PreservesReplacementNativeComposition()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            var composition = native.Document.Context;
+            composition.Type("hf");
+            native.Begin(1);
+            var replacement = new CandidateCompositionView();
+            native.First.OnFinalize = () =>
+            {
+                composition.Current = replacement;
+                composition.Preedit = "cs";
+            };
+
+            Assert.True((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+            Assert.Same(replacement, composition.Current);
+            Assert.Equal("cs", composition.Preedit);
+            Assert.NotEmpty(scope.Keyboard.Candidates);
+        });
+    }
+
+    /// <summary>
+    /// An unobservable native state cannot confirm completion, even after Finalize returned S_OK.
+    /// </summary>
+    [Fact]
+    public Task Finalize_EnumerationFailureDoesNotRetireCandidates()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Document.Context.Type("hf");
+            native.Begin(1);
+            native.First.OnFinalize = () => native.Document.Context.OnEnumerate = () =>
+            {
+                throw new COMException("Enumeration unavailable.");
+            };
+
+            var result = await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None);
+            Assert.True(result.Handled);
+            Assert.False(result.Succeeded);
+            Assert.NotEmpty(scope.Keyboard.Candidates);
+        });
+    }
+
+    /// <summary>
+    /// A focus change inside Finalize preserves the previous editor's native transaction.
+    /// </summary>
+    [Fact]
+    public Task Finalize_FocusedDocumentChangePreservesNativeTransaction()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Document.Context.Type("hf");
+            native.Begin(1);
+            native.First.OnFinalize = () => typeof(TsfCandidateSession)
+                .GetField("_threadManager", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(native.Session, new ThreadManager(new CandidateCompositionDocument()));
+
+            Assert.True((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+            Assert.Equal("hf", native.Document.Context.Preedit);
+        });
+    }
+
+    /// <summary>
+    /// Verified native completion closes presentation even if a TIP retains the same callable
+    /// element, strings, and manager membership, whether or not it sends EndUIElement.
+    /// </summary>
+    /// <param name="enumerated">Whether discovery happened without a Begin callback.</param>
+    /// <param name="notifyEnd">Whether Finalize synchronously sends an End callback.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public Task Finalize_RetiresCandidateAndRejectsRediscovery(bool enumerated, bool notifyEnd)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => native.First;
+            if (notifyEnd)
+            {
+                native.First.OnFinalize = () => native.End(1);
+            }
+
+            if (enumerated)
+            {
+                native.Session.Refresh(scope.Keyboard);
+            }
+            else
+            {
+                native.Begin(1);
+            }
+
+            var candidate = Assert.Single(scope.Keyboard.Candidates);
+            var result = await native.Session.TryCommitAsync(scope.Keyboard, candidate, CancellationToken.None);
+            Assert.True(result.Succeeded);
+            Assert.Empty(scope.Keyboard.Candidates);
+            Assert.False(scope.Keyboard.HasCandidates);
+            Assert.Equal(0U, scope.Keyboard.CandidatePageNumber);
+            Assert.Equal(0U, scope.Keyboard.CandidatePageCount);
+            Assert.Null(scope.Keyboard.SelectedCandidateIndex);
+            Assert.False(scope.Keyboard.CanGoToNextCandidatePage);
+            Assert.Equal(SoftKeyboardCandidatePresentationState.None, scope.Keyboard.CandidatePresentationState);
+            Assert.DoesNotContain(1, native.First.ShowCalls);
+
+            // A stale Update, unrelated End, timer callback, or public refresh must not resurrect
+            // the finalized element. Repeated clicks must not finalize the same list again.
+            ((ISoftKeyboardTsfUIElementSink)native.Session).UpdateUIElement(1);
+            native.End(42);
+            typeof(TsfCandidateSession).GetMethod(
+                "OnCandidatePollTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(native.Session, [null, EventArgs.Empty]);
+            native.Session.Refresh(scope.Keyboard);
+            await scope.DrainAsync();
+            Assert.Empty(scope.Keyboard.Candidates);
+            Assert.False((await native.Session.TryCommitAsync(
+                scope.Keyboard, candidate, CancellationToken.None)).Succeeded);
+            Assert.Equal(1, native.First.Finalizations);
+            Assert.False(((DispatcherTimer)typeof(TsfCandidateSession)
+                .GetField("_candidatePollTimer", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(native.Session)!).IsEnabled);
+        });
+    }
+
+    /// <summary>
+    /// A later composition or an explicit Begin can reuse the exact COM element and candidate text.
+    /// Suppression is scoped to a candidate lifetime rather than to its string values.
+    /// </summary>
+    /// <param name="begin">Whether TSF supplies a fresh Begin instead of only a WPF start.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task FinalizedElement_CanBeReusedByNextComposition(bool begin)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => native.First;
+            native.Begin(1);
+            Assert.True((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+
+            if (begin)
+            {
+                native.Begin(1);
+            }
+            else
+            {
+                ObserveCompositionStart(scope);
+                native.Session.Refresh(scope.Keyboard);
+            }
+
+            Assert.Equal("first0", Assert.Single(scope.Keyboard.Candidates).Text);
+            Assert.True((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+            Assert.Equal(2, native.First.Finalizations);
+        });
+    }
+
+    /// <summary>
+    /// Finalize can synchronously begin another candidate list or composition. Its success only
+    /// closes the captured generation and cannot erase that replacement, including COM/id reuse.
+    /// </summary>
+    /// <param name="replacement">A different element, reused element, or new composition.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public Task Finalize_ReentrantReplacementKeepsNewCandidates(int replacement)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Begin(1);
+            native.First.OnFinalize = () =>
+            {
+                if (replacement == 2)
+                {
+                    ObserveCompositionStart(scope);
+                }
+                else
+                {
+                    native.End(1);
+                    native.Begin(replacement == 0 ? 2U : 1U);
+                }
+            };
+
+            Assert.True((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+            Assert.Equal(replacement == 0 ? "second0" : "first0",
+                Assert.Single(scope.Keyboard.Candidates).Text);
+            Assert.Equal(SoftKeyboardCandidatePresentationState.Embedded, scope.Keyboard.CandidatePresentationState);
+        });
+    }
+
+    /// <summary>
+    /// A failing or noncommittal HRESULT must not discard a list that remains available for retry.
+    /// </summary>
+    /// <param name="result">The result returned by the native finalization method.</param>
+    [Theory]
+    [InlineData(unchecked((int)0x80004005))]
+    [InlineData(1)]
+    public Task FinalizeWithoutSuccess_KeepsCandidates(int result)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Begin(1);
+            native.First.FinalizeResult = result;
+            Assert.False((await native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None)).Succeeded);
+            Assert.NotEmpty(scope.Keyboard.Candidates);
+        });
+    }
+
+    /// <summary>
+    /// Reproduces the composition start observed independently of a native candidate callback.
+    /// </summary>
+    private static void ObserveCompositionStart(SoftKeyboardRegressionScope scope)
+    {
+        var composition = new TextComposition(InputManager.Current, scope.Editor, string.Empty);
+        scope.Keyboard.OnSessionTextComposition(new TextCompositionEventArgs(Keyboard.PrimaryDevice, composition)
+        {
+            RoutedEvent = TextCompositionManager.PreviewTextInputStartEvent,
+            Source = scope.Editor,
+        });
+    }
+
+    /// <summary>
+    /// Extension acknowledgement has the same cleanup boundary as native Finalize, but a late
+    /// acknowledgement cannot retire a replacement list that appeared while the extension awaited.
+    /// </summary>
+    /// <param name="replace">Whether a new list starts before acknowledgement completes.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task ExtensionCommitSuccess_RetiresOnlyItsOwnElement(bool replace)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            var extension = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            extension.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded);
+            var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
+            provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
+                new[] { new SoftKeyboardExtension(candidateBehavior: extension) });
+            scope.Keyboard.ExtensionProvider = provider;
+            var pending = new TaskCompletionSource<SoftKeyboardCandidateOperationResult>();
+            extension.CommitAsync(
+                Arg.Any<SoftKeyboardTsfCandidateContext>(), Arg.Any<SoftKeyboardCandidate>(),
+                Arg.Any<CancellationToken>()
+            ).Returns(async _ => await pending.Task);
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Begin(1);
+            var operation = native.Session.TryCommitAsync(
+                scope.Keyboard, scope.Keyboard.Candidates[0], CancellationToken.None);
+            Assert.False(operation.IsCompleted);
+            if (replace)
+            {
+                native.End(1);
+                native.Begin(2);
+            }
+
+            pending.SetResult(SoftKeyboardCandidateOperationResult.Success);
+            Assert.True((await operation).Succeeded);
+            Assert.Equal(0, native.First.Finalizations);
+            Assert.Equal(0, native.Second.Finalizations);
+            if (replace)
+            {
+                Assert.Equal("second0", Assert.Single(scope.Keyboard.Candidates).Text);
+            }
+            else
+            {
+                Assert.Empty(scope.Keyboard.Candidates);
+                native.Manager.ElementFactory = () => native.First;
+                native.Session.Refresh(scope.Keyboard);
+                Assert.Empty(scope.Keyboard.Candidates);
+            }
+        });
+    }
+
+    /// <summary>
     /// A due poll or deferred End reconciliation replaces stale candidates before queued input.
     /// </summary>
-    /// <param name="poll">Whether to trigger the periodic poll instead of an End notification.</param>
+    /// <param name="poll">Whether to trigger polling instead of an End notification.</param>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -37,7 +541,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             native.Manager.ElementFactory = () => native.First;
@@ -84,7 +588,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             Action replace = () =>
@@ -120,7 +624,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             native.First.SelectionResult = 1;
@@ -141,7 +645,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             native.Manager.ElementFactory = () => native.First;
@@ -184,7 +688,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             var sink = (ISoftKeyboardTsfUIElementSink)native.Session;
@@ -208,7 +712,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             native.First.DocumentResult = unchecked((int)0x80004001);
@@ -256,7 +760,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             var behavior = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
             behavior.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
@@ -298,7 +802,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             using var element = new NativeUnknown(candidateInterface);
@@ -369,9 +873,11 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             var extension = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            extension.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded);
             var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
             provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
                 new[] { new SoftKeyboardExtension(candidateBehavior: extension) }
@@ -442,9 +948,11 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             var extension = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            extension.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded);
             var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
             provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
                 new[] { new SoftKeyboardExtension(candidateBehavior: extension) }
@@ -518,9 +1026,11 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             var extension = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            extension.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded);
             var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
             provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
                 new[] { new SoftKeyboardExtension(candidateBehavior: extension) });
@@ -559,7 +1069,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             native.Begin(1);
@@ -590,7 +1100,7 @@ public class TsfCandidateLifetimeTests
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
-            using var scope = new SoftKeyboardRegressionScope();
+            using var scope = CreateEmbeddedScope();
             await scope.DrainAsync();
             using var native = new CandidateHarness(scope.Keyboard);
             native.Begin(1);
@@ -605,6 +1115,16 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
+    /// Grants explicit admission through the Windows extension for candidate lifecycle tests.
+    /// </summary>
+    private static SoftKeyboardRegressionScope CreateEmbeddedScope()
+    {
+        var scope = new SoftKeyboardRegressionScope(KnownTextServices.MicrosoftPinyin);
+        scope.Keyboard.ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default;
+        return scope;
+    }
+
+    /// <summary>
     /// Replaces only the COM transport, leaving registration, sink routing, page parsing, and
     /// operation checks intact.
     /// </summary>
@@ -614,7 +1134,7 @@ public class TsfCandidateLifetimeTests
 
         internal CandidateHarness(SoftKeyboard keyboard)
         {
-            Document = new object();
+            Document = new CandidateCompositionDocument();
             First = new IntegratedCandidateElement(Document, "first");
             Second = new IntegratedCandidateElement(Document, "second");
             Session = new TsfCandidateSession(Dispatcher.CurrentDispatcher);
@@ -630,7 +1150,7 @@ public class TsfCandidateLifetimeTests
         internal ElementManager Manager { get; }
         internal CandidateElement First { get; }
         internal CandidateElement Second { get; }
-        internal object Document { get; }
+        internal CandidateCompositionDocument Document { get; }
 
         internal void Begin(uint id)
         {
@@ -857,6 +1377,7 @@ public class TsfCandidateLifetimeTests
         internal Action? OnString { get; set; }
         internal int DocumentResult { get; set; }
         internal int SelectionResult { get; set; }
+        internal int FinalizeResult { get; set; }
         internal int ContentReads { get; private set; }
 
         /// <inheritdoc />
@@ -966,7 +1487,7 @@ public class TsfCandidateLifetimeTests
         {
             Finalizations++;
             OnFinalize?.Invoke();
-            return 0;
+            return FinalizeResult;
         }
 
         /// <inheritdoc />

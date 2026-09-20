@@ -486,20 +486,21 @@ TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存
 `BeginUIElement` 中决定是否隐藏输入法 UI，但 Windows Shell 对内置输入法还有未公开的产品策略。
 控件只在键盘打开、候选属于 TSF 当前焦点文档且实现
 `ITfCandidateListUIElementBehavior` 时继续协商。`Wpf.Zen.Ui.VirtualInput.Extensions` 的默认策略
-明确内嵌已知 Windows 内置东亚输入法，第三方输入法保留原生浮窗。没有扩展明确决策时，核心仅对
-实现 `ITfIntegratableCandidateListUIElement` 的候选使用内嵌；标准提交调用 `SetSelection` 与
-`Finalize`。
+仅允许名单中明确列出的 Windows 内置东亚输入法使用内嵌候选，其余输入法保留原生候选窗口。
+未配置扩展、扩展均返回 `Default` 或未提供候选行为时，也使用原生窗口。只有扩展明确返回
+`Embedded` 才允许接管；标准提交调用 `SetSelection` 与 `Finalize`。
 若 TIP 在 sink 订阅前已打开候选，控件还会从同一个 `ITfUIElementMgr` 发现该候选，并仅在候选
 存续期间短时同步其内容。微软拼音支持这组集成候选接口，可使用内嵌候选栏。
 枚举器仅用于当前同步查询，并在当前 Dispatcher 上及时释放，缩短该快照的原生引用寿命。
 
 输入法菜单及菜单项均不可获得键盘焦点；选择时编辑器持续持有其 TSF 文档和输入法状态。
-候选接管统一检查接口能力、候选所属文档与当前焦点，不按输入法服务 GUID 强制回退。
+候选接管统一要求扩展明确准入，并检查接口能力、候选所属文档与当前焦点。
+服务名单由扩展维护，核心不包含输入法厂商名单；回调发现和枚举发现遵循相同规则。
 获取或枚举后未被接管的 UIElement 引用在当前同步查询结束前释放，不留给后续 GC 清理。
 `BeginUIElement` 协商显示，首次 `UpdateUIElement` 才读取候选内容。
 未提供可控制候选接口的输入法继续使用自己的浮窗。
 
-候选展示由接口能力、文档归属和扩展协商自动决定，不提供手动展示模式设置。
+候选展示以扩展显式准入为前提，并受接口能力和文档归属约束，不提供手动展示模式设置。
 
 任何提交路径都以 TSF 后续通知决定候选显示，不因为 HRESULT 成功或按键入队就提前清空候选栏。
 
@@ -510,9 +511,10 @@ TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存
 
 `GUID_TFCAT_TIPCAP_UIELEMENTENABLED` 只声明基础 UIElement 能力，第三方输入法即使注册该类别，
 也不一定支持完整的集成候选交互。`ITfIntegratableCandidateListUIElement` 是 Windows 文档为
-IME 集成控件定义的更强但可选的契约；实际 Microsoft Pinyin 也不一定暴露它。因此该接口只能
-作为公开的保守回退信号，不能复刻 Windows Shell 的完整判断。默认扩展把已知 Windows 内置 TSF
-服务身份作为显式产品策略，应用仍可用 `ISoftKeyboardTsfCandidateBehavior` 覆盖特定输入法。
+IME 集成控件定义的可选契约，但声明该接口不能证明翻页、选词和提交生命周期完整兼容，
+因此核心不据此自动嵌入。默认扩展维护允许嵌入的 TSF 服务名单；应用可通过
+`ISoftKeyboardTsfCandidateBehavior` 为已验证的输入法显式返回 `Embedded`，其余返回
+`Native` 或 `Default`。微信输入法由原生窗口负责展开、翻页、选词和复位。
 
 不支持可控制候选的输入法继续显示原生候选窗。可通过 `CandidatePresentationState` 区分
 `Embedded`、`NativeFallback` 和 `Unavailable`；当前分页由 `CandidatePageNumber` 与
