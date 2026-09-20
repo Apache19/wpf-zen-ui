@@ -83,6 +83,8 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
   同语言下的多个 profile 分别呈现，命令参数仍是各自的完整 profile。
 - 候选开始通知提供真实元素 ID；枚举发现的候选没有 ID，读取、翻页、提交和轮询时必须确认其
   COM 身份仍在 TSF 管理器的活动列表中。文档仍聚焦、COM 对象仍可调用，都不等于候选仍有效。
+- 已内嵌候选每 75ms 补查一次，以兼容缺失更新通知的输入法。补查和候选结束后的异步核对使用
+  `Normal` 优先级，避免持续输入推迟候选更新；候选失效或会话释放后停止补查。
 - `GetSelection` 返回 `S_FALSE` 时公开 `SelectedCandidateIndex=null`；没有选中项不影响候选展示。
 - 普通符号和长按字面文本先请求 Escape，等待 WPF 组合完成后才注入 Unicode。到本轮
   `ContextIdle` 仍未结束组合、出现新组合或输入会话发生变化时，放弃本次文字，后续不自动重放。
@@ -619,6 +621,8 @@ conversion，也不根据返回值提前发布界面状态。请求失败或调�
 `SystemKeyboardSuppressionState` 公开。焦点变化时除即时请求外，还会在本轮 WPF 焦点处理完成后
 合并补发一次隐藏请求，避免 `UIElement.Focus()` 随后调用 `TipTsfHelper.Show()` 覆盖隐藏结果。
 有效抑制期间每 250ms 复核目标和前台窗口并请求隐藏，处理 Win11 异步弹出系统键盘的情况；
+定时复核使用 `Normal` 优先级，避免持续输入推迟隐藏请求。焦点变化后的补发请求仍使用
+`Background`，以排在 WPF 可能通过 `Input` 调度的显示请求之后。
 接口不可用时停止定时重试，待下一次焦点或显示状态变化再尝试。
 整个过程不修改注册表、系统服务、全局触摸设置或 WPF 应用级开关，也不禁用编辑器 IME。
 这属于自动隐藏而非 Windows 的强制禁止显示策略，系统拒绝请求时仍可能显示，异步弹出时也

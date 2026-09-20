@@ -27,6 +27,51 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class TsfCandidateLifetimeTests
 {
     /// <summary>
+    /// A due poll or deferred End reconciliation replaces stale candidates before queued input.
+    /// </summary>
+    /// <param name="poll">Whether to trigger the periodic poll instead of an End notification.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task CandidateReconciliation_PrecedesPendingInput(bool poll)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Manager.ElementFactory = () => native.First;
+            native.Session.Refresh(scope.Keyboard);
+            Assert.Equal("first0", Assert.Single(scope.Keyboard.Candidates).Text);
+
+            var timer = (DispatcherTimer)typeof(TsfCandidateSession)
+                .GetField("_candidatePollTimer", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(native.Session)!;
+            timer.Stop();
+            native.Manager.ElementFactory = () => native.Second;
+
+            var input = Dispatcher.CurrentDispatcher.InvokeAsync(
+                () => Assert.Equal("second0", Assert.Single(scope.Keyboard.Candidates).Text),
+                DispatcherPriority.Input);
+
+            if (poll)
+            {
+                // Make exactly one poll due without depending on wall-clock timing.
+                timer.Interval = TimeSpan.Zero;
+                timer.Tick += (_, _) => timer.Stop();
+                timer.Start();
+            }
+            else
+            {
+                native.End(42);
+            }
+
+            Assert.Equal("first0", Assert.Single(scope.Keyboard.Candidates).Text);
+            await input;
+        });
+    }
+
+    /// <summary>
     /// A synchronous TIP callback may replace an element while its old snapshot is being read.
     /// Neither old data nor an old COM failure may overwrite the replacement's presentation.
     /// </summary>

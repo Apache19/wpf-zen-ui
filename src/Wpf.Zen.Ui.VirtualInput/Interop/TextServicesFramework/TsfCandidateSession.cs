@@ -37,13 +37,19 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     private CancellationTokenSource?           _activeCandidateCancellation;
     private bool                               _reflectionUnavailable;
 
+    /// <summary>
+    /// Creates the candidate bridge and its bounded polling cadence on the TSF Dispatcher.
+    /// </summary>
+    /// <param name="dispatcher">The Dispatcher that owns the WPF text services and candidates.</param>
     internal TsfCandidateSession(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
 
+        // Polling refreshes an existing element and does not wait for injected input. Normal
+        // priority lets due snapshots advance while mouse or keyboard input remains pending.
         _candidatePollTimer = new DispatcherTimer(
             TimeSpan.FromMilliseconds(75),
-            DispatcherPriority.Input,
+            DispatcherPriority.Normal,
             OnCandidatePollTimerTick,
             dispatcher
         );
@@ -516,10 +522,11 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         {
             // End can be delivered before the manager removes the element. Reconcile after
             // the callback unwinds; an unrelated end must not clear the current candidate.
+            // Normal priority keeps the displayed element current without waiting for input idle.
             var version = _activeCandidateVersion;
 
             _ = _dispatcher.BeginInvoke(
-                DispatcherPriority.Input,
+                DispatcherPriority.Normal,
                 new Action(
                     () =>
                     {
@@ -1151,6 +1158,9 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         // owned by WPF's TextServicesHost.
     }
 
+    /// <summary>
+    /// Refreshes the embedded element and reconciles manager membership if that element ended.
+    /// </summary>
     private void OnCandidatePollTimerTick(object? sender, EventArgs eventArgs)
     {
         // A TIP that began its UI before our sink was advised need not send UpdateUIElement.

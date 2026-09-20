@@ -13,6 +13,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    /// <summary>
+    /// Requests immediate and post-focus suppression, and maintains the periodic ownership check.
+    /// </summary>
     private void RequestSystemKeyboardHide()
     {
         if (!IsSystemKeyboardSuppressionRequired)
@@ -42,9 +45,11 @@ public partial class SoftKeyboard
         // Windows can finish its own focus tracking asynchronously, after WPF's dispatcher work.
         // Keep a low-frequency guard only for a live foreground editor. TryHide is advisory, so a
         // successful request is not a permanent policy and must not disable subsequent checks.
+        // Unlike the post-focus hide, this recurring check has no queued Show ordering dependency;
+        // Normal priority lets it run while pointer movement or typing keeps input pending.
         _inputPaneHideTimer ??= new DispatcherTimer(
             TimeSpan.FromMilliseconds(250),
-            DispatcherPriority.Background,
+            DispatcherPriority.Normal,
             OnInputPaneHideTimerTick,
             Dispatcher
         );
@@ -93,6 +98,9 @@ public partial class SoftKeyboard
         }
     }
 
+    /// <summary>
+    /// Revalidates the current editor before retrying the advisory Windows hide request.
+    /// </summary>
     private void OnInputPaneHideTimerTick(object? sender, EventArgs args)
     {
         HideSystemKeyboardIfRequired();
