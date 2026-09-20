@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.VirtualInput.Controls;
 using Wpf.Zen.Ui.VirtualInput.Extensions;
+using Wpf.Zen.Ui.VirtualInput.Extensions.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Interop;
@@ -31,6 +32,84 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// Reads the initial Microsoft Pinyin presentation without focusing any scoped editor or
+    /// issuing a profile or mode command. Run alone to exercise a fresh WPF text-services host.
+    /// </summary>
+    [Fact]
+    public void Pinyin_InitialPresentationWithoutScopedEditorFocus()
+    {
+        VerifyInitialPinyinPresentation(focusOutsideEditor: false);
+    }
+
+    /// <summary>
+    /// Displays Pinyin state while only an editor outside the keyboard's target scope has focus.
+    /// </summary>
+    [Fact]
+    public void Pinyin_InitialPresentationWithOutsideEditorFocus()
+    {
+        VerifyInitialPinyinPresentation(focusOutsideEditor: true);
+    }
+
+    /// <summary>
+    /// Hosts the cold-start scenario with either a plain button or an out-of-scope editor focused.
+    /// </summary>
+    private void VerifyInitialPinyinPresentation(bool focusOutsideEditor)
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("WPF_ZEN_NATIVE_IME_TESTS") == "1",
+            "Set WPF_ZEN_NATIVE_IME_TESTS=1 to exercise the default Microsoft Pinyin profile.");
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new TextBox { Height = 40 };
+            Control outside = focusOutsideEditor
+                ? new TextBox { Text = "Outside input scope" }
+                : new System.Windows.Controls.Button { Content = "Outside input scope" };
+            var keyboard = new SoftKeyboard
+            {
+                IsOpen = true,
+                TargetScope = editor,
+                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
+            };
+            var root = new StackPanel();
+            root.Children.Add(outside);
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 850, Height = 420 };
+            var editorFocused = false;
+            editor.GotKeyboardFocus += (_, _) => editorFocused = true;
+            try
+            {
+                window.Show();
+                ActivateTestWindow(window);
+                Assert.True(outside.Focus());
+                Assert.True(PumpUntil(() => keyboard.ActiveInputMethod is not null, 2000));
+                Assert.SkipUnless(keyboard.ActiveInputMethod?.ClassId == KnownTextServices.MicrosoftPinyin,
+                    "Microsoft Pinyin must be the initial active profile for this read-only test.");
+                Assert.True(PumpUntil(() => keyboard.InputModeButton is not null, 2000),
+                    DescribeLanguageBar(keyboard)
+                    + $" open={SoftKeyboardTsfInputMode.GetKeyboardOpenValue()}, "
+                    + $"conversion={SoftKeyboardTsfInputMode.GetKeyboardConversionValue()}.");
+                if (focusOutsideEditor)
+                {
+                    Assert.True(PumpUntil(() => keyboard.InputModeButton?.Id
+                        is not (null or "windows:input-mode:unknown"), 2000));
+                }
+
+                Assert.Contains(keyboard.CurrentLayout.Keys,
+                    key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
+                Assert.False(editorFocused);
+                Assert.Null(keyboard.ActiveTarget);
+                Assert.Same(outside, Keyboard.FocusedElement);
+                output.WriteLine($"Initial presentation: {keyboard.InputModeButton!.Id}");
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     private static readonly Guid IflytekServiceId =
         new("B722B5D7-0C4C-4933-A7B9-DF8C91F2C643");
 

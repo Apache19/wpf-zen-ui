@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -491,6 +491,8 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// This property describes the last committed platform command or extension-defined cap.
+    /// Observation follows the Dispatcher's input context independently of target-scope focus.
+    /// Windows text services without readable presentation use a neutral mode-switch icon.
     /// During profile observation its appearance is retained and mode clicks are ignored.
     /// A visible button does not guarantee that the input method will accept a command.
     /// </remarks>
@@ -828,10 +830,7 @@ public partial class SoftKeyboard
             keyboard.ClearActiveComposition();
         }
 
-        if (args.NewValue is not null)
-        {
-            keyboard.RefreshInputMethodState();
-        }
+        keyboard.RefreshInputMethodState();
 
         // A different editor starts with its semantic input scope; explicit navigation applies
         // only while that editor remains the target.

@@ -102,10 +102,10 @@ internal sealed class InputMethodObservationCoordinator(
                     || (Observation.ConversionObserved && Observation.ConversionValue == state.ConversionValue));
 
             Observation = new SoftKeyboardInputObservation(
-                openObserved: Observation.OpenObserved || state.OpenObserved,
-                openValue: state.OpenObserved ? state.OpenValue : Observation.OpenValue,
+                openObserved      : Observation.OpenObserved || state.OpenObserved,
+                openValue         : state.OpenObserved ? state.OpenValue : Observation.OpenValue,
                 conversionObserved: Observation.ConversionObserved || state.ConversionObserved,
-                conversionValue: state.ConversionObserved ? state.ConversionValue : Observation.ConversionValue
+                conversionValue   : state.ConversionObserved ? state.ConversionValue : Observation.ConversionValue
             );
         }
         else if (change.Kind == InputMethodChangeKind.InputModePresentation)
@@ -135,6 +135,7 @@ internal sealed class InputMethodObservationCoordinator(
 
     /// <summary>
     /// Tries one settled fallback per generation, accepting only interpretable state.
+    /// An explicit command can request another attempt after unavailable state prevented a route.
     /// </summary>
     /// <remarks>
     /// Missing values are supplemented first. If the retained combination cannot be interpreted,
@@ -143,11 +144,12 @@ internal sealed class InputMethodObservationCoordinator(
     /// profile changes and editor changes invalidate the entire in-flight fallback.
     /// </remarks>
     internal void CompleteObservation(
-        Func<bool, SoftKeyboardInputObservation> read,
-        Func<SoftKeyboardInputObservation, bool> canInterpret,
-        Func<bool> isCurrent)
+        Func<bool, SoftKeyboardInputObservation>  read,
+        Func<SoftKeyboardInputObservation, bool>  canInterpret,
+        Func<bool>                                isCurrent,
+        bool retryUnavailable = false)
     {
-        if (IsObserving || _completionAttempted)
+        if (IsObserving || (_completionAttempted && !retryUnavailable))
         {
             return;
         }
@@ -318,7 +320,8 @@ internal sealed class InputMethodObservationCoordinator(
         if (_refresh is not null || _clickRefresh is not null || IsObserving)
         {
             Debug.WriteLine(
-                $"[SoftKeyboard.InputMode.Observation] Pending work CANCELED; generation={_generation}.");
+                $"[SoftKeyboard.InputMode.Observation] Pending work CANCELED; generation={_generation}."
+            );
         }
 
         _generation++;

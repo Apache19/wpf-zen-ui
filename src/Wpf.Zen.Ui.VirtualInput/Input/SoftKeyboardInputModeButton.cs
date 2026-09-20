@@ -11,8 +11,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// <remarks>
 /// The descriptor presents a mode command without claiming to interpret a service-specific
 /// conversion mode. The Windows source creates it from the active TSF language-bar item.
-/// An input-mode adapter can replace it with a service-specific descriptor. A null descriptor means that no reliable command should be
-/// displayed.
+/// An input-mode adapter can replace it with a service-specific descriptor. Windows text services
+/// without available presentation use a neutral action icon until their state becomes readable.
+/// A displayed descriptor does not guarantee that the service will accept a mode command.
 /// </remarks>
 public sealed class SoftKeyboardInputModeButton : IEquatable<SoftKeyboardInputModeButton>
 {

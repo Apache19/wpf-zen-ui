@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Windows.Input;
+using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
@@ -13,6 +14,16 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    /// <summary>
+    /// Presents the Windows input-mode action while the active text service exposes no mode cap.
+    /// The neutral arrows describe the action and carry no inferred state or fallback command.
+    /// </summary>
+    private static readonly SoftKeyboardInputModeButton UnknownInputModeButton = new(
+        "windows:input-mode:unknown",
+        new FluentIconSource(SymbolRegular.ArrowSwap24),
+        "切换输入模式（当前模式未知）"
+    );
+
     /// <summary>
     /// Gets whether a profile command or state publication is currently in progress.
     /// Candidate discovery resumes after the operation and its layout publication finish.
@@ -32,6 +43,7 @@ public partial class SoftKeyboard
     private CultureInfo?                 _observedInputCulture;
     private SoftKeyboardInputMethod?     _observedModeProfile;
     private IInputElement?               _observationTarget;
+    private IInputElement?               _observationFocus;
     private bool                         _observationInitialized;
     private int                          _observationInputVersion;
     private ISoftKeyboardLayoutProvider? _observedLayoutProvider;
@@ -389,6 +401,7 @@ public partial class SoftKeyboard
         if (!_observationInitialized
             || !HaveSameInputMethod(_observedModeProfile, snapshot.ActiveInputMethod)
             || !ReferenceEquals(_observationTarget, target)
+            || !ReferenceEquals(_observationFocus, Keyboard.FocusedElement)
             || _observationInputVersion != _inputOperationVersion)
         {
             BeginInputObservation(snapshot.ActiveInputMethod);
@@ -442,26 +455,9 @@ public partial class SoftKeyboard
             : null;
 
         var adapter = ResolveObservedInputModeAdapter(active, culture, target);
-        if (adapter is not null && isCurrent()
-            && InputMethodSource is WindowsSoftKeyboardInputMethodSource { StateBackend: { } stateBackend }
-            && target is DependencyObject editor && ReferenceEquals(target, Keyboard.FocusedElement)
-            && PresentationSource.FromDependencyObject(editor) is HwndSource window)
+        if (adapter is not null && isCurrent())
         {
-            // Load, profile changes and window reactivation all settle through this path.
-            // Sample only the current editor; interpretation is the extension's existing contract.
-            _inputObservation.CompleteObservation(
-                read: useImm => stateBackend.ReadState(useImm, window.Handle),
-                canInterpret: state =>
-                {
-                    var result = adapter.GetContribution(active, state);
-                    return result.Button is not null || result.LayoutProvider is not null
-                        || result.Transition is not null;
-                },
-                isCurrent: () => isCurrent()
-                    && ReferenceEquals(target, Keyboard.FocusedElement)
-                    && !window.IsDisposed
-                    && ReferenceEquals(PresentationSource.FromDependencyObject(editor), window)
-            );
+            CompleteInputModeObservation(active, adapter, isCurrent);
         }
 
         if (!isCurrent())
@@ -478,6 +474,14 @@ public partial class SoftKeyboard
             ? contribution.Button
             : platformButton ?? fallbackButton;
 
+        // Ordinary keyboard layouts do not have an IME mode. Application-owned sources retain
+        // their own presentation contract, including an intentional null descriptor.
+        if (button is null && InputMethodSource is WindowsSoftKeyboardInputMethodSource
+            && active.ClassId != Guid.Empty)
+        {
+            button = UnknownInputModeButton;
+        }
+
         Debug.WriteLine(
             "[SoftKeyboard.InputMode.Presentation] BUTTON resolved; "
             + $"profileId={active.ProfileId}, classId={active.ClassId}, "
@@ -491,6 +495,58 @@ public partial class SoftKeyboard
         );
 
         return new InputModeObservation(button, contribution.LayoutProvider);
+    }
+
+    /// <summary>
+    /// Completes mode observations from the current input context using the adapter's decoder.
+    /// An explicit click can retry unavailable state before resolving an extension command.
+    /// The neutral Windows cap is resolved separately and cannot satisfy adapter interpretation.
+    /// </summary>
+    private void CompleteInputModeObservation(
+        SoftKeyboardInputMethod active,
+        ISoftKeyboardInputModeAdapter adapter,
+        Func<bool> isCurrent,
+        bool retryUnavailable = false)
+    {
+        if (InputMethodSource is not WindowsSoftKeyboardInputMethodSource { StateBackend: { } stateBackend })
+        {
+            return;
+        }
+
+        // TSF compartments belong to the Dispatcher. IMM uses the actual focused window,
+        // or this control's host before an element receives focus, independently of TargetScope.
+        var focus = Keyboard.FocusedElement;
+        var window = GetInputObservationWindow();
+
+        _inputObservation.CompleteObservation(
+            read: useImm => stateBackend.ReadState(useImm, window?.Handle ?? IntPtr.Zero),
+            canInterpret: state =>
+            {
+                var result = adapter.GetContribution(active, state);
+                return result.Button is not null || result.LayoutProvider is not null
+                    || result.Transition is not null;
+            },
+            isCurrent: () => isCurrent()
+                && ReferenceEquals(focus, Keyboard.FocusedElement)
+                && window?.IsDisposed != true
+                && ReferenceEquals(GetInputObservationWindow(), window),
+            retryUnavailable: retryUnavailable
+        );
+    }
+
+    /// <summary>
+    /// Resolves the current Dispatcher input window for an optional IMM fallback read.
+    /// Before element focus exists, the keyboard's own presentation source supplies the HWND.
+    /// TSF sampling remains available when neither window exists.
+    /// </summary>
+    private HwndSource? GetInputObservationWindow()
+    {
+        var source = Keyboard.FocusedElement is DependencyObject focused
+            ? PresentationSource.FromDependencyObject(focused) as HwndSource
+            : null;
+
+        source ??= PresentationSource.FromDependencyObject(this) as HwndSource;
+        return source?.IsDisposed == false ? source : null;
     }
 
     /// <summary>
@@ -845,6 +901,7 @@ public partial class SoftKeyboard
     {
         _observedModeProfile     = profile;
         _observationTarget       = ActiveTarget;
+        _observationFocus        = Keyboard.FocusedElement;
         _observationInputVersion = _inputOperationVersion;
         _observationInitialized  = true;
 
@@ -854,19 +911,19 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Publishes scheduled work only for its original editor and input session.
+    /// Rediscovers an expired input context before publishing scheduled presentation work.
     /// </summary>
     private void PublishScheduledInputObservation()
     {
         if (_observationInitialized && (!ReferenceEquals(_observationTarget, ActiveTarget)
+            || !ReferenceEquals(_observationFocus, Keyboard.FocusedElement)
             || _observationInputVersion != _inputOperationVersion))
         {
             Debug.WriteLine(
-                "[SoftKeyboard.InputMode.Observation] Publication REJECTED; reason=ExpiredTarget."
+                "[SoftKeyboard.InputMode.Observation] Context CHANGED; action=Rediscover."
             );
 
             ResetObservedPlatformState();
-            return;
         }
 
         if (IsInputMethodOperationActive)
@@ -888,6 +945,7 @@ public partial class SoftKeyboard
 
         _observedModeProfile    = null;
         _observationTarget      = null;
+        _observationFocus       = null;
         _observationInitialized = false;
     }
 

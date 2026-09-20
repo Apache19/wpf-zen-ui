@@ -59,7 +59,7 @@ internal static class KeyboardLayoutParts
             SoftKeyboardShiftState.Off    => ShiftIcon,
             SoftKeyboardShiftState.Once   => ShiftOnceIcon,
             SoftKeyboardShiftState.Locked => ShiftLockedIcon,
-            _                             => throw new ArgumentOutOfRangeException(nameof(shiftState)),
+            _ => throw new ArgumentOutOfRangeException(nameof(shiftState)),
         };
     }
 

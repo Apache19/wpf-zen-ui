@@ -24,7 +24,8 @@ internal interface ISoftKeyboardInputModeButtonBackend
     SoftKeyboardInputModeButton? GetInputModeButton(SoftKeyboardInputMethod inputMethod);
 
     SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
-        SoftKeyboardInputMethod inputMethod, Rect screenBounds);
+        SoftKeyboardInputMethod inputMethod,
+        Rect screenBounds);
 }
 
 /// <summary>
@@ -33,8 +34,8 @@ internal interface ISoftKeyboardInputModeButtonBackend
 internal interface ISoftKeyboardInputStateBackend
 {
     /// <summary>
-    /// Reads both values through TSF, or through IMM for the supplied focused editor HWND.
-    /// Missing contexts and failed reads remain explicitly unavailable.
+    /// Reads both values through Dispatcher-wide TSF, or through IMM for the current input HWND.
+    /// A zero HWND, missing contexts and failed reads remain explicitly unavailable for IMM.
     /// </summary>
     SoftKeyboardInputObservation ReadState(bool useImm, IntPtr window);
 }

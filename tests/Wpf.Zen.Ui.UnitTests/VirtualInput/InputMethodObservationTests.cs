@@ -9,6 +9,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -27,6 +30,232 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 /// </summary>
 public class InputMethodObservationTests
 {
+    /// <summary>
+    /// An unknown cap delegates to native toggling first; only an unavailable native command can
+    /// trigger a state retry and a decoded extension transition. No transition is invented.
+    /// </summary>
+    /// <param name="result">The native command's result.</param>
+    /// <param name="conversion">The value becoming readable only after initial discovery.</param>
+    /// <param name="transition">
+    /// The expected extension command, or null when none is allowed.
+    /// </param>
+    [Theory]
+    [InlineData(SoftKeyboardInputModeCommandResult.Accepted, 1025, null)]
+    [InlineData(SoftKeyboardInputModeCommandResult.Failed, 1025, null)]
+    [InlineData(SoftKeyboardInputModeCommandResult.Unavailable, null, null)]
+    [InlineData(SoftKeyboardInputModeCommandResult.Unavailable, 1025, "disable")]
+    [InlineData(SoftKeyboardInputModeCommandResult.Unavailable, 0, "enable")]
+    public Task UnknownModeClickOnlyExecutesNativeOrDecodedTransition(
+        SoftKeyboardInputModeCommandResult result, int? conversion, string? transition)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            var profile = new SoftKeyboardInputMethod(KnownTextServices.MicrosoftPinyin,
+                Guid.NewGuid(), 0x0804, "Pinyin", true);
+            var adapter = new RecordingStateAdapter();
+            var backend = new Backend(profile) { Result = result };
+            scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
+            scope.Keyboard.InputModeAdapter = adapter;
+            await scope.DrainAsync();
+
+            var unknown = Assert.IsType<Wpf.Zen.Ui.Controls.FluentIconSource>(ModeCap(scope.Keyboard).Content);
+            Assert.Equal(Wpf.Zen.Ui.Controls.SymbolRegular.ArrowSwap24, unknown.Symbol);
+            var initial = scope.Keyboard.InputModeButton;
+            var reads = backend.StateReads;
+            backend.StateReader = (_, _) => conversion is null
+                ? SoftKeyboardInputObservation.Empty
+                : new SoftKeyboardInputObservation(true, 1, true, conversion);
+            Click(scope.Keyboard);
+
+            Assert.Equal(1, backend.Invocations);
+            Assert.Equal(transition is null ? Array.Empty<string>() : new[] { transition },
+                adapter.Transitions);
+            Assert.Equal(reads + (result == SoftKeyboardInputModeCommandResult.Unavailable
+                ? conversion is null ? 2 : 1 : 0), backend.StateReads);
+            scope.Clock.Advance(30);
+            Assert.Null(scope.Keyboard.InputMethodError);
+            if (transition is null)
+            {
+                Assert.Same(initial, scope.Keyboard.InputModeButton);
+            }
+            else
+            {
+                // The fake command records the request; only the observed pre-command state is
+                // published. Acceptance does not predict what the native mode will become.
+                Assert.Equal(conversion == 0 ? "A" : "中", ModeCap(scope.Keyboard).Content);
+            }
+
+            Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 0);
+            scope.Clock.Advance(0);
+            Assert.Equal("A", ModeCap(scope.Keyboard).Content);
+        });
+    }
+
+    /// <summary>
+    /// Plain keyboard layouts have no IME mode and do not acquire an unknown-mode command.
+    /// </summary>
+    [Fact]
+    public Task KeyboardLayoutDoesNotShowUnknownImeMode()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            var profile = new SoftKeyboardInputMethod(Guid.Empty, Guid.Empty, 0x0409,
+                "Keyboard layout", true, keyboardLayout: new IntPtr(0x04090409));
+            scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(new Backend(profile));
+            await scope.DrainAsync();
+            Assert.Null(scope.Keyboard.InputModeButton);
+            Assert.DoesNotContain(scope.Keyboard.CurrentLayout.Keys,
+                key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
+        });
+    }
+
+    /// <summary>
+    /// Initial Pinyin discovery samples the Dispatcher or current HWND with no eligible target.
+    /// Later profile and mode notifications update the actual key while focus stays outside scope.
+    /// </summary>
+    /// <param name="useImm">Whether only the IMM fallback supplies interpretable state.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task DiscoveryAndProfileChangesPresentOutsideTargetScope(bool useImm)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            scope.Keyboard.AutoHideMode = SoftKeyboardAutoHideMode.Manual;
+            scope.Keyboard.Target = null;
+            scope.Keyboard.TargetScope = scope.Editor;
+            Assert.True(scope.OtherEditor.Focus());
+            // Clearing the scope removes even the previously remembered editor.
+            scope.Keyboard.TargetScope = new StackPanel();
+            Assert.Null(scope.Keyboard.ActiveTarget);
+            var profile = new SoftKeyboardInputMethod(KnownTextServices.MicrosoftPinyin,
+                Guid.NewGuid(), 0x0804, "Pinyin", true);
+            var window = new WindowInteropHelper(scope.Window).Handle;
+            var backend = new Backend(profile)
+            {
+                StateReader = (imm, handle) =>
+                {
+                    Assert.Equal(window, handle);
+                    return imm == useImm
+                        ? new SoftKeyboardInputObservation(true, 1, true, 1025)
+                        : SoftKeyboardInputObservation.Empty;
+                },
+            };
+            scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
+            scope.Keyboard.InputModeAdapter = ChineseInputModeAdapter.Default;
+            await scope.DrainAsync();
+            Assert.Null(scope.Keyboard.InputMethodError);
+            Assert.Equal("中", ModeCap(scope.Keyboard).Content);
+            Assert.Equal(useImm ? 2 : 1, backend.StateReads);
+
+            // A profile notification has no mode values; the new generation must sample again.
+            backend.Profile = new SoftKeyboardInputMethod(KnownTextServices.MicrosoftPinyin,
+                Guid.NewGuid(), 0x0804, "Next Pinyin profile", true);
+            Activate(scope.Keyboard, backend.Profile);
+            await scope.DrainAsync();
+            Assert.Same(backend.Profile, scope.Keyboard.ActiveInputMethod);
+            Assert.Equal("中", ModeCap(scope.Keyboard).Content);
+            Assert.Equal(useImm ? 4 : 2, backend.StateReads);
+
+            Notify(scope.Keyboard, InputMethodChangeKind.ImeConversion, 0);
+            scope.Clock.Advance(0);
+            Assert.Equal("A", ModeCap(scope.Keyboard).Content);
+            Assert.Same(scope.OtherEditor, Keyboard.FocusedElement);
+            Assert.Null(scope.Keyboard.ActiveTarget);
+            Click(scope.Keyboard);
+            Assert.Equal(0, backend.Invocations);
+        });
+    }
+
+    /// <summary>
+    /// Focus moves outside scope resample context state even when ActiveTarget does not change.
+    /// </summary>
+    /// <param name="autoHide">Whether leaving the scope also closes the input surface.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task FocusOutsideScopeRefreshesRetainedTargetPresentation(bool autoHide)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            scope.Keyboard.AutoHideMode = autoHide
+                ? SoftKeyboardAutoHideMode.FocusLeavesScope : SoftKeyboardAutoHideMode.Manual;
+            scope.Keyboard.TargetScope = scope.Editor;
+            var profile = new SoftKeyboardInputMethod(KnownTextServices.MicrosoftPinyin,
+                Guid.NewGuid(), 0x0804, "Pinyin", true);
+            var backend = new Backend(profile)
+            {
+                StateReader = (_, _) => new SoftKeyboardInputObservation(true, 1, true,
+                    ReferenceEquals(Keyboard.FocusedElement, scope.Editor) ? 1025 : 0),
+            };
+            scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
+            scope.Keyboard.InputModeAdapter = ChineseInputModeAdapter.Default;
+            await scope.DrainAsync();
+            Assert.Equal("中", ModeCap(scope.Keyboard).Content);
+
+            Assert.True(scope.OtherEditor.Focus());
+            await scope.DrainAsync();
+            Assert.Same(scope.Editor, scope.Keyboard.ActiveTarget);
+            Assert.Equal(!autoHide, scope.Keyboard.IsOpen);
+            Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
+            Assert.Null(scope.Keyboard.InputMethodError);
+        });
+    }
+
+    /// <summary>
+    /// Window, visibility and enabled recovery refresh state while the keyboard is closed.
+    /// </summary>
+    /// <param name="boundary">The lifecycle boundary that invalidates the previous sample.</param>
+    [Theory]
+    [InlineData("Window")]
+    [InlineData("Visibility")]
+    [InlineData("Enabled")]
+    public Task ClosedKeyboardRecoversPresentationAtLifecycleBoundaries(string boundary)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = new SoftKeyboardRegressionScope();
+            var profile = new SoftKeyboardInputMethod(KnownTextServices.MicrosoftPinyin,
+                Guid.NewGuid(), 0x0804, "Pinyin", true);
+            var sample = new SoftKeyboardInputObservation(true, 1, true, 1025);
+            var backend = new Backend(profile) { StateReader = (_, _) => sample };
+            scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
+            scope.Keyboard.InputModeAdapter = ChineseInputModeAdapter.Default;
+            await scope.DrainAsync();
+            Assert.Equal("中", scope.Keyboard.InputModeButton?.Content);
+
+            scope.Keyboard.IsOpen = false;
+            sample = new SoftKeyboardInputObservation(true, 1, true, 0);
+            if (boundary == "Window")
+            {
+                typeof(SoftKeyboard).GetMethod("OnWindowDeactivated",
+                    BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(scope.Keyboard, new object?[] { scope.Window, EventArgs.Empty });
+                typeof(SoftKeyboard).GetMethod("OnWindowActivated",
+                    BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(scope.Keyboard, new object?[] { scope.Window, EventArgs.Empty });
+            }
+            else if (boundary == "Visibility")
+            {
+                scope.Panel.Visibility = Visibility.Collapsed;
+                scope.Panel.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                scope.Keyboard.IsEnabled = false;
+                scope.Keyboard.IsEnabled = true;
+            }
+
+            await scope.DrainAsync();
+            Assert.False(scope.Keyboard.IsOpen);
+            Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
+        });
+    }
+
     /// <summary>
     /// Due observation work remains asynchronous but runs ahead of queued input processing.
     /// </summary>
@@ -770,7 +999,8 @@ public class InputMethodObservationTests
             Assert.Equal(reads, backend.Reads);
             scope.Keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(new Backend(scope.Method));
             scope.Clock.Advance(100);
-            Assert.Null(scope.Keyboard.InputModeButton);
+            Assert.Equal("windows:input-mode:unknown", scope.Keyboard.InputModeButton?.Id);
+            Assert.Equal(reads, backend.Reads);
         });
     }
 
@@ -934,6 +1164,29 @@ public class InputMethodObservationTests
             new byte[] { value, value, value, 255 }, 4);
         image.Freeze();
         return new SoftKeyboardInputModeButton(id, image, "Mode command");
+    }
+
+    /// <summary>
+    /// Uses the real Chinese decoder while recording fallback commands without native writes.
+    /// </summary>
+    private sealed class RecordingStateAdapter : ISoftKeyboardInputModeAdapter
+    {
+        internal List<string> Transitions { get; } = [];
+
+        /// <inheritdoc />
+        public SoftKeyboardInputModeContribution GetContribution(
+            SoftKeyboardInputMethod inputMethod, SoftKeyboardInputObservation observation)
+        {
+            return ChineseInputModeAdapter.Default.GetContribution(inputMethod, observation);
+        }
+
+        /// <inheritdoc />
+        public bool TrySwitchMode(SoftKeyboardInputMethod inputMethod,
+            SoftKeyboardInputObservation observation, SoftKeyboardInputModeTransition transition)
+        {
+            Transitions.Add(transition.Id);
+            return true;
+        }
     }
 
     private sealed class Backend(SoftKeyboardInputMethod profile) :

@@ -13,7 +13,7 @@ using Wpf.Zen.Ui.VirtualInput.Interop;
 namespace Wpf.Zen.Ui.VirtualInput.InputMethods;
 
 /// <summary>
-/// Provides TSF mode operations for input-mode adapters on the focused WPF editor's dispatcher.
+/// Provides TSF mode presentation and commands on the owning WPF Dispatcher.
 /// </summary>
 /// <remarks>
 /// These operations borrow WPF's initialized thread manager. They neither initialize TSF nor
@@ -37,8 +37,8 @@ public static class SoftKeyboardTsfInputMode
     /// </summary>
     /// <param name="serviceId">The expected active TIP.</param>
     /// <returns>
-    /// A button descriptor when the item is visible, enabled, owned by the service, and supplies an
-    /// icon or text; otherwise null.
+    /// A button descriptor when the item belongs to the service and supplies an icon or text;
+    /// otherwise null. Language-bar visibility and command availability do not gate presentation.
     /// </returns>
     /// <remarks>
     /// The descriptor represents the language-bar command, not a decoded keyboard state. The icon
@@ -51,10 +51,11 @@ public static class SoftKeyboardTsfInputMode
 
         try
         {
-            if (!TryGetInputModeButton(serviceId, requireVisible: true, out button))
+            if (!TryGetInputModeButton(serviceId, forInvocation: false, out button))
             {
                 return null;
             }
+
             var iconResult = button!.GetIcon(out icon);
             if (iconResult < 0 || icon == IntPtr.Zero)
             {
@@ -85,6 +86,7 @@ public static class SoftKeyboardTsfInputMode
                 + $"serviceId={serviceId}, exception={exception.GetType().FullName}, "
                 + $"message='{exception.Message}'."
             );
+
             return null;
         }
         finally
@@ -195,7 +197,7 @@ public static class SoftKeyboardTsfInputMode
 
         try
         {
-            if (!TryGetInputModeButton(inputMethod.ClassId, requireVisible: false, out button))
+            if (!TryGetInputModeButton(inputMethod.ClassId, forInvocation: true, out button))
             {
                 return SoftKeyboardInputModeCommandResult.Unavailable;
             }
@@ -259,11 +261,12 @@ public static class SoftKeyboardTsfInputMode
     }
 
     /// <summary>
-    /// Resolves the enabled standard input-mode command owned by the expected active service.
+    /// Resolves the standard input-mode item owned by the expected active service.
+    /// Invocation additionally requires a successful status read, an enabled item and click style.
     /// </summary>
     private static bool TryGetInputModeButton(
         Guid serviceId,
-        bool requireVisible,
+        bool forInvocation,
         out ITfLangBarItemButton? button)
     {
         button = null;
@@ -318,13 +321,13 @@ public static class SoftKeyboardTsfInputMode
         var statusResult = candidate.GetStatus(out var status);
 
         var serviceMatches = infoResult >= 0 && info.ServiceId == serviceId
-            && info.ItemId == InputModeItemId && (info.Style & ButtonClickStyles) != 0;
+            && info.ItemId == InputModeItemId;
 
         var isDisabled = statusResult >= 0 && (status & ButtonDisabled) != 0;
         var isHidden   = statusResult >= 0 && (status & ButtonHidden) != 0;
 
-        if (infoResult < 0 || !serviceMatches || statusResult < 0 || isDisabled
-            || (requireVisible && isHidden))
+        if (!serviceMatches || (forInvocation
+            && (statusResult < 0 || isDisabled || (info.Style & ButtonClickStyles) == 0)))
         {
             Debug.WriteLine(
                 "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup rejected; "
@@ -332,7 +335,7 @@ public static class SoftKeyboardTsfInputMode
                 + $"{(infoResult >= 0 ? info.ServiceId : Guid.Empty)}, "
                 + $"infoHresult=0x{infoResult:X8}, statusHresult=0x{statusResult:X8}, "
                 + $"status=0x{status:X8}, disabled={isDisabled}, hidden={isHidden}, "
-                + $"requireVisible={requireVisible}."
+                + $"forInvocation={forInvocation}."
             );
 
             ReleaseComObject(candidate);
@@ -344,7 +347,7 @@ public static class SoftKeyboardTsfInputMode
         Debug.WriteLine(
             "[SoftKeyboard.InputMode] GUID_LBI_INPUTMODE lookup succeeded; "
             + $"serviceId={serviceId}, status=0x{status:X8}, hidden={isHidden}, "
-            + $"requireVisible={requireVisible}."
+            + $"forInvocation={forInvocation}."
         );
 
         button = candidate;

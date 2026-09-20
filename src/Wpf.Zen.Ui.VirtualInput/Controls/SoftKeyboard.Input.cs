@@ -302,9 +302,29 @@ public partial class SoftKeyboard
                 var observation  = _inputObservation.Observation;
                 var contribution = adapter?.GetContribution(actual, observation);
 
-                if (!isCurrent() || _inputObservation.IsObserving
-                    || contribution?.Transition is not { } transition)
+                if (adapter is not null && contribution?.Transition is null
+                    && isCurrent() && !_inputObservation.IsObserving)
                 {
+                    // The neutral cap does not choose a direction. A user click is an explicit
+                    // opportunity to recover state that was unavailable during initial discovery.
+                    CompleteInputModeObservation(actual, adapter, isCurrent, retryUnavailable: true);
+
+                    observation  = _inputObservation.Observation;
+                    contribution = adapter.GetContribution(actual, observation);
+                }
+
+                if (!isCurrent() || _inputObservation.IsObserving)
+                {
+                    return false;
+                }
+
+                if (contribution?.Transition is not { } transition)
+                {
+                    Debug.WriteLine(
+                        "[SoftKeyboard.InputMode.Command] EXTENSION skipped; "
+                        + $"profileId={actual.ProfileId}, reason=NoCurrentTransition."
+                    );
+
                     return false;
                 }
 

@@ -26,9 +26,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 [ClassInterface(ClassInterfaceType.None)]
 internal sealed class InputMethodMonitor
     : ISoftKeyboardTsfInputProcessorProfileActivationSink,
-        ISoftKeyboardTsfCompartmentEventSink,
-        ISoftKeyboardTsfLangBarItemSink,
-        IDisposable
+      ISoftKeyboardTsfCompartmentEventSink,
+      ISoftKeyboardTsfLangBarItemSink,
+      IDisposable
 {
     private const uint ActiveProfileFlag     = 0x00000001;
     private const uint LanguageBarIconFlag   = 0x00000001;
@@ -60,10 +60,26 @@ internal sealed class InputMethodMonitor
     internal InputMethodMonitor(Dispatcher dispatcher, Action<InputMethodChange> changed)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-        _changed    = changed ?? throw new ArgumentNullException(nameof(changed));
+        _changed    = changed    ?? throw new ArgumentNullException(nameof(changed));
 
+        InputLanguageManager.Current.InputLanguageChanged += OnInputLanguageChanged;
         _dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
         EnsureNotifications();
+    }
+
+    /// <summary>
+    /// Supplements TSF profile notifications through WPF's independent language source.
+    /// This source can notify before a WPF text-services host is available for sink registration.
+    /// </summary>
+    private void OnInputLanguageChanged(object sender, InputLanguageEventArgs args)
+    {
+        Debug.WriteLine(
+            "[SoftKeyboard.InputMode.Monitor] WPF LANGUAGE changed; "
+            + $"language={args.NewLanguage.Name}."
+        );
+
+        EnsureNotifications();
+        Publish(new InputMethodChange(InputMethodChangeKind.RefreshAll));
     }
 
     /// <summary>
@@ -133,13 +149,13 @@ internal sealed class InputMethodMonitor
     }
 
     int ISoftKeyboardTsfInputProcessorProfileActivationSink.OnActivated(
-        uint profileType,
-        ushort languageId,
-        ref Guid classId,
-        ref Guid categoryId,
-        ref Guid profileId,
-        IntPtr keyboardLayout,
-        uint flags)
+        uint            profileType,
+        ushort          languageId,
+        ref Guid        classId,
+        ref Guid        categoryId,
+        ref Guid        profileId,
+        IntPtr          keyboardLayout,
+        uint            flags)
     {
         Debug.WriteLine(
             "[SoftKeyboard.InputMode.Monitor] Profile activation observed; "
@@ -409,7 +425,7 @@ internal sealed class InputMethodMonitor
 
         if (_profileActivationSinkPointer != IntPtr.Zero)
         {
-            _                             = Marshal.Release(_profileActivationSinkPointer);
+            _ = Marshal.Release(_profileActivationSinkPointer);
             _profileActivationSinkPointer = IntPtr.Zero;
         }
     }
@@ -470,17 +486,17 @@ internal sealed class InputMethodMonitor
             && _keyboardConversionSource is null
             && _compartmentSinkPointer != IntPtr.Zero)
         {
-            _                       = Marshal.Release(_compartmentSinkPointer);
+            _ = Marshal.Release(_compartmentSinkPointer);
             _compartmentSinkPointer = IntPtr.Zero;
         }
     }
 
     private static bool TryConnectCompartment(
-        ITfCompartmentMgr manager,
-        Guid compartmentId,
-        IntPtr sinkPointer,
-        out ITfSource? source,
-        out uint cookie)
+        ITfCompartmentMgr        manager,
+        Guid                     compartmentId,
+        IntPtr                   sinkPointer,
+        out ITfSource?           source,
+        out uint                 cookie)
     {
         source = null;
         cookie = 0;
@@ -509,7 +525,7 @@ internal sealed class InputMethodMonitor
 
         if (_compartmentSinkPointer != IntPtr.Zero)
         {
-            _                       = Marshal.Release(_compartmentSinkPointer);
+            _ = Marshal.Release(_compartmentSinkPointer);
             _compartmentSinkPointer = IntPtr.Zero;
         }
     }
@@ -597,7 +613,7 @@ internal sealed class InputMethodMonitor
 
         if (_languageBarItemSinkPointer != IntPtr.Zero)
         {
-            _                           = Marshal.Release(_languageBarItemSinkPointer);
+            _ = Marshal.Release(_languageBarItemSinkPointer);
             _languageBarItemSinkPointer = IntPtr.Zero;
         }
     }
@@ -620,6 +636,8 @@ internal sealed class InputMethodMonitor
         }
 
         _disposed = true;
+
+        InputLanguageManager.Current.InputLanguageChanged -= OnInputLanguageChanged;
 
         DisconnectWindowNotifications();
         DisconnectProfileNotifications();

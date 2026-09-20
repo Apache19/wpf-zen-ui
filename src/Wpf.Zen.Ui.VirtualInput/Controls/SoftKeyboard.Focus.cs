@@ -14,14 +14,22 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    /// <summary>
+    /// Refreshes presentation for Dispatcher focus changes and routes eligible editors according
+    /// to this keyboard's target scope and automatic open/close policy.
+    /// </summary>
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
     {
-        if (_inputMethodMenu?.IsOpen == true || SettingsMenu.IsOpen)
+        if (!IsLoaded)
         {
             return;
         }
 
-        if (!IsLoaded)
+        // WPF applies input-method policy during focus processing. Observe the settled result
+        // even when the new focus does not belong to this keyboard's input scope.
+        _inputObservation.RequestRefresh();
+
+        if (_inputMethodMenu?.IsOpen == true || SettingsMenu.IsOpen)
         {
             return;
         }
@@ -52,14 +60,12 @@ public partial class SoftKeyboard
                 SetCurrentValue(IsOpenProperty, true);
             }
 
+            RefreshInputMethodState();
+
             if (IsOpen)
             {
-                RefreshInputMethodState();
-
                 RequestSystemKeyboardHide();
-
                 RequestCandidateRefresh();
-
                 QueueCandidateBridgeRefresh();
             }
 
@@ -76,6 +82,10 @@ public partial class SoftKeyboard
         // scope—the new focus owner and Windows input policy must decide what UI it needs.
         ReleaseSystemKeyboardSuppression(tryRestore: false);
         ResetCandidateSession();
+
+        // Auto-hide may have canceled the earlier request while releasing the input session.
+        // Queue presentation against the resulting focus and lifecycle generation.
+        _inputObservation.RequestRefresh();
     }
 
     /// <summary>

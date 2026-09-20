@@ -11,6 +11,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    /// <summary>
+    /// Registers shared observation and discovers initial presentation when the control loads.
+    /// </summary>
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
         _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
@@ -37,9 +40,13 @@ public partial class SoftKeyboard
         }
     }
 
+    /// <summary>
+    /// Cancels pending input and observation work and releases the loaded control's sessions.
+    /// </summary>
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
         _inputOperationVersion++;
+
         ResetObservedPlatformState();
 
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
@@ -71,6 +78,9 @@ public partial class SoftKeyboard
         ClearActiveComposition();
     }
 
+    /// <summary>
+    /// Releases hidden input sessions and refreshes presentation when ancestor visibility returns.
+    /// </summary>
     private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
     {
         if (!IsVisible)
@@ -94,16 +104,25 @@ public partial class SoftKeyboard
         // IsVisible includes ancestor visibility, unlike the local Visibility value. Reacquire the
         // still-active TSF element when a Page/dialog region becomes visible without requiring the
         // user to type another character.
-        if (IsLoaded && IsOpen && ActiveTarget is not null)
+        if (IsLoaded)
         {
             RefreshInputMethodState();
-            RequestCandidateRefresh();
-            RequestSystemKeyboardHide();
+
+            if (IsOpen && ActiveTarget is not null)
+            {
+                RequestCandidateRefresh();
+                RequestSystemKeyboardHide();
+            }
         }
     }
 
+    /// <summary>
+    /// Reconnects monitoring and refreshes the foreground thread's input-method presentation.
+    /// </summary>
     private void OnWindowActivated(object? sender, EventArgs args)
     {
+        _session?.EnsureInputMethodMonitoring();
+
         if (IsOpen)
         {
             // Deactivation occurs after the HWND has lost foreground ownership, when SendInput is
@@ -112,12 +131,16 @@ public partial class SoftKeyboard
             // cancellation.
             _ = TryCancelActiveComposition();
 
-            RefreshInputMethodState();
             RequestSystemKeyboardHide();
             QueueCandidateBridgeRefresh();
         }
+
+        RefreshInputMethodState();
     }
 
+    /// <summary>
+    /// Invalidates pending input and observations when the host loses foreground ownership.
+    /// </summary>
     private void OnWindowDeactivated(object? sender, EventArgs args)
     {
         _inputOperationVersion++;
@@ -133,6 +156,9 @@ public partial class SoftKeyboard
         ResetCandidateSession();
     }
 
+    /// <summary>
+    /// Releases disabled input sessions and rediscovers presentation when the control is enabled.
+    /// </summary>
     private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs args)
     {
         if (!IsEnabled)
@@ -150,11 +176,15 @@ public partial class SoftKeyboard
 
             ReleaseSystemKeyboardSuppression(tryRestore: true);
         }
-        else if (IsLoaded && IsOpen)
+        else if (IsLoaded)
         {
             RefreshInputMethodState();
-            RequestCandidateRefresh();
-            RequestSystemKeyboardHide();
+
+            if (IsOpen)
+            {
+                RequestCandidateRefresh();
+                RequestSystemKeyboardHide();
+            }
         }
     }
 }
