@@ -9,7 +9,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.VirtualInput.Controls"
     xmlns:imaging="clr-namespace:System.Windows.Media.Imaging;assembly=PresentationCore"
-    xmlns:layouts="clr-namespace:Wpf.Zen.Ui.VirtualInput.Layouts"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027">
 
     <Style TargetType="{x:Type controls:SoftKeyboardCandidateItem}">
@@ -110,6 +109,36 @@
         </Setter>
     </Style>
 
+    <!-- The alternative visual tree is instantiated only when the popup is first measured. -->
+    <DataTemplate x:Key="SoftKeyboardAlternatesTemplate">
+        <Border
+            Margin="2"
+            Padding="4"
+            Background="{ui:DynamicBrush SolidBackgroundFillTertiary}"
+            BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType={x:Type ContentControl}}}"
+            BorderThickness="1"
+            CornerRadius="6">
+            <ItemsControl ItemsSource="{Binding Alternates}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel MaxWidth="440" HorizontalAlignment="Center" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ui:Button
+                            MinWidth="44"
+                            MinHeight="44"
+                            AutomationProperties.Name="{Binding}"
+                            Content="{Binding}"
+                            Focusable="False"
+                            IsTabStop="False" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+    </DataTemplate>
+
     <!--  todo: 键帽不同于普通按钮控件，周围的空白应该能够交互，所以需要把面板的间隙去掉，让键帽自己包一圈可交互的空白区域  -->
     <Style TargetType="{x:Type controls:SoftKeyboardKeyControl}">
         <Style.Resources>
@@ -179,32 +208,12 @@
                             Focusable="False"
                             Placement="Top"
                             StaysOpen="True">
-                            <Border
-                                Margin="2"
-                                Padding="4"
-                                Background="{ui:DynamicBrush SolidBackgroundFillTertiary}"
+                            <ContentControl
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="6">
-                                <ItemsControl ItemsSource="{Binding Key.Alternates, RelativeSource={RelativeSource TemplatedParent}}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel MaxWidth="440" HorizontalAlignment="Center" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <ui:Button
-                                                MinWidth="44"
-                                                MinHeight="44"
-                                                AutomationProperties.Name="{Binding}"
-                                                Content="{Binding}"
-                                                Focusable="False"
-                                                IsTabStop="False" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Border>
+                                Content="{Binding Key, RelativeSource={RelativeSource TemplatedParent}}"
+                                ContentTemplate="{StaticResource SoftKeyboardAlternatesTemplate}"
+                                Focusable="False"
+                                IsTabStop="False" />
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -269,20 +278,6 @@
                             </Grid.RowDefinitions>
 
                             <DockPanel Grid.Row="0" Margin="0,0,0,4">
-                                <!--  The button owns popup behavior; the keyboard supplies policy-generated menu data.  -->
-                                <ui:DropDownButton
-                                    x:Name="PART_SettingsButton"
-                                    Padding="10,8"
-                                    Appearance="Transparent"
-                                    AutomationProperties.Name="键盘设置"
-                                    BorderBrush="{x:Null}"
-                                    BorderThickness="0"
-                                    Content="{ui:FluentIconSource Settings24}"
-                                    DockPanel.Dock="Left"
-                                    Flyout="{Binding SettingsMenu, RelativeSource={RelativeSource TemplatedParent}}"
-                                    FontSize="18"
-                                    IsDropDownArrowVisible="False" />
-
                                 <Grid MinHeight="40">
                                     <!--  候选栏不显示时，仅显示当前输入法名称。  -->
                                     <StackPanel
@@ -354,7 +349,7 @@
                                 </Grid>
                             </DockPanel>
 
-                            <ItemsControl
+                            <controls:SoftKeyboardKeyList
                                 x:Name="PART_Keys"
                                 Grid.Row="1"
                                 HorizontalContentAlignment="Stretch"
@@ -369,24 +364,7 @@
                                             RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="{x:Type ContentPresenter}">
-                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
-                                        <Setter Property="VerticalAlignment" Value="Stretch" />
-                                        <Setter Property="controls:SoftKeyboardPanel.Row" Value="{Binding Row}" />
-                                        <Setter Property="controls:SoftKeyboardPanel.Column" Value="{Binding Column}" />
-                                        <Setter Property="controls:SoftKeyboardPanel.ColumnSpan" Value="{Binding ColumnSpan}" />
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type layouts:SoftKeyboardKey}">
-                                        <controls:SoftKeyboardKeyControl
-                                            Key="{Binding}"
-                                            AutomationProperties.Name="{Binding AutomationName}"
-                                            Content="{Binding Content}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            </controls:SoftKeyboardKeyList>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>

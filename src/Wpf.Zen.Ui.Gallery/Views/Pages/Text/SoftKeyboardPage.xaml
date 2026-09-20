@@ -79,10 +79,15 @@
                     Height="80"
                     HorizontalAlignment="Left" />
 
-                <StackPanel
-                    Grid.Row="6"
-                    HorizontalAlignment="Left">
+                <StackPanel Grid.Row="6" HorizontalAlignment="Left">
                     <WrapPanel>
+                        <ui:DropDownButton
+                            x:Name="SettingsButton"
+                            Margin="0,0,16,0"
+                            Click="OnSettingsClick"
+                            Content="Keyboard settings"
+                            Focusable="False"
+                            IsTabStop="False" />
                         <CheckBox
                             Margin="0,0,24,0"
                             Content="Keyboard open"
@@ -107,7 +112,6 @@
                     AutoHideMode="Manual"
                     AutoShowMode="TouchAndPen"
                     ExtensionProvider="{x:Static keyboardExt:DefaultSoftKeyboardExtensionProvider.Default}"
-                    IsOpen="True"
                     TargetScope="{Binding ElementName=FormScope}" />
             </Grid>
         </controls:ControlExample>

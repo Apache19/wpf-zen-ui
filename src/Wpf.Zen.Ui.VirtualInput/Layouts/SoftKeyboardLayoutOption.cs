@@ -9,5 +9,5 @@ namespace Wpf.Zen.Ui.VirtualInput.Layouts;
 /// Describes one implemented supplemental layout available in the current input environment.
 /// </summary>
 /// <param name="Id">Stable selection identifier.</param>
-/// <param name="DisplayName">Presentation text, replaceable by a settings provider.</param>
+/// <param name="DisplayName">Default display label for application-owned layout selectors.</param>
 public sealed record SoftKeyboardLayoutOption(string Id, string DisplayName);

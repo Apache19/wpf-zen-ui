@@ -46,10 +46,12 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
     /// <inheritdoc />
     public ISoftKeyboardInputMethodSession CreateSession()
     {
-        return new Session(_backend);
+        return _backend is ISoftKeyboardActiveInputMethodBackend activeBackend
+            ? new ActiveSession(_backend, activeBackend)
+            : new Session(_backend);
     }
 
-    private sealed class Session(ISoftKeyboardInputMethodBackend backend) :
+    private class Session(ISoftKeyboardInputMethodBackend backend) :
         ISoftKeyboardInputMethodSession,
         ISoftKeyboardInputModeButtonSession
     {
@@ -117,12 +119,31 @@ public sealed class WindowsSoftKeyboardInputMethodSource : ISoftKeyboardInputMet
             _disposed = true;
         }
 
-        private void ThrowIfDisposed()
+        /// <summary>
+        /// Rejects access after this keyboard has released the source session.
+        /// </summary>
+        protected void ThrowIfDisposed()
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(Session));
             }
+        }
+    }
+
+    /// <summary>
+    /// Advertises separate active-profile reads only when the backend supports them.
+    /// </summary>
+    private sealed class ActiveSession(
+        ISoftKeyboardInputMethodBackend backend,
+        ISoftKeyboardActiveInputMethodBackend activeBackend)
+        : Session(backend), ISoftKeyboardActiveInputMethodSession
+    {
+        /// <inheritdoc />
+        public SoftKeyboardInputMethod? GetActiveInputMethod()
+        {
+            ThrowIfDisposed();
+            return activeBackend.GetActiveInputMethod();
         }
     }
 }

@@ -12,7 +12,6 @@ public partial class SoftKeyboard
 {
     private IReadOnlyList<SoftKeyboardExtension>          _activeExtensions       = [];
     private IReadOnlyList<SoftKeyboardSupplementalLayout> _supplementalLayouts    = [];
-    private IReadOnlyList<SoftKeyboardLayoutOption>       _availableLayoutOptions = [];
 
     /// <summary>
     /// Identifies the <see cref="ExtensionProvider"/> dependency property.
@@ -60,11 +59,17 @@ public partial class SoftKeyboard
     /// </summary>
     public Exception? ExtensionError => (Exception?)GetValue(ExtensionErrorProperty);
 
+    /// <summary>
+    /// Returns extensions resolved for the most recently built layout context.
+    /// </summary>
     internal IReadOnlyList<SoftKeyboardExtension> ResolveExtensions()
     {
         return _activeExtensions;
     }
 
+    /// <summary>
+    /// Resolves applicable registrations, publishes layout choices and records provider failures.
+    /// </summary>
     private void ResolveExtensions(SoftKeyboardLayoutContext context)
     {
         var                     errors = new List<Exception>();
@@ -167,7 +172,8 @@ public partial class SoftKeyboard
         }
 
         _supplementalLayouts = registrations;
-        _availableLayoutOptions =
+
+        SoftKeyboardLayoutOption[] options =
         [
             new SoftKeyboardLayoutOption(
                 SoftKeyboardSupplementalLayouts.Automatic,
@@ -180,6 +186,8 @@ public partial class SoftKeyboard
                 )
             )
         ];
+
+        SetValue(AvailableSupplementalLayoutsPropertyKey, Array.AsReadOnly(options));
 
         SetValue(
             ExtensionErrorPropertyKey,
@@ -208,20 +216,6 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Prefers the control-level adapter, then the first adapter in resolved extension order.
-    /// </summary>
-    private ISoftKeyboardInputModeAdapter? ResolveInputModeAdapter()
-    {
-        if (InputModeAdapter is not null)
-        {
-            return InputModeAdapter;
-        }
-
-        return _activeExtensions.Select(static extension => extension.InputModeAdapter)
-            .FirstOrDefault(static adapter => adapter is not null);
-    }
-
-    /// <summary>
     /// Preserves previous extension failures when reporting another callback or cleanup error.
     /// </summary>
     private void ReportExtensionError(Exception exception)
@@ -240,7 +234,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Releases candidate work before rebuilding layout, mode and settings from new registrations.
+    /// Releases candidate work before rebuilding layout and mode from new registrations.
     /// </summary>
     private static void OnExtensionProviderChanged(
         DependencyObject dependencyObject,
@@ -248,12 +242,13 @@ public partial class SoftKeyboard
     {
         var keyboard = (SoftKeyboard)dependencyObject;
 
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("ExtensionProviderChanged", keyboard);
+#endif
         keyboard.CancelCandidateOperations();
         keyboard.ReleaseCandidatePresentation();
         keyboard.RebuildLayout();
         keyboard.RefreshInputMode();
-        // Extension registrations can change available settings without changing the input state.
-        keyboard.RefreshSettings();
 
         if (keyboard.IsLoaded && keyboard.IsOpen)
         {

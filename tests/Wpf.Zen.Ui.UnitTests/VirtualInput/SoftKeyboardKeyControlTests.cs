@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
@@ -204,6 +205,39 @@ public class SoftKeyboardKeyControlTests
             Assert.Empty(requests);
             Assert.False(cap.IsAlternatePopupOpen);
             Assert.False(cap.IsPressed);
+        });
+    }
+
+    /// <summary>
+    /// Verifies deferred popup content is generated on demand and submits the replacement key.
+    /// </summary>
+    [Fact]
+    public void AlternativeVisuals_AreDeferredUntilOpenedAndFollowReplacementKeys()
+    {
+        WithCap((cap, requests, _) =>
+        {
+            cap.Key = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "e", "e", text: "e",
+                alternates: ["é", "è"]);
+            var popup = (Popup)cap.Template.FindName("PART_AlternatePopup", cap);
+            Assert.Empty(FindVisualDescendants<System.Windows.Controls.ItemsControl>(popup.Child));
+
+            cap.BeginPress();
+            cap.AdvanceHold();
+            ((FrameworkElement)popup.Child).UpdateLayout();
+            var list = Assert.Single(FindVisualDescendants<System.Windows.Controls.ItemsControl>(popup.Child));
+            Assert.Equal(new[] { "é", "è" }, list.Items.Cast<string>());
+            cap.CancelInteraction();
+
+            cap.Key = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "a", "a", text: "a",
+                alternates: ["á"]);
+            cap.BeginPress();
+            cap.AdvanceHold();
+            ((FrameworkElement)popup.Child).UpdateLayout();
+            Assert.Equal(new[] { "á" }, list.Items.Cast<string>());
+            var button = Assert.Single(FindVisualDescendants<Wpf.Zen.Ui.Controls.Button>(popup.Child));
+            button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+            Assert.Equal("á", Assert.Single(requests).AlternateText);
+            Assert.False(popup.IsOpen);
         });
     }
 

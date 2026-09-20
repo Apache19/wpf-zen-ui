@@ -19,16 +19,18 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The optional <c>PART_AlternatePopup</c> template part displays <see cref="SoftKeyboardKey.Alternates"/>.
+/// The optional <c>PART_AlternatePopup</c> template part displays
+/// <see cref="SoftKeyboardKey.Alternates"/>.
 /// Its non-focusable buttons carry alternative strings as their data contexts. Missing this part
-/// leaves ordinary invocation available. The popup belongs to this key and does not affect measurement.
+/// leaves ordinary invocation available. The popup belongs to this key and does not affect
+/// measurement.
 /// </para>
 /// <para>
 /// Mouse input, including WPF-promoted pen and primary touch input, drives a single active gesture.
 /// Alternatives take precedence over repeat. Release after opening alternatives does not invoke the
 /// primary action; a variant may be selected on release over it or by a subsequent click.
-/// Hosts cancel interaction when their input context changes. Unload, disabling, hiding, template or
-/// key replacement and unexpected capture loss also cancel without submitting input.
+/// Hosts cancel interaction when their input context changes. Unload, disabling, hiding, template
+/// or key replacement and unexpected capture loss also cancel without submitting input.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = AlternatePopupPartName, Type = typeof(Popup))]
@@ -36,12 +38,19 @@ public class SoftKeyboardKeyControl : ContentControl
 {
     private const string AlternatePopupPartName = "PART_AlternatePopup";
 
-    // todo: 将来要公布 Popup 是否打开的状态，所以监听自己的属性变更就行了，不一定用这种反向监听模式
-    private static readonly DependencyPropertyDescriptor PopupIsOpenDescriptor
-        = DependencyPropertyDescriptor.FromProperty(
-            Popup.IsOpenProperty,
-            typeof(Popup)
-        );
+    /// <summary>
+    /// Initializes Popup observation only when a template actually supplies a Popup.
+    /// </summary>
+    private static class PopupObservation
+    {
+        internal static readonly DependencyPropertyDescriptor IsOpenDescriptor
+            = DependencyPropertyDescriptor.FromProperty(Popup.IsOpenProperty, typeof(Popup));
+
+        // An explicit initializer keeps this separate from routed-event type initialization.
+        static PopupObservation()
+        {
+        }
+    }
 
     private readonly DispatcherTimer _timer;
 
@@ -118,7 +127,7 @@ public class SoftKeyboardKeyControl : ContentControl
 
     /// <summary>
     /// Gets or sets the immutable key description. Defaults to null, which prevents input requests.
-    /// The property is not inherited; the template binds presentation and alternatives to this model.
+    /// The property is not inherited; templates bind presentation and alternatives to this model.
     /// </summary>
     public SoftKeyboardKey? Key
     {
@@ -140,8 +149,8 @@ public class SoftKeyboardKeyControl : ContentControl
     public static readonly DependencyProperty IsPressedProperty
         = IsPressedPropertyKey.DependencyProperty;
 
-    /// <summary
-    /// >Gets a value indicating whether the active pointer is pressing this cap.
+    /// <summary>
+    /// Gets a value indicating whether the active pointer is pressing this cap.
     /// Defaults to false; used by template triggers.
     /// </summary>
     public bool IsPressed => (bool)GetValue(IsPressedProperty);
@@ -209,8 +218,9 @@ public class SoftKeyboardKeyControl : ContentControl
     }
 
     /// <summary>
-    /// Requests the primary action once, including for UI Automation. Cancels any unfinished gesture
-    /// first; a disabled, hidden or unconfigured key does nothing. Editor validation belongs to the host.
+    /// Requests the primary action once, including for UI Automation, after cancelling any
+    /// unfinished gesture. Disabled, hidden or unconfigured keys do nothing. The host validates
+    /// the editor.
     /// </summary>
     public void Invoke()
     {
@@ -555,7 +565,7 @@ public class SoftKeyboardKeyControl : ContentControl
 
         // Closed may follow native-window destruction asynchronously. Observe IsOpen itself
         // so an outside dismissal immediately invalidates pending selection requests.
-        PopupIsOpenDescriptor.AddValueChanged(_popup, OnPopupIsOpenChanged);
+        PopupObservation.IsOpenDescriptor.AddValueChanged(_popup, OnPopupIsOpenChanged);
 
         // A Popup has a separate presentation source. Translate selection into an event on the
         // cap instead of depending on an ancestor route across the popup boundary.
@@ -573,7 +583,7 @@ public class SoftKeyboardKeyControl : ContentControl
 
         // Property descriptors retain their listeners. Remove subscriptions on both template
         // replacement and unload; Loaded reconnects an unchanged template when reused.
-        PopupIsOpenDescriptor.RemoveValueChanged(_popup, OnPopupIsOpenChanged);
+        PopupObservation.IsOpenDescriptor.RemoveValueChanged(_popup, OnPopupIsOpenChanged);
 
         _popup.RemoveHandler(
             ButtonBase.ClickEvent, new RoutedEventHandler(OnAlternativeClick)

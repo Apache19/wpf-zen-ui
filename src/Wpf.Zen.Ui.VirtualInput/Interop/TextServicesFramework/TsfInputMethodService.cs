@@ -20,6 +20,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 /// </remarks>
 internal sealed class TsfInputMethodService :
     ISoftKeyboardInputMethodBackend,
+    ISoftKeyboardActiveInputMethodBackend,
     ISoftKeyboardInputModeButtonBackend,
     ISoftKeyboardInputStateBackend
 {
@@ -41,6 +42,57 @@ internal sealed class TsfInputMethodService :
         return useImm ? InputMethodMonitor.ReadImmState(window) : InputMethodMonitor.ReadTsfState();
     }
 
+    /// <summary>
+    /// Reads only the active keyboard-category profile and its presentation capabilities.
+    /// Each call owns its COM reference on the calling apartment; no catalog is enumerated.
+    /// </summary>
+    public SoftKeyboardInputMethod? GetActiveInputMethod()
+    {
+        ITfInputProcessorProfiles? profiles = null;
+        try
+        {
+            profiles = CreateProfiles();
+            if (profiles is null || ReadActiveKeyboardProfile(profiles) is not { } native
+                || native.langid == 0)
+            {
+                return null;
+            }
+
+            var isLayout = native.dwProfileType == ProfileTypeKeyboardLayout;
+            if ((!isLayout && (native.dwProfileType != ProfileTypeInputProcessor
+                    || native.clsid == Guid.Empty || native.guidProfile == Guid.Empty))
+                || (isLayout && native.hkl == default))
+            {
+                return null;
+            }
+
+            var legacy = new TfLanguageProfile
+            {
+                ClassId = native.clsid,
+                ProfileId = native.guidProfile,
+                LanguageId = native.langid
+            };
+
+            return new SoftKeyboardInputMethod(
+                isLayout ? Guid.Empty : native.clsid,
+                isLayout ? Guid.Empty : native.guidProfile,
+                native.langid,
+                isLayout ? KeyboardLayoutNames.GetDisplayName(native.hkl, native.langid)
+                    : GetDescription(profiles, in legacy),
+                true,
+                isLayout ? native.hkl : IntPtr.Zero,
+                isLayout ? null : TsfTouchLayoutQuery.Query(native.clsid));
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            return null;
+        }
+        finally
+        {
+            ReleaseComObject(profiles);
+        }
+    }
+
     /// <inheritdoc />
     public void Refresh(
         ObservableCollection<SoftKeyboardInputMethod> destination,
@@ -48,6 +100,9 @@ internal sealed class TsfInputMethodService :
     {
         active = null;
 
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("EnumerateInputMethods");
+#endif
         var profiles = TryEnumerateProfiles();
         destination.Clear();
 
@@ -349,7 +404,7 @@ internal sealed class TsfInputMethodService :
                 && profile.clsid != Guid.Empty && profile.guidProfile != Guid.Empty,
 
             ProfileTypeKeyboardLayout => profile.hkl != default
-                && loadedLayouts.Contains((IntPtr)profile.hkl)
+                && loadedLayouts.Contains(profile.hkl)
                 && (profile.dwFlags & PInvoke.TF_IPP_FLAG_SUBSTITUTEDBYINPUTPROCESSOR) == 0,
 
             _ => false,
@@ -395,9 +450,9 @@ internal sealed class TsfInputMethodService :
     private static string GetDescription(ITfInputProcessorProfiles profiles, in TfLanguageProfile profile)
     {
         var r = profiles.GetLanguageProfileDescription(
-            in profile.ClassId,
-            profile.LanguageId,
-            in profile.ProfileId,
+            in      profile.ClassId,
+                    profile.LanguageId,
+            in      profile.ProfileId,
             out var description
         );
 

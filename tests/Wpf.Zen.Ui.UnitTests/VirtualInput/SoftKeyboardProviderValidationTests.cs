@@ -29,7 +29,6 @@ public class SoftKeyboardProviderValidationTests
             Assert.Throws<ArgumentException>(() => keyboard.CandidateSource = null!);
             Assert.Throws<ArgumentException>(() => keyboard.InputMethodSource = null!);
             Assert.Throws<ArgumentException>(() => keyboard.ExtensionProvider = null!);
-            Assert.Throws<ArgumentException>(() => keyboard.SettingsProvider = null!);
         });
     }
 
@@ -41,7 +40,6 @@ public class SoftKeyboardProviderValidationTests
     [InlineData(nameof(SoftKeyboard.CandidateSource))]
     [InlineData(nameof(SoftKeyboard.InputMethodSource))]
     [InlineData(nameof(SoftKeyboard.ExtensionProvider))]
-    [InlineData(nameof(SoftKeyboard.SettingsProvider))]
     public void DirectWrites_RejectNullAndPreserveProvider(string propertyName)
     {
         WpfTestThread.Run(() =>
@@ -73,7 +71,6 @@ public class SoftKeyboardProviderValidationTests
     [InlineData(nameof(SoftKeyboard.CandidateSource))]
     [InlineData(nameof(SoftKeyboard.InputMethodSource))]
     [InlineData(nameof(SoftKeyboard.ExtensionProvider))]
-    [InlineData(nameof(SoftKeyboard.SettingsProvider))]
     public void Styles_ValidateProviders(string propertyName)
     {
         WpfTestThread.Run(() =>
@@ -107,8 +104,6 @@ public class SoftKeyboardProviderValidationTests
     [InlineData(nameof(SoftKeyboard.InputMethodSource), true)]
     [InlineData(nameof(SoftKeyboard.ExtensionProvider), false)]
     [InlineData(nameof(SoftKeyboard.ExtensionProvider), true)]
-    [InlineData(nameof(SoftKeyboard.SettingsProvider), false)]
-    [InlineData(nameof(SoftKeyboard.SettingsProvider), true)]
     public void Bindings_NullUsesFallbackAndValidUpdatesRecover(string propertyName, bool useFallback)
     {
         WpfTestThread.Run(() =>
@@ -159,7 +154,6 @@ public class SoftKeyboardProviderValidationTests
             nameof(SoftKeyboard.CandidateSource) => SoftKeyboard.CandidateSourceProperty,
             nameof(SoftKeyboard.InputMethodSource) => SoftKeyboard.InputMethodSourceProperty,
             nameof(SoftKeyboard.ExtensionProvider) => SoftKeyboard.ExtensionProviderProperty,
-            nameof(SoftKeyboard.SettingsProvider) => SoftKeyboard.SettingsProviderProperty,
             _ => throw new ArgumentOutOfRangeException(nameof(propertyName))
         };
     }

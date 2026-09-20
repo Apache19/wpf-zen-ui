@@ -6,7 +6,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Threading;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -87,6 +86,9 @@ internal sealed class InputMethodMonitor
     /// </summary>
     internal void EnsureNotifications()
     {
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("ConnectInputMethodNotifications");
+#endif
         _dispatcher.VerifyAccess();
 
         if (_disposed)

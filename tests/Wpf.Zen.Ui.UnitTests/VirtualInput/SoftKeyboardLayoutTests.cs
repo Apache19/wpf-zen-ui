@@ -242,7 +242,7 @@ public class SoftKeyboardLayoutTests
                 Assert.Equal(keyboard.BorderThickness, root.BorderThickness);
                 Assert.Equal(keyboard.Padding, root.Padding);
                 Assert.Equal(keyboard.CornerRadius, root.CornerRadius);
-                var keys = Assert.IsType<ItemsControl>(keyboard.Template.FindName("PART_Keys", keyboard));
+                var keys = Assert.IsType<SoftKeyboardKeyList>(keyboard.Template.FindName("PART_Keys", keyboard));
                 var panel = Assert.IsType<SoftKeyboardPanel>(FindVisualDescendant<SoftKeyboardPanel>(keys));
                 Assert.Equal(keyboard.CurrentLayout.ColumnCount, panel.ColumnCount);
                 Assert.Equal(7, panel.RowSpacing);
@@ -250,9 +250,13 @@ public class SoftKeyboardLayoutTests
                 int wideKeyIndex = Enumerable.Range(0, keyboard.CurrentLayout.Keys.Count)
                     .First(index => keyboard.CurrentLayout.Keys[index].ColumnSpan > 2);
                 SoftKeyboardKey wideKey = keyboard.CurrentLayout.Keys[wideKeyIndex];
-                var container = Assert.IsType<ContentPresenter>(
+                var container = Assert.IsType<SoftKeyboardKeyControl>(
                     keys.ItemContainerGenerator.ContainerFromIndex(wideKeyIndex)
                 );
+                Assert.Same(wideKey, container.Key);
+                Assert.Same(wideKey.Content, container.Content);
+                Assert.Same(panel, VisualTreeHelper.GetParent(container));
+                Assert.Equal(wideKey.AutomationName, System.Windows.Automation.AutomationProperties.GetName(container));
                 Assert.Equal(wideKey.Row, SoftKeyboardPanel.GetRow(container));
                 Assert.Equal(wideKey.Column, SoftKeyboardPanel.GetColumn(container));
                 Assert.Equal(wideKey.ColumnSpan, SoftKeyboardPanel.GetColumnSpan(container));
@@ -263,6 +267,182 @@ public class SoftKeyboardLayoutTests
             {
                 window.Close();
             }
+        });
+    }
+
+    /// <summary>
+    /// Verifies snapshot replacement also ends interactions owned by the outgoing container.
+    /// </summary>
+    [Fact]
+    public void KeyContainers_ReplaceTheirSnapshotsAndCancelOutgoingInteractions()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var first = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "a", "letter a", text: "a",
+                alternates: ["á"]);
+            var replacement = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "b", "letter b", text: "b",
+                row: 3, column: 2, columnSpan: 2);
+            var list = new SoftKeyboardKeyList { ItemsSource = new[] { first } };
+            var window = new Window { Content = list, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                var outgoing = Assert.IsType<SoftKeyboardKeyControl>(list.ItemContainerGenerator.ContainerFromIndex(0));
+                outgoing.BeginPress();
+                outgoing.AdvanceHold();
+                Assert.True(outgoing.IsAlternatePopupOpen);
+
+                list.ItemsSource = new[] { replacement };
+                window.UpdateLayout();
+
+                Assert.False(outgoing.IsPressed);
+                Assert.False(outgoing.IsAlternatePopupOpen);
+                Assert.Null(outgoing.Key);
+                var current = Assert.IsType<SoftKeyboardKeyControl>(list.ItemContainerGenerator.ContainerFromIndex(0));
+                Assert.Same(replacement, current.Key);
+                Assert.Equal("b", current.Content);
+                Assert.Equal("letter b", System.Windows.Automation.AutomationProperties.GetName(current));
+                Assert.Equal(3, SoftKeyboardPanel.GetRow(current));
+                Assert.Equal(2, SoftKeyboardPanel.GetColumn(current));
+                Assert.Equal(2, SoftKeyboardPanel.GetColumnSpan(current));
+                Assert.False(current.Focusable);
+                Assert.False(current.IsTabStop);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Preserves the standard ItemsControl styling and content presentation extension points.
+    /// </summary>
+    [Fact]
+    public void KeyContainers_ForwardContentTemplatesAndContainerStyles()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var template = (DataTemplate)System.Windows.Markup.XamlReader.Parse(
+                "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>"
+                + "<TextBlock Text='{Binding}' /></DataTemplate>"
+            );
+            var style = new Style(typeof(SoftKeyboardKeyControl));
+            style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(13)));
+            var list = new SoftKeyboardKeyList
+            {
+                ItemsSource = new[] { new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "custom", "custom", text: "a") },
+                ItemTemplate = template,
+                ItemContainerStyle = style,
+            };
+            var window = new Window { Content = list, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                var container = Assert.IsType<SoftKeyboardKeyControl>(list.ItemContainerGenerator.ContainerFromIndex(0));
+                Assert.Same(template, container.ContentTemplate);
+                Assert.Equal(new Thickness(13), container.Padding);
+                var presenter = FindVisualDescendant<ContentPresenter>(container)!;
+                Assert.Equal("custom", presenter.Content);
+                Assert.Equal("custom", FindVisualDescendant<System.Windows.Controls.TextBlock>(presenter)!.Text);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Exercises row-cache invalidation through changes that can leave the child count unchanged.
+    /// </summary>
+    [Fact]
+    public void CachedRows_TrackPlacementVisibilityAndReplacementAtTheSameChildCount()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var panel = new SoftKeyboardPanel { ColumnCount = 4, ColumnSpacing = 0, RowSpacing = 0 };
+            var first = new Border();
+            var second = new Border();
+            panel.Children.Add(first);
+            panel.Children.Add(second);
+            SoftKeyboardPanel.SetRow(first, 10);
+            SoftKeyboardPanel.SetRow(second, 20);
+
+            void Layout()
+            {
+                panel.Measure(new Size(400, 80));
+                panel.Arrange(new Rect(0, 0, 400, 80));
+            }
+
+            Layout();
+            Assert.Equal(new Rect(0, 40, 100, 40), LayoutInformation.GetLayoutSlot(second));
+
+            SoftKeyboardPanel.SetRow(second, 5);
+            SoftKeyboardPanel.SetColumn(second, 1);
+            SoftKeyboardPanel.SetColumnSpan(second, 2);
+            Layout();
+            Assert.Equal(new Rect(100, 0, 200, 40), LayoutInformation.GetLayoutSlot(second));
+            Assert.Equal(new Rect(0, 40, 100, 40), LayoutInformation.GetLayoutSlot(first));
+
+            second.Visibility = Visibility.Hidden;
+            Layout();
+            Assert.Equal(40, LayoutInformation.GetLayoutSlot(first).Height);
+            second.Visibility = Visibility.Collapsed;
+            Layout();
+            Assert.Equal(new Rect(0, 0, 100, 80), LayoutInformation.GetLayoutSlot(first));
+
+            second.Visibility = Visibility.Visible;
+            Layout();
+            Assert.Equal(new Rect(100, 0, 200, 40), LayoutInformation.GetLayoutSlot(second));
+
+            var replacement = new Border();
+            SoftKeyboardPanel.SetRow(replacement, 30);
+            panel.Children.Remove(second);
+            panel.Children.Add(replacement);
+            Layout();
+            Assert.Equal(new Rect(0, 0, 100, 40), LayoutInformation.GetLayoutSlot(first));
+            Assert.Equal(new Rect(0, 40, 100, 40), LayoutInformation.GetLayoutSlot(replacement));
+
+            first.Visibility = Visibility.Collapsed;
+            replacement.Visibility = Visibility.Collapsed;
+            Layout();
+            Assert.Equal(default, panel.DesiredSize);
+            panel.Children.Clear();
+            Layout();
+            first.Visibility = Visibility.Visible;
+            panel.Children.Add(first);
+            Layout();
+            Assert.Equal(new Rect(0, 0, 100, 80), LayoutInformation.GetLayoutSlot(first));
+        });
+    }
+
+    /// <summary>
+    /// Keeps cached row membership independent of current column and span clamping.
+    /// </summary>
+    [Fact]
+    public void CachedRows_ApplyColumnAndSpanChangesWithoutChangingRows()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var panel = new SoftKeyboardPanel { ColumnCount = 4, ColumnSpacing = 0, RowSpacing = 0 };
+            var child = new Border();
+            panel.Children.Add(child);
+            panel.Measure(new Size(400, 80));
+            panel.Arrange(new Rect(0, 0, 400, 80));
+
+            SoftKeyboardPanel.SetColumn(child, 2);
+            SoftKeyboardPanel.SetColumnSpan(child, 8);
+            panel.Measure(new Size(400, 80));
+            panel.Arrange(new Rect(0, 0, 400, 80));
+            Assert.Equal(new Rect(200, 0, 200, 80), LayoutInformation.GetLayoutSlot(child));
+
+            panel.ColumnCount = 2;
+            panel.Measure(new Size(400, 80));
+            panel.Arrange(new Rect(0, 0, 400, 80));
+            Assert.Equal(new Rect(200, 0, 200, 80), LayoutInformation.GetLayoutSlot(child));
         });
     }
 

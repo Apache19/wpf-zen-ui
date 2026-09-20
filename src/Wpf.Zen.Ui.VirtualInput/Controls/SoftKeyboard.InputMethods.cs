@@ -34,6 +34,14 @@ public partial class SoftKeyboard
     private ISoftKeyboardInputMethodSession? _inputMethodSession;
 #pragma warning restore IDISP006
 
+    private bool _explicitInputMethodRefresh;
+
+    /// <summary>
+    /// Automatic native observation is needed only by a loaded, usable input surface.
+    /// Explicit application refreshes remain available independently of this lifecycle gate.
+    /// </summary>
+    internal bool CanObserveInputMethods => IsLoaded && IsOpen && IsVisible && IsEnabled;
+
     private int _inputMethodSessionVersion;
     private int _inputMethodOperationDepth;
     private int _inputMethodObservationVersion;
@@ -123,6 +131,9 @@ public partial class SoftKeyboard
     /// <remarks>
     /// A refresh replaces this value only when catalog content changes. A previously obtained list
     /// remains immutable, and transient read failures preserve the last successful value.
+    /// The Windows source populates this list on RefreshInputMethods or ShowInputMethodMenu.
+    /// Routine observations update ActiveInputMethod independently; the catalog retains the
+    /// activation flags captured by its last explicit discovery.
     /// </remarks>
     public IReadOnlyList<SoftKeyboardInputMethod> InputMethods
     {
@@ -136,9 +147,10 @@ public partial class SoftKeyboard
     /// complete.
     /// </summary>
     /// <remarks>
-    /// This method is an explicit refresh request. System notifications are processed separately
-    /// according to their notification type. Failures preserve the last successfully published
-    /// state.
+    /// This explicit request works even before loading or while closed. It publishes the catalog
+    /// immediately; active-profile and mode presentation may await the observation window.
+    /// System notifications read active state independently. Discovery failures preserve the
+    /// previous catalog, while a later mode failure does not discard a successful catalog read.
     /// </remarks>
     /// <returns>
     /// True when presentation was published or confirmed unchanged. False also indicates a pending
@@ -148,14 +160,30 @@ public partial class SoftKeyboard
     {
         VerifyAccess();
 
-        return IsInputMethodOperationActive ? false : RefreshInputMethodStateNow();
+        if (IsInputMethodOperationActive)
+        {
+            return false;
+        }
+
+        _explicitInputMethodRefresh = true;
+        var refreshed = RefreshInputMethodsCore(includeCatalog: true);
+        if (!_inputObservation.IsObserving)
+        {
+            _explicitInputMethodRefresh = false;
+        }
+
+        RefreshCandidatesAfterInputMethodChange();
+        return refreshed;
     }
 
     /// <summary>
     /// Reads and publishes one current input-method observation.
     /// </summary>
-    private bool RefreshInputMethodsCore()
+    private bool RefreshInputMethodsCore(bool includeCatalog = false)
     {
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("RefreshInputMethods", this);
+#endif
         _inputMethodOperationDepth++;
 
         var sessionVersion     = _inputMethodSessionVersion;
@@ -186,7 +214,7 @@ public partial class SoftKeyboard
                 return false;
             }
 
-            var observation = ReadInputMethodObservation(session, IsCurrent, target);
+            var observation = ReadInputMethodObservation(session, IsCurrent, target, includeCatalog);
             if (observation is null || !IsCurrent())
             {
                 return false;
@@ -384,14 +412,17 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Reads the catalog and active-profile state requested by a full refresh.
+    /// Reads active state, including the catalog only for an explicit discovery request.
     /// </summary>
     private InputMethodObservation? ReadInputMethodObservation(
         ISoftKeyboardInputMethodSession session,
         Func<bool> isCurrent,
-        IInputElement? target)
+        IInputElement? target,
+        bool includeCatalog)
     {
-        var snapshot = session.GetSnapshot()
+        var snapshot = !includeCatalog && session is ISoftKeyboardActiveInputMethodSession activeSession
+            ? new SoftKeyboardInputMethodSnapshot(InputMethods, activeSession.GetActiveInputMethod())
+            : session.GetSnapshot()
             ?? throw new InvalidOperationException(
                 "The input-method source returned a null snapshot."
             );
@@ -399,6 +430,15 @@ public partial class SoftKeyboard
         if (!isCurrent())
         {
             return null;
+        }
+
+        if (includeCatalog && !HaveSameCatalog(InputMethods, snapshot.InputMethods))
+        {
+            SetValue(InputMethodsPropertyKey, snapshot.InputMethods);
+            if (!isCurrent())
+            {
+                return null;
+            }
         }
 
         if (!_observationInitialized
@@ -804,15 +844,21 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Performs one explicit full refresh immediately.
+    /// Refreshes active presentation automatically while the input surface is usable.
     /// </summary>
     private bool RefreshInputMethodState()
     {
+        if (!CanObserveInputMethods || IsInputMethodOperationActive)
+        {
+            return false;
+        }
+
+        _session?.EnsureInputMethodMonitoring();
         return RefreshInputMethodStateNow();
     }
 
     /// <summary>
-    /// Performs one full read for the request currently being processed.
+    /// Reads current state for automatic or scheduled publication without requesting a catalog.
     /// </summary>
     private bool RefreshInputMethodStateNow()
     {
@@ -924,6 +970,12 @@ public partial class SoftKeyboard
     /// </summary>
     private void PublishScheduledInputObservation()
     {
+        if (!CanObserveInputMethods && !_explicitInputMethodRefresh)
+        {
+            ResetObservedPlatformState();
+            return;
+        }
+
         if (_observationInitialized && (!ReferenceEquals(_observationTarget, ActiveTarget)
             || !ReferenceEquals(_observationFocus, Keyboard.FocusedElement)
             || _observationInputVersion != _inputOperationVersion))
@@ -943,6 +995,11 @@ public partial class SoftKeyboard
 
         _session?.EnsureInputMethodMonitoring();
         RefreshInputMethodStateNow();
+
+        if (!_inputObservation.IsObserving)
+        {
+            _explicitInputMethodRefresh = false;
+        }
     }
 
     /// <summary>
@@ -951,6 +1008,7 @@ public partial class SoftKeyboard
     private void ResetObservedPlatformState()
     {
         _inputObservation.Cancel();
+        _explicitInputMethodRefresh = false;
 
         _observedModeProfile    = null;
         _observationTarget      = null;

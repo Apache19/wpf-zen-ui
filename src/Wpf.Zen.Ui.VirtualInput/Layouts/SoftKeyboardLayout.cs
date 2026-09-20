@@ -19,6 +19,23 @@ namespace Wpf.Zen.Ui.VirtualInput.Layouts;
 public sealed class SoftKeyboardLayout
 {
     /// <summary>
+    /// Gets the shared immutable layout used before a keyboard first requests its key surface.
+    /// </summary>
+    /// <remarks>
+    /// Contains no keys and one logical column, so template bindings remain valid while deferred.
+    /// </remarks>
+    public static SoftKeyboardLayout Empty { get; } = new();
+
+    /// <summary>
+    /// Creates the empty snapshot without running key validation or initializing key factories.
+    /// </summary>
+    private SoftKeyboardLayout()
+    {
+        Keys = Array.Empty<SoftKeyboardKey>();
+        ColumnCount = 1;
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SoftKeyboardLayout"/> class.
     /// </summary>
     /// <param name="keys">Positioned keys in reading order.</param>
@@ -80,7 +97,7 @@ public sealed class SoftKeyboardLayout
     }
 
     /// <summary>
-    /// Gets the positioned keys in reading order. Items with the same row identifier retain this order.
+    /// Gets keys in reading order. Items with the same row identifier retain this order.
     /// </summary>
     public IReadOnlyList<SoftKeyboardKey> Keys { get; }
 

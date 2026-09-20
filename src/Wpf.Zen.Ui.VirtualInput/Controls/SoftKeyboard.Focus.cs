@@ -28,9 +28,12 @@ public partial class SoftKeyboard
 
         // WPF applies input-method policy during focus processing. Observe the settled result
         // even when the new focus does not belong to this keyboard's input scope.
-        _inputObservation.RequestRefresh();
+        if (CanObserveInputMethods)
+        {
+            _inputObservation.RequestRefresh();
+        }
 
-        if (_inputMethodMenu?.IsOpen == true || SettingsMenu.IsOpen)
+        if (_inputMethodMenu?.IsOpen == true)
         {
             return;
         }
@@ -86,7 +89,10 @@ public partial class SoftKeyboard
 
         // Auto-hide may have canceled the earlier request while releasing the input session.
         // Queue presentation against the resulting focus and lifecycle generation.
-        _inputObservation.RequestRefresh();
+        if (CanObserveInputMethods)
+        {
+            _inputObservation.RequestRefresh();
+        }
     }
 
     /// <summary>
@@ -95,7 +101,10 @@ public partial class SoftKeyboard
     internal void OnSessionInputMethodChanged(InputMethodChange change)
     {
         VerifyAccess();
-        ApplyInputMethodChange(change);
+        if (CanObserveInputMethods || _explicitInputMethodRefresh)
+        {
+            ApplyInputMethodChange(change);
+        }
     }
 
     /// <summary>
@@ -109,6 +118,11 @@ public partial class SoftKeyboard
     /// </remarks>
     private void ApplyInputMethodChange(InputMethodChange change)
     {
+        if (!CanObserveInputMethods && !_explicitInputMethodRefresh)
+        {
+            return;
+        }
+
         // Native TSF notifications must never contaminate an application-owned source.
         if (InputMethodSource is not WindowsSoftKeyboardInputMethodSource
             && change.Kind != InputMethodChangeKind.RefreshAll)

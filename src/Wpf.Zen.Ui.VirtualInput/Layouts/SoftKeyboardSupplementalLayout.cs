@@ -13,12 +13,16 @@ public sealed class SoftKeyboardSupplementalLayout
     /// <summary>
     /// Initializes a new instance of the <see cref="SoftKeyboardSupplementalLayout"/> class.
     /// </summary>
-    /// <param name="id">The nonempty, case-sensitive identifier stored as the user's selection.</param>
-    /// <param name="displayName">The nonempty default label exposed to settings providers.</param>
+    /// <param name="id">
+    /// The nonempty, case-sensitive identifier stored as the user's selection.
+    /// </param>
+    /// <param name="displayName">The nonempty default label exposed to applications.</param>
     /// <param name="layoutProvider">The provider that creates this layout when selected.</param>
-    /// <param name="isAutomaticPreferred">Whether Automatic should choose this registration.</param>
+    /// <param name="isAutomaticPreferred">
+    /// Whether Automatic should choose this registration.
+    /// </param>
     /// <param name="isApplicable">
-    /// An optional context predicate. A null predicate makes the registration universally applicable.
+    /// An optional context predicate. Null makes the registration universally applicable.
     /// </param>
     public SoftKeyboardSupplementalLayout(
         string id,
@@ -46,7 +50,7 @@ public sealed class SoftKeyboardSupplementalLayout
     public string Id { get; }
 
     /// <summary>
-    /// Gets the default settings label.
+    /// Gets the default label for application-owned layout selectors.
     /// </summary>
     public string DisplayName { get; }
 
@@ -61,7 +65,8 @@ public sealed class SoftKeyboardSupplementalLayout
     public bool IsAutomaticPreferred { get; }
 
     /// <summary>
-    /// Gets the context predicate that controls catalog, validation, automatic selection, and generation.
+    /// Gets the context predicate used by the catalog, validation, automatic selection,
+    /// and layout generation.
     /// </summary>
     public Func<SoftKeyboardLayoutContext, bool> IsApplicable { get; }
 }

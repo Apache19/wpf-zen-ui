@@ -171,7 +171,7 @@ public class InputMethodObservationTests
     }
 
     /// <summary>
-    /// Focus moves outside scope resample context state even when ActiveTarget does not change.
+    /// Focus changes refresh an open surface; an auto-hidden surface catches up when reopened.
     /// </summary>
     /// <param name="autoHide">Whether leaving the scope also closes the input surface.</param>
     [Theory]
@@ -201,20 +201,26 @@ public class InputMethodObservationTests
             await scope.DrainAsync();
             Assert.Same(scope.Editor, scope.Keyboard.ActiveTarget);
             Assert.Equal(!autoHide, scope.Keyboard.IsOpen);
-            Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
+            Assert.Equal(autoHide ? "中" : "A", scope.Keyboard.InputModeButton?.Content);
+            if (autoHide)
+            {
+                scope.Keyboard.IsOpen = true;
+                await scope.DrainAsync();
+                Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
+            }
             Assert.Null(scope.Keyboard.InputMethodError);
         });
     }
 
     /// <summary>
-    /// Window, visibility and enabled recovery refresh state while the keyboard is closed.
+    /// Closed keyboards defer lifecycle refreshes until reopening and then read fresh state.
     /// </summary>
     /// <param name="boundary">The lifecycle boundary that invalidates the previous sample.</param>
     [Theory]
     [InlineData("Window")]
     [InlineData("Visibility")]
     [InlineData("Enabled")]
-    public Task ClosedKeyboardRecoversPresentationAtLifecycleBoundaries(string boundary)
+    public Task ClosedKeyboardDefersLifecycleRefreshUntilReopened(string boundary)
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -229,6 +235,7 @@ public class InputMethodObservationTests
             Assert.Equal("中", scope.Keyboard.InputModeButton?.Content);
 
             scope.Keyboard.IsOpen = false;
+            var reads = backend.StateReads;
             sample = new SoftKeyboardInputObservation(true, 1, true, 0);
             if (boundary == "Window")
             {
@@ -252,6 +259,10 @@ public class InputMethodObservationTests
 
             await scope.DrainAsync();
             Assert.False(scope.Keyboard.IsOpen);
+            Assert.Equal(reads, backend.StateReads);
+            Assert.Equal("中", scope.Keyboard.InputModeButton?.Content);
+            scope.Keyboard.IsOpen = true;
+            await scope.DrainAsync();
             Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
         });
     }

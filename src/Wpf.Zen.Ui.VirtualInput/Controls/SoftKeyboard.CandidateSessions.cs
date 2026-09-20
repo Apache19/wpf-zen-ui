@@ -230,7 +230,10 @@ public partial class SoftKeyboard
     /// </summary>
     internal void RequestCandidateRefresh()
     {
-        _ = RefreshCandidatesAsync();
+        if (CanObserveInputMethods)
+        {
+            _ = RefreshCandidatesAsync();
+        }
     }
 
     /// <summary>
@@ -488,6 +491,9 @@ public partial class SoftKeyboard
 
         _candidateSessionTransitionActive = true;
 
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("CreateCandidateSession", this);
+#endif
         var host = new SoftKeyboardCandidateHost(this);
         _candidateHost = host;
 

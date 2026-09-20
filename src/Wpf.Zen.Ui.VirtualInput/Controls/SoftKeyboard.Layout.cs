@@ -13,6 +13,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     private bool _isRebuildingLayout;
+    private bool _layoutDirty = true;
+    private bool _hasBuiltLayout;
+    private bool _explicitLayoutRefresh;
     private bool _inputMethodLayoutPending;
 
     private static readonly DependencyPropertyKey LayoutErrorPropertyKey
@@ -46,16 +49,23 @@ public partial class SoftKeyboard
     /// <remarks>
     /// Call on the owning dispatcher. This cancels held-key interactions before replacing their
     /// data. Providers must not call this while constructing a layout; recursive construction is
-    /// ignored.
+    /// ignored. Closed controls can explicitly build their layout and available choices with this
+    /// method. Requests during an input-method operation wait for its coherent publication.
     /// </remarks>
     public void RefreshLayout()
     {
         VerifyAccess();
+        if (_isRebuildingLayout)
+        {
+            return;
+        }
+
+        _explicitLayoutRefresh = true;
         RebuildLayout();
     }
 
     /// <summary>
-    /// Builds a layout from the current context, batching requests during input-method operations.
+    /// Invalidates the layout, coalescing closed-state changes and native-operation requests.
     /// </summary>
     /// <param name="publishInputMethodState">
     /// True while publishing a complete observed snapshot under the input-method operation gate.
@@ -67,15 +77,45 @@ public partial class SoftKeyboard
             return;
         }
 
-        if ((_inputObservation.IsObserving || IsInputMethodOperationActive) && !publishInputMethodState)
+        _layoutDirty = true;
+        EnsureLayout(publishInputMethodState);
+    }
+
+    /// <summary>
+    /// Coalesces closed-state changes and enters the layout factory only when requested.
+    /// </summary>
+    private void EnsureLayout(bool publishInputMethodState = false)
+    {
+        if (!_layoutDirty || _isRebuildingLayout || (!IsOpen && !_explicitLayoutRefresh))
         {
-            // A complete input-method observation publishes all fields before one layout rebuild.
+            return;
+        }
+
+        if (!publishInputMethodState
+            && (IsInputMethodOperationActive || (_inputObservation.IsObserving && _hasBuiltLayout)))
+        {
+            // First opening can show the last committed context while native discovery settles.
+            // Later refreshes keep the existing surface until all observed fields are published.
             _inputMethodLayoutPending = true;
             return;
         }
 
+        BuildLayoutCore();
+    }
+
+    /// <summary>
+    /// Resolves and publishes one requested snapshot; kept outside the closed-state fast path.
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private void BuildLayoutCore()
+    {
+        _layoutDirty = false;
+        _explicitLayoutRefresh = false;
         _isRebuildingLayout = true;
 
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("RebuildLayout", this);
+#endif
         try
         {
             CancelKeyInteraction();
@@ -93,7 +133,7 @@ public partial class SoftKeyboard
 
             SetValue(SelectedSupplementalLayoutPropertyKey, supplementalSelection);
 
-            var settingsContext = new SoftKeyboardLayoutContext(
+            var extensionContext = new SoftKeyboardLayoutContext(
                 culture,
                 inputScope,
                 Page,
@@ -103,7 +143,7 @@ public partial class SoftKeyboard
                 inputModeButton: InputModeButton
             );
 
-            ResolveExtensions(settingsContext);
+            ResolveExtensions(extensionContext);
 
             var supplementalLayout = ResolveSupplementalLayout(supplementalSelection);
             var context = new SoftKeyboardLayoutContext(
@@ -187,7 +227,7 @@ public partial class SoftKeyboard
                     inputScope,
                     Page,
                     ShiftState,
-                        ActiveInputMethod,
+                    ActiveInputMethod,
                     supplementalLayout: SoftKeyboardSupplementalLayouts.Standard,
                     inputModeButton: InputModeButton
                 );
@@ -195,10 +235,9 @@ public partial class SoftKeyboard
                 layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context)!;
             }
 
+            _hasBuiltLayout = true;
             SetValue(CurrentLayoutPropertyKey, layout);
             SetValue(LayoutErrorPropertyKey, error);
-
-            UpdateSettingsContext(settingsContext);
         }
         finally
         {

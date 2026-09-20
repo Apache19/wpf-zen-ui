@@ -16,10 +16,11 @@ public partial class SoftKeyboard
     /// </summary>
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("Loaded", this);
+#endif
         _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
         _session.Register(this);
-
-        _ = EnsureCandidateSession();
 
         _window = Window.GetWindow(this);
 
@@ -95,6 +96,7 @@ public partial class SoftKeyboard
             CloseFlyouts();
 
             ResetCandidateSession();
+            _session?.EnsureInputMethodMonitoring();
 
             ReleaseSystemKeyboardSuppression(tryRestore: true);
 
@@ -173,6 +175,7 @@ public partial class SoftKeyboard
             CloseFlyouts();
 
             ResetCandidateSession();
+            _session?.EnsureInputMethodMonitoring();
 
             ReleaseSystemKeyboardSuppression(tryRestore: true);
         }

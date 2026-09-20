@@ -17,6 +17,17 @@ internal interface ISoftKeyboardInputMethodBackend
 }
 
 /// <summary>
+/// Reads current native identity without traversing installed languages and profiles.
+/// </summary>
+internal interface ISoftKeyboardActiveInputMethodBackend
+{
+    /// <summary>
+    /// Returns the active keyboard-category profile, or null when unavailable.
+    /// </summary>
+    SoftKeyboardInputMethod? GetActiveInputMethod();
+}
+
+/// <summary>
 /// Separates a platform mode command from backends that expose interpreted mode state.
 /// </summary>
 internal interface ISoftKeyboardInputModeButtonBackend

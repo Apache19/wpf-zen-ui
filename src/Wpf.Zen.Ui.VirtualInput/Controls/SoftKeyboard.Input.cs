@@ -27,14 +27,7 @@ public partial class SoftKeyboard
         switch (button.DataContext)
         {
             default:
-                if (button.Name == SettingsButtonPartName)
-                {
-                    // DropDownButton opens its Flyout after raising Click. Prepare the data while
-                    // editor focus still belongs to the text store; the button owns popup state.
-                    CloseFlyouts();
-                    RefreshSettings();
-                }
-                else if (button.Tag is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangePage } navigation)
+                if (button.Tag is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangePage } navigation)
                 {
                     ShowPage(navigation.Page);
                 }
@@ -95,8 +88,6 @@ public partial class SoftKeyboard
         _inputMethodMenuRequestVersion++;
 
         _inputMethodMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
-
-        SettingsMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (!IsOpen || !IsEnabled || !IsVisible)
         {
@@ -258,7 +249,9 @@ public partial class SoftKeyboard
         {
             RunInputMethodCommand((session, isCurrent) =>
             {
-                var actual = session.GetSnapshot().ActiveInputMethod;
+                var actual = session is ISoftKeyboardActiveInputMethodSession activeSession
+                    ? activeSession.GetActiveInputMethod()
+                    : session.GetSnapshot().ActiveInputMethod;
 
                 if (!isCurrent() || !HaveSameInputMethod(actual, _observedModeProfile)
                     || !HaveSameInputMethod(actual, ActiveInputMethod))

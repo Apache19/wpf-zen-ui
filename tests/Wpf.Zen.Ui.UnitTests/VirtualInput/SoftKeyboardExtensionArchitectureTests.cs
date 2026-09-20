@@ -18,7 +18,6 @@ using Wpf.Zen.Ui.VirtualInput.Input;
 using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
 using Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
-using Wpf.Zen.Ui.VirtualInput.Settings;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 
@@ -106,11 +105,53 @@ public class SoftKeyboardExtensionArchitectureTests
         WpfApplicationTestHost.Run(() =>
         {
             var keyboard = new SoftKeyboard();
+            keyboard.RefreshLayout();
 
             Assert.Same(EmptySoftKeyboardExtensionProvider.Default, keyboard.ExtensionProvider);
-            Assert.DoesNotContain(keyboard.SettingsItems, setting => setting.Id == "layout");
+            Assert.Equal(2, keyboard.AvailableSupplementalLayouts.Count);
             Assert.Null(keyboard.ExtensionError);
             Assert.NotEmpty(keyboard.CurrentLayout.Keys);
+        });
+    }
+
+    /// <summary>
+    /// Application selectors receive updated catalogs without mutating previously read snapshots.
+    /// </summary>
+    [Fact]
+    public void SupplementalCatalog_IsBindableAndKeepsPreviousSnapshotsImmutable()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard();
+            keyboard.RefreshLayout();
+            var original = keyboard.AvailableSupplementalLayouts;
+            var selector = new System.Windows.Controls.ItemsControl();
+            selector.SetBinding(System.Windows.Controls.ItemsControl.ItemsSourceProperty,
+                new System.Windows.Data.Binding(nameof(SoftKeyboard.AvailableSupplementalLayouts))
+                {
+                    Source = keyboard
+                });
+            Assert.Same(original, selector.ItemsSource);
+
+            keyboard.ExtensionProvider = new FixedExtensionProvider(new SoftKeyboardExtension(
+                supplementalLayouts: new FixedSupplementalProvider(new SoftKeyboardSupplementalLayout(
+                    "sample:catalog", "Catalog", new MarkerLayoutProvider("catalog")))));
+            keyboard.RefreshLayout();
+
+            Assert.Equal(2, original.Count);
+            Assert.Equal(3, keyboard.AvailableSupplementalLayouts.Count);
+            Assert.Same(keyboard.AvailableSupplementalLayouts, selector.ItemsSource);
+            var choices = Assert.IsAssignableFrom<IList<SoftKeyboardLayoutOption>>(
+                keyboard.AvailableSupplementalLayouts);
+            Assert.Throws<NotSupportedException>(() => choices.Clear());
+            keyboard.SelectSupplementalLayout("sample:catalog");
+            Assert.Equal("sample:catalog", keyboard.SelectedSupplementalLayout);
+            Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "catalog");
+
+            keyboard.ExtensionProvider = EmptySoftKeyboardExtensionProvider.Default;
+            keyboard.RefreshLayout();
+            Assert.Equal(2, keyboard.AvailableSupplementalLayouts.Count);
+            Assert.Throws<ArgumentException>(() => keyboard.SelectSupplementalLayout("sample:catalog"));
         });
     }
 
@@ -177,13 +218,10 @@ public class SoftKeyboardExtensionArchitectureTests
                 ),
             };
 
+            keyboard.RefreshLayout();
             Assert.NotNull(keyboard.ExtensionError);
             Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "first");
-            SoftKeyboardSetting layout = Assert.Single(
-                keyboard.SettingsItems,
-                setting => setting.Id == "layout"
-            );
-            Assert.Single(layout.Children, setting => setting.Id == "layout.sample:shared");
+            Assert.Single(keyboard.AvailableSupplementalLayouts, option => option.Id == "sample:shared");
 
             keyboard.SelectSupplementalLayout("sample:shared");
 
@@ -214,7 +252,8 @@ public class SoftKeyboardExtensionArchitectureTests
                 ),
             };
 
-            Assert.DoesNotContain(keyboard.SettingsItems, setting => setting.Id == "layout");
+            keyboard.RefreshLayout();
+            Assert.Equal(2, keyboard.AvailableSupplementalLayouts.Count);
             Assert.Throws<ArgumentException>(() =>
                 keyboard.SelectSupplementalLayout("sample:hidden"));
             Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => key.Text == "hidden");

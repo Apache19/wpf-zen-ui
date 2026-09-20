@@ -7,7 +7,7 @@
 核心的 `Wpf.Zen.Ui.VirtualInput.Extensions` 程序集。核心不扫描程序集、不执行模块初始化，也不维护
 进程级扩展注册表；每个 `SoftKeyboard` 通过 `ExtensionProvider` 显式选择自己的扩展组合。
 XAML 使用专属 XML 命名空间，C# API 按职责分布在 `.Controls`、`.Candidates`、`.Extensions`、
-`.InputMethods`、`.Input`、`.Layouts`、`.Settings` 与 `.Theming` 中。
+`.InputMethods`、`.Input`、`.Layouts` 与 `.Theming` 中。
 
 扩展库按扩展入口、输入法适配、布局、候选策略和语言路由划分目录。职责与依赖说明见
 [扩展库结构](../src/Wpf.Zen.Ui.VirtualInput.Extensions/README.md)。
@@ -291,6 +291,11 @@ JIS 与英文键盘配置使用各自的 OEM 排列；原生布局不提供映�
 `RowSpacing` / `ColumnSpacing` 默认均为 4 DIP。布局提供器应避免重叠并保持各状态的行数一致。
 极小容器下间距和键位会缩小；触摸使用应为键盘提供足够空间。
 
+默认键区使用 `SoftKeyboardKeyList`，直接生成 `SoftKeyboardKeyControl` 容器，并在准备容器时应用
+不可变布局的键位、内容和辅助名称。`SoftKeyboardPanel` 缓存行分组，尺寸或键内容变化不会重新分配行列表；
+子元素、行号或折叠状态变化时才重建分组。备用字符弹窗的内容模板在首次打开时创建。
+原生 `Grid` 的对比结果、测量方法及性能边界见 [布局性能评估](SoftKeyboard.LayoutPerformance.md)。
+
 ## 输入法观察、按钮和布局
 
 软键盘不公开统一的“当前输入模式”。`ActiveInputMethod` 表示最后提交的 Profile，
@@ -462,7 +467,7 @@ public sealed class AppInputModeAdapter : ISoftKeyboardInputModeAdapter
 
 ## 常驻头部与长按浮层
 
-头部左侧的设置 `DropDownButton` 常驻并保留头部高度，右侧显示候选和分页按钮。
+头部显示候选和分页按钮；应用自行提供配置入口。
 无候选或原生候选回退时，候选区域隐藏并仅显示当前输入法名称，不显示推断出的输入法模式；
 整个头部不会折叠。
 
@@ -727,6 +732,16 @@ conversion，也不根据返回值提前发布界面状态。请求失败或调�
 `Column`、`ColumnSpan`。有限宽度下键区按比例收缩；无限宽度测量（例如水平 StackPanel）下按最大单位
 列宽需求预留空间，避免排列时普通键被较宽的功能键挤压。默认布局不使用状态相关的折叠键。
 
+复用默认键区时可使用 `SoftKeyboardKeyList` 并绑定 `ItemsSource` 到 `CurrentLayout.Keys`，
+为其 `ItemsPanel` 配置 `SoftKeyboardPanel`，并绑定 `ColumnCount` 和间距属性。
+`ItemContainerStyle` 的目标类型是 `SoftKeyboardKeyControl`；`ItemTemplate` 定制的是
+`SoftKeyboardKey.Content` 的呈现，模板的数据上下文就是该内容。
+使用普通 `ItemsControl` 的自定义模板仍应把布局附加属性设置在其直接生成的容器上。
+
+Debug 构建中，单轮面板测量达到 16 ms 时输出 `[SoftKeyboard.Layout] Slow MEASURE completed`。
+日志分别记录容器生成准备（`generationMs`）、行分组检查或重建（`indexMs`）以及子元素测量
+（`childrenMs`）的耗时；子元素测量包含按键模板创建。Release 构建不执行这段计时和日志逻辑。
+
 自定义键区使用 `SoftKeyboardKeyControl` 并绑定 `Key`，键盘不把普通 Button 的 `DataContext`
 解释为按键。候选及页面按钮仍由键盘处理；应用按钮若未使用候选模型或动作 Tag，其 Click 事件继续向宿主冒泡。
 长按在键盘禁用、隐藏、卸载、替换模板、窗口失活或鼠标捕获中断时结束；普通松手仍保留正确的单击抑制行为。
@@ -740,7 +755,7 @@ dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
 & tests/Wpf.Zen.Ui.UnitTests/bin/Debug/net10.0-windows/Wpf.Zen.Ui.UnitTests.exe -class '*SoftKeyboard*'
 ```
 
-当前 VirtualInput 测试结果为 168 项、0 失败、6 项原生环境测试跳过、2 项显式测试未运行。
+当前 VirtualInput 测试结果为 504 项、0 失败、12 项原生环境测试跳过、2 项显式测试未运行。
 自动测试覆盖核心无扩展、扩展组合和冲突、布局注册链路、异步来源版本隔离、异常降级、动作取消、
 组合修饰键、候选列表扩展点，以及既有布局、菜单、候选、组合取消和目标隔离行为。
 `GeneratedLetterKey_InvokeInsertsThroughWindowsInputStream` 和
@@ -756,35 +771,50 @@ dotnet pack src/Wpf.Zen.Ui.VirtualInput.Extensions/Wpf.Zen.Ui.VirtualInput.Exten
     -c Debug -o artifacts/packages
 ```
 
-## 动态设置与附加布局
+## 初始化与按需发现
 
-默认模板的 `PART_SettingsButton` 是 `Wpf.Zen.Ui.Controls.DropDownButton`，`Flyout` 绑定每个键盘独享的
-`SettingsMenu`。菜单和菜单项保持不可聚焦，适合触摸／鼠标操作，避免切走编辑器的 TSF 文档。
-自定义模板可直接使用 `SettingsItems` 数据建立自己的呈现方式，也可省略设置按钮，保留程序化 API。
+构造阶段不生成布局或读取输入法目录。`CurrentLayout` 初始为共享的 `SoftKeyboardLayout.Empty`
+（无按键、一个逻辑列），`AvailableSupplementalLayouts` 初始为空；读取这两个属性不会隐式触发工作。
+关闭状态下的布局、扩展、目标和页面配置变更只标记失效，保留上次生成的快照。
+首次打开或重新打开时按最新配置生成布局；需提前查询布局或扩展目录的应用可以显式调用 `RefreshLayout()`。
+已有布局的刷新仍等待当前输入法观察稳定；首次显示可先使用最后已提交的上下文生成基础表面。
+按键路由事件在首次打开时注册一次；Popup 属性描述器在实际连接按键 Popup 时初始化。
+关闭、隐藏或禁用时暂停自动输入法观察；关闭状态的 Loaded 仅保留自动唤起需要的焦点跟踪。
+可用的 Windows 输入表面按需启动共享原生监听，最后一个表面停用时释放监听。
+候选会话在实际使用或显式候选刷新时创建。
 
-默认菜单结构为：
+Windows 会话实现 `ISoftKeyboardActiveInputMethodSession`：普通刷新和输入前验证只读取活动配置，
+不遍历全部语言和输入法。`InputMethods` 初始为空，仅通过 `RefreshInputMethods()` 或打开输入法
+切换菜单请求完整目录；`ActiveInputMethod` 独立更新，目录中的 IsActive 表示上次枚举时的状态。
+显式刷新可用于未加载/关闭的控件，目录立即发布，模式与键帽仍遵循原来的观察窗口。
+自定义来源可实现该可选接口；仅实现基础会话接口时，仍通过 GetSnapshot 提供观察数据。
 
-- 键盘开关
-  - 自动打开（`AnyFocus`）／手动打开（`Disabled`），独立单选组
-  - 分隔线
-  - 自动关闭（`FocusLeavesScope`）／手动关闭（`Manual`），独立单选组
-- 有附加面板时才显示分隔线和“键盘布局”子菜单，使用 `RadioMenuItem`
+WPF 控件和 TSF 调用留在所属 Dispatcher，不通过 Task.Run 转移线程。
+首次构造的分段测量、按需布局实现和复测结果见 [构造性能复核](SoftKeyboard.ConstructorPerformance.md)。
 
-原有 `TouchAndPen` 策略仍可通过属性设置；它不等同于菜单中的 `AnyFocus`，此时两个打开选项均不冒充选中。
+## 应用配置与附加布局
 
-设置引擎由以下部分组成：
+软键盘通过公开属性和布局选择 API 提供配置能力。控件库不提供设置菜单、菜单数据模型或设置提供器。
+应用自行决定配置入口、文案、持久化和交互方式。
+
+图库在点击外部 `DropDownButton` 时显式刷新布局目录并创建菜单，根据当前属性生成选中状态，在选择时调用
+`SetCurrentValue` 修改 `AutoShowMode`、`AutoHideMode`，保留现有属性绑定。
+打开策略包含 `Disabled`、`TouchAndPen` 和 `AnyFocus`；关闭策略独立选择 `Manual` 或 `FocusLeavesScope`。
+菜单关闭后由页面恢复编辑器焦点，页面卸载时关闭菜单。
 
 | API | 用途 |
 | --- | --- |
-| `SettingsProvider` / `ISoftKeyboardSettingsProvider` | 从不可变状态快照生成菜单树，可组合默认策略或整体替换 |
-| `SoftKeyboardSettingsContext` | 提供布局上下文、自动开关策略与当前 `AvailableLayouts` |
-| `SoftKeyboardSetting` | 菜单数据；`Header`、`Icon`、`ItemStyle` 为呈现槽，`Children` 为子级，`RadioGroup`、`IsChecked` 为单选状态，`Apply` 为动作 |
-| `SettingsItems` | 当前只读可观察菜单树，方便应用自定义呈现 |
-| `RefreshSettings()` / `SettingsError` | 刷新外部策略数据；提供器或呈现数据出错时回退默认菜单并保留诊断 |
+| `IsOpen` | 控制当前显示状态 |
+| `AutoShowMode` / `AutoHideMode` | 独立配置自动打开与关闭策略 |
+| `AvailableSupplementalLayouts` | 上次生成的可用布局快照，可绑定；初始为空，打开或显式刷新后包含 Automatic、Standard 与适用的扩展布局 |
 | `SelectSupplementalLayout(id)` / `SelectedSupplementalLayout` | 验证、选择并读取当前输入法的附加布局选择 |
 
+打开期间布局目录随输入上下文和扩展变化更新；关闭期间按需刷新，已取得的快照不变。
+应用执行延迟的选择前应检查该布局仍可用；`SelectSupplementalLayout` 会验证失效的目录，再安全应用选择。
+选择布局仍会安全取消组合，并在控件生命周期内按输入法记忆；应用负责跨启动持久化。
+
 附加布局通过 `ISoftKeyboardSupplementalLayoutProvider` 注册。每项把稳定 ID、显示名称、适用条件、
-Automatic 首选规则和实际布局提供器放在同一不可变模型中，因此菜单、校验、记忆和生成不会分叉：
+Automatic 首选规则和实际布局提供器放在同一不可变模型中，供应用发现布局，并统一用于校验、记忆和布局生成：
 
 ```csharp
 public sealed class AppLayouts : ISoftKeyboardSupplementalLayoutProvider
@@ -815,40 +845,6 @@ public sealed class AppExtensions : ISoftKeyboardExtensionProvider
 
 keyboard.ExtensionProvider = new AppExtensions();
 ```
-
-开关属性改变、已提交 Profile 或布局上下文改变和菜单打开时刷新设置；
-相同的呈现结果不会重复销毁菜单容器。
-单选组按菜单实例隔离，多个键盘互不干扰。默认动作使用 `SetCurrentValue`，不会移除宿主对开关属性的绑定。
-策略的生成方法不能更改键盘状态；自定义 `Apply` 动作作为普通应用回调执行，异常按普通回调传播。
-
-```csharp
-using Wpf.Zen.Ui.VirtualInput.Settings;
-
-public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
-{
-    public IEnumerable<SoftKeyboardSetting> CreateSettings(SoftKeyboardSettingsContext context)
-    {
-        foreach (var item in DefaultSoftKeyboardSettingsProvider.Default.CreateSettings(context))
-        {
-            yield return item.Id == "keyboard"
-                ? item with
-                {
-                    Header = "打开与关闭",
-                    Icon = new Wpf.Zen.Ui.Controls.FluentIconSource(
-                        Wpf.Zen.Ui.Controls.SymbolRegular.Settings24)
-                }
-                : item;
-        }
-
-        yield return new SoftKeyboardSetting("app.refresh", "刷新布局", k => k.RefreshLayout());
-    }
-}
-
-// keyboard.SettingsProvider = new AppKeyboardSettings();
-```
-
-图标应优先提供 `IconSource` 等数据，默认菜单为每项创建独立的内容呈现器，并支持隐式 `DataTemplate`。
-`ItemStyle` 应匹配该项实际生成的 `MenuItem`、`RadioMenuItem` 或 `Separator` 类型。
 
 布局查询使用 `ITfFnGetPreferredTouchKeyboardLayout.GetLayout`，只获取布局类型及标识，不获取系统面板的几何和行为。
 查询失败或输入法不实现接口时，`TouchLayoutPreference` 为 null；未知标识保留给自定义策略，不伪造系统支持。

@@ -4,7 +4,6 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using System.Windows.Input;
 using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
@@ -215,10 +214,7 @@ public partial class SoftKeyboard
             nameof(AutoShowMode),
             typeof(SoftKeyboardAutoShowMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(
-                SoftKeyboardAutoShowMode.Disabled,
-                (d, _) => ((SoftKeyboard)d).RefreshSettings()
-            ),
+            new PropertyMetadata(SoftKeyboardAutoShowMode.Disabled),
             static value => value is SoftKeyboardAutoShowMode mode
                 && Enum.IsDefined(typeof(SoftKeyboardAutoShowMode), mode)
         );
@@ -246,10 +242,7 @@ public partial class SoftKeyboard
             nameof(AutoHideMode),
             typeof(SoftKeyboardAutoHideMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(
-                SoftKeyboardAutoHideMode.FocusLeavesScope,
-                (d, _) => ((SoftKeyboard)d).RefreshSettings()
-            ),
+            new PropertyMetadata(SoftKeyboardAutoHideMode.FocusLeavesScope),
             static value => value is SoftKeyboardAutoHideMode mode
                 && Enum.IsDefined(typeof(SoftKeyboardAutoHideMode), mode)
         );
@@ -289,7 +282,8 @@ public partial class SoftKeyboard
     /// <remarks>
     /// Defaults to null. A non-null application provider has priority over extensions and the
     /// built-in provider; use CompositeSoftKeyboardLayoutProvider for ordered partial overrides.
-    /// Replacing this non-inherited property cancels key interactions and rebuilds the surface.
+    /// Replacing this non-inherited property rebuilds an open surface. Closed changes are applied
+    /// on reopening or RefreshLayout; layout discovery is not performed by the property setter.
     /// LayoutError exposes provider failures while a usable built-in layout is retained.
     /// </remarks>
     [Bindable(true)]
@@ -378,7 +372,7 @@ public partial class SoftKeyboard
     /// Gets the requested surface. The default, Automatic, follows the active editor input scope.
     /// </summary>
     /// <remarks>
-    /// Page identifiers are case-sensitive and extensible. Changes rebuild the key surface; the
+    /// Page identifiers are case-sensitive and extensible. Changes invalidate the key surface; the
     /// property does not inherit and cannot be animated. An unhandled page falls back to Automatic
     /// and records a LayoutError, keeping navigation state consistent with the displayed layout.
     /// </remarks>
@@ -425,7 +419,7 @@ public partial class SoftKeyboard
             nameof(CurrentLayout),
             typeof(SoftKeyboardLayout),
             typeof(SoftKeyboard),
-            new PropertyMetadata(null)
+            new PropertyMetadata(SoftKeyboardLayout.Empty)
         );
 
     /// <summary>
@@ -435,8 +429,12 @@ public partial class SoftKeyboard
         = CurrentLayoutPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets the immutable key layout currently rendered by the default template.
+    /// Gets the last generated immutable key layout, initially SoftKeyboardLayout.Empty.
     /// </summary>
+    /// <remarks>
+    /// Opening generates the current surface. Configuration changes while closed retain the last
+    /// snapshot until reopening or RefreshLayout; reading this property does not create a layout.
+    /// </remarks>
     public SoftKeyboardLayout CurrentLayout
     {
         get => (SoftKeyboardLayout)GetValue(CurrentLayoutProperty);
@@ -737,9 +735,10 @@ public partial class SoftKeyboard
 
         if ((bool)args.NewValue)
         {
+            keyboard.EnsureKeyEventHandlers();
+            keyboard._layoutDirty = true;
             keyboard.ResolveTarget();
-            keyboard.RebuildLayout();
-            keyboard.RefreshInputMethods();
+            keyboard.EnsureLayout();
             keyboard.RefreshInputMode();
             keyboard.RequestSystemKeyboardHide();
 
@@ -756,6 +755,7 @@ public partial class SoftKeyboard
             keyboard.CloseFlyouts();
 
             keyboard.ResetCandidateSession();
+            keyboard._session?.EnsureInputMethodMonitoring();
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: true);
         }
     }

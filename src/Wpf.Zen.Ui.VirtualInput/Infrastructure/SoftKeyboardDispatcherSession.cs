@@ -24,18 +24,17 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
 
     private readonly Dispatcher          _dispatcher;
     private readonly List<WeakReference> _keyboards = [];
-    private readonly InputMethodMonitor  _inputMethodMonitor;
+
+    private InputMethodMonitor? _inputMethodMonitor;
 
     private int _lastTouchOrPenTick;
 
     /// <summary>
-    /// Attaches one input pipeline observer and native monitor for the dispatcher lifetime.
+    /// Attaches lightweight focus observation; native monitoring starts with an active keyboard.
     /// </summary>
     private SoftKeyboardDispatcherSession(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
-
-        _inputMethodMonitor = new InputMethodMonitor(dispatcher, OnInputMethodStateInvalidated);
 
         InputManager.Current.PreProcessInput += OnPreProcessInput;
 
@@ -66,15 +65,35 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         }
 
         _keyboards.Add(new WeakReference(keyboard));
-        _inputMethodMonitor.EnsureNotifications();
+        EnsureInputMethodMonitoring();
     }
 
     /// <summary>
-    /// Retries profile monitoring after WPF creates a text-services host for a focused editor.
+    /// Connects monitoring while a Windows-backed surface is usable, releasing it otherwise.
+    /// Later focus changes retry connections after WPF creates its text-services host.
     /// </summary>
     internal void EnsureInputMethodMonitoring()
     {
-        _inputMethodMonitor.EnsureNotifications();
+        var needed = _keyboards.Any(reference => reference.Target is SoftKeyboard keyboard
+            && keyboard.CanObserveInputMethods
+            && keyboard.InputMethodSource is WindowsSoftKeyboardInputMethodSource
+                { UsesNativeNotifications: true });
+
+        if (!needed)
+        {
+            _inputMethodMonitor?.Dispose();
+            _inputMethodMonitor = null;
+            return;
+        }
+
+        if (_inputMethodMonitor is null)
+        {
+            _inputMethodMonitor = new InputMethodMonitor(_dispatcher, OnInputMethodStateInvalidated);
+        }
+        else
+        {
+            _inputMethodMonitor.EnsureNotifications();
+        }
     }
 
     /// <summary>
@@ -83,6 +102,7 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     internal void Unregister(SoftKeyboard keyboard)
     {
         _keyboards.RemoveAll(reference => !reference.IsAlive || ReferenceEquals(reference.Target, keyboard));
+        EnsureInputMethodMonitoring();
     }
 
     /// <summary>
@@ -135,7 +155,7 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
         var elapsed             = unchecked(Environment.TickCount - _lastTouchOrPenTick);
         var touchOrPenInitiated = elapsed is >= 0 and <= 1000;
 
-        _inputMethodMonitor.EnsureNotifications();
+        EnsureInputMethodMonitoring();
 
         ForEachKeyboard(
             keyboard => keyboard.OnSessionFocusChanged(
@@ -174,7 +194,8 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     {
         InputManager.Current.PreProcessInput -= OnPreProcessInput;
 
-        _inputMethodMonitor.Dispose();
+        _inputMethodMonitor?.Dispose();
+        _inputMethodMonitor = null;
 
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;
 

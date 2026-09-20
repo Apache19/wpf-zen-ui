@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -747,7 +747,8 @@ public class SoftKeyboardTests
             Assert.Equal(4, keyboard.RowSpacing);
             Assert.Equal(4, keyboard.ColumnSpacing);
             Assert.True(metadata.BindsTwoWayByDefault);
-            Assert.NotEmpty(keyboard.CurrentLayout.Keys);
+            Assert.Same(SoftKeyboardLayout.Empty, keyboard.CurrentLayout);
+            Assert.Empty(keyboard.AvailableSupplementalLayouts);
         });
     }
 
@@ -1578,7 +1579,7 @@ public class SoftKeyboardTests
                 keyboard.Template.FindName("PART_PreviousCandidatePageButton", keyboard)
             );
             Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
-            // The persistent settings button reserves the row even when the candidate surface is empty.
+            // The hidden candidate surface reserves its height to avoid moving the key rows.
             Assert.True(((FrameworkElement)candidateBar.Parent).ActualHeight > 0);
             Assert.Equal(Visibility.Collapsed, previous.Visibility);
             double emptyHeight = keyboard.ActualHeight;
@@ -1686,6 +1687,8 @@ public class SoftKeyboardTests
             {
                 IsOpen = true
             };
+            // Explicit acquisition makes this unhosted test own a candidate session.
+            keyboard.RefreshCandidatesAsync().GetAwaiter().GetResult();
             candidates.Publish(keyboard, 1, 1, "candidate");
 
             keyboard.IsOpen = false;

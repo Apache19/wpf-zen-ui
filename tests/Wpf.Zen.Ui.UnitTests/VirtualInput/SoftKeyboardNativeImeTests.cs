@@ -21,7 +21,6 @@ using Wpf.Zen.Ui.VirtualInput.InputMethods;
 using Wpf.Zen.Ui.VirtualInput.Interop;
 using Wpf.Zen.Ui.VirtualInput.Interop.TextServicesFramework;
 using Wpf.Zen.Ui.VirtualInput.Layouts;
-using Wpf.Zen.Ui.VirtualInput.Settings;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace Wpf.Zen.Ui.UnitTests.VirtualInput;

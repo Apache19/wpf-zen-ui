@@ -38,16 +38,17 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// available for a replacement paging surface.
 /// The optional <c>PART_Candidates</c> list binds Candidates and SelectedCandidateIndex.
 /// It owns containers and scrolling and reports CandidateInvoked without taking editor focus.
-/// Keys use <see cref="SoftKeyboardKeyControl"/> with its Key property bound to the layout item.
+/// <see cref="SoftKeyboardKeyList"/> prepares <see cref="SoftKeyboardKeyControl"/> containers
+/// directly from immutable layout items.
 /// Each cap owns its gesture and alternative popup; this control only coordinates cancellation
 /// and executes semantic input requests against the active editor.
+/// Applications configure behavior through the public properties and own their configuration UI.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = KeysPartName, Type = typeof(ItemsControl))]
 [TemplatePart(Name = CandidatesPartName, Type = typeof(SoftKeyboardCandidateList))]
 [TemplatePart(Name = PreviousCandidatePageButtonPartName, Type = typeof(ButtonBase))]
 [TemplatePart(Name = NextCandidatePageButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = SettingsButtonPartName, Type = typeof(Wpf.Zen.Ui.Controls.DropDownButton))]
 public partial class SoftKeyboard : Control
 {
     private const string KeysPartName                        = "PART_Keys";
@@ -71,6 +72,7 @@ public partial class SoftKeyboard : Control
     private DispatcherOperation?           _inputPaneHideOperation;
     private DispatcherTimer?               _inputPaneHideTimer;
     private bool                           _systemKeyboardHiddenByThisControl;
+    private bool                           _keyEventHandlersAttached;
 
     static SoftKeyboard()
     {
@@ -93,7 +95,7 @@ public partial class SoftKeyboard : Control
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SoftKeyboard"/> class.
+    /// Initializes a closed keyboard. Layout discovery starts on opening or RefreshLayout.
     /// </summary>
     public SoftKeyboard()
         : this(SoftKeyboardPlatformServices.Default)
@@ -107,6 +109,9 @@ public partial class SoftKeyboard : Control
     /// <param name="platform">The native service boundary.</param>
     internal SoftKeyboard(SoftKeyboardPlatformServices platform)
     {
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("Constructor", this);
+#endif
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
 
         _inputObservation = new InputMethodObservationCoordinator(
@@ -118,24 +123,11 @@ public partial class SoftKeyboard : Control
                 ReleaseCandidatePresentation();
             });
 
-        SettingsItems = [with(_settingsItems)];
-        SettingsMenu  = InitializeSettings();
-
         Candidates = [with(_candidates)];
 
         AddHandler(
             ButtonBase.ClickEvent,
             new RoutedEventHandler(OnButtonClick)
-        );
-
-        AddHandler(
-            SoftKeyboardKeyControl.InteractionStartedEvent,
-            new RoutedEventHandler(OnKeyInteractionStarted)
-        );
-
-        AddHandler(
-            SoftKeyboardKeyControl.InputRequestedEvent,
-            new EventHandler<SoftKeyboardInputRequestedEventArgs>(OnKeyInputRequested)
         );
 
         Loaded   += OnLoaded;
@@ -156,8 +148,41 @@ public partial class SoftKeyboard : Control
                 new WindowsSoftKeyboardInputMethodSource(platform.InputMethods)
             );
         }
+    }
 
-        RebuildLayout();
+    /// <summary>
+    /// Connects routed key input once, when this control first opens its input surface.
+    /// </summary>
+    private void EnsureKeyEventHandlers()
+    {
+        if (_keyEventHandlersAttached)
+        {
+            return;
+        }
+
+        AddHandler(
+            SoftKeyboardKeyControl.InteractionStartedEvent,
+            new RoutedEventHandler(OnKeyInteractionStarted)
+        );
+
+        AddHandler(
+            SoftKeyboardKeyControl.InputRequestedEvent,
+            new EventHandler<SoftKeyboardInputRequestedEventArgs>(OnKeyInputRequested)
+        );
+
+        _keyEventHandlersAttached = true;
+    }
+
+    /// <inheritdoc />
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        if (IsOpen)
+        {
+            // Also covers derived controls whose metadata defaults IsOpen to true.
+            EnsureKeyEventHandlers();
+            EnsureLayout();
+        }
     }
 
     /// <summary>
@@ -255,8 +280,6 @@ public partial class SoftKeyboard : Control
         _inputMethodMenuRequestVersion++;
 
         CancelKeyInteraction();
-
-        SettingsMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (_inputMethodMenu is not null)
         {

@@ -159,6 +159,7 @@ public class SoftKeyboardCompositionTests
                 var keyboard = new SoftKeyboard
                 {
                     LayoutProvider = new SoftKeyboardLayoutRule(c => c.Page == "app:third", _ => custom),
+                    IsOpen = true,
                 };
 
                 keyboard.ShowPage("app:third");

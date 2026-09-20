@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Controls;
 
 // ReSharper disable once CheckNamespace
@@ -15,17 +16,16 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// <para>
 /// Direct children select a logical row through <see cref="RowProperty"/> and a horizontal slot
 /// through <see cref="ColumnProperty"/> and <see cref="ColumnSpanProperty"/>. All rows use the same
-/// <see cref="ColumnCount"/>, so an unoccupied column remains real space instead of being distributed
-/// among the populated keys. This is what permits naturally staggered keyboard rows.
+/// <see cref="ColumnCount"/>, so an unoccupied column reserves space instead of distributing it
+/// among populated keys. This permits naturally staggered keyboard rows.
 /// </para>
 /// <para>
-/// Row identifiers are grouping keys rather than absolute coordinates: populated rows are ordered by
-/// identifier and gaps in the identifiers do not create empty visual rows. All populated rows receive
-/// the same height.
+/// Row identifiers are grouping keys: populated rows are ordered by identifier and gaps in the
+/// identifiers do not create empty visual rows. All populated rows receive the same height.
 /// </para>
 /// <para>
 /// <see cref="ColumnSpacing"/> is a grid gutter. A key that spans multiple columns also spans the
-/// gutters between those columns, matching WPF <see cref="Grid"/> span geometry and CSS grid tracks.
+/// gutters between those columns, matching WPF <see cref="Grid"/> span geometry.
 /// Under an undersized finite constraint, gutters contract before tracks reach zero.
 /// </para>
 /// <para>
@@ -36,6 +36,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public sealed class SoftKeyboardPanel : Panel
 {
     private readonly List<SoftKeyboardPanelRow> _rows = [];
+    private readonly List<(UIElement Child, int Row, bool Collapsed)> _rowAssignments = [];
+    private readonly Dictionary<int, SoftKeyboardPanelRow> _rowLookup = [];
 
     static SoftKeyboardPanel()
     {
@@ -66,7 +68,7 @@ public sealed class SoftKeyboardPanel : Panel
         );
 
     /// <summary>
-    /// Gets or sets the number of equal-width logical columns shared by every row. The default is one.
+    /// Gets or sets the number of equal-width columns shared by every row. The default is one.
     /// </summary>
     /// <remarks>
     /// Empty leading and trailing columns deliberately reserve space. Child columns and spans that
@@ -289,8 +291,8 @@ public sealed class SoftKeyboardPanel : Panel
     #endregion
 
     /// <summary>
-    /// Measures children against their shared grid slots and derives the smallest uniform track that
-    /// satisfies every child's desired width.
+    /// Measures children against their shared grid slots and derives the smallest uniform track
+    /// that satisfies every child's desired width.
     /// </summary>
     /// <param name="availableSize">
     /// The size offered by the parent; either dimension may be infinite.
@@ -300,8 +302,20 @@ public sealed class SoftKeyboardPanel : Panel
     /// </returns>
     protected override Size MeasureOverride(Size availableSize)
     {
-        BuildRows();
-        MeasureCollapsedChildren();
+#if DEBUG
+        var started = Stopwatch.GetTimestamp();
+#endif
+        // InternalChildren generates and prepares item containers on first access. Keep that work
+        // separate from row indexing and child measurement when diagnosing a slow initial layout.
+        var children = InternalChildren;
+#if DEBUG
+        var generated = Stopwatch.GetTimestamp();
+#endif
+        EnsureRows(children);
+#if DEBUG
+        var indexed = Stopwatch.GetTimestamp();
+#endif
+        MeasureCollapsedChildren(children);
 
         if (_rows.Count == 0)
         {
@@ -334,10 +348,27 @@ public sealed class SoftKeyboardPanel : Panel
             }
         }
 
-        return new Size(
+        var desiredSize = new Size(
             GetTotalExtent(desiredTrackWidth * ColumnCount, ColumnCount, columnSpacing),
             GetTotalExtent(desiredRowHeight * _rows.Count, _rows.Count, rowSpacing)
         );
+#if DEBUG
+        var finished = Stopwatch.GetTimestamp();
+        var millisecondsPerTick = 1000D / Stopwatch.Frequency;
+
+        if ((finished - started) * millisecondsPerTick >= 16D)
+        {
+            Debug.WriteLine(
+                $"[SoftKeyboard.Layout] Slow MEASURE completed; children={children.Count}, "
+                + $"rows={_rows.Count}, columns={ColumnCount}, available={availableSize}, "
+                + $"generationMs={(generated - started) * millisecondsPerTick:F3}, "
+                + $"indexMs={(indexed - generated) * millisecondsPerTick:F3}, "
+                + $"childrenMs={(finished - indexed) * millisecondsPerTick:F3}, "
+                + $"totalMs={(finished - started) * millisecondsPerTick:F3}."
+            );
+        }
+#endif
+        return desiredSize;
     }
 
     /// <summary>
@@ -347,10 +378,12 @@ public sealed class SoftKeyboardPanel : Panel
     /// <returns>The allocated size.</returns>
     protected override Size ArrangeOverride(Size finalSize)
     {
-        // Attached placement properties can change between measure and arrange. Rebuilding is cheap
-        // for keyboard-sized collections and guarantees that arrangement never consumes stale groups.
-        BuildRows();
-        ArrangeCollapsedChildren();
+        // Placement and visibility can change between passes. Validate the cached grouping without
+        // allocating row lists or delegates when only the available size or key content changed.
+        var children = InternalChildren;
+
+        EnsureRows(children);
+        ArrangeCollapsedChildren(children);
 
         if (_rows.Count == 0)
         {
@@ -388,11 +421,17 @@ public sealed class SoftKeyboardPanel : Panel
         return finalSize;
     }
 
+    /// <summary>
+    /// Restricts gutters to finite nonnegative distances accepted by WPF layout.
+    /// </summary>
     private static bool IsValidSpacing(object? value)
     {
         return value is double spacing and >= 0D && !double.IsInfinity(spacing);
     }
 
+    /// <summary>
+    /// Contracts gutters when they alone would exceed the finite space offered by the parent.
+    /// </summary>
     private static double GetEffectiveSpacing(double available, int count, double requested)
     {
         if (count <= 1 || double.IsInfinity(available))
@@ -403,6 +442,9 @@ public sealed class SoftKeyboardPanel : Panel
         return Math.Min(requested, Math.Max(0D, available) / (count - 1));
     }
 
+    /// <summary>
+    /// Divides usable space uniformly while preserving an unconstrained measurement axis.
+    /// </summary>
     private static double GetSharedExtent(double available, int count, double spacing)
     {
         if (double.IsInfinity(available))
@@ -413,6 +455,9 @@ public sealed class SoftKeyboardPanel : Panel
         return count == 0 ? 0D : GetUsableExtent(available, count, spacing) / count;
     }
 
+    /// <summary>
+    /// Removes the intervening gutters to obtain the space available to tracks.
+    /// </summary>
     private static double GetUsableExtent(double available, int count, double spacing)
     {
         return double.IsInfinity(available)
@@ -420,6 +465,9 @@ public sealed class SoftKeyboardPanel : Panel
             : Math.Max(0D, available - (spacing * Math.Max(0, count - 1)));
     }
 
+    /// <summary>
+    /// Includes internal gutters in the slot of a key spanning multiple tracks.
+    /// </summary>
     private static double GetSpannedExtent(double trackWidth, int columnSpan, double spacing)
     {
         return double.IsInfinity(trackWidth)
@@ -427,11 +475,17 @@ public sealed class SoftKeyboardPanel : Panel
             : Math.Max(0D, (trackWidth * columnSpan) + (spacing * (columnSpan - 1)));
     }
 
+    /// <summary>
+    /// Converts a spanned key's desired width into its minimum uniform track requirement.
+    /// </summary>
     private static double GetRequiredTrackExtent(double desiredWidth, int columnSpan, double spacing)
     {
         return Math.Max(0D, desiredWidth - (spacing * (columnSpan - 1))) / columnSpan;
     }
 
+    /// <summary>
+    /// Adds inter-track spacing and keeps the panel's desired extent finite.
+    /// </summary>
     private static double GetTotalExtent(double contentExtent, int count, double spacing)
     {
         return count == 0
@@ -439,6 +493,9 @@ public sealed class SoftKeyboardPanel : Panel
             : Math.Min(double.MaxValue, contentExtent + (spacing * (count - 1)));
     }
 
+    /// <summary>
+    /// Reads the current column range, clamped to the panel's declared logical grid.
+    /// </summary>
     private SoftKeyboardGridPlacement GetPlacement(UIElement child)
     {
         // WPF Grid clamps an out-of-range index to its final definition and then clamps the span to
@@ -450,23 +507,60 @@ public sealed class SoftKeyboardPanel : Panel
         return new SoftKeyboardGridPlacement(column, columnSpan);
     }
 
-    private void BuildRows()
+    /// <summary>
+    /// Reuses row groups until child identity, row assignment, or collapsed state changes.
+    /// </summary>
+    /// <remarks>
+    /// Inspecting direct children also handles visibility changes without per-child subscriptions.
+    /// Hidden children still reserve a slot. Column and span changes are read during each pass and
+    /// do not require regrouping. The item generator must supply children before this call.
+    /// </remarks>
+    private void EnsureRows(UIElementCollection children)
     {
-        _rows.Clear();
-
-        foreach (UIElement child in InternalChildren)
+        var unchanged = _rowAssignments.Count == children.Count;
+        if (unchanged)
         {
-            if (child.Visibility == Visibility.Collapsed)
+            for (var index = 0; index < children.Count; index++)
+            {
+                var child = children[index];
+                var cached = _rowAssignments[index];
+                if (!ReferenceEquals(cached.Child, child)
+                    || cached.Row != GetRow(child)
+                    || cached.Collapsed != (child.Visibility == Visibility.Collapsed))
+                {
+                    unchanged = false;
+                    break;
+                }
+            }
+        }
+
+        if (unchanged)
+        {
+            return;
+        }
+
+        _rows.Clear();
+        _rowLookup.Clear();
+        _rowAssignments.Clear();
+
+        for (var index = 0; index < children.Count; index++)
+        {
+            var child     = children[index];
+            var rowId     = GetRow(child);
+            var collapsed = child.Visibility == Visibility.Collapsed;
+
+            _rowAssignments.Add((child, rowId, collapsed));
+
+            if (collapsed)
             {
                 continue;
             }
 
-            var rowId = GetRow(child);
-            var row   = _rows.FirstOrDefault(candidate => candidate.Id == rowId);
-
-            if (row is null)
+            if (!_rowLookup.TryGetValue(rowId, out var row))
             {
                 row = new SoftKeyboardPanelRow(rowId);
+
+                _rowLookup.Add(rowId, row);
                 _rows.Add(row);
             }
 
@@ -476,9 +570,12 @@ public sealed class SoftKeyboardPanel : Panel
         _rows.Sort(static (left, right) => left.Id.CompareTo(right.Id));
     }
 
-    private void MeasureCollapsedChildren()
+    /// <summary>
+    /// Lets WPF acknowledge collapsed children without including them in the occupied row count.
+    /// </summary>
+    private static void MeasureCollapsedChildren(UIElementCollection children)
     {
-        foreach (UIElement child in InternalChildren)
+        foreach (UIElement child in children)
         {
             if (child.Visibility == Visibility.Collapsed)
             {
@@ -487,9 +584,12 @@ public sealed class SoftKeyboardPanel : Panel
         }
     }
 
-    private void ArrangeCollapsedChildren()
+    /// <summary>
+    /// Clears the previous layout slot of a child removed from visible row grouping.
+    /// </summary>
+    private static void ArrangeCollapsedChildren(UIElementCollection children)
     {
-        foreach (UIElement child in InternalChildren)
+        foreach (UIElement child in children)
         {
             if (child.Visibility == Visibility.Collapsed)
             {
