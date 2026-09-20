@@ -30,12 +30,17 @@ public partial class SoftKeyboard
         _ = ExecuteCustomActionAsync(action, alternative);
     }
 
+    /// <summary>
+    /// Owns the action context until completion and suppresses failures from expired lifetimes.
+    /// </summary>
     private async Task ExecuteCustomActionAsync(ISoftKeyboardAction action, string? alternative)
     {
         if (!PrepareTargetForInput())
         {
             return;
         }
+
+        var isInputCurrent = CaptureInputLifetime();
 
         using var operation = _actionOperation.Start(
             CancellationToken.None, replace: true, ReportExtensionError
@@ -46,12 +51,16 @@ public partial class SoftKeyboard
             return;
         }
 
-        var operationVersion = _inputOperationVersion;
-
-        var context = new SoftKeyboardActionContext(this, operationVersion, operation.Token);
+        var lifetime = new SoftKeyboardOperationContext(operation, isInputCurrent);
+        var context  = new SoftKeyboardActionContext(this, lifetime, operation.Token);
 
         try
         {
+            if (!lifetime.IsCurrent)
+            {
+                return;
+            }
+
             if (alternative is not null
                 && action is IAsyncSoftKeyboardAlternateKeyAction asyncAlternate)
             {
@@ -76,12 +85,12 @@ public partial class SoftKeyboard
                 throw new InvalidOperationException("The custom key action has no executable capability.");
             }
         }
-        catch (OperationCanceledException) when (!operation.IsCurrent)
+        catch (OperationCanceledException) when (!lifetime.IsCurrent)
         {
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
-            if (operation.IsCurrent)
+            if (lifetime.IsCurrent)
             {
                 ReportExtensionError(exception);
             }
@@ -92,10 +101,13 @@ public partial class SoftKeyboard
         }
     }
 
-    internal bool SendActionText(string text)
+    /// <summary>
+    /// Sends action text and consumes one-shot Shift while the initiating owner remains current.
+    /// </summary>
+    internal bool SendActionText(string text, Func<bool>? isCurrent = null)
     {
-        var sent = TrySendText(text);
-        if (sent && ShiftState == SoftKeyboardShiftState.Once)
+        var sent = TrySendText(text, isCurrent);
+        if (sent && (isCurrent is null || isCurrent()) && ShiftState == SoftKeyboardShiftState.Once)
         {
             SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
         }
@@ -116,14 +128,15 @@ public partial class SoftKeyboard
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrEmpty(text) || !PrepareTargetForInput())
+        var isInputCurrent = CaptureInputLifetime();
+
+        if (string.IsNullOrEmpty(text) || !IsCurrent() || !PrepareTargetForInput() || !IsCurrent())
         {
             return false;
         }
 
         if (_activeTextComposition is not null)
         {
-            var version            = _inputOperationVersion;
             var compositionVersion = _compositionStartVersion;
             var target             = ActiveTarget;
 
@@ -136,9 +149,8 @@ public partial class SoftKeyboard
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (version != _inputOperationVersion
+            if (!IsCurrent()
                 || compositionVersion != _compositionStartVersion
-                || !ReferenceEquals(target, ActiveTarget)
                 || !ReferenceEquals(target, Keyboard.FocusedElement)
                 || _activeTextComposition is not null)
             {
@@ -146,32 +158,33 @@ public partial class SoftKeyboard
             }
         }
 
-        return (isContextCurrent is null || isContextCurrent()) && SendActionText(text);
+        return SendActionText(text, IsCurrent);
+
+        bool IsCurrent()
+        {
+            return !cancellationToken.IsCancellationRequested
+                && isInputCurrent() && (isContextCurrent is null || isContextCurrent());
+        }
     }
 
-    internal bool SendActionKey(Key key, ModifierKeys modifiers)
+    /// <summary>
+    /// Sends an action chord using the same ownership guard before and after focus restoration.
+    /// </summary>
+    internal bool SendActionKey(Key key, ModifierKeys modifiers, Func<bool>? isCurrent = null)
     {
         if (key == Key.None || !Enum.IsDefined(typeof(Key), key))
         {
             throw new ArgumentOutOfRangeException(nameof(key));
         }
 
-        var sent = TrySendVirtualKey(key, modifiers);
-        if (sent && IsCharacterKey(key) && ShiftState == SoftKeyboardShiftState.Once)
+        var sent = TrySendVirtualKey(key, modifiers, isCurrent);
+        if (sent && (isCurrent is null || isCurrent())
+            && IsCharacterKey(key) && ShiftState == SoftKeyboardShiftState.Once)
         {
             SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
         }
 
         return sent;
-    }
-
-    internal bool IsActionContextCurrent(int operationVersion)
-    {
-        return operationVersion == _inputOperationVersion
-            && IsOpen
-            && IsVisible
-            && IsEnabled
-            && ActiveTarget is not null;
     }
 
     private void CancelAsyncAction()

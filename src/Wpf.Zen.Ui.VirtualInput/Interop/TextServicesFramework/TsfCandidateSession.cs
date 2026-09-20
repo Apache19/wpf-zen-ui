@@ -232,6 +232,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         );
 
         var operationToken = operationCancellation.Token;
+        SoftKeyboardTsfCandidateContext? context = null;
 
         try
         {
@@ -259,7 +260,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             using var compositionLease = composition;
 
-            var context = CreateBehaviorContext(
+            context = CreateBehaviorContext(
                 keyboard, nativeBehavior, operationToken, cancellationToken
             );
 
@@ -269,7 +270,11 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 {
                     operationToken.ThrowIfCancellationRequested();
 
-                    if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
+                    // Extension discovery, error observers and COM validation can reenter.
+                    // Each fallback step must still refer to the original request snapshot.
+                    if (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion
+                        || !ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                        || !context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion)
                     {
                         return SoftKeyboardCandidateOperationResult.NotHandled;
                     }
@@ -289,7 +294,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        if (!IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
+                        if (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion
+                            || !IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
                         {
                             return SoftKeyboardCandidateOperationResult.NotHandled;
                         }
@@ -299,6 +305,11 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                     }
 
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    if (!context.IsCurrent)
+                    {
+                        return SoftKeyboardCandidateOperationResult.NotHandled;
+                    }
 
                     if (result?.Handled == true)
                     {
@@ -311,14 +322,29 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
                         return result;
                     }
+
+                    // An extension may await a page update and decline handling. Its original
+                    // candidate index must never be replayed against the newer snapshot.
+                    if (context.SnapshotVersion != keyboard.CandidateSnapshotVersion)
+                    {
+                        return SoftKeyboardCandidateOperationResult.NotHandled;
+                    }
                 }
             }
 
             operationToken.ThrowIfCancellationRequested();
 
+            if (context is not null
+                && (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
             // SetSelection can synchronously end this UI element and begin another in the same
             // document. Only finalize the captured element if its generation survived selection.
-            if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
+            if (!ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                || (context is not null
+                    && (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion)))
             {
                 return SoftKeyboardCandidateOperationResult.NotHandled;
             }
@@ -331,6 +357,15 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             );
 
             if (selectionResult < 0 || !ValidateCandidateOperation(keyboard, nativeBehavior, version))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
+            // Selection and document validation may synchronously cancel the caller or change
+            // input ownership without ending this native element.
+            operationToken.ThrowIfCancellationRequested();
+
+            if (context is not null && !context.IsCurrent)
             {
                 return SoftKeyboardCandidateOperationResult.NotHandled;
             }
@@ -378,6 +413,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             return SoftKeyboardCandidateOperationResult.Failure(exception);
         }
+        finally
+        {
+            context?.Expire();
+        }
     }
 
     internal async Task<SoftKeyboardCandidateOperationResult> TryMovePageAsync(
@@ -406,6 +445,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
         );
 
         var operationToken = operationCancellation.Token;
+        SoftKeyboardTsfCandidateContext? context = null;
 
         try
         {
@@ -416,14 +456,17 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 return SoftKeyboardCandidateOperationResult.NotHandled;
             }
 
-            var context = CreateBehaviorContext(keyboard, nativeBehavior, operationToken, cancellationToken);
+            context = CreateBehaviorContext(keyboard, nativeBehavior, operationToken, cancellationToken);
             if (context is not null)
             {
                 foreach (var behavior in keyboard.GetTsfCandidateBehaviors())
                 {
                     operationToken.ThrowIfCancellationRequested();
 
-                    if (!ValidateCandidateOperation(keyboard, nativeBehavior, version))
+                    // Revalidate after callbacks before handing the page request to another extension.
+                    if (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion
+                        || !ValidateCandidateOperation(keyboard, nativeBehavior, version)
+                        || !context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion)
                     {
                         return SoftKeyboardCandidateOperationResult.NotHandled;
                     }
@@ -443,7 +486,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        if (!IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
+                        if (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion
+                            || !IsCandidateOperationCurrent(keyboard, nativeBehavior, version))
                         {
                             return SoftKeyboardCandidateOperationResult.NotHandled;
                         }
@@ -454,21 +498,50 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
                     cancellationToken.ThrowIfCancellationRequested();
 
+                    if (!context.IsCurrent)
+                    {
+                        return SoftKeyboardCandidateOperationResult.NotHandled;
+                    }
+
                     if (result?.Handled == true)
                     {
                         return result;
+                    }
+
+                    if (context.SnapshotVersion != keyboard.CandidateSnapshotVersion)
+                    {
+                        return SoftKeyboardCandidateOperationResult.NotHandled;
                     }
                 }
             }
 
             operationToken.ThrowIfCancellationRequested();
 
+            if (context is not null
+                && (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
             // TSF owns the page boundaries. Selecting the first item on an adjacent page asks
             // the TIP to move its current page without committing text; FinalizeCandidate is
             // deliberately reserved for an actual candidate-button invocation.
             if (!ValidateCandidateOperation(keyboard, nativeBehavior, version)
-                || nativeBehavior.SetSelection(pageStart) < 0
+                || (context is not null
+                    && (!context.IsCurrent || context.SnapshotVersion != keyboard.CandidateSnapshotVersion)))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
+            if (nativeBehavior.SetSelection(pageStart) < 0
                 || !ValidateCandidateOperation(keyboard, nativeBehavior, version))
+            {
+                return SoftKeyboardCandidateOperationResult.NotHandled;
+            }
+
+            operationToken.ThrowIfCancellationRequested();
+
+            if (context is not null && !context.IsCurrent)
             {
                 return SoftKeyboardCandidateOperationResult.NotHandled;
             }
@@ -499,6 +572,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
             keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
 
             return SoftKeyboardCandidateOperationResult.Failure(exception);
+        }
+        finally
+        {
+            context?.Expire();
         }
     }
 

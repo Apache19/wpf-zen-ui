@@ -13,8 +13,11 @@ namespace Wpf.Zen.Ui.VirtualInput.Candidates;
 public sealed class SoftKeyboardTsfCandidateContext
 {
     private readonly SoftKeyboardCandidateHost _host;
-    private readonly CancellationToken _cancellationToken;
-    private readonly CancellationToken _callerCancellationToken;
+    private readonly CancellationToken         _cancellationToken;
+    private readonly CancellationToken         _callerCancellationToken;
+    private readonly Func<bool>                _isOwnerCurrent;
+
+    private bool _expired;
 
     /// <summary>
     /// Captures the current page and the cancellation boundaries of its candidate operation.
@@ -32,6 +35,7 @@ public sealed class SoftKeyboardTsfCandidateContext
         _host                    = host;
         _cancellationToken       = cancellationToken;
         _callerCancellationToken = callerCancellationToken;
+        _isOwnerCurrent          = host.CaptureOperationValidity();
         ElementType              = elementType;
         Candidates               = candidates;
         PageNumber               = pageNumber;
@@ -87,7 +91,13 @@ public sealed class SoftKeyboardTsfCandidateContext
     public bool TrySendKey(Key key, ModifierKeys modifiers = ModifierKeys.None)
     {
         _cancellationToken.ThrowIfCancellationRequested();
-        return _host.TrySendKey(key, modifiers);
+
+        return _host.TrySendKey(
+            key, modifiers,
+            () => IsCurrent
+                  && !_cancellationToken.IsCancellationRequested
+                  && SnapshotVersion == _host.SnapshotVersion
+        );
     }
 
     /// <summary>
@@ -113,10 +123,25 @@ public sealed class SoftKeyboardTsfCandidateContext
 
         var changed = await _host
             .WaitForSnapshotChangeAsync(SnapshotVersion, timeout, token)
-            .ConfigureAwait(false);
+            .ConfigureAwait(true);
 
         token.ThrowIfCancellationRequested();
 
-        return changed;
+        return changed && IsCurrent;
+    }
+
+    /// <summary>
+    /// Gets operation ownership independently from element end and snapshot acknowledgements.
+    /// </summary>
+    internal bool IsCurrent => !_expired
+        && !_callerCancellationToken.IsCancellationRequested
+        && _isOwnerCurrent();
+
+    /// <summary>
+    /// Revokes retained extension contexts when their invoking operation finishes.
+    /// </summary>
+    internal void Expire()
+    {
+        _expired = true;
     }
 }

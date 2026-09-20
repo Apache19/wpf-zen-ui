@@ -18,6 +18,7 @@ internal sealed class SoftKeyboardOperationSlot
 #pragma warning disable IDISP006 // This slot owns publication rights; the executing caller owns disposal.
     private Operation? _current;
 #pragma warning restore IDISP006
+    private long _version;
 
     /// <summary>
     /// Starts an operation, either replacing the current operation or rejecting concurrent input.
@@ -31,7 +32,7 @@ internal sealed class SoftKeyboardOperationSlot
         }
 
         var previous  = _current;
-        var operation = new Operation(this, cancellationToken);
+        var operation = new Operation(this, cancellationToken, ++_version);
 
 #pragma warning disable IDISP003 // Replaced operations release their own resources after execution finishes.
         _current = operation;
@@ -47,6 +48,7 @@ internal sealed class SoftKeyboardOperationSlot
     internal void Cancel(Action<Exception> reportError)
     {
         var previous = _current;
+        _version++;
 
 #pragma warning disable IDISP003 // Cancellation revokes publication without disposing a running operation.
         _current = null;
@@ -56,13 +58,16 @@ internal sealed class SoftKeyboardOperationSlot
     }
 
     /// <summary>
-    /// Revokes related operations together before any cancellation callback can start replacement work.
+    /// Revokes related operations before cancellation callbacks can start replacement work.
     /// </summary>
     internal static void CancelTogether(
         SoftKeyboardOperationSlot first, SoftKeyboardOperationSlot second, Action<Exception> reportError)
     {
         var firstOperation  = first._current;
         var secondOperation = second._current;
+
+        first._version++;
+        second._version++;
 
 #pragma warning disable IDISP003 // Running callers dispose the detached operations after execution.
         first._current  = null;
@@ -80,12 +85,16 @@ internal sealed class SoftKeyboardOperationSlot
     {
         private readonly SoftKeyboardOperationSlot _owner;
         private readonly CancellationTokenSource   _cancellation;
+        private readonly long                      _version;
+        private readonly CancellationToken         _callerToken;
 
         private bool _disposed;
 
-        internal Operation(SoftKeyboardOperationSlot owner, CancellationToken cancellationToken)
+        internal Operation(SoftKeyboardOperationSlot owner, CancellationToken cancellationToken, long version)
         {
             _owner        = owner;
+            _version      = version;
+            _callerToken  = cancellationToken;
             _cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             Token         = _cancellation.Token;
         }
@@ -100,6 +109,12 @@ internal sealed class SoftKeyboardOperationSlot
         /// </summary>
         internal bool IsCurrent => !_disposed
             && !Token.IsCancellationRequested && ReferenceEquals(_owner._current, this);
+
+        /// <summary>
+        /// Gets whether queued results remain valid, including after normal execution completion.
+        /// </summary>
+        internal bool IsLatest => !Token.IsCancellationRequested
+            && !_callerToken.IsCancellationRequested && _version == _owner._version;
 
         /// <summary>
         /// Releases execution resources without disturbing a replacement operation.
@@ -122,7 +137,7 @@ internal sealed class SoftKeyboardOperationSlot
         }
 
         /// <summary>
-        /// Notifies all cancellation callbacks; callback failure cannot prevent ownership revocation.
+        /// Notifies cancellation callbacks; callback failure cannot prevent ownership revocation.
         /// </summary>
         internal void Cancel(Action<Exception> reportError)
         {

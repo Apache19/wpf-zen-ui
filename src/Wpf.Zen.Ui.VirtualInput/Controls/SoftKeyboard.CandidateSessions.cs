@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
@@ -112,38 +113,52 @@ public partial class SoftKeyboard
             return;
         }
 
+        var isInputCurrent = CaptureInputLifetime();
+
         using var operation = _candidateRefreshOperation.Start(
             cancellationToken, replace: true, SetCandidateError
         );
 
-        if (operation is null || !operation.IsCurrent
-            || !IsCandidateSessionCurrent(state.Version, state.Session))
+        if (operation is null)
+        {
+            return;
+        }
+
+        var context = new SoftKeyboardOperationContext(
+            operation,
+            () => isInputCurrent() && IsCandidateSessionCurrent(state.Version, state.Session)
+        );
+
+        if (!context.IsCurrent)
         {
             return;
         }
 
         var refreshVersion = ++_candidateRefreshVersion;
 
-        using var refreshScope = _candidateHost!.EnterRefresh(refreshVersion, operation.Token);
+        using var refreshScope = _candidateHost!.EnterOperation(context, refreshVersion);
 
         try
         {
             await state.Session.RefreshAsync(operation.Token).ConfigureAwait(true);
 
-            if (operation.IsCurrent && IsCandidateSessionCurrent(state.Version, state.Session))
+            if (context.IsCurrent)
             {
                 SetValue(CandidateErrorPropertyKey, null);
             }
         }
-        catch (OperationCanceledException) when (!operation.IsCurrent)
+        catch (OperationCanceledException) when (!context.IsCurrent)
         {
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
-            if (operation.IsCurrent && IsCandidateSessionCurrent(state.Version, state.Session))
+            if (context.IsCurrent)
             {
                 SetValue(CandidateErrorPropertyKey, exception);
-                ReleaseCandidatePresentation();
+                if (context.IsCurrent)
+                {
+                    ReleaseCandidatePresentation();
+                }
             }
         }
     }
@@ -166,7 +181,7 @@ public partial class SoftKeyboard
         }
 
         if (cancellationToken.IsCancellationRequested
-            || !_candidates.Contains(candidate) || !CanPresentCandidates || !PrepareTargetForInput())
+            || !_candidates.Contains(candidate) || !PrepareCandidateOperation())
         {
             return Task.FromResult(false);
         }
@@ -199,7 +214,7 @@ public partial class SoftKeyboard
         }
 
         if (cancellationToken.IsCancellationRequested
-            || !CanPresentCandidates || !PrepareTargetForInput())
+            || !PrepareCandidateOperation())
         {
             return Task.FromResult(false);
         }
@@ -236,27 +251,57 @@ public partial class SoftKeyboard
         );
     }
 
-    internal bool SendCandidateNavigationKey(Key key, ModifierKeys modifiers)
+    /// <summary>
+    /// Injects candidate navigation only while the original operation still owns input.
+    /// </summary>
+    internal bool SendCandidateNavigationKey(
+        Key key, ModifierKeys modifiers, Func<bool> isCurrent)
     {
-        return TrySendVirtualKey(key, modifiers);
+        return TrySendVirtualKey(key, modifiers, isCurrent);
     }
 
+    /// <summary>
+    /// Keeps a selection or page request tied to the snapshot preceding reentrant focus callbacks.
+    /// </summary>
+    private bool PrepareCandidateOperation()
+    {
+        var isInputCurrent  = CaptureInputLifetime();
+        var sessionVersion  = _candidateSessionVersion;
+        var snapshotVersion = CandidateSnapshotVersion;
+        var prepared        = CanPresentCandidates && PrepareTargetForInput();
+
+        var current = prepared && isInputCurrent()
+            && sessionVersion == _candidateSessionVersion && snapshotVersion == CandidateSnapshotVersion;
+
+        if (prepared && !current)
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.Operations] Stale REQUEST rejected; kind=Candidate, stage=Prepare."
+            );
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// Marshals publication to the dispatcher and revalidates queued operation ownership there.
+    /// </summary>
     internal void PublishCandidateSnapshot(
         SoftKeyboardCandidateHost host,
         SoftKeyboardCandidateSnapshot snapshot,
         int? refreshVersion,
-        CancellationToken cancellationToken)
+        SoftKeyboardOperationContext? context)
     {
         if (!Dispatcher.CheckAccess())
         {
             _ = Dispatcher.BeginInvoke(
-                new Action(() => PublishCandidateSnapshot(host, snapshot, refreshVersion, cancellationToken))
+                new Action(() => PublishCandidateSnapshot(host, snapshot, refreshVersion, context))
             );
 
             return;
         }
 
-        if (cancellationToken.IsCancellationRequested
+        if ((context is not null && !context.CanPublish)
             || !ReferenceEquals(host, _candidateHost)
             || (refreshVersion.HasValue && refreshVersion.Value != _candidateRefreshVersion)
             || !host.CanPresentCandidates)
@@ -320,10 +365,17 @@ public partial class SoftKeyboard
         ];
     }
 
+    /// <summary>
+    /// Holds one input operation across provider execution, publication and error callbacks.
+    /// Snapshot changes after invocation may acknowledge the operation without expiring its result.
+    /// </summary>
     private async Task<bool> RunCandidateOperationAsync(
         Func<ISoftKeyboardCandidateSession, CancellationToken, Task<SoftKeyboardCandidateOperationResult>> operation,
         CancellationToken cancellationToken)
     {
+        var snapshotVersion = CandidateSnapshotVersion;
+        var isInputCurrent  = CaptureInputLifetime();
+
         var state = EnsureCandidateSession();
         if (state.Session is null)
         {
@@ -334,23 +386,41 @@ public partial class SoftKeyboard
             cancellationToken, replace: false, SetCandidateError
         );
 
-        if (execution is null || !execution.IsCurrent
-            || !IsCandidateSessionCurrent(state.Version, state.Session))
+        if (execution is null)
         {
             return false;
         }
 
+        var context = new SoftKeyboardOperationContext(
+            execution,
+            () => isInputCurrent() && IsCandidateSessionCurrent(state.Version, state.Session),
+            () => snapshotVersion == CandidateSnapshotVersion
+        );
+
+        if (!context.IsCurrent)
+        {
+            return false;
+        }
+
+        using var operationScope = _candidateHost!.EnterOperation(context);
+
         SetValue(CandidateErrorPropertyKey, null);
 
-        var observationGeneration = _inputObservation.Generation;
         try
         {
+            // Error observers can synchronously replace the source or target.
+            if (!context.IsCurrent || snapshotVersion != CandidateSnapshotVersion)
+            {
+                return false;
+            }
+
             var result = await operation(state.Session, execution.Token).ConfigureAwait(true);
 
-            if (!IsCandidateSessionCurrent(state.Version, state.Session)
-                || observationGeneration != _inputObservation.Generation
-                || !execution.IsCurrent)
+            if (!context.IsCurrent)
             {
+                Debug.WriteLine(
+                    "[SoftKeyboard.Operations] Stale COMPLETION rejected; kind=Candidate."
+                );
                 return false;
             }
 
@@ -364,20 +434,21 @@ public partial class SoftKeyboard
                 SetValue(CandidateErrorPropertyKey, result.Error);
             }
 
-            return execution.IsCurrent
-                && IsCandidateSessionCurrent(state.Version, state.Session)
-                && result is { Handled: true, Succeeded: true };
+            return context.IsCurrent && result is { Handled: true, Succeeded: true };
         }
-        catch (OperationCanceledException) when (!execution.IsCurrent)
+        catch (OperationCanceledException) when (!context.IsCurrent)
         {
             return false;
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
-            if (execution.IsCurrent && IsCandidateSessionCurrent(state.Version, state.Session))
+            if (context.IsCurrent)
             {
                 SetValue(CandidateErrorPropertyKey, exception);
-                ReleaseCandidatePresentation();
+                if (context.IsCurrent)
+                {
+                    ReleaseCandidatePresentation();
+                }
             }
 
             return false;

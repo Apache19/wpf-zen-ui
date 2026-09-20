@@ -81,7 +81,7 @@ public class SoftKeyboardOperationSlotTests
     }
 
     /// <summary>
-    /// Cancellation callbacks can replace ownership without old cleanup detaching the new operation.
+    /// Cancellation callbacks replace ownership without old cleanup detaching the new operation.
     /// </summary>
     [Fact]
     public void Replacement_ReentrantCancellationPreservesTheNewestOwner()
@@ -127,7 +127,7 @@ public class SoftKeyboardOperationSlotTests
     }
 
     /// <summary>
-    /// Related operations detach together so old cancellation callbacks cannot lose their replacements.
+    /// Related operations detach together so old callbacks cannot lose their replacements.
     /// </summary>
     [Fact]
     public void GroupCancellation_DoesNotCancelWorkStartedByAnOldCallback()
@@ -156,5 +156,35 @@ public class SoftKeyboardOperationSlotTests
     private static void Fail(Exception exception)
     {
         Assert.Fail(exception.ToString());
+    }
+
+    /// <summary>
+    /// Queued results survive normal completion but expire on caller cancellation or newer work.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CompletedOperation_QueuedPublicationRetainsOnlyOriginalOwnership(bool cancelCaller)
+    {
+        using var cancellation = new CancellationTokenSource();
+        var slot = new SoftKeyboardOperationSlot();
+        using var operation = slot.Start(cancellation.Token, replace: true, Fail);
+        Assert.NotNull(operation);
+        var context = new SoftKeyboardOperationContext(operation, () => true);
+#pragma warning disable IDISP017 // Finish execution before examining its already queued results.
+        operation.Dispose();
+#pragma warning restore IDISP017
+        Assert.False(context.IsCurrent);
+        Assert.True(context.CanPublish);
+        if (cancelCaller)
+        {
+            cancellation.Cancel();
+        }
+        else
+        {
+            using var replacement = slot.Start(TestContext.Current.CancellationToken, replace: true, Fail);
+        }
+
+        Assert.False(context.CanPublish);
     }
 }

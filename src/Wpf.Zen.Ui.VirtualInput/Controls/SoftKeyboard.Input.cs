@@ -355,14 +355,23 @@ public partial class SoftKeyboard
         return TrySendVirtualKey(key, shift ? ModifierKeys.Shift : ModifierKeys.None);
     }
 
-    private bool TrySendVirtualKey(Key key, ModifierKeys modifiers)
+    /// <summary>
+    /// Injects a chord after target preparation and optional compound ownership validation.
+    /// </summary>
+    private bool TrySendVirtualKey(Key key, ModifierKeys modifiers, Func<bool>? isCurrent = null)
     {
-        if (!PrepareTargetForInput())
+        if ((isCurrent is not null && !isCurrent()) || !PrepareTargetForInput()
+            || (isCurrent is not null && !isCurrent()))
         {
             return false;
         }
 
         var sent = _platform.Input.SendVirtualKey(key, modifiers);
+        if (isCurrent is not null && !isCurrent())
+        {
+            return sent;
+        }
+
         if (sent)
         {
             QueueCandidateBridgeRefresh();
@@ -376,9 +385,10 @@ public partial class SoftKeyboard
     /// Sends literal text only when the validated target has no active composition. A pending
     /// composition requests cancellation and returns false so callers can observe actual delivery.
     /// </summary>
-    private bool TrySendText(string text)
+    private bool TrySendText(string text, Func<bool>? isCurrent = null)
     {
-        if (!PrepareTargetForInput())
+        if ((isCurrent is not null && !isCurrent()) || !PrepareTargetForInput()
+            || (isCurrent is not null && !isCurrent()))
         {
             return false;
         }
@@ -392,6 +402,11 @@ public partial class SoftKeyboard
         }
 
         var sent = _platform.Input.SendUnicode(text);
+        if (isCurrent is not null && !isCurrent())
+        {
+            return sent;
+        }
+
         if (sent)
         {
             QueueCandidateBridgeRefresh();

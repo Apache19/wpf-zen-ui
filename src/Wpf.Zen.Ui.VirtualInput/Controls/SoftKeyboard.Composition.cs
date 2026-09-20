@@ -100,23 +100,24 @@ public partial class SoftKeyboard
             return;
         }
 
+        var isInputCurrent     = CaptureInputLifetime();
+        var compositionVersion = _compositionStartVersion;
+        var operationTarget    = ActiveTarget;
+
         if (!TryCancelActiveComposition())
         {
             return;
         }
 
-        // Completion may arrive after a target switch, close/reopen or unload/reload. A version
-        // also rejects a round trip back to the same editor; identity alone cannot detect that.
-        var operationVersion = _inputOperationVersion;
-        var operationTarget  = ActiveTarget;
+        // Completion belongs to the profile, editor and composition captured before Escape.
+        // A new composition may both start and finish before this idle callback runs.
 
         _ = Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(
                 () =>
                 {
-                    if (operationVersion != _inputOperationVersion
-                        || !ReferenceEquals(operationTarget, ActiveTarget)
+                    if (!isInputCurrent() || compositionVersion != _compositionStartVersion
                         || !ReferenceEquals(operationTarget, Keyboard.FocusedElement))
                     {
                         return;

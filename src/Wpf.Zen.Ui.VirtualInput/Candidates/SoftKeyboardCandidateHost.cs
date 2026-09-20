@@ -13,11 +13,13 @@ namespace Wpf.Zen.Ui.VirtualInput.Candidates;
 /// </summary>
 /// <remarks>
 /// A host is valid only while its source remains attached to the keyboard. Late publications are
-/// ignored after expiration. Publications made from a worker thread are marshalled to the keyboard dispatcher.
+/// ignored after expiration. Worker-thread publications are marshalled to the keyboard dispatcher.
+/// Calls made during refresh, commit or paging inherit that operation's ownership across awaits.
+/// Source notifications may publish outside an operation while this host remains active.
 /// </remarks>
 public sealed class SoftKeyboardCandidateHost
 {
-    private readonly AsyncLocal<RefreshScope?> _refresh = new();
+    private readonly AsyncLocal<OperationScope?> _operation = new();
 
     private SoftKeyboard? _keyboard;
 
@@ -43,7 +45,7 @@ public sealed class SoftKeyboardCandidateHost
     }
 
     /// <summary>
-    /// Gets a value indicating whether the keyboard currently owns a visible, editable input target.
+    /// Gets whether the keyboard currently owns a visible, editable input target.
     /// </summary>
     public bool CanPresentCandidates
     {
@@ -67,8 +69,13 @@ public sealed class SoftKeyboardCandidateHost
             return;
         }
 
-        var refresh = _refresh.Value;
-        keyboard.PublishCandidateSnapshot(this, snapshot, refresh?.Version, refresh?.Token ?? default);
+        var operation = _operation.Value;
+        if (operation is not null && !operation.Context.IsExecuting)
+        {
+            return;
+        }
+
+        keyboard.PublishCandidateSnapshot(this, snapshot, operation?.Version, operation?.Context);
     }
 
     /// <summary>
@@ -79,7 +86,32 @@ public sealed class SoftKeyboardCandidateHost
     /// <returns>Whether Windows accepted the complete key chord.</returns>
     public bool TrySendKey(Key key, ModifierKeys modifiers = ModifierKeys.None)
     {
-        return GetKeyboard().SendCandidateNavigationKey(key, modifiers);
+        return TrySendKey(key, modifiers, CaptureOperationValidity(forInput: true));
+    }
+
+    /// <summary>
+    /// Checks captured ownership again after focus callbacks and candidate discovery finish.
+    /// </summary>
+    internal bool TrySendKey(Key key, ModifierKeys modifiers, Func<bool> isCurrent)
+    {
+        var keyboard = GetKeyboard();
+        keyboard.VerifyAccess();
+        return keyboard.SendCandidateNavigationKey(key, modifiers, isCurrent);
+    }
+
+    /// <summary>
+    /// Captures operation ownership for contexts retained outside their original execution flow.
+    /// </summary>
+    internal Func<bool> CaptureOperationValidity(bool forInput = false)
+    {
+        var keyboard = GetKeyboard();
+        keyboard.VerifyAccess();
+
+        var isInputCurrent = keyboard.CaptureInputLifetime();
+        var context        = _operation.Value?.Context;
+
+        return () => ReferenceEquals(keyboard.ActiveCandidateHost, this) && isInputCurrent()
+            && (context is null || (forInput ? context.CanSendInput : context.IsCurrent));
     }
 
     /// <summary>
@@ -87,14 +119,27 @@ public sealed class SoftKeyboardCandidateHost
     /// </summary>
     /// <param name="version">The version observed before starting an operation.</param>
     /// <param name="timeout">The maximum acknowledgement interval.</param>
-    /// <param name="cancellationToken">Cancels a request that no longer owns the input session.</param>
+    /// <param name="cancellationToken">Cancels a request that no longer owns input.</param>
     /// <returns>True when a newer snapshot was published; otherwise false.</returns>
-    public Task<bool> WaitForSnapshotChangeAsync(
+    public async Task<bool> WaitForSnapshotChangeAsync(
         int version,
         TimeSpan timeout,
         CancellationToken cancellationToken)
     {
-        return GetKeyboard().WaitForCandidateSnapshotChangeAsync(version, timeout, cancellationToken);
+        var isCurrent = CaptureOperationValidity();
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!isCurrent())
+        {
+            return false;
+        }
+
+        var changed = await GetKeyboard()
+            .WaitForCandidateSnapshotChangeAsync(version, timeout, cancellationToken)
+            .ConfigureAwait(true);
+
+        return changed && isCurrent();
     }
 
     /// <summary>
@@ -116,12 +161,12 @@ public sealed class SoftKeyboardCandidateHost
     }
 
     /// <summary>
-    /// Captures refresh ownership across awaits and worker-thread publication.
+    /// Captures compound operation ownership across awaits and worker-thread publication.
     /// </summary>
-    internal IDisposable EnterRefresh(int refreshVersion, CancellationToken cancellationToken)
+    internal IDisposable EnterOperation(SoftKeyboardOperationContext context, int? refreshVersion = null)
     {
-        var scope = new RefreshScope(this, _refresh.Value, refreshVersion, cancellationToken);
-        _refresh.Value = scope;
+        var scope = new OperationScope(this, _operation.Value, refreshVersion, context);
+        _operation.Value = scope;
 
         return scope;
     }
@@ -135,24 +180,29 @@ public sealed class SoftKeyboardCandidateHost
         return keyboard;
     }
 
-    private sealed class RefreshScope : IDisposable
+    /// <summary>
+    /// Restores an enclosing operation while keeping asynchronous flows tied to their owner.
+    /// </summary>
+    private sealed class OperationScope : IDisposable
     {
-        private readonly RefreshScope?              _previous;
+        private readonly OperationScope?            _previous;
         private          SoftKeyboardCandidateHost? _host;
 
-        internal RefreshScope(
-            SoftKeyboardCandidateHost host, RefreshScope? previous, int version, CancellationToken token)
+        internal OperationScope(
+            SoftKeyboardCandidateHost host, OperationScope? previous,
+            int? version, SoftKeyboardOperationContext context)
         {
             _host     = host;
             _previous = previous;
             Version   = version;
-            Token     = token;
+            Context   = context;
         }
 
-        internal int Version { get; }
+        internal int? Version { get; }
 
-        internal CancellationToken Token { get; }
+        internal SoftKeyboardOperationContext Context { get; }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             SoftKeyboardCandidateHost? host = _host;
@@ -164,7 +214,7 @@ public sealed class SoftKeyboardCandidateHost
 
             _host = null;
 
-            host._refresh.Value = _previous;
+            host._operation.Value = _previous;
         }
     }
 }

@@ -16,18 +16,18 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// </remarks>
 public sealed class SoftKeyboardActionContext
 {
-    private readonly int               _operationVersion;
-    private readonly CancellationToken _cancellationToken;
+    private readonly SoftKeyboardOperationContext _lifetime;
+    private readonly CancellationToken            _cancellationToken;
 
     private SoftKeyboard? _keyboard;
 
     internal SoftKeyboardActionContext(
         SoftKeyboard keyboard,
-        int operationVersion,
+        SoftKeyboardOperationContext lifetime,
         CancellationToken cancellationToken)
     {
         _keyboard          = keyboard;
-        _operationVersion  = operationVersion;
+        _lifetime          = lifetime;
         _cancellationToken = cancellationToken;
     }
 
@@ -47,7 +47,7 @@ public sealed class SoftKeyboardActionContext
             throw new ArgumentException("Input text is required.", nameof(text));
         }
 
-        return GetKeyboard().SendActionText(text);
+        return GetKeyboard().SendActionText(text, IsCurrent);
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public sealed class SoftKeyboardActionContext
         return keyboard.SendActionTextAsync(
             text,
             _cancellationToken,
-            () => ReferenceEquals(_keyboard, keyboard) && keyboard.IsActionContextCurrent(_operationVersion)
+            IsCurrent
         );
     }
 
@@ -91,7 +91,7 @@ public sealed class SoftKeyboardActionContext
     /// </returns>
     public bool TrySendKey(Key key, ModifierKeys modifiers = ModifierKeys.None)
     {
-        return GetKeyboard().SendActionKey(key, modifiers);
+        return GetKeyboard().SendActionKey(key, modifiers, IsCurrent);
     }
 
     /// <summary>
@@ -138,11 +138,19 @@ public sealed class SoftKeyboardActionContext
 
         _cancellationToken.ThrowIfCancellationRequested();
 
-        if (!keyboard.IsActionContextCurrent(_operationVersion))
+        if (!IsCurrent())
         {
             throw new InvalidOperationException("The key action context no longer owns the input session.");
         }
 
         return keyboard;
+    }
+
+    /// <summary>
+    /// Revalidates the whole action after focus restoration and asynchronous continuations.
+    /// </summary>
+    private bool IsCurrent()
+    {
+        return _keyboard is not null && _lifetime.IsCurrent;
     }
 }

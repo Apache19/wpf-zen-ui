@@ -1016,6 +1016,143 @@ public class TsfCandidateLifetimeTests
     }
 
     /// <summary>
+    /// A changed page within the same native element cannot receive a fallback using old indices.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public Task PendingExtension_RejectsFallbackAfterSnapshotChange(bool movePage, bool fail)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            var extension = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            extension.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded);
+            var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
+            provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
+                new[] { new SoftKeyboardExtension(candidateBehavior: extension) });
+            scope.Keyboard.ExtensionProvider = provider;
+            var pending = new TaskCompletionSource<SoftKeyboardCandidateOperationResult>();
+            SoftKeyboardTsfCandidateContext? context = null;
+            extension.CommitAsync(
+                Arg.Any<SoftKeyboardTsfCandidateContext>(), Arg.Any<SoftKeyboardCandidate>(),
+                Arg.Any<CancellationToken>()).Returns(call =>
+            {
+                context = call.Arg<SoftKeyboardTsfCandidateContext>();
+                return pending.Task;
+            });
+            extension.MovePageAsync(
+                Arg.Any<SoftKeyboardTsfCandidateContext>(), Arg.Any<int>(),
+                Arg.Any<CancellationToken>()).Returns(call =>
+            {
+                context = call.Arg<SoftKeyboardTsfCandidateContext>();
+                return pending.Task;
+            });
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Begin(1);
+            var operation = movePage
+                ? native.Session.TryMovePageAsync(scope.Keyboard, 1, TestContext.Current.CancellationToken)
+                : native.Session.TryCommitAsync(scope.Keyboard, scope.Keyboard.Candidates[0],
+                    TestContext.Current.CancellationToken);
+            Assert.NotNull(context);
+            scope.Keyboard.ReplaceCandidates(
+                [new SoftKeyboardCandidate(0, "replacement")],
+                SoftKeyboardCandidatePresentationState.Embedded, 1, 2);
+            Assert.False(context.TrySendKey(Key.D1));
+            if (fail)
+            {
+                pending.SetException(new InvalidOperationException("obsolete extension"));
+            }
+            else
+            {
+                pending.SetResult(SoftKeyboardCandidateOperationResult.NotHandled);
+            }
+
+            Assert.False((await operation).Succeeded);
+            Assert.False(context.IsCurrent);
+            Assert.Empty(native.First.Selections);
+            Assert.Equal(0, native.First.Finalizations);
+            Assert.Null(scope.Keyboard.CandidateError);
+            Assert.Equal("replacement", Assert.Single(scope.Keyboard.Candidates).Text);
+        });
+    }
+
+    /// <summary>
+    /// Error observers may replace a page before the next extension in the fallback chain runs.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task ExtensionErrorObserver_RejectsNextBehaviorAfterSnapshotChange(bool movePage)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            var first = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            var second = Substitute.For<ISoftKeyboardTsfCandidateBehavior>();
+            first.GetPresentation(Arg.Any<SoftKeyboardTsfCandidateContext>()).Returns(
+                SoftKeyboardTsfCandidatePresentation.Embedded);
+            var provider = Substitute.For<ISoftKeyboardExtensionProvider>();
+            provider.GetExtensions(Arg.Any<SoftKeyboardExtensionContext>()).Returns(
+                new[]
+                {
+                    new SoftKeyboardExtension(candidateBehavior: first),
+                    new SoftKeyboardExtension(candidateBehavior: second),
+                });
+            scope.Keyboard.ExtensionProvider = provider;
+            var pending = new TaskCompletionSource<SoftKeyboardCandidateOperationResult>();
+            first.CommitAsync(Arg.Any<SoftKeyboardTsfCandidateContext>(),
+                Arg.Any<SoftKeyboardCandidate>(), Arg.Any<CancellationToken>()).Returns(pending.Task);
+            first.MovePageAsync(Arg.Any<SoftKeyboardTsfCandidateContext>(),
+                Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(pending.Task);
+            var nextCalls = 0;
+            Task<SoftKeyboardCandidateOperationResult> Continue()
+            {
+                nextCalls++;
+                return Task.FromResult(SoftKeyboardCandidateOperationResult.NotHandled);
+            }
+
+            second.CommitAsync(Arg.Any<SoftKeyboardTsfCandidateContext>(),
+                Arg.Any<SoftKeyboardCandidate>(), Arg.Any<CancellationToken>()).Returns(_ => Continue());
+            second.MovePageAsync(Arg.Any<SoftKeyboardTsfCandidateContext>(),
+                Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(_ => Continue());
+            using var native = new CandidateHarness(scope.Keyboard);
+            native.Begin(1);
+            var descriptor = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(
+                SoftKeyboard.CandidateErrorProperty, typeof(SoftKeyboard));
+            void ReplacePage(object? sender, EventArgs args)
+            {
+                scope.Keyboard.ReplaceCandidates([new SoftKeyboardCandidate(0, "replacement")],
+                    SoftKeyboardCandidatePresentationState.Embedded, 1, 2);
+            }
+
+            descriptor.AddValueChanged(scope.Keyboard, ReplacePage);
+            try
+            {
+                var operation = movePage
+                    ? native.Session.TryMovePageAsync(scope.Keyboard, 1, TestContext.Current.CancellationToken)
+                    : native.Session.TryCommitAsync(scope.Keyboard, scope.Keyboard.Candidates[0],
+                        TestContext.Current.CancellationToken);
+                pending.SetException(new InvalidOperationException("first extension failed"));
+                Assert.False((await operation).Succeeded);
+                Assert.Equal(0, nextCalls);
+                Assert.Empty(native.First.Selections);
+                Assert.Equal(0, native.First.Finalizations);
+                Assert.Equal("replacement", Assert.Single(scope.Keyboard.Candidates).Text);
+            }
+            finally
+            {
+                descriptor.RemoveValueChanged(scope.Keyboard, ReplacePage);
+            }
+        });
+    }
+
+    /// <summary>
     /// Caller cancellation prevents a late extension failure from changing a still-active native
     /// element.
     /// </summary>
@@ -1086,6 +1223,41 @@ public class TsfCandidateLifetimeTests
             Assert.Equal(0, native.First.Finalizations);
             Assert.Equal(0, native.Second.Finalizations);
             Assert.Equal(SoftKeyboardCandidatePresentationState.Embedded, scope.Keyboard.CandidatePresentationState);
+        });
+    }
+
+    /// <summary>
+    /// Cancellation during native selection stops finalization and subsequent page publication.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task NativeSelection_RechecksCallerCancellation(bool movePage)
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            using var scope = CreateEmbeddedScope();
+            await scope.DrainAsync();
+            using var native = new CandidateHarness(scope.Keyboard);
+            using var cancellation = new CancellationTokenSource();
+            native.Begin(1);
+            var snapshotVersion = scope.Keyboard.CandidateSnapshotVersion;
+            native.First.OnSelect = cancellation.Cancel;
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            {
+                if (movePage)
+                {
+                    await native.Session.TryMovePageAsync(scope.Keyboard, 1, cancellation.Token);
+                }
+                else
+                {
+                    await native.Session.TryCommitAsync(
+                        scope.Keyboard, scope.Keyboard.Candidates[0], cancellation.Token);
+                }
+            });
+            Assert.Single(native.First.Selections);
+            Assert.Equal(0, native.First.Finalizations);
+            Assert.Equal(snapshotVersion, scope.Keyboard.CandidateSnapshotVersion);
         });
     }
 
