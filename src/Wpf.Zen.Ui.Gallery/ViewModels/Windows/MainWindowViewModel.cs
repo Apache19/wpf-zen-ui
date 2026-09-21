@@ -131,8 +131,7 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("Image",   typeof(ImagePage)), new NavigationItem("Canvas",       typeof(CanvasPage)),
-                new NavigationItem("WebView", typeof(WebViewPage)), new NavigationItem("WebBrowser", typeof(WebBrowserPage)),
+                new NavigationItem("Image", typeof(ImagePage)), new NavigationItem("Canvas", typeof(CanvasPage)),
             },
         },
         new NavigationItem("Navigation", SymbolRegular.Navigation24, typeof(NavigationPage))
@@ -263,8 +262,6 @@ public partial class MainWindowViewModel : ViewModel
         string media = AddPage<MediaPage>("Media", isBreadcrumbVisible: false);
         AddPage<ImagePage>("Image", media);
         AddPage<CanvasPage>("Canvas", media);
-        AddPage<WebViewPage>("WebView", media);
-        AddPage<WebBrowserPage>("WebBrowser", media);
 
         string navigation = AddPage<NavigationPage>("Navigation", isBreadcrumbVisible: false);
         AddPage<BreadcrumbBarPage>("BreadcrumbBar", navigation);

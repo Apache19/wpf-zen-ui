@@ -15,7 +15,6 @@ public partial class WindowsViewModel(WindowsProviderService windowsProviderServ
     [ObservableProperty]
     public partial WindowCard[] WindowCards { get; set; } =
     [
-        new("Monaco", "Visual Studio Code in your WPF app.", SymbolRegular.CodeBlock24, "monaco"),
         new("Editor", "Text editor with tabbed background.", SymbolRegular.ScanText24, "editor"),
 #if DEBUG
         new("Sandbox", "Sandbox for controls testing.", SymbolRegular.ScanText24, "sandbox"),
@@ -32,10 +31,6 @@ public partial class WindowsViewModel(WindowsProviderService windowsProviderServ
 
         switch (value)
         {
-            case "monaco":
-                windowsProviderService.Show<MonacoWindow>();
-                break;
-
             case "editor":
                 windowsProviderService.Show<EditorWindow>();
                 break;
