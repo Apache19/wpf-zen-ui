@@ -96,3 +96,5 @@ HTHELP
 
 MonitorFromRect
 GetMonitorInfo
+MonitorFromWindow
+IsWindowEnabled

@@ -9,17 +9,19 @@ using Wpf.Zen.Ui.Gallery.Models;
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Dialogs;
 
 /// <summary>
-/// Provides immutable binding values for one presentation of the reusable message-box dialog.
+/// Provides immutable binding values for one presentation of the reusable prompt dialog.
 /// </summary>
 /// <remarks>
 /// Action roles are assigned here instead of being accepted as arbitrary command parameters from
 /// callers. Consequently the service always returns one of the documented, strongly typed results.
 /// </remarks>
-public sealed class MessageBoxDialogViewModel
+public sealed class PromptDialogViewModel
 {
-    /// <summary>Initializes a new instance of the <see cref="MessageBoxDialogViewModel"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PromptDialogViewModel"/> class.
+    /// </summary>
     /// <param name="options">The immutable request used to compose this presentation.</param>
-    public MessageBoxDialogViewModel(MessageBoxDialogOptions options)
+    public PromptDialogViewModel(PromptDialogOptions options)
     {
         if (options is null)
         {
@@ -28,12 +30,12 @@ public sealed class MessageBoxDialogViewModel
 
         if (string.IsNullOrWhiteSpace(options.Title))
         {
-            throw new ArgumentException("A message-box title is required.", nameof(options));
+            throw new ArgumentException("A prompt title is required.", nameof(options));
         }
 
         if (string.IsNullOrWhiteSpace(options.Message))
         {
-            throw new ArgumentException("A message-box message is required.", nameof(options));
+            throw new ArgumentException("A prompt message is required.", nameof(options));
         }
 
         Title         = options.Title;
@@ -42,34 +44,42 @@ public sealed class MessageBoxDialogViewModel
         HasIcon       = options.Icon.HasValue;
         IsDismissible = options.IsDismissible;
 
-        var actions = new List<MessageBoxDialogActionViewModel>(3)
+        var actions = new List<PromptDialogActionViewModel>(3)
         {
-            CreateAction(options.PrimaryButton, MessageBoxDialogResult.Primary),
+            CreateAction(options.PrimaryButton, PromptDialogResult.Primary),
         };
 
         if (options.SecondaryButton is { } secondaryButton)
         {
-            actions.Add(CreateAction(secondaryButton, MessageBoxDialogResult.Secondary));
+            actions.Add(CreateAction(secondaryButton, PromptDialogResult.Secondary));
         }
 
         if (options.CloseButton is { } closeButton)
         {
-            actions.Add(CreateAction(closeButton, MessageBoxDialogResult.Close, isCancel: true));
+            actions.Add(CreateAction(closeButton, PromptDialogResult.Close, isCancel: true));
         }
 
         Actions = actions.AsReadOnly();
     }
 
-    /// <summary>Gets the heading displayed by the dialog.</summary>
+    /// <summary>
+    /// Gets the heading displayed by the dialog.
+    /// </summary>
     public string Title { get; }
 
-    /// <summary>Gets the message displayed in the dialog body.</summary>
+    /// <summary>
+    /// Gets the message displayed in the dialog body.
+    /// </summary>
     public string Message { get; }
 
-    /// <summary>Gets the Fluent icon displayed beside the message.</summary>
+    /// <summary>
+    /// Gets the Fluent icon displayed beside the message.
+    /// </summary>
     public SymbolRegular Icon { get; }
 
-    /// <summary>Gets a value indicating whether the icon slot is visible.</summary>
+    /// <summary>
+    /// Gets a value indicating whether the icon slot is visible.
+    /// </summary>
     public bool HasIcon { get; }
 
     /// <summary>
@@ -77,12 +87,14 @@ public sealed class MessageBoxDialogViewModel
     /// </summary>
     public bool IsDismissible { get; }
 
-    /// <summary>Gets the ordered footer actions displayed by the dialog.</summary>
-    public IReadOnlyList<MessageBoxDialogActionViewModel> Actions { get; }
+    /// <summary>
+    /// Gets the ordered footer actions displayed by the dialog.
+    /// </summary>
+    public IReadOnlyList<PromptDialogActionViewModel> Actions { get; }
 
-    private static MessageBoxDialogActionViewModel CreateAction(
-        MessageBoxDialogButtonOptions options,
-        MessageBoxDialogResult result,
+    private static PromptDialogActionViewModel CreateAction(
+        PromptDialogButtonOptions options,
+        PromptDialogResult result,
         bool isCancel = false)
     {
         if (options is null)
@@ -92,10 +104,10 @@ public sealed class MessageBoxDialogViewModel
 
         if (string.IsNullOrWhiteSpace(options.Text))
         {
-            throw new ArgumentException("A message-box action requires text.", nameof(options));
+            throw new ArgumentException("A prompt action requires text.", nameof(options));
         }
 
-        return new MessageBoxDialogActionViewModel(
+        return new PromptDialogActionViewModel(
             options.Text,
             options.Appearance,
             options.IsDefault,

@@ -12,15 +12,15 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:MessageBoxViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
-            HeaderText="Standard MessageBox."
-            XamlCode="&lt;MessageBox /&gt;">
+            HeaderText="Native WPF MessageBox."
+            XamlCode="System.Windows.MessageBox.Show(&quot;Something about to happen&quot;, &quot;I can feel it&quot;);">
             <ui:Button
                 HorizontalAlignment="Left"
                 Command="{Binding OpenStandardMessageBoxCommand, Mode=OneWay}"
@@ -35,5 +35,6 @@
                 CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                 Content="Open custom MessageBox" />
         </controls:ControlExample>
+        <TextBlock Margin="0,24,0,0" Text="{Binding ResultText}" />
     </StackPanel>
 </Page>

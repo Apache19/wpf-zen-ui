@@ -28,7 +28,6 @@
     <EmbeddedResource Include="Controls\ScrollViewer\UiScrollViewer.bmp" />
     <EmbeddedResource Include="Controls\ScrollViewer\UiScrollBar.bmp" />
     <EmbeddedResource Include="Controls\ScrollViewer\DynamicScrollViewer.bmp" />
-    <EmbeddedResource Include="Controls\MessageBox\MessageBox.bmp" />
     <EmbeddedResource Include="Controls\NavigationView\NavigationView.bmp" />
     <EmbeddedResource Include="Controls\NavigationView\NavigationViewItem.bmp" />
     <EmbeddedResource Include="Controls\NumberBox\NumberBox.bmp" />

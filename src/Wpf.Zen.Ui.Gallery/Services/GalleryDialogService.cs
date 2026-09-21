@@ -91,8 +91,8 @@ public sealed class GalleryDialogService(IContentDialogService cds) : IGalleryDi
     }
 
     /// <inheritdoc />
-    public async Task<MessageBoxDialogResult> ShowMessageBoxAsync(
-        MessageBoxDialogOptions options,
+    public async Task<PromptDialogResult> ShowPromptAsync(
+        PromptDialogOptions options,
         CancellationToken ct = default)
     {
         if (options is null)
@@ -100,8 +100,8 @@ public sealed class GalleryDialogService(IContentDialogService cds) : IGalleryDi
             throw new ArgumentNullException(nameof(options));
         }
 
-        var viewModel = new MessageBoxDialogViewModel(options);
-        var view      = new MessageBoxDialog { DataContext = viewModel };
+        var viewModel = new PromptDialogViewModel(options);
+        var view      = new PromptDialog { DataContext = viewModel };
 
         if (options.MaxWidth is { } maxWidth)
         {
@@ -112,8 +112,8 @@ public sealed class GalleryDialogService(IContentDialogService cds) : IGalleryDi
 
         // A null host result represents top-right dismissal or host teardown. Cancellation remains
         // distinct because ContentDialogHost propagates it by cancelling the returned task.
-        return result is MessageBoxDialogResult typedResult
+        return result is PromptDialogResult typedResult
             ? typedResult
-            : MessageBoxDialogResult.Dismissed;
+            : PromptDialogResult.Dismissed;
     }
 }

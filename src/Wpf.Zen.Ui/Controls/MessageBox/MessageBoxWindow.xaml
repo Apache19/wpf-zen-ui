@@ -1,0 +1,76 @@
+<ui:FluentWindow
+    x:Class="Wpf.Zen.Ui.Controls.MessageBoxWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls"
+    Width="460"
+    x:ClassModifier="internal"
+    Background="{m:DynamicBrush SolidBackgroundFillQuarternary}"
+    Foreground="{m:DynamicBrush TextFillPrimary}"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="Height"
+    WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Height="40">
+            <ui:TitleBar.Template>
+                <ControlTemplate TargetType="ui:TitleBar">
+                    <Grid ui:TitleBar.HitTestRole="Caption" Background="Transparent">
+                        <ui:TextBlock
+                            Margin="16,0,56,0"
+                            VerticalAlignment="Center"
+                            FontTypography="SubtitleSmall"
+                            Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                            TextTrimming="CharacterEllipsis" />
+                        <ui:TitleBarButton
+                            Width="46"
+                            HorizontalAlignment="Right"
+                            ui:TitleBar.HitTestRole="CloseButton"
+                            AutomationProperties.AutomationId="MessageBoxClose"
+                            IsEnabled="{Binding CanDismiss, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    </Grid>
+                </ControlTemplate>
+            </ui:TitleBar.Template>
+        </ui:TitleBar>
+        <ScrollViewer
+            x:Name="MessageScroller"
+            Grid.Row="1"
+            Padding="24,20,24,28"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ui:FluentIcon
+                    x:Name="MessageIcon"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    Focusable="False"
+                    FontSize="32" />
+                <TextBlock
+                    x:Name="MessageText"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="MessageBoxText"
+                    FontSize="14"
+                    TextWrapping="Wrap" />
+            </Grid>
+        </ScrollViewer>
+        <Border
+            Grid.Row="2"
+            Padding="24,16"
+            Background="{m:DynamicBrush SolidBackgroundFillBase}"
+            BorderBrush="{m:DynamicBrush CardStrokeDefaultSolid}"
+            BorderThickness="0,1,0,0">
+            <ui:ContentDialogActionBar x:Name="ButtonsPanel" />
+        </Border>
+    </Grid>
+</ui:FluentWindow>

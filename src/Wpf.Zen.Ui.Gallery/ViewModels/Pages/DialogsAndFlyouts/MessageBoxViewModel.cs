@@ -3,38 +3,52 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics.CodeAnalysis;
+using Wpf.Zen.Ui.Controls;
+using UiMessageBox = Wpf.Zen.Ui.Controls.MessageBox;
 
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 
+/// <summary>
+/// Demonstrates native-compatible modal calls and per-button text overrides.
+/// </summary>
 public partial class MessageBoxViewModel : ViewModel
 {
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "relay command")]
+    /// <summary>
+    /// Gets the result returned after the modal window closes.
+    /// </summary>
+    [ObservableProperty]
+    public partial string ResultText { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Displays the native WPF message box for comparison with the Fluent message box.
+    /// </summary>
     [RelayCommand]
     private void OnOpenStandardMessageBox(object sender)
     {
-        _ = MessageBox.Show("Something about to happen", "I can feel it");
+        ResultText = System.Windows.MessageBox.Show("Something about to happen", "I can feel it").ToString();
     }
 
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "relay command")]
+    /// <summary>
+    /// Replaces Yes and No labels while retaining the localized Cancel label and WPF results.
+    /// </summary>
     [RelayCommand]
-    private async Task OnOpenCustomMessageBox(object sender)
+    private void OnOpenCustomMessageBox(object sender)
     {
-        var uiMessageBox = new Wpf.Zen.Ui.Controls.MessageBox
-        {
-            Title = "WPF Zen UI Message Box",
-            Content =
-                "Never gonna give you up, never gonna let you down Never gonna run around and desert you Never gonna make you cry, never gonna say goodbye",
-        };
+        var owner = Window.GetWindow((DependencyObject)sender);
 
-        if (sender is DependencyObject d)
-        {
-            if (Window.GetWindow(d) is { } window)
+        ResultText = UiMessageBox.Show(
+            owner,
+            "Save changes before closing?",
+            "Unsaved changes",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Warning,
+            MessageBoxResult.Cancel,
+            MessageBoxOptions.None,
+            new MessageBoxButtonText
             {
-                uiMessageBox.Owner = window;
+                Yes = "_Save",
+                No  = "_Don't save"
             }
-        }
-
-        _ = await uiMessageBox.ShowDialogAsync();
+        ).ToString();
     }
 }

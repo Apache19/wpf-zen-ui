@@ -122,7 +122,7 @@ public sealed class ContentDialogAutomationTests : UiTest
     }
 
     [Fact]
-    public async Task MessageBoxDialog_Should_Return_Primary_Result()
+    public async Task PromptDialog_Should_Return_Primary_Result()
     {
         await Wait(2, TestContext.Current.CancellationToken);
 
@@ -172,8 +172,10 @@ public sealed class ContentDialogAutomationTests : UiTest
     /// </summary>
     /// <param name="text">The text to wait for.</param>
     /// <param name="retries">Number of polling attempts.</param>
-    /// <param name="delaySeconds">Delay in seconds between attempts (uses test cancellation token).</param>
-    /// <returns>A task that completes when the text is found or throws an assertion if not found.</returns>
+    /// <param name="delaySeconds">Delay in seconds between attempts (uses test cancellation
+    /// token).</param>
+    /// <returns>A task that completes when the text is found or throws an assertion if not
+    /// found.</returns>
     private async Task WaitForText(string text, int retries = 10, int delaySeconds = 1)
     {
         for (var i = 0; i < retries; i++)
@@ -194,7 +196,8 @@ public sealed class ContentDialogAutomationTests : UiTest
 
     /// <summary>
     /// Finds and clicks a button matching one of the provided candidate texts.
-    /// Fails when no matching button exists, so a layout regression cannot invoke an unrelated action.
+    /// Fails when no matching button exists, so a layout regression cannot invoke an unrelated
+    /// action.
     /// </summary>
     /// <param name="candidates">Array of acceptable button texts (first match is used).</param>
     /// <returns>A task that waits a short time after clicking to allow UI to settle.</returns>

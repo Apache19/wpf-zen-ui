@@ -5,7 +5,6 @@
 
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using UiMessageBox = Wpf.Zen.Ui.Controls.MessageBox;
 using UiSnackbar = Wpf.Zen.Ui.Controls.Snackbar;
 using UiTextBox = Wpf.Zen.Ui.Controls.TextBox;
 using UiThumbRate = Wpf.Zen.Ui.Controls.ThumbRate;
@@ -14,30 +13,6 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class TemplateButtonPartTests
 {
-    [Theory]
-    [InlineData("PART_PrimaryButton", Wpf.Zen.Ui.Controls.MessageBoxButton.Primary)]
-    [InlineData("PART_SecondaryButton", Wpf.Zen.Ui.Controls.MessageBoxButton.Secondary)]
-    [InlineData("PART_CloseButton", Wpf.Zen.Ui.Controls.MessageBoxButton.Close)]
-    public void MessageBox_TemplateButton_UsesPartIdentity(
-        string partName,
-        Wpf.Zen.Ui.Controls.MessageBoxButton expectedButton
-    )
-    {
-        WpfTestThread.Run(() =>
-        {
-            var messageBox = new RecordingMessageBox
-            {
-                Template = CreateTemplate(typeof(UiMessageBox), typeof(Button), partName),
-            };
-
-            Assert.True(messageBox.ApplyTemplate());
-            RaiseClick(FindButton(messageBox, partName));
-
-            Assert.Equal(expectedButton, messageBox.LastButton);
-            Assert.Equal(1, messageBox.ClickCount);
-        });
-    }
-
     [Fact]
     public void Snackbar_ClosePart_InvokesHide()
     {
@@ -106,7 +81,6 @@ public class TemplateButtonPartTests
         {
             var controls = new (Control Control, string PartName, Action AssertUnchanged)[]
             {
-                CreateMessageBoxCase(),
                 CreateSnackbarCase(),
                 CreateTextBoxCase(),
                 CreateThumbRateCase(),
@@ -123,15 +97,6 @@ public class TemplateButtonPartTests
                 assertUnchanged();
             }
         });
-    }
-
-    private static (Control Control, string PartName, Action AssertUnchanged) CreateMessageBoxCase()
-    {
-        var control = new RecordingMessageBox
-        {
-            Template = CreateTemplate(typeof(UiMessageBox), typeof(Button), "PART_PrimaryButton"),
-        };
-        return (control, "PART_PrimaryButton", () => Assert.Equal(0, control.ClickCount));
     }
 
     private static (Control Control, string PartName, Action AssertUnchanged) CreateSnackbarCase()
@@ -182,19 +147,6 @@ public class TemplateButtonPartTests
         var root = new FrameworkElementFactory(rootType) { Name = name };
         return new ControlTemplate(targetType) { VisualTree = root };
 #pragma warning restore CS0618
-    }
-
-    private sealed class RecordingMessageBox : UiMessageBox
-    {
-        public int ClickCount { get; private set; }
-
-        public Wpf.Zen.Ui.Controls.MessageBoxButton? LastButton { get; private set; }
-
-        protected override void OnButtonClick(Wpf.Zen.Ui.Controls.MessageBoxButton button)
-        {
-            ClickCount++;
-            LastButton = button;
-        }
     }
 
     private sealed class RecordingSnackbar() : UiSnackbar(new Wpf.Zen.Ui.Controls.SnackbarPresenter())

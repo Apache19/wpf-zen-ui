@@ -3,620 +3,506 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Reflection;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using Size = System.Windows.Size;
-#if NET8_0_OR_GREATER
-using System.Runtime.CompilerServices;
-#endif
-
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Customized window for notifications.
+/// Displays a synchronous Fluent modal message box using the standard WPF buttons and results.
 /// </summary>
-[TemplatePart(Name = PrimaryButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = SecondaryButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = CloseButtonPartName, Type = typeof(ButtonBase))]
-public class MessageBox : FluentWindow
+/// <remarks>
+/// Call Show on an STA UI thread. It returns only after the user dismisses the window.
+/// The owner overloads require a non-null window on the calling dispatcher.
+/// ServiceNotification and DefaultDesktopOnly use the native WPF message box because a WPF
+/// window cannot be displayed on another desktop; custom labels are unavailable in those modes.
+/// </remarks>
+public static class MessageBox
 {
-    private const string PrimaryButtonPartName = "PART_PrimaryButton";
-    private const string SecondaryButtonPartName = "PART_SecondaryButton";
-    private const string CloseButtonPartName = "PART_CloseButton";
-
-    private ButtonBase? _primaryButton;
-    private ButtonBase? _secondaryButton;
-    private ButtonBase? _closeButton;
-
-    /// <summary>Identifies the <see cref="ShowTitle"/> dependency property.</summary>
-    public static readonly DependencyProperty ShowTitleProperty = DependencyProperty.Register(
-        nameof(ShowTitle),
-        typeof(bool),
-        typeof(MessageBox),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="PrimaryButtonText"/> dependency property.</summary>
-    public static readonly DependencyProperty PrimaryButtonTextProperty = DependencyProperty.Register(
-        nameof(PrimaryButtonText),
-        typeof(string),
-        typeof(MessageBox),
-        new PropertyMetadata(string.Empty)
-    );
-
-    /// <summary>Identifies the <see cref="SecondaryButtonText"/> dependency property.</summary>
-    public static readonly DependencyProperty SecondaryButtonTextProperty = DependencyProperty.Register(
-        nameof(SecondaryButtonText),
-        typeof(string),
-        typeof(MessageBox),
-        new PropertyMetadata(string.Empty)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonText"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonTextProperty = DependencyProperty.Register(
-        nameof(CloseButtonText),
-        typeof(string),
-        typeof(MessageBox),
-        new PropertyMetadata("Close")
-    );
-
-    /// <summary>Identifies the <see cref="PrimaryButtonIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty PrimaryButtonIconProperty = DependencyProperty.Register(
-        nameof(PrimaryButtonIcon),
-        typeof(object),
-        typeof(MessageBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="SecondaryButtonIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty SecondaryButtonIconProperty = DependencyProperty.Register(
-        nameof(SecondaryButtonIcon),
-        typeof(object),
-        typeof(MessageBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonIconProperty = DependencyProperty.Register(
-        nameof(CloseButtonIcon),
-        typeof(object),
-        typeof(MessageBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="PrimaryButtonAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty PrimaryButtonAppearanceProperty = DependencyProperty.Register(
-        nameof(PrimaryButtonAppearance),
-        typeof(ControlAppearance),
-        typeof(MessageBox),
-        new PropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="SecondaryButtonAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty SecondaryButtonAppearanceProperty = DependencyProperty.Register(
-        nameof(SecondaryButtonAppearance),
-        typeof(ControlAppearance),
-        typeof(MessageBox),
-        new PropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonAppearanceProperty = DependencyProperty.Register(
-        nameof(CloseButtonAppearance),
-        typeof(ControlAppearance),
-        typeof(MessageBox),
-        new PropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="IsPrimaryButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPrimaryButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsPrimaryButtonEnabled),
-        typeof(bool),
-        typeof(MessageBox),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="IsSecondaryButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsSecondaryButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsSecondaryButtonEnabled),
-        typeof(bool),
-        typeof(MessageBox),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="IsCloseButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsCloseButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsCloseButtonEnabled),
-        typeof(bool),
-        typeof(MessageBox),
-        new PropertyMetadata(true)
-    );
-
-    static MessageBox()
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(string text)
     {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(MessageBox),
-            new FrameworkPropertyMetadata(typeof(MessageBox))
+        return ShowCore(
+            null,
+            text,
+            string.Empty,
+            MessageBoxButton.OK,
+            MessageBoxImage.None,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
         );
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to show the <see cref="System.Windows.Window.Title"/> in <see cref="TitleBar"/>.
+    /// Displays a modal message box and returns the selected WPF result.
     /// </summary>
-    public bool ShowTitle
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(string text, string caption)
     {
-        get => (bool)GetValue(ShowTitleProperty);
-        set => SetValue(ShowTitleProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the text to display on the primary button.
-    /// </summary>
-    public string PrimaryButtonText
-    {
-        get => (string)GetValue(PrimaryButtonTextProperty);
-        set => SetValue(PrimaryButtonTextProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the text to be displayed on the secondary button.
-    /// </summary>
-    public string SecondaryButtonText
-    {
-        get => (string)GetValue(SecondaryButtonTextProperty);
-        set => SetValue(SecondaryButtonTextProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the text to display on the close button.
-    /// </summary>
-    public string CloseButtonText
-    {
-        get => (string)GetValue(CloseButtonTextProperty);
-        set => SetValue(CloseButtonTextProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the primary button's icon slot.
-    /// </summary>
-    public object? PrimaryButtonIcon
-    {
-        get => GetValue(PrimaryButtonIconProperty);
-        set => SetValue(PrimaryButtonIconProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the secondary button's icon slot.
-    /// </summary>
-    public object? SecondaryButtonIcon
-    {
-        get => GetValue(SecondaryButtonIconProperty);
-        set => SetValue(SecondaryButtonIconProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the close button's icon slot.
-    /// </summary>
-    public object? CloseButtonIcon
-    {
-        get => GetValue(CloseButtonIconProperty);
-        set => SetValue(CloseButtonIconProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="ControlAppearance"/> on the primary button
-    /// </summary>
-    public ControlAppearance PrimaryButtonAppearance
-    {
-        get => (ControlAppearance)GetValue(PrimaryButtonAppearanceProperty);
-        set => SetValue(PrimaryButtonAppearanceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="ControlAppearance"/> on the secondary button
-    /// </summary>
-    public ControlAppearance SecondaryButtonAppearance
-    {
-        get => (ControlAppearance)GetValue(SecondaryButtonAppearanceProperty);
-        set => SetValue(SecondaryButtonAppearanceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="ControlAppearance"/> on the close button
-    /// </summary>
-    public ControlAppearance CloseButtonAppearance
-    {
-        get => (ControlAppearance)GetValue(CloseButtonAppearanceProperty);
-        set => SetValue(CloseButtonAppearanceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the <see cref="MessageBox"/> close button is enabled.
-    /// </summary>
-    public bool IsCloseButtonEnabled
-    {
-        get => (bool)GetValue(IsCloseButtonEnabledProperty);
-        set => SetValue(IsCloseButtonEnabledProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the <see cref="MessageBox"/> secondary button is enabled.
-    /// </summary>
-    public bool IsSecondaryButtonEnabled
-    {
-        get => (bool)GetValue(IsSecondaryButtonEnabledProperty);
-        set => SetValue(IsSecondaryButtonEnabledProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the <see cref="MessageBox"/> primary button is enabled.
-    /// </summary>
-    public bool IsPrimaryButtonEnabled
-    {
-        get => (bool)GetValue(IsPrimaryButtonEnabledProperty);
-        set => SetValue(IsPrimaryButtonEnabledProperty, value);
-    }
-
-    #if !NET8_0_OR_GREATER
-    private static readonly PropertyInfo CanCenterOverWPFOwnerPropertyInfo = typeof(Window).GetProperty(
-        "CanCenterOverWPFOwner",
-        BindingFlags.NonPublic | BindingFlags.Instance
-    )!;
-    #endif
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MessageBox"/> class.
-    /// </summary>
-    public MessageBox()
-    {
-        Topmost = true;
-
-        PreviewMouseDoubleClick += static (_, args) => args.Handled = true;
-
-        Loaded += static (sender, _) =>
-        {
-            var self = (MessageBox)sender;
-            self.OnLoaded();
-        };
-    }
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// Footer buttons are optional template parts. Handlers are attached to the currently applied
-    /// visual tree only, which lets custom templates omit actions and makes template replacement
-    /// safe.
-    /// </remarks>
-    public override void OnApplyTemplate()
-    {
-        DetachTemplateButtons();
-        base.OnApplyTemplate();
-
-        _primaryButton = GetTemplateChild(PrimaryButtonPartName) as ButtonBase;
-        _secondaryButton = GetTemplateChild(SecondaryButtonPartName) as ButtonBase;
-        _closeButton = GetTemplateChild(CloseButtonPartName) as ButtonBase;
-
-        if (_primaryButton is not null)
-        {
-            _primaryButton.Click += OnPrimaryButtonClick;
-        }
-
-        if (_secondaryButton is not null)
-        {
-            _secondaryButton.Click += OnSecondaryButtonClick;
-        }
-
-        if (_closeButton is not null)
-        {
-            _closeButton.Click += OnCloseButtonClick;
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
-    {
-        // Template assignment can leave the old tree alive until the next layout pass. It must no
-        // longer be able to close this window during that interval.
-        DetachTemplateButtons();
-        base.OnTemplateChanged(oldTemplate, newTemplate);
-    }
-
-    protected TaskCompletionSource<MessageBoxResult>? Tcs { get; set; }
-
-    [Obsolete($"Use {nameof(ShowDialogAsync)} instead")]
-    public new void Show()
-    {
-        throw new InvalidOperationException($"Use {nameof(ShowDialogAsync)} instead");
-    }
-
-    [Obsolete($"Use {nameof(ShowDialogAsync)} instead")]
-    public new bool? ShowDialog()
-    {
-        throw new InvalidOperationException($"Use {nameof(ShowDialogAsync)} instead");
-    }
-
-    [Obsolete($"Use {nameof(Close)} with MessageBoxResult instead")]
-    public new void Close()
-    {
-        throw new InvalidOperationException($"Use {nameof(Close)} with MessageBoxResult instead");
-    }
-
-    /// <summary>
-    /// Closes the message box with the specified result.
-    /// </summary>
-    /// <param name="result">The result returned by the message box.</param>
-    public void Close(MessageBoxResult result)
-    {
-        _ = Tcs?.TrySetResult(result);
-        CloseCore();
-    }
-
-    /// <summary>
-    /// Displays a message box
-    /// </summary>
-    /// <returns><see cref="MessageBoxResult"/></returns>
-    /// <exception cref="OperationCanceledException">Thrown if the operation is canceled.</exception>
-    public async Task<MessageBoxResult> ShowDialogAsync(
-        bool showAsDialog = true,
-        CancellationToken cancellationToken = default
-    )
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var tcs = new TaskCompletionSource<MessageBoxResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        Tcs = tcs;
-        CancellationTokenRegistration tokenRegistration = cancellationToken.Register(
-            () =>
-            {
-                _ = tcs.TrySetCanceled(cancellationToken);
-                RequestClose();
-            }
+        return ShowCore(
+            null,
+            text,
+            caption,
+            MessageBoxButton.OK,
+            MessageBoxImage.None,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
         );
-
-        #if NET6_0_OR_GREATER
-        await using (tokenRegistration)
-        {
-            if (showAsDialog)
-            {
-                base.ShowDialog();
-            }
-            else
-            {
-                base.Show();
-            }
-
-            return await tcs.Task;
-        }
-        #else
-        using (tokenRegistration)
-        {
-            if (showAsDialog)
-            {
-                base.ShowDialog();
-            }
-            else
-            {
-                base.Show();
-            }
-
-            return await tcs.Task;
-        }
-        #endif
     }
 
     /// <summary>
-    /// Occurs after Loading event
+    /// Displays a modal message box and returns the selected WPF result.
     /// </summary>
-    protected virtual void OnLoaded()
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(string text, string caption, MessageBoxButton button)
     {
-        var rootElement = (UIElement)GetVisualChild(0)!;
-
-        ResizeToContentSize(rootElement);
-
-        switch (WindowStartupLocation)
-        {
-            case WindowStartupLocation.Manual:
-            case WindowStartupLocation.CenterScreen:
-                CenterWindowOnScreen();
-                break;
-            case WindowStartupLocation.CenterOwner:
-                if (Owner is not { WindowState: not WindowState.Minimized } owner || !CanCenterOverWPFOwner())
-                {
-                    CenterWindowOnScreen();
-                }
-                else
-                {
-                    CenterWindowOnOwner(owner);
-                }
-
-                break;
-            default:
-                throw new InvalidOperationException();
-        }
-    }
-
-    // CanCenterOverWPFOwner property see https://source.dot.net/#PresentationFramework/System/Windows/Window.cs,e679e433777b21b8
-    private bool CanCenterOverWPFOwner()
-    {
-        #if NET8_0_OR_GREATER
-        return CanCenterOverWPFOwnerAccessor(this);
-        #else
-        return (bool)CanCenterOverWPFOwnerPropertyInfo.GetValue(this)!;
-        #endif
-    }
-
-    #if NET8_0_OR_GREATER
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_CanCenterOverWPFOwner")]
-    private static extern bool CanCenterOverWPFOwnerAccessor(Window w);
-    #endif
-
-    /// <summary>
-    /// Resizes the MessageBox to fit the content's size, including margins.
-    /// </summary>
-    /// <param name="rootElement">The root element of the MessageBox</param>
-    protected virtual void ResizeToContentSize(UIElement rootElement)
-    {
-        Size desiredSize = rootElement.DesiredSize;
-
-        // left and right margin
-        const double margin = 12.0 * 2;
-
-        SetCurrentValue(WidthProperty,  desiredSize.Width + margin);
-        SetCurrentValue(HeightProperty, desiredSize.Height);
-
-        ResizeWidth(rootElement);
-        ResizeHeight(rootElement);
-    }
-
-    protected override void OnClosing(CancelEventArgs e)
-    {
-        base.OnClosing(e);
-
-        if (e.Cancel)
-        {
-            return;
-        }
-
-        _ = Tcs?.TrySetResult(MessageBoxResult.None);
-    }
-
-    protected virtual void CenterWindowOnScreen()
-    {
-        double screenWidth  = SystemParameters.PrimaryScreenWidth;
-        double screenHeight = SystemParameters.PrimaryScreenHeight;
-
-        SetCurrentValue(LeftProperty, (screenWidth / 2) - (Width / 2));
-        SetCurrentValue(TopProperty,  (screenHeight / 2) - (Height / 2));
-    }
-
-    private void CenterWindowOnOwner(Window owner)
-    {
-        double left = owner.Left + ((owner.Width - Width) / 2);
-        double top  = owner.Top + ((owner.Height - Height) / 2);
-
-        SetCurrentValue(LeftProperty, left);
-        SetCurrentValue(TopProperty,  top);
+        return ShowCore(
+            null,
+            text,
+            caption,
+            button,
+            MessageBoxImage.None,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
+        );
     }
 
     /// <summary>
-    /// Occurs after the <see cref="MessageBoxButton"/> is clicked
+    /// Displays a modal message box and returns the selected WPF result.
     /// </summary>
-    /// <param name="button">The MessageBox button</param>
-    protected virtual void OnButtonClick(MessageBoxButton button)
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon)
     {
-        MessageBoxResult result = button switch
+        return ShowCore(
+            null,
+            text,
+            caption,
+            button,
+            icon,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
+        );
+    }
+
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <param name="defaultResult">
+    /// The initially focused result; an absent result selects the first button.
+    /// </param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon,
+        MessageBoxResult defaultResult)
+    {
+        return ShowCore(
+            null,
+            text,
+            caption,
+            button,
+            icon,
+            defaultResult,
+            MessageBoxOptions.None,
+            null
+        );
+    }
+
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <param name="defaultResult">
+    /// The initially focused result; an absent result selects the first button.
+    /// </param>
+    /// <param name="options">
+    /// Text direction, alignment, or native desktop notification options.
+    /// </param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon,
+        MessageBoxResult defaultResult,
+        MessageBoxOptions options)
+    {
+        return ShowCore(null, text, caption, button, icon, defaultResult, options, null);
+    }
+
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(Window owner, string text)
+    {
+        if (owner is null)
         {
-            MessageBoxButton.Primary   => MessageBoxResult.Primary,
-            MessageBoxButton.Secondary => MessageBoxResult.Secondary,
-            _                          => MessageBoxResult.None,
-        };
-
-        Close(result);
-    }
-
-    private void OnPrimaryButtonClick(object sender, RoutedEventArgs e)
-    {
-        OnButtonClick(MessageBoxButton.Primary);
-    }
-
-    private void OnSecondaryButtonClick(object sender, RoutedEventArgs e)
-    {
-        OnButtonClick(MessageBoxButton.Secondary);
-    }
-
-    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
-    {
-        OnButtonClick(MessageBoxButton.Close);
-    }
-
-    private void DetachTemplateButtons()
-    {
-        if (_primaryButton is not null)
-        {
-            _primaryButton.Click -= OnPrimaryButtonClick;
-            _primaryButton = null;
+            throw new ArgumentNullException(nameof(owner));
         }
 
-        if (_secondaryButton is not null)
-        {
-            _secondaryButton.Click -= OnSecondaryButtonClick;
-            _secondaryButton = null;
-        }
-
-        if (_closeButton is not null)
-        {
-            _closeButton.Click -= OnCloseButtonClick;
-            _closeButton = null;
-        }
+        return ShowCore(
+            owner,
+            text,
+            string.Empty,
+            MessageBoxButton.OK,
+            MessageBoxImage.None,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
+        );
     }
 
-    private void CloseCore()
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(Window owner, string text, string caption)
     {
-        base.Close();
-    }
-
-    private void RequestClose()
-    {
-        if (Dispatcher.CheckAccess())
+        if (owner is null)
         {
-            RequestCloseCore();
-            return;
+            throw new ArgumentNullException(nameof(owner));
         }
 
-        _ = Dispatcher.BeginInvoke(new Action(RequestCloseCore));
+        return ShowCore(
+            owner,
+            text,
+            caption,
+            MessageBoxButton.OK,
+            MessageBoxImage.None,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
+        );
     }
 
-    private void RequestCloseCore()
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        Window owner,
+        string text,
+        string caption,
+        MessageBoxButton button)
     {
-        if (IsLoaded)
+        if (owner is null)
         {
-            CloseCore();
-            return;
+            throw new ArgumentNullException(nameof(owner));
         }
 
-        Loaded += OnRequestCloseAfterLoaded;
+        return ShowCore(
+            owner,
+            text,
+            caption,
+            button,
+            MessageBoxImage.None,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
+        );
     }
 
-    private void OnRequestCloseAfterLoaded(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        Window owner,
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon)
     {
-        Loaded -= OnRequestCloseAfterLoaded;
-        CloseCore();
+        if (owner is null)
+        {
+            throw new ArgumentNullException(nameof(owner));
+        }
+
+        return ShowCore(
+            owner,
+            text,
+            caption,
+            button,
+            icon,
+            MessageBoxResult.None,
+            MessageBoxOptions.None,
+            null
+        );
     }
 
-    private void ResizeWidth(UIElement element)
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <param name="defaultResult">
+    /// The initially focused result; an absent result selects the first button.
+    /// </param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        Window owner,
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon,
+        MessageBoxResult defaultResult)
     {
-        if (Width <= MaxWidth)
+        if (owner is null)
         {
-            return;
+            throw new ArgumentNullException(nameof(owner));
         }
 
-        SetCurrentValue(WidthProperty, MaxWidth);
-        element.UpdateLayout();
-
-        SetCurrentValue(HeightProperty, element.DesiredSize.Height);
-
-        if (Height > MaxHeight)
-        {
-            SetCurrentValue(MaxHeightProperty, Height);
-        }
+        return ShowCore(owner, text, caption, button, icon, defaultResult, MessageBoxOptions.None, null);
     }
 
-    private void ResizeHeight(UIElement element)
+    /// <summary>
+    /// Displays a modal message box and returns the selected WPF result.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <param name="defaultResult">
+    /// The initially focused result; an absent result selects the first button.
+    /// </param>
+    /// <param name="options">
+    /// Text direction, alignment, or native desktop notification options.
+    /// </param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        Window owner,
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon,
+        MessageBoxResult defaultResult,
+        MessageBoxOptions options)
     {
-        if (Height <= MaxHeight)
+        if (owner is null)
         {
-            return;
+            throw new ArgumentNullException(nameof(owner));
         }
 
-        SetCurrentValue(HeightProperty, MaxHeight);
-        element.UpdateLayout();
+        return ShowCore(owner, text, caption, button, icon, defaultResult, options, null);
+    }
 
-        SetCurrentValue(WidthProperty, element.DesiredSize.Width);
+    /// <summary>
+    /// Displays a message box with optional per-result button labels.
+    /// Null or empty labels use the built-in CurrentUICulture resources.
+    /// </summary>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <param name="defaultResult">
+    /// The initially focused result; an absent result selects the first button.
+    /// </param>
+    /// <param name="options">
+    /// Text direction, alignment, or native desktop notification options.
+    /// </param>
+    /// <param name="buttonText">
+    /// Optional per-button labels; missing labels use localized resources.
+    /// </param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        string text,
+        string caption = "",
+        MessageBoxButton button = MessageBoxButton.OK,
+        MessageBoxImage icon = MessageBoxImage.None,
+        MessageBoxResult defaultResult = MessageBoxResult.None,
+        MessageBoxOptions options = MessageBoxOptions.None,
+        MessageBoxButtonText? buttonText = null)
+    {
+        return ShowCore(null, text, caption, button, icon, defaultResult, options, buttonText);
+    }
 
-        if (Width > MaxWidth)
+    /// <summary>
+    /// Displays an owned message box with optional per-result button labels.
+    /// Null or empty labels use the built-in CurrentUICulture resources.
+    /// </summary>
+    /// <param name="owner">The owning window on the current dispatcher.</param>
+    /// <param name="text">The message to display; null is treated as empty text.</param>
+    /// <param name="caption">The window caption; null is treated as empty text.</param>
+    /// <param name="button">The standard button combination.</param>
+    /// <param name="icon">The standard message icon, including its WPF aliases.</param>
+    /// <param name="defaultResult">
+    /// The initially focused result; an absent result selects the first button.
+    /// </param>
+    /// <param name="options">
+    /// Text direction, alignment, or native desktop notification options.
+    /// </param>
+    /// <param name="buttonText">
+    /// Optional per-button labels; missing labels use localized resources.
+    /// </param>
+    /// <returns>The standard WPF result selected before the modal window closes.</returns>
+    public static MessageBoxResult Show(
+        Window owner,
+        string text,
+        string caption = "",
+        MessageBoxButton button = MessageBoxButton.OK,
+        MessageBoxImage icon = MessageBoxImage.None,
+        MessageBoxResult defaultResult = MessageBoxResult.None,
+        MessageBoxOptions options = MessageBoxOptions.None,
+        MessageBoxButtonText? buttonText = null)
+    {
+        if (owner is null)
         {
-            SetCurrentValue(MaxWidthProperty, Width);
+            throw new ArgumentNullException(nameof(owner));
+        }
+
+        return ShowCore(owner, text, caption, button, icon, defaultResult, options, buttonText);
+    }
+
+    /// <summary>
+    /// Validates before creating a window and routes desktop-specific requests to Windows.
+    /// </summary>
+    private static MessageBoxResult ShowCore(
+        Window? owner,
+        string text,
+        string caption,
+        MessageBoxButton button,
+        MessageBoxImage icon,
+        MessageBoxResult defaultResult,
+        MessageBoxOptions options,
+        MessageBoxButtonText? buttonText)
+    {
+        Validate(button, icon, defaultResult, options);
+
+        if ((options & (MessageBoxOptions.ServiceNotification | MessageBoxOptions.DefaultDesktopOnly)) != 0)
+        {
+            if (owner is not null)
+            {
+                throw new ArgumentException(
+                    "Desktop notification options cannot specify an owner.",
+                    nameof(owner)
+                );
+            }
+
+            if (buttonText is not null)
+            {
+                throw new NotSupportedException(
+                    "Desktop notifications do not support custom button text."
+                );
+            }
+
+            // todo: 为什么这个路径要弹原生消息框？
+            return System.Windows.MessageBox.Show(text, caption, button, icon, defaultResult, options);
+        }
+
+        owner?.VerifyAccess();
+
+        var window = new MessageBoxWindow(text, caption, button, icon, defaultResult, options, buttonText);
+        if (owner is not null)
+        {
+            window.Owner = owner;
+
+            // 保证主题与所有者窗口一致
+            if (Theme.GetRequested(owner) is { } requestedTheme)
+            {
+                Theme.SetRequested(window, requestedTheme);
+            }
+        }
+
+        // Window.ShowDialog resolves the active native owner when no explicit owner was supplied,
+        // disables the thread's windows and restores activation in its finally path.
+        window.ShowDialog();
+        return window.Result;
+    }
+
+    /// <summary>
+    /// Matches the accepted enum values in WPF MessageBox.ShowCore, including icon aliases.
+    /// </summary>
+    internal static void Validate(
+        MessageBoxButton button,
+        MessageBoxImage icon,
+        MessageBoxResult defaultResult,
+        MessageBoxOptions options)
+    {
+        if (!Enum.IsDefined(typeof(MessageBoxButton), button))
+        {
+            throw new InvalidEnumArgumentException(
+                nameof(button),
+                (int)button,
+                typeof(MessageBoxButton)
+            );
+        }
+
+        if (!Enum.IsDefined(typeof(MessageBoxImage), icon))
+        {
+            throw new InvalidEnumArgumentException(
+                nameof(icon),
+                (int)icon,
+                typeof(MessageBoxImage)
+            );
+        }
+
+        if (!Enum.IsDefined(typeof(MessageBoxResult), defaultResult))
+        {
+            throw new InvalidEnumArgumentException(
+                nameof(defaultResult),
+                (int)defaultResult,
+                typeof(MessageBoxResult)
+            );
+        }
+
+        const MessageBoxOptions mask = MessageBoxOptions.ServiceNotification
+            | MessageBoxOptions.DefaultDesktopOnly
+            | MessageBoxOptions.RightAlign
+            | MessageBoxOptions.RtlReading;
+
+        if ((options & ~mask) != 0)
+        {
+            throw new InvalidEnumArgumentException(
+                nameof(options),
+                (int)options,
+                typeof(MessageBoxOptions)
+            );
         }
     }
 }

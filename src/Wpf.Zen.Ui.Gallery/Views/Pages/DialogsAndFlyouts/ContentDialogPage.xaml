@@ -41,27 +41,27 @@
                 Content="Show" />
         </controls:ControlExample>
 
-        <controls:ControlExample Margin="0,36,0,0" HeaderText="Reusable message-box dialogs">
+        <controls:ControlExample Margin="0,36,0,0" HeaderText="Reusable ContentDialog prompts">
             <StackPanel>
                 <WrapPanel>
                     <ui:Button
                         Margin="0,0,8,8"
-                        Command="{Binding ShowInformationMessageBoxCommand}"
+                        Command="{Binding ShowInformationPromptCommand}"
                         Content="Information" />
                     <ui:Button
                         Margin="0,0,8,8"
-                        Command="{Binding ShowConfirmationMessageBoxCommand}"
+                        Command="{Binding ShowConfirmationPromptCommand}"
                         Content="Confirmation" />
                     <ui:Button
                         Margin="0,0,0,8"
-                        Command="{Binding ShowDestructiveMessageBoxCommand}"
+                        Command="{Binding ShowDestructivePromptCommand}"
                         Content="Destructive" />
                 </WrapPanel>
 
                 <ui:TextBlock
                     Margin="0,8,0,0"
                     FontSize="14"
-                    Text="{Binding MessageBoxResultText}" />
+                    Text="{Binding PromptResultText}" />
             </StackPanel>
         </controls:ControlExample>
         <controls:ControlExample Margin="0,36,0,0" HeaderText="Custom login dialog">

@@ -17,7 +17,9 @@ namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 /// </param>
 public partial class ContentDialogViewModel(IGalleryDialogService dialogService) : ViewModel
 {
-    /// <summary>Gets the latest result of the custom login simulation.</summary>
+    /// <summary>
+    /// Gets the latest result of the custom login simulation.
+    /// </summary>
     [ObservableProperty]
     public partial string LoginResultText { get; private set; } = string.Empty;
 
@@ -30,17 +32,23 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
             : $"Demo signed in as {result.UserName} (no connection).";
     }
 
-    /// <summary>Gets the description of the most recent save decision.</summary>
+    /// <summary>
+    /// Gets the description of the most recent save decision.
+    /// </summary>
     [ObservableProperty]
     public partial string DialogResultText { get; private set; } = string.Empty;
 
-    /// <summary>Gets the save option returned with the most recent completed save decision.</summary>
+    /// <summary>
+    /// Gets the save option returned with the most recent completed save decision.
+    /// </summary>
     [ObservableProperty]
     public partial string SaveWorkDetailsText { get; private set; } = string.Empty;
 
-    /// <summary>Gets the description of the most recent generic message-box result.</summary>
+    /// <summary>
+    /// Gets the description of the most recent ContentDialog prompt result.
+    /// </summary>
     [ObservableProperty]
-    public partial string MessageBoxResultText { get; private set; } = string.Empty;
+    public partial string PromptResultText { get; private set; } = string.Empty;
 
     [RelayCommand]
     private async Task ShowSaveWorkDialogAsync()
@@ -75,12 +83,12 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
     }
 
     [RelayCommand]
-    private async Task ShowInformationMessageBoxAsync()
+    private async Task ShowInformationPromptAsync()
     {
-        var options = new MessageBoxDialogOptions(
+        var options = new PromptDialogOptions(
             "Changes saved",
             "Your gallery preferences were saved successfully.",
-            new MessageBoxDialogButtonOptions("Got it")
+            new PromptDialogButtonOptions("Got it")
             {
                 Appearance = ControlAppearance.Accent,
                 IsDefault  = true,
@@ -90,17 +98,17 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
             Icon = SymbolRegular.Info24,
         };
 
-        MessageBoxDialogResult result = await dialogService.ShowMessageBoxAsync(options).ConfigureAwait(true);
-        MessageBoxResultText = DescribeMessageBoxResult("Information", result);
+        PromptDialogResult result = await dialogService.ShowPromptAsync(options).ConfigureAwait(true);
+        PromptResultText = DescribePromptResult("Information", result);
     }
 
     [RelayCommand]
-    private async Task ShowConfirmationMessageBoxAsync()
+    private async Task ShowConfirmationPromptAsync()
     {
-        var options = new MessageBoxDialogOptions(
+        var options = new PromptDialogOptions(
             "Continue editing?",
             "You can continue now, postpone the change, or cancel this decision.",
-            new MessageBoxDialogButtonOptions("Continue")
+            new PromptDialogButtonOptions("Continue")
             {
                 Appearance = ControlAppearance.Accent,
                 IsDefault  = true,
@@ -109,21 +117,21 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
         {
             Icon            = SymbolRegular.Question24,
             MaxWidth        = 440,
-            SecondaryButton = new MessageBoxDialogButtonOptions("Not now"),
-            CloseButton     = new MessageBoxDialogButtonOptions("Cancel"),
+            SecondaryButton = new PromptDialogButtonOptions("Not now"),
+            CloseButton     = new PromptDialogButtonOptions("Cancel"),
         };
 
-        MessageBoxDialogResult result = await dialogService.ShowMessageBoxAsync(options).ConfigureAwait(true);
-        MessageBoxResultText = DescribeMessageBoxResult("Confirmation", result);
+        PromptDialogResult result = await dialogService.ShowPromptAsync(options).ConfigureAwait(true);
+        PromptResultText = DescribePromptResult("Confirmation", result);
     }
 
     [RelayCommand]
-    private async Task ShowDestructiveMessageBoxAsync()
+    private async Task ShowDestructivePromptAsync()
     {
-        var options = new MessageBoxDialogOptions(
+        var options = new PromptDialogOptions(
             "Delete this item?",
             "This example demonstrates a destructive action that is intentionally not the default button.",
-            new MessageBoxDialogButtonOptions("Delete")
+            new PromptDialogButtonOptions("Delete")
             {
                 Appearance = ControlAppearance.Danger,
             }
@@ -131,14 +139,14 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
         {
             Icon        = SymbolRegular.Delete24,
             MaxWidth    = 400,
-            CloseButton = new MessageBoxDialogButtonOptions("Cancel"),
+            CloseButton = new PromptDialogButtonOptions("Cancel"),
         };
 
-        MessageBoxDialogResult result = await dialogService.ShowMessageBoxAsync(options).ConfigureAwait(true);
-        MessageBoxResultText = DescribeMessageBoxResult("Destructive", result);
+        PromptDialogResult result = await dialogService.ShowPromptAsync(options).ConfigureAwait(true);
+        PromptResultText = DescribePromptResult("Destructive", result);
     }
 
-    private static string DescribeMessageBoxResult(string example, MessageBoxDialogResult result)
+    private static string DescribePromptResult(string example, PromptDialogResult result)
     {
         return $"{example} dialog result: {result}";
     }

@@ -3,26 +3,30 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
-namespace Wpf.Zen.Ui.Controls;
+namespace Wpf.Zen.Ui.Gallery.Models;
 
 /// <summary>
-/// Defines constants that specify the default button on a <see cref="MessageBox"/>.
+/// Identifies how a generic prompt dialog was completed.
 /// </summary>
-public enum MessageBoxButton
+public enum PromptDialogResult
 {
     /// <summary>
-    /// The primary button
+    /// The dialog was dismissed without invoking a configured footer action.
+    /// </summary>
+    Dismissed,
+
+    /// <summary>
+    /// The configured primary action was invoked.
     /// </summary>
     Primary,
 
     /// <summary>
-    /// The secondary button
+    /// The configured secondary action was invoked.
     /// </summary>
     Secondary,
 
     /// <summary>
-    /// The close button
+    /// The configured close action was invoked.
     /// </summary>
     Close,
 }

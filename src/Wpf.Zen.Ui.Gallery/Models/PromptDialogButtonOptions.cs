@@ -8,12 +8,12 @@ using Wpf.Zen.Ui.Controls;
 namespace Wpf.Zen.Ui.Gallery.Models;
 
 /// <summary>
-/// Describes the presentation of one generic message-box action.
+/// Describes the presentation of one generic prompt action.
 /// </summary>
 /// <param name="Text">
 /// The text displayed by the action.
 /// </param>
-public sealed record MessageBoxDialogButtonOptions(string Text)
+public sealed record PromptDialogButtonOptions(string Text)
 {
     /// <summary>
     /// Gets the visual appearance applied to the action.
@@ -21,7 +21,8 @@ public sealed record MessageBoxDialogButtonOptions(string Text)
     public ControlAppearance Appearance { get; init; } = ControlAppearance.Normal;
 
     /// <summary>
-    /// Gets a value indicating whether Enter invokes the action through WPF's default-button behavior.
+    /// Gets a value indicating whether Enter invokes the action through WPF's default-button
+    /// behavior.
     /// </summary>
     /// <remarks>
     /// Destructive actions should normally leave this value false so an unqualified Enter key does
