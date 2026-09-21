@@ -2131,16 +2131,19 @@ public class SoftKeyboardTests
             else
             {
                 Assert.True(initialHeight >= 44d);
-                Assert.NotEmpty(keyboard.CurrentLayout.Keys);
+                Assert.Empty(keyboard.CurrentLayout.Keys);
             }
 
             keyboard.Visibility = Visibility.Visible;
             window.UpdateLayout();
             Assert.True(keyboard.ActualHeight >= 44d);
-            if (visibility == Visibility.Hidden)
-            {
-                Assert.Equal(initialHeight, keyboard.ActualHeight);
-            }
+            Assert.NotEmpty(keyboard.CurrentLayout.Keys);
+
+            var visibleHeight = keyboard.ActualHeight;
+            keyboard.Visibility = Visibility.Hidden;
+            window.UpdateLayout();
+            Assert.Equal(visibleHeight, keyboard.ActualHeight);
+            keyboard.Visibility = Visibility.Visible;
 
             Assert.All(
                 Descendants<SoftKeyboardKeyControl>(keyboard),

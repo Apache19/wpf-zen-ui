@@ -6,7 +6,6 @@
 using System.Diagnostics;
 using System.Windows.Controls;
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>

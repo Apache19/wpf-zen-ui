@@ -14,35 +14,67 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 public partial class SoftKeyboard
 {
     /// <summary>
-    /// Registers shared observation and discovers initial presentation when the control loads.
+    /// Starts presentation only when the loaded control is actually visible.
     /// </summary>
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
 #if DEBUG
         using var performance = new SoftKeyboardPerformanceScope("Loaded", this);
 #endif
-        _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
-        _session.Register(this);
-
-        _window = Window.GetWindow(this);
-
-        if (_window is not null)
+        if (IsVisible)
         {
-            _window.Activated   += OnWindowActivated;
-            _window.Deactivated += OnWindowDeactivated;
+            ActivateVisibleSurface();
+        }
+    }
+
+    /// <summary>
+    /// Acquires loaded observation on first display and refreshes the current input context.
+    /// Visibility can precede Loaded while element-name bindings are still being resolved.
+    /// Such transient visibility must not initialize the surface or its services.
+    /// Registrations survive hiding for target tracking and are released on Unloaded.
+    /// </summary>
+    private void ActivateVisibleSurface()
+    {
+        if (!IsLoaded || !IsVisible)
+        {
+            Debug.WriteLine(
+                "[SoftKeyboard.Lifecycle] DISPLAY initialization deferred; "
+                + $"isLoaded={IsLoaded}, isVisible={IsVisible}."
+            );
+
+            return;
+        }
+
+#if DEBUG
+        using var performance = new SoftKeyboardPerformanceScope("ActivateVisibleSurface", this);
+#endif
+        EnsureKeyEventHandlers();
+
+        if (_session is null)
+        {
+            _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
+            _session.Register(this);
+            _window = Window.GetWindow(this);
+
+            if (_window is not null)
+            {
+                _window.Activated   += OnWindowActivated;
+                _window.Deactivated += OnWindowDeactivated;
+            }
+
+            Debug.WriteLine(
+                "[SoftKeyboard.Lifecycle] DISPLAY observation attached; "
+                + $"isLoaded={IsLoaded}, isVisible={IsVisible}."
+            );
         }
 
         ResolveTarget();
-        EnsureKeyEventHandlers();
         EnsureLayout();
-        RefreshInputMode();
 
-        if (IsVisible)
-        {
-            RequestSystemKeyboardHide();
-            RequestCandidateRefresh();
-            QueueCandidateBridgeRefresh();
-        }
+        RefreshInputMethodState();
+        RequestSystemKeyboardHide();
+        RequestCandidateRefresh();
+        QueueCandidateBridgeRefresh();
     }
 
     /// <summary>
@@ -115,20 +147,7 @@ public partial class SoftKeyboard
         // IsVisible includes ancestor visibility, unlike the local Visibility value. Reacquire the
         // still-active TSF element when a Page/dialog region becomes visible without requiring the
         // user to type another character.
-        EnsureKeyEventHandlers();
-        ResolveTarget();
-        EnsureLayout();
-
-        if (IsLoaded)
-        {
-            RefreshInputMethodState();
-
-            if (ActiveTarget is not null)
-            {
-                RequestCandidateRefresh();
-                RequestSystemKeyboardHide();
-            }
-        }
+        ActivateVisibleSurface();
     }
 
     /// <summary>

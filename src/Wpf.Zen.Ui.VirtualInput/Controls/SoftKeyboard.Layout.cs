@@ -82,11 +82,12 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Coalesces invisible-state changes and enters the layout factory only when requested.
+    /// Coalesces unloaded or invisible changes until display, preserving explicit refresh requests.
     /// </summary>
     private void EnsureLayout(bool publishInputMethodState = false)
     {
-        if (!_layoutDirty || _isRebuildingLayout || (!IsVisible && !_explicitLayoutRefresh))
+        if (!_layoutDirty || _isRebuildingLayout
+            || ((!IsLoaded || !IsVisible) && !_explicitLayoutRefresh))
         {
             return;
         }
@@ -236,6 +237,7 @@ public partial class SoftKeyboard
             }
 
             _hasBuiltLayout = true;
+
             SetValue(CurrentLayoutPropertyKey, layout);
             SetValue(LayoutErrorPropertyKey, error);
         }

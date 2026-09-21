@@ -116,7 +116,7 @@
                     Grid.Row="4"
                     ExtensionProvider="{x:Static keyboardExt:DefaultSoftKeyboardExtensionProvider.Default}"
                     TargetScope="{Binding ElementName=FormScope}"
-                    Visibility="{Binding IsChecked, ElementName=KeyboardVisibleCheckBox, Converter={StaticResource KeyboardVisibilityConverter}}" />
+                    Visibility="{Binding IsChecked, ElementName=KeyboardVisibleCheckBox, Converter={StaticResource KeyboardVisibilityConverter}, FallbackValue=Collapsed}" />
             </Grid>
         </controls:ControlExample>
 

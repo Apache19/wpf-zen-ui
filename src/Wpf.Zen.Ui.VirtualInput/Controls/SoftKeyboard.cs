@@ -11,7 +11,6 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
@@ -99,7 +98,7 @@ public partial class SoftKeyboard : Control
 
     /// <summary>
     /// Initializes a keyboard with standard WPF visibility. Layout discovery starts when its
-    /// template is applied, it becomes visible, or RefreshLayout is requested explicitly.
+    /// surface is loaded and actually visible or RefreshLayout is requested explicitly.
     /// </summary>
     public SoftKeyboard()
         : this(SoftKeyboardPlatformServices.Default)
@@ -155,7 +154,7 @@ public partial class SoftKeyboard : Control
     }
 
     /// <summary>
-    /// Connects routed key input once when the control loads or prepares its input surface.
+    /// Connects routed key input once when the control prepares a visible input surface.
     /// </summary>
     private void EnsureKeyEventHandlers()
     {
@@ -181,13 +180,11 @@ public partial class SoftKeyboard : Control
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
-        EnsureKeyEventHandlers();
 
-        // WPF also measures Hidden controls. Build the requested template's layout so hidden
-        // surfaces reserve their normal space before their first visible presentation.
-        if (_layoutDirty)
+        if (IsLoaded && IsVisible)
         {
-            RefreshLayout();
+            EnsureKeyEventHandlers();
+            EnsureLayout();
         }
     }
 

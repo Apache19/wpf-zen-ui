@@ -26,11 +26,67 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardLoadingTests
 {
     /// <summary>
-    /// Construction, configuration, focus and collapsed loading must not acquire input services.
-    /// Opening observes active state; only explicit requests enumerate the catalog.
+    /// A transient visible state before Loaded must not build keys, even if a template or a
+    /// property callback requests a layout. A later intentional display uses the latest state.
     /// </summary>
     [Fact]
-    public Task CollapsedLoadDefersServicesAndShowingReadsOnlyActiveProfile()
+    public Task TransientVisibilityBeforeLoadedDoesNotInitializeSurface()
+    {
+        return WpfApplicationTestHost.RunAsync(async () =>
+        {
+            var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
+            provider.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>())
+                .Returns(SoftKeyboardLayout.Empty);
+            var keyboard = new SoftKeyboard
+            {
+                LayoutProvider = provider,
+                ExtensionProvider = EmptySoftKeyboardExtensionProvider.Default,
+            };
+            var observedTransientVisibility = false;
+            keyboard.IsVisibleChanged += (_, _) =>
+            {
+                if (keyboard.IsVisible && !keyboard.IsLoaded)
+                {
+                    observedTransientVisibility = true;
+                    keyboard.ApplyTemplate();
+                    keyboard.ShowPage("latest");
+                    provider.DidNotReceive().CreateLayout(Arg.Any<SoftKeyboardLayoutContext>());
+                    Assert.Same(SoftKeyboardLayout.Empty, keyboard.CurrentLayout);
+                    keyboard.Visibility = Visibility.Collapsed;
+                }
+            };
+            var window = new Window { Content = keyboard, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                Assert.True(observedTransientVisibility);
+                Assert.True(keyboard.IsLoaded);
+                Assert.False(keyboard.IsVisible);
+                provider.DidNotReceive().CreateLayout(Arg.Any<SoftKeyboardLayoutContext>());
+                keyboard.Visibility = Visibility.Visible;
+                provider.Received().CreateLayout(Arg.Is<SoftKeyboardLayoutContext>(c => c.Page == "latest"));
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Construction, template application and invisible loading must not acquire input services.
+    /// Opening observes active state; only explicit requests enumerate the catalog.
+    /// </summary>
+    /// <param name="visibility">The local or inherited initial visibility.</param>
+    /// <param name="hideAncestor">Whether the host supplies the visibility constraint.</param>
+    [Theory]
+    [InlineData(Visibility.Collapsed, false)]
+    [InlineData(Visibility.Hidden, false)]
+    [InlineData(Visibility.Collapsed, true)]
+    [InlineData(Visibility.Hidden, true)]
+    public Task InvisibleLoadDefersServicesAndShowingReadsOnlyActiveProfile(
+        Visibility visibility, bool hideAncestor)
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -51,7 +107,7 @@ public class SoftKeyboardLoadingTests
             {
                 InputMethodSource = source,
                 ExtensionProvider = EmptySoftKeyboardExtensionProvider.Default,
-                Visibility = Visibility.Collapsed,
+                Visibility = hideAncestor ? Visibility.Visible : visibility,
             };
             var layouts = Substitute.For<ISoftKeyboardLayoutProvider>();
             layouts.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(SoftKeyboardLayout.Empty);
@@ -60,16 +116,25 @@ public class SoftKeyboardLoadingTests
             keyboard.Target = editor;
             var panel = new StackPanel();
             panel.Children.Add(editor);
-            panel.Children.Add(keyboard);
+            var host = new Border
+            {
+                Child = keyboard,
+                Visibility = hideAncestor ? visibility : Visibility.Visible,
+            };
+            panel.Children.Add(host);
             var window = new Window { Content = panel, Width = 600, Height = 400, ShowInTaskbar = false };
             try
             {
                 window.Show();
+                keyboard.ApplyTemplate();
                 editor.Focus();
                 await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
                 clock.Advance(500);
                 Assert.True(keyboard.IsLoaded);
-                Assert.Equal(Visibility.Collapsed, keyboard.Visibility);
+                Assert.False(keyboard.IsVisible);
+                Assert.Null(typeof(SoftKeyboard).GetField("_session",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetValue(keyboard));
                 source.DidNotReceive().CreateSession();
                 candidates.DidNotReceive().CreateSession(Arg.Any<SoftKeyboardCandidateHost>());
                 Assert.Equal(0, backend.Reads);
@@ -78,8 +143,23 @@ public class SoftKeyboardLoadingTests
                 Assert.Empty(keyboard.AvailableSupplementalLayouts);
 
                 keyboard.Visibility = Visibility.Visible;
+                host.Visibility = Visibility.Visible;
                 clock.Advance(100);
+                Assert.Same(editor, keyboard.ActiveTarget);
                 Assert.Same(profile, keyboard.ActiveInputMethod);
+
+                // A loaded instance can leave and rejoin the tree after its first display.
+                host.Child = null;
+                await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                source.ClearReceivedCalls();
+                keyboard.Visibility = Visibility.Hidden;
+                host.Child = keyboard;
+                await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                source.DidNotReceive().CreateSession();
+                keyboard.Visibility = Visibility.Visible;
+                clock.Advance(100);
+                source.Received(1).CreateSession();
+                Assert.Same(editor, keyboard.ActiveTarget);
                 session.Received().GetActiveInputMethod();
                 session.DidNotReceive().GetSnapshot();
                 Assert.Empty(keyboard.InputMethods);
