@@ -95,7 +95,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var other = new System.Windows.Controls.TextBox();
@@ -147,8 +147,8 @@ public class SoftKeyboardTests
 
                         break;
                     case "closeRoundTrip":
-                        keyboard.IsOpen = false;
-                        keyboard.IsOpen = true;
+                        keyboard.Visibility = Visibility.Collapsed;
+                        keyboard.Visibility = Visibility.Visible;
                         break;
                     case "disableRoundTrip":
                         keyboard.IsEnabled = false;
@@ -178,7 +178,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -230,7 +230,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             keyboard.Target = editor;
@@ -288,7 +288,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             keyboard.Target = editor;
@@ -320,7 +320,7 @@ public class SoftKeyboardTests
                 Assert.True(context.TrySendKey(Key.K, modifiers));
                 Assert.Contains((Key.K, modifiers), input.Chords);
 
-                keyboard.IsOpen = false;
+                keyboard.Visibility = Visibility.Collapsed;
                 Assert.True(action.CancellationToken.IsCancellationRequested);
                 Assert.Throws<OperationCanceledException>(() => context.TrySendText("obsolete"));
 
@@ -344,7 +344,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             keyboard.Target = editor;
@@ -447,7 +447,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -691,7 +691,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var window = new Window
             {
@@ -730,23 +730,16 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void Defaults_AreClosedManualAndNonFocusable()
+    public void Defaults_UseStandardVisibilityAndRemainNonFocusable()
     {
         WpfTestThread.Run(() =>
         {
             var keyboard = new SoftKeyboard();
-            var metadata = Assert.IsType<FrameworkPropertyMetadata>(
-                SoftKeyboard.IsOpenProperty.GetMetadata(typeof(SoftKeyboard))
-            );
-
-            Assert.False(keyboard.IsOpen);
+            Assert.Equal(Visibility.Visible, keyboard.Visibility);
             Assert.False(keyboard.Focusable);
             Assert.False(keyboard.IsTabStop);
-            Assert.Equal(SoftKeyboardAutoShowMode.Disabled, keyboard.AutoShowMode);
-            Assert.Equal(SoftKeyboardAutoHideMode.FocusLeavesScope, keyboard.AutoHideMode);
             Assert.Equal(4, keyboard.RowSpacing);
             Assert.Equal(4, keyboard.ColumnSpacing);
-            Assert.True(metadata.BindsTwoWayByDefault);
             Assert.Same(SoftKeyboardLayout.Empty, keyboard.CurrentLayout);
             Assert.Empty(keyboard.AvailableSupplementalLayouts);
         });
@@ -804,7 +797,7 @@ public class SoftKeyboardTests
             var services = CreateServices(out RecordingInputBackend input, out _, out _);
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new Grid();
@@ -855,7 +848,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -923,7 +916,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -950,7 +943,7 @@ public class SoftKeyboardTests
 
             Assert.Equal([(Key.Left, false), (Key.Left, false)], input.VirtualKeys);
             Assert.Same(editor, Keyboard.FocusedElement);
-            keyboard.IsOpen = false;
+            keyboard.Visibility = Visibility.Collapsed;
             window.Close();
         });
     }
@@ -964,7 +957,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -1007,7 +1000,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor,
                 TargetAdapter = new NumberScopeAdapter()
             };
@@ -1069,7 +1062,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor,
                 TargetAdapter = new NumberScopeAdapter()
             };
@@ -1109,7 +1102,7 @@ public class SoftKeyboardTests
             editor.PreviewKeyDown += (_, eventArgs) => receivedKey = eventArgs.Key;
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -1157,7 +1150,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -1287,7 +1280,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -1338,7 +1331,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -1382,7 +1375,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var window = new Window
             {
@@ -1438,35 +1431,54 @@ public class SoftKeyboardTests
         });
     }
 
-    [Fact]
-    public void AutoShow_TracksSupportedTargetsAndAutoHideLeavesScope()
+    /// <summary>
+    /// Focus tracking respects the host's visibility binding for every WPF visibility value.
+    /// </summary>
+    /// <param name="visibility">The initial presentation selected by the host.</param>
+    [Theory]
+    [InlineData(Visibility.Visible)]
+    [InlineData(Visibility.Hidden)]
+    [InlineData(Visibility.Collapsed)]
+    public void Focus_TracksSupportedTargetsWithoutChangingVisibility(Visibility visibility)
     {
         WpfApplicationTestHost.Run(() =>
         {
             var scope = new Grid();
             var editor = new System.Windows.Controls.TextBox();
             scope.Children.Add(editor);
-            var keyboard = new SoftKeyboard
-            {
-                TargetScope = scope,
-                AutoShowMode = SoftKeyboardAutoShowMode.AnyFocus,
-            };
+            var keyboard = new SoftKeyboard { TargetScope = scope };
+            var state = new Border { Visibility = visibility };
+            System.Windows.Data.BindingOperations.SetBinding(
+                keyboard, UIElement.VisibilityProperty,
+                new System.Windows.Data.Binding(nameof(UIElement.Visibility)) { Source = state });
             scope.Children.Add(keyboard);
-            var window = new Window
+            var window = new Window { Content = scope, ShowInTaskbar = false };
+            try
             {
-                Content = scope,
-                ShowInTaskbar = false
-            };
-            window.Show();
-            PumpDispatcher();
+                window.Show();
+                PumpDispatcher();
 
-            keyboard.OnSessionFocusChanged(editor, touchOrPenInitiated: false);
-            Assert.True(keyboard.IsOpen);
-            Assert.Same(editor, keyboard.ActiveTarget);
+                keyboard.OnSessionFocusChanged(editor);
+                Assert.Equal(visibility, keyboard.Visibility);
+                Assert.Same(editor, keyboard.ActiveTarget);
+                keyboard.OnSessionFocusChanged(new System.Windows.Controls.Button());
+                Assert.Equal(visibility, keyboard.Visibility);
 
-            keyboard.OnSessionFocusChanged(new System.Windows.Controls.Button(), touchOrPenInitiated: false);
-            Assert.False(keyboard.IsOpen);
-            window.Close();
+                state.Visibility = Visibility.Visible;
+                Assert.True(keyboard.IsVisible);
+                keyboard.OnSessionFocusChanged(editor);
+                keyboard.OnSessionFocusChanged(new System.Windows.Controls.Button());
+                Assert.Equal(Visibility.Visible, keyboard.Visibility);
+
+                state.Visibility = Visibility.Collapsed;
+                Assert.False(keyboard.IsVisible);
+                Assert.True(System.Windows.Data.BindingOperations.IsDataBound(
+                    keyboard, UIElement.VisibilityProperty));
+            }
+            finally
+            {
+                window.Close();
+            }
         });
     }
 
@@ -1502,7 +1514,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -1556,7 +1568,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -1615,7 +1627,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -1678,29 +1690,49 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void ClosingKeyboard_ReleasesEmbeddedCandidatePresentation()
+    public void CollapsingKeyboard_ReleasesEmbeddedCandidatePresentation()
     {
-        WpfTestThread.Run(() =>
+        WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out FakeCandidateBackend candidates, out _);
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
-            // Explicit acquisition makes this unhosted test own a candidate session.
-            keyboard.RefreshCandidatesAsync().GetAwaiter().GetResult();
-            candidates.Publish(keyboard, 1, 1, "candidate");
+            var window = new Window { Content = keyboard, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                // Explicit acquisition supplies a candidate session without an editor.
+                keyboard.RefreshCandidatesAsync().GetAwaiter().GetResult();
+                candidates.Publish(keyboard, 1, 1, "candidate");
 
-            keyboard.IsOpen = false;
+                var releases = candidates.ReleasePresentationCount;
+                keyboard.Visibility = Visibility.Collapsed;
 
-            Assert.Equal(1, candidates.ReleasePresentationCount);
-            Assert.Empty(keyboard.Candidates);
-            Assert.Equal(SoftKeyboardCandidatePresentationState.None, keyboard.CandidatePresentationState);
+                Assert.Equal(releases + 1, candidates.ReleasePresentationCount);
+                Assert.Empty(keyboard.Candidates);
+                Assert.Equal(SoftKeyboardCandidatePresentationState.None, keyboard.CandidatePresentationState);
+            }
+            finally
+            {
+                window.Close();
+            }
         });
     }
 
-    [Fact]
-    public void HidingKeyboard_ReleasesCandidatesAndShowingItRefreshesTheBridge()
+    /// <summary>
+    /// Local and ancestor visibility release candidates and reacquire them when shown.
+    /// </summary>
+    /// <param name="visibility">The hidden state applied by the host.</param>
+    /// <param name="hideAncestor">Whether the host hides the keyboard's parent.</param>
+    [Theory]
+    [InlineData(Visibility.Collapsed, false)]
+    [InlineData(Visibility.Hidden, false)]
+    [InlineData(Visibility.Collapsed, true)]
+    [InlineData(Visibility.Hidden, true)]
+    public void HidingKeyboard_ReleasesCandidatesAndShowingItRefreshesTheBridge(
+        Visibility visibility, bool hideAncestor)
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -1708,7 +1740,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var keyboardHost = new Grid();
@@ -1729,12 +1761,15 @@ public class SoftKeyboardTests
             int releasesBeforeHide = candidates.ReleasePresentationCount;
             int refreshesBeforeHide = candidates.RefreshCount;
 
-            keyboardHost.Visibility = Visibility.Collapsed;
+            UIElement surface = hideAncestor ? keyboardHost : keyboard;
+            surface.Visibility = visibility;
+            Assert.False(keyboard.IsVisible);
 
             Assert.True(candidates.ReleasePresentationCount > releasesBeforeHide);
             Assert.Empty(keyboard.Candidates);
 
-            keyboardHost.Visibility = Visibility.Visible;
+            surface.Visibility = Visibility.Visible;
+            Assert.True(keyboard.IsVisible);
             window.UpdateLayout();
 
             Assert.True(candidates.RefreshCount > refreshesBeforeHide);
@@ -1751,7 +1786,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new Grid();
             root.Children.Add(editor);
@@ -1779,24 +1814,15 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void AutomationPeer_ExpandsAndCollapsesWithoutMakingControlFocusable()
+    public void AutomationPeer_ExposesPaneWithoutVisibilityCommands()
     {
         WpfTestThread.Run(() =>
         {
             var keyboard = new SoftKeyboard();
             var peer = new SoftKeyboardAutomationPeer(keyboard);
-            var provider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
-                peer.GetPattern(PatternInterface.ExpandCollapse)
-            );
-
-            provider.Expand();
-            Assert.True(keyboard.IsOpen);
+            Assert.Equal(AutomationControlType.Pane, peer.GetAutomationControlType());
+            Assert.Null(peer.GetPattern(PatternInterface.ExpandCollapse));
             Assert.False(keyboard.Focusable);
-            Assert.Equal(ExpandCollapseState.Expanded, provider.ExpandCollapseState);
-
-            provider.Collapse();
-            Assert.False(keyboard.IsOpen);
-            Assert.Equal(ExpandCollapseState.Collapsed, provider.ExpandCollapseState);
         });
     }
 
@@ -1810,7 +1836,7 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -1848,11 +1874,11 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
 
-            // IsOpen can be data-bound before the control enters a visual tree. With no HWND and no
+            // Visibility can be bound before the control enters a visual tree. With no HWND and no
             // focused target there must be no native InputPane call.
             Assert.Equal(0, pane.HideCount);
             Assert.Equal(
@@ -1899,7 +1925,7 @@ public class SoftKeyboardTests
             Assert.True(pane.HideCount > hideCountBeforeCollapse);
             Assert.Equal(SoftKeyboardSystemKeyboardSuppressionState.Hidden, keyboard.SystemKeyboardSuppressionState);
 
-            keyboard.IsOpen = false;
+            keyboard.Visibility = Visibility.Collapsed;
 
             Assert.Equal(2, pane.ShowCount);
             Assert.Equal(
@@ -1925,12 +1951,12 @@ public class SoftKeyboardTests
             var editor = new System.Windows.Controls.TextBox();
             var firstKeyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var secondKeyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor
             };
             var root = new StackPanel();
@@ -1949,20 +1975,20 @@ public class SoftKeyboardTests
             PumpDispatcher();
             Assert.True(pane.HideCount >= 2);
 
-            firstKeyboard.IsOpen = false;
+            firstKeyboard.Visibility = Visibility.Collapsed;
 
             Assert.Equal(0, pane.ShowCount);
-            secondKeyboard.IsOpen = false;
+            secondKeyboard.Visibility = Visibility.Collapsed;
             Assert.Equal(1, pane.ShowCount);
 
             pane.Result = SoftKeyboardSystemKeyboardSuppressionState.Rejected;
-            firstKeyboard.IsOpen = true;
+            firstKeyboard.Visibility = Visibility.Visible;
             Assert.Equal(
                 SoftKeyboardSystemKeyboardSuppressionState.Rejected,
                 firstKeyboard.SystemKeyboardSuppressionState
             );
 
-            firstKeyboard.IsOpen = false;
+            firstKeyboard.Visibility = Visibility.Collapsed;
             Assert.Equal(1, pane.ShowCount);
             window.Close();
         });
@@ -1978,7 +2004,7 @@ public class SoftKeyboardTests
             var secondEditor = new System.Windows.Controls.TextBox();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var root = new StackPanel();
             root.Children.Add(firstEditor);
@@ -2013,7 +2039,7 @@ public class SoftKeyboardTests
                 }
 
                 Assert.False(pane.IsVisible);
-                keyboard.IsOpen = false;
+                keyboard.Visibility = Visibility.Collapsed;
                 int finalHideCount = pane.HideCount;
                 pane.IsVisible = true;
                     PumpDispatcher();
@@ -2038,7 +2064,7 @@ public class SoftKeyboardTests
             var scope = new StackPanel();
             var keyboard = new SoftKeyboard(services)
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 TargetScope = scope
             };
             scope.Children.Add(editor);
@@ -2073,13 +2099,19 @@ public class SoftKeyboardTests
         });
     }
 
-    [Fact]
-    public void DefaultTemplate_ClosedMeasuresZeroAndGeneratedKeysRemainNonFocusable()
+    /// <summary>
+    /// WPF visibility preserves Hidden layout space and removes Collapsed layout space.
+    /// </summary>
+    /// <param name="visibility">The initial visibility before template creation.</param>
+    [Theory]
+    [InlineData(Visibility.Collapsed)]
+    [InlineData(Visibility.Hidden)]
+    public void DefaultTemplate_UsesWpfVisibilityLayoutAndKeepsKeysNonFocusable(Visibility visibility)
     {
         WpfApplicationTestHost.Run(() =>
         {
             var services = CreateServices(out _, out _, out _);
-            var keyboard = new SoftKeyboard(services);
+            var keyboard = new SoftKeyboard(services) { Visibility = visibility };
             var window = new Window
             {
                 Content = keyboard,
@@ -2091,11 +2123,25 @@ public class SoftKeyboardTests
             PumpDispatcher();
             window.UpdateLayout();
 
-            Assert.Equal(0d, keyboard.ActualHeight);
+            var initialHeight = keyboard.ActualHeight;
+            if (visibility == Visibility.Collapsed)
+            {
+                Assert.Equal(0d, initialHeight);
+            }
+            else
+            {
+                Assert.True(initialHeight >= 44d);
+                Assert.NotEmpty(keyboard.CurrentLayout.Keys);
+            }
 
-            keyboard.IsOpen = true;
+            keyboard.Visibility = Visibility.Visible;
             window.UpdateLayout();
             Assert.True(keyboard.ActualHeight >= 44d);
+            if (visibility == Visibility.Hidden)
+            {
+                Assert.Equal(initialHeight, keyboard.ActualHeight);
+            }
+
             Assert.All(
                 Descendants<SoftKeyboardKeyControl>(keyboard),
                 button =>
@@ -2132,7 +2178,7 @@ public class SoftKeyboardTests
             // keyboard must not manually release that shared COM identity when requesting TryHide.
             Assert.True(firstEditor.Focus());
             keyboard.Target = firstEditor;
-            keyboard.IsOpen = true;
+            keyboard.Visibility = Visibility.Visible;
 
             Assert.True(secondEditor.Focus());
             Assert.Same(secondEditor, Keyboard.FocusedElement);
@@ -2147,7 +2193,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _, out var methods))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             // This test exercises Chinese native punctuation, independently of the test machine's
             // installed/current keyboard language. State and page changes still come from the control.
@@ -2212,7 +2258,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2270,7 +2316,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var window = new Window
             {
@@ -2301,7 +2347,7 @@ public class SoftKeyboardTests
                 Assert.Same(layout, keyboard.CurrentLayout);
                 Assert.Equal(height, keyboard.ActualHeight);
 
-                keyboard.IsOpen = false;
+                keyboard.Visibility = Visibility.Collapsed;
 
                 Assert.False(menu.IsOpen);
             }
@@ -2350,7 +2396,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             InputMethod.SetInputScope(editor, new InputScope
@@ -2399,7 +2445,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out var candidates, out _, out var inputMethods))
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2442,8 +2488,8 @@ public class SoftKeyboardTests
 
                 keyboard.ShowPage(mode);
                 window.UpdateLayout();
-                keyboard.IsOpen = false;
-                Assert.False(keyboard.IsOpen);
+                keyboard.Visibility = Visibility.Collapsed;
+                Assert.Equal(Visibility.Collapsed, keyboard.Visibility);
             }
             finally
             {
@@ -2461,7 +2507,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2516,7 +2562,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out var candidates, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var other = new System.Windows.Controls.TextBox();
@@ -2647,7 +2693,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var window = new Window
             {
@@ -2687,7 +2733,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2735,7 +2781,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2786,13 +2832,13 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void CloseKey_RequestsCompositionCancellationOnlyOnce()
+    public void HostCollapse_RequestsCompositionCancellationOnlyOnce()
     {
         WpfApplicationTestHost.Run(() =>
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2820,9 +2866,9 @@ public class SoftKeyboardTests
                 );
                 _ = TextCompositionManager.StartComposition(composition);
 
-                InvokeKey(keyboard, new SoftKeyboardKey(SoftKeyboardKeyKind.Close, "Close", "Close"));
+                keyboard.Visibility = Visibility.Collapsed;
 
-                Assert.False(keyboard.IsOpen);
+                Assert.Equal(Visibility.Collapsed, keyboard.Visibility);
                 Assert.Equal(1, input.VirtualKeys.Count(item => item == (Key.Escape, false)));
                 composition.Complete();
             }
@@ -2840,7 +2886,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -2901,7 +2947,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             TextBoxBase editor = richText
                 ? new System.Windows.Controls.RichTextBox()
@@ -2988,7 +3034,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out var candidates, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var root = new StackPanel();
@@ -3044,7 +3090,7 @@ public class SoftKeyboardTests
         {
             var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _))
             {
-                IsOpen = true
+                Visibility = Visibility.Visible
             };
             var editor = new System.Windows.Controls.TextBox();
             var other = new System.Windows.Controls.TextBox();
@@ -3076,7 +3122,7 @@ public class SoftKeyboardTests
                     case "nextKey": FindCap(keyboard, Key.A).BeginPress(); break;
                     case "target": keyboard.Target = other; break;
                     case "layout": keyboard.ShowPage(SoftKeyboardPages.Symbols); break;
-                    case "close": keyboard.IsOpen = false; break;
+                    case "close": keyboard.Visibility = Visibility.Collapsed; break;
                     case "deactivate":
                         typeof(SoftKeyboard).GetMethod(
                                 "OnWindowDeactivated",
@@ -3203,7 +3249,7 @@ public class SoftKeyboardTests
             var adapter = new TestInputModeAdapter();
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 InputModeAdapter = adapter,
             };
             var editor = new System.Windows.Controls.TextBox();

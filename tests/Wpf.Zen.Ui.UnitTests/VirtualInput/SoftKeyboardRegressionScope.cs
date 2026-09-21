@@ -41,7 +41,7 @@ internal sealed class SoftKeyboardRegressionScope : IDisposable
         Panel.Children.Add(OtherEditor);
         Panel.Children.Add(Keyboard);
         Keyboard.Target = Editor;
-        Keyboard.IsOpen = true;
+        Keyboard.Visibility = Visibility.Visible;
         Window = new Window { Content = Panel, ShowInTaskbar = false, Width = 700, Height = 400 };
         Window.Show();
         Assert.True(Editor.Focus());

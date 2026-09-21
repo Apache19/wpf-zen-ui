@@ -4,7 +4,6 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
@@ -108,40 +107,6 @@ public partial class SoftKeyboard
 
     #endregion
 
-    #region DP: IsOpen
-
-    /// <summary>
-    /// Identifies the <see cref="IsOpen"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty IsOpenProperty
-        = DependencyProperty.Register(
-            nameof(IsOpen),
-            typeof(bool),
-            typeof(SoftKeyboard),
-            new FrameworkPropertyMetadata(
-                false,
-                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-                OnIsOpenChanged
-            )
-        );
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the keyboard surface is open and participates in
-    /// layout.
-    /// </summary>
-    /// <remarks>
-    /// The default is <see langword="false"/>. The closed default template measures to zero.
-    /// </remarks>
-    [Bindable(true)]
-    [Category("Behavior")]
-    public bool IsOpen
-    {
-        get => (bool)GetValue(IsOpenProperty);
-        set => SetValue(IsOpenProperty, value);
-    }
-
-    #endregion
-
     #region DP: Target
 
     /// <summary>
@@ -204,62 +169,6 @@ public partial class SoftKeyboard
 
     #endregion
 
-    #region DP: AutoShowMode
-
-    /// <summary>
-    /// Identifies the <see cref="AutoShowMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty AutoShowModeProperty
-        = DependencyProperty.Register(
-            nameof(AutoShowMode),
-            typeof(SoftKeyboardAutoShowMode),
-            typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardAutoShowMode.Disabled),
-            static value => value is SoftKeyboardAutoShowMode mode
-                && Enum.IsDefined(typeof(SoftKeyboardAutoShowMode), mode)
-        );
-
-    /// <summary>
-    /// Gets or sets which editor-focus transitions open the keyboard automatically.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Behavior")]
-    public SoftKeyboardAutoShowMode AutoShowMode
-    {
-        get => (SoftKeyboardAutoShowMode)GetValue(AutoShowModeProperty);
-        set => SetValue(AutoShowModeProperty, value);
-    }
-
-    #endregion
-
-    #region DP: AutoHideMode
-
-    /// <summary>
-    /// Identifies the <see cref="AutoHideMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty AutoHideModeProperty
-        = DependencyProperty.Register(
-            nameof(AutoHideMode),
-            typeof(SoftKeyboardAutoHideMode),
-            typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardAutoHideMode.FocusLeavesScope),
-            static value => value is SoftKeyboardAutoHideMode mode
-                && Enum.IsDefined(typeof(SoftKeyboardAutoHideMode), mode)
-        );
-
-    /// <summary>
-    /// Gets or sets when the keyboard closes, independently of its automatic opening policy.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Behavior")]
-    public SoftKeyboardAutoHideMode AutoHideMode
-    {
-        get => (SoftKeyboardAutoHideMode)GetValue(AutoHideModeProperty);
-        set => SetValue(AutoHideModeProperty, value);
-    }
-
-    #endregion
-
     #region DP: LayoutProvider
 
     /// <summary>
@@ -282,8 +191,8 @@ public partial class SoftKeyboard
     /// <remarks>
     /// Defaults to null. A non-null application provider has priority over extensions and the
     /// built-in provider; use CompositeSoftKeyboardLayoutProvider for ordered partial overrides.
-    /// Replacing this non-inherited property rebuilds an open surface. Closed changes are applied
-    /// on reopening or RefreshLayout; layout discovery is not performed by the property setter.
+    /// Replacing this non-inherited property rebuilds a visible surface. While invisible, changes
+    /// are deferred until template application, becoming visible, or an explicit RefreshLayout.
     /// LayoutError exposes provider failures while a usable built-in layout is retained.
     /// </remarks>
     [Bindable(true)]
@@ -432,8 +341,8 @@ public partial class SoftKeyboard
     /// Gets the last generated immutable key layout, initially SoftKeyboardLayout.Empty.
     /// </summary>
     /// <remarks>
-    /// Opening generates the current surface. Configuration changes while closed retain the last
-    /// snapshot until reopening or RefreshLayout; reading this property does not create a layout.
+    /// Template application or becoming visible generates the current surface. Invisible changes
+    /// retain the last snapshot until then or RefreshLayout; reading this property is passive.
     /// </remarks>
     public SoftKeyboardLayout CurrentLayout
     {
@@ -723,43 +632,6 @@ public partial class SoftKeyboard
 
     #endregion
 
-    private static void OnIsOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
-    {
-        var keyboard = (SoftKeyboard)d;
-
-        SoftKeyboardAutomationPeer.RaiseIsOpenChanged(
-            keyboard,
-            (bool)args.OldValue,
-            (bool)args.NewValue
-        );
-
-        if ((bool)args.NewValue)
-        {
-            keyboard.EnsureKeyEventHandlers();
-            keyboard._layoutDirty = true;
-            keyboard.ResolveTarget();
-            keyboard.EnsureLayout();
-            keyboard.RefreshInputMode();
-            keyboard.RequestSystemKeyboardHide();
-
-            keyboard.RequestCandidateRefresh();
-        }
-        else
-        {
-            keyboard._inputOperationVersion++;
-            keyboard.ResetObservedPlatformState();
-
-            _ = keyboard.TryCancelActiveComposition();
-
-            keyboard.CancelKeyInteraction();
-            keyboard.CloseFlyouts();
-
-            keyboard.ResetCandidateSession();
-            keyboard._session?.EnsureInputMethodMonitoring();
-            keyboard.ReleaseSystemKeyboardSuppression(tryRestore: true);
-        }
-    }
-
     private static void OnTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
         var keyboard = (SoftKeyboard)d;
@@ -841,7 +713,6 @@ public partial class SoftKeyboard
         if (keyboard is
             {
                 IsLoaded: true,
-                IsOpen: true,
                 IsVisible: true,
                 IsEnabled: true,
                 ActiveTarget: not null

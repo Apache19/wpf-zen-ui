@@ -322,7 +322,6 @@ public class SoftKeyboardRegressionTests
         {
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
-            scope.Keyboard.AutoHideMode = SoftKeyboardAutoHideMode.Manual;
             scope.Keyboard.TargetScope = scope.Editor;
 
             Assert.True(scope.OtherEditor.Focus());
@@ -431,7 +430,7 @@ public class SoftKeyboardRegressionTests
                         session.DidNotReceive().Dispose();
                         break;
                     case "close":
-                        keyboard.IsOpen = false;
+                        keyboard.Visibility = Visibility.Collapsed;
                         break;
                     case "target":
                         keyboard.Target = scope.OtherEditor;
@@ -498,7 +497,7 @@ public class SoftKeyboardRegressionTests
             await scope.DrainAsync();
             ButtonSession(session).TryInvokeInputModeButton(Arg.Any<SoftKeyboardInputMethod>(), Arg.Any<System.Windows.Rect>()).Returns(_ =>
             {
-                scope.Keyboard.IsOpen = false;
+                scope.Keyboard.Visibility = Visibility.Collapsed;
                 return SoftKeyboardInputModeCommandResult.Accepted;
             });
 
@@ -1171,7 +1170,7 @@ public class SoftKeyboardRegressionTests
 
             scope.Keyboard.CandidateSource = source;
             await scope.Keyboard.RefreshCandidatesAsync();
-            scope.Keyboard.IsOpen = false;
+            scope.Keyboard.Visibility = Visibility.Collapsed;
             session.Received(1).Dispose();
             if (disposeThrows)
             {
@@ -1220,7 +1219,7 @@ public class SoftKeyboardRegressionTests
             Assert.Empty(scope.Input.Text);
             if (failAfterClosing)
             {
-                scope.Keyboard.IsOpen = false;
+                scope.Keyboard.Visibility = Visibility.Collapsed;
                 pending.SetException(new InvalidOperationException("late action failure"));
             }
             else
@@ -1283,7 +1282,7 @@ public class SoftKeyboardRegressionTests
             {
                 if (transition == "close")
                 {
-                    scope.Keyboard.IsOpen = false;
+                    scope.Keyboard.Visibility = Visibility.Collapsed;
                 }
                 else if (transition == "source")
                 {
@@ -1317,15 +1316,15 @@ public class SoftKeyboardRegressionTests
         {
             using var scope = new SoftKeyboardRegressionScope();
             await scope.DrainAsync();
-            scope.Keyboard.IsOpen = false;
+            scope.Keyboard.Visibility = Visibility.Collapsed;
             scope.Keyboard.IsEnabled = !disableBeforeOpening;
-            scope.Keyboard.IsOpen = true;
+            scope.Keyboard.Visibility = Visibility.Visible;
             await Task.Delay(250);
             scope.Keyboard.IsEnabled = false;
             var root = Assert.IsType<Border>(scope.Keyboard.Template.FindName("KeyboardRoot", scope.Keyboard));
             Assert.Equal(0.55, root.Opacity, 3);
-            scope.Keyboard.IsOpen = false;
-            scope.Keyboard.IsOpen = true;
+            scope.Keyboard.Visibility = Visibility.Collapsed;
+            scope.Keyboard.Visibility = Visibility.Visible;
             await Task.Delay(250);
             Assert.Equal(0.55, root.Opacity, 3);
             scope.Keyboard.IsEnabled = true;

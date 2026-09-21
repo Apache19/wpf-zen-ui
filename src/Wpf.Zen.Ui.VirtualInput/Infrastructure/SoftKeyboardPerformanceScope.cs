@@ -17,10 +17,10 @@ namespace Wpf.Zen.Ui.VirtualInput.Infrastructure;
 /// </remarks>
 internal readonly struct SoftKeyboardPerformanceScope : IDisposable
 {
-    private readonly long   _started;
-    private readonly string _operation;
-    private readonly bool?  _isOpen;
-    private readonly bool?  _isLoaded;
+    private readonly long    _started;
+    private readonly string  _operation;
+    private readonly bool?   _isVisible;
+    private readonly bool?   _isLoaded;
 
     /// <summary>
     /// Starts timing a named operation, optionally recording its keyboard lifecycle state.
@@ -28,7 +28,7 @@ internal readonly struct SoftKeyboardPerformanceScope : IDisposable
     internal SoftKeyboardPerformanceScope(string operation, SoftKeyboard? keyboard = null)
     {
         _operation = operation;
-        _isOpen    = keyboard?.IsOpen;
+        _isVisible = keyboard?.IsVisible;
         _isLoaded  = keyboard?.IsLoaded;
         _started   = Stopwatch.GetTimestamp();
     }
@@ -42,7 +42,7 @@ internal readonly struct SoftKeyboardPerformanceScope : IDisposable
         if (elapsed >= 16)
         {
             Debug.WriteLine(FormattableString.Invariant(
-                $"[SoftKeyboard.Performance] Slow OPERATION; operation={_operation}, elapsedMs={elapsed:F3}, isOpen={_isOpen}, isLoaded={_isLoaded}.")
+                $"[SoftKeyboard.Performance] Slow OPERATION; operation={_operation}, elapsedMs={elapsed:F3}, isVisible={_isVisible}, isLoaded={_isLoaded}.")
             );
         }
     }

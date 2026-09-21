@@ -25,8 +25,11 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// input methods continue to behave as they do with a hardware keyboard.
 /// </para>
 /// <para>
-/// Set <see cref="IsOpen"/> explicitly for deterministic application layout. Alternatively set
-/// <see cref="AutoShowMode"/> to open after touch/pen focus or every supported editor focus.
+/// Applications own presentation through <see cref="UIElement.Visibility"/> or a host container.
+/// Visibility defaults to Visible. Hidden retains layout space; Collapsed removes it.
+/// Actual visibility governs input sessions, including ancestor visibility. Hiding cancels pending
+/// input and releases candidate presentation; showing refreshes the current input context.
+/// Focus changes only select the input target.
 /// <see cref="TargetScope"/> separates keyboard ownership when multiple forms, Pages, or dialogs
 /// are loaded on the same Dispatcher.
 /// </para>
@@ -95,7 +98,8 @@ public partial class SoftKeyboard : Control
     }
 
     /// <summary>
-    /// Initializes a closed keyboard. Layout discovery starts on opening or RefreshLayout.
+    /// Initializes a keyboard with standard WPF visibility. Layout discovery starts when its
+    /// template is applied, it becomes visible, or RefreshLayout is requested explicitly.
     /// </summary>
     public SoftKeyboard()
         : this(SoftKeyboardPlatformServices.Default)
@@ -151,7 +155,7 @@ public partial class SoftKeyboard : Control
     }
 
     /// <summary>
-    /// Connects routed key input once, when this control first opens its input surface.
+    /// Connects routed key input once when the control loads or prepares its input surface.
     /// </summary>
     private void EnsureKeyEventHandlers()
     {
@@ -177,11 +181,13 @@ public partial class SoftKeyboard : Control
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
-        if (IsOpen)
+        EnsureKeyEventHandlers();
+
+        // WPF also measures Hidden controls. Build the requested template's layout so hidden
+        // surfaces reserve their normal space before their first visible presentation.
+        if (_layoutDirty)
         {
-            // Also covers derived controls whose metadata defaults IsOpen to true.
-            EnsureKeyEventHandlers();
-            EnsureLayout();
+            RefreshLayout();
         }
     }
 
@@ -252,14 +258,6 @@ public partial class SoftKeyboard : Control
         _activeTextComposition            = null;
         _compositionTarget                = null;
         _compositionCancellationRequested = false;
-    }
-
-    private void CloseKeyboard()
-    {
-        if (TryCancelActiveComposition())
-        {
-            SetCurrentValue(IsOpenProperty, false);
-        }
     }
 
     private void CancelKeyInteraction()

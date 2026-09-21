@@ -65,8 +65,8 @@ public class SoftKeyboardTextBoundaryTests
                     scope.Editor.Focus();
                     break;
                 case "reopen":
-                    scope.Keyboard.IsOpen = false;
-                    scope.Keyboard.IsOpen = true;
+                    scope.Keyboard.Visibility = Visibility.Collapsed;
+                    scope.Keyboard.Visibility = Visibility.Visible;
                     break;
                 case "composition":
                     StartComposition(scope).Complete();

@@ -124,7 +124,6 @@ public class InputMethodObservationTests
         return WpfApplicationTestHost.RunAsync(async () =>
         {
             using var scope = new SoftKeyboardRegressionScope();
-            scope.Keyboard.AutoHideMode = SoftKeyboardAutoHideMode.Manual;
             scope.Keyboard.Target = null;
             scope.Keyboard.TargetScope = scope.Editor;
             Assert.True(scope.OtherEditor.Focus());
@@ -171,19 +170,18 @@ public class InputMethodObservationTests
     }
 
     /// <summary>
-    /// Focus changes refresh an open surface; an auto-hidden surface catches up when reopened.
+    /// Focus changes refresh an open surface; an host-hidden surface catches up when reopened.
     /// </summary>
-    /// <param name="autoHide">Whether leaving the scope also closes the input surface.</param>
+    /// <param name="hideByHost">Whether the host hides the surface before moving focus.</param>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public Task FocusOutsideScopeRefreshesRetainedTargetPresentation(bool autoHide)
+    public Task FocusOutsideScopeRefreshesRetainedTargetPresentation(bool hideByHost)
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
             using var scope = new SoftKeyboardRegressionScope();
-            scope.Keyboard.AutoHideMode = autoHide
-                ? SoftKeyboardAutoHideMode.FocusLeavesScope : SoftKeyboardAutoHideMode.Manual;
+
             scope.Keyboard.TargetScope = scope.Editor;
             var profile = new SoftKeyboardInputMethod(KnownTextServices.MicrosoftPinyin,
                 Guid.NewGuid(), 0x0804, "Pinyin", true);
@@ -197,14 +195,19 @@ public class InputMethodObservationTests
             await scope.DrainAsync();
             Assert.Equal("中", ModeCap(scope.Keyboard).Content);
 
+            if (hideByHost)
+            {
+                scope.Keyboard.Visibility = Visibility.Collapsed;
+            }
+
             Assert.True(scope.OtherEditor.Focus());
             await scope.DrainAsync();
             Assert.Same(scope.Editor, scope.Keyboard.ActiveTarget);
-            Assert.Equal(!autoHide, scope.Keyboard.IsOpen);
-            Assert.Equal(autoHide ? "中" : "A", scope.Keyboard.InputModeButton?.Content);
-            if (autoHide)
+            Assert.Equal(hideByHost ? Visibility.Collapsed : Visibility.Visible, scope.Keyboard.Visibility);
+            Assert.Equal(hideByHost ? "中" : "A", scope.Keyboard.InputModeButton?.Content);
+            if (hideByHost)
             {
-                scope.Keyboard.IsOpen = true;
+                scope.Keyboard.Visibility = Visibility.Visible;
                 await scope.DrainAsync();
                 Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
             }
@@ -234,7 +237,7 @@ public class InputMethodObservationTests
             await scope.DrainAsync();
             Assert.Equal("中", scope.Keyboard.InputModeButton?.Content);
 
-            scope.Keyboard.IsOpen = false;
+            scope.Keyboard.Visibility = Visibility.Collapsed;
             var reads = backend.StateReads;
             sample = new SoftKeyboardInputObservation(true, 1, true, 0);
             if (boundary == "Window")
@@ -258,10 +261,10 @@ public class InputMethodObservationTests
             }
 
             await scope.DrainAsync();
-            Assert.False(scope.Keyboard.IsOpen);
+            Assert.Equal(Visibility.Collapsed, scope.Keyboard.Visibility);
             Assert.Equal(reads, backend.StateReads);
             Assert.Equal("中", scope.Keyboard.InputModeButton?.Content);
-            scope.Keyboard.IsOpen = true;
+            scope.Keyboard.Visibility = Visibility.Visible;
             await scope.DrainAsync();
             Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
         });

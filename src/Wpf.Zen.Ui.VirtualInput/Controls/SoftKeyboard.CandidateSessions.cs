@@ -652,7 +652,7 @@ public partial class SoftKeyboard
         keyboard.SetValue(CandidateErrorPropertyKey, null);
         keyboard.ResetCandidateSession();
 
-        if (keyboard is { IsLoaded: true, IsOpen: true, IsVisible: true, IsEnabled: true })
+        if (keyboard is { IsLoaded: true, IsVisible: true, IsEnabled: true })
         {
             keyboard.RequestCandidateRefresh();
         }

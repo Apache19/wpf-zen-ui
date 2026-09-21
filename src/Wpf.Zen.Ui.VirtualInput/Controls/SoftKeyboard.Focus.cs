@@ -17,9 +17,9 @@ public partial class SoftKeyboard
 {
     /// <summary>
     /// Refreshes presentation for Dispatcher focus changes and routes eligible editors according
-    /// to this keyboard's target scope and automatic open/close policy.
+    /// to this keyboard's target scope.
     /// </summary>
-    internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
+    internal void OnSessionFocusChanged(IInputElement? focusedElement)
     {
         if (!IsLoaded)
         {
@@ -56,17 +56,9 @@ public partial class SoftKeyboard
                 SetValue(ActiveTargetPropertyKey, focusedElement);
             }
 
-            var shouldOpen = AutoShowMode == SoftKeyboardAutoShowMode.AnyFocus
-                || (AutoShowMode == SoftKeyboardAutoShowMode.TouchAndPen && touchOrPenInitiated);
-
-            if (shouldOpen && isEditableTarget)
-            {
-                SetCurrentValue(IsOpenProperty, true);
-            }
-
             RefreshInputMethodState();
 
-            if (IsOpen)
+            if (IsVisible)
             {
                 RequestSystemKeyboardHide();
                 RequestCandidateRefresh();
@@ -76,19 +68,13 @@ public partial class SoftKeyboard
             return;
         }
 
-        if (AutoHideMode == SoftKeyboardAutoHideMode.FocusLeavesScope)
-        {
-            SetCurrentValue(IsOpenProperty, false);
-        }
-
         // Focus outside the effective scope cannot be a valid target for this keyboard. Release the
         // local suppression marker immediately, but do not request TryShow for another window or
         // scope—the new focus owner and Windows input policy must decide what UI it needs.
         ReleaseSystemKeyboardSuppression(tryRestore: false);
         ResetCandidateSession();
 
-        // Auto-hide may have canceled the earlier request while releasing the input session.
-        // Queue presentation against the resulting focus and lifecycle generation.
+        // Refresh presentation after releasing candidate ownership for the previous scope.
         if (CanObserveInputMethods)
         {
             _inputObservation.RequestRefresh();

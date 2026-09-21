@@ -10,8 +10,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
-    private IReadOnlyList<SoftKeyboardExtension>          _activeExtensions       = [];
-    private IReadOnlyList<SoftKeyboardSupplementalLayout> _supplementalLayouts    = [];
+    private IReadOnlyList<SoftKeyboardExtension>          _activeExtensions    = [];
+    private IReadOnlyList<SoftKeyboardSupplementalLayout> _supplementalLayouts = [];
 
     /// <summary>
     /// Identifies the <see cref="ExtensionProvider"/> dependency property.
@@ -250,7 +250,7 @@ public partial class SoftKeyboard
         keyboard.RebuildLayout();
         keyboard.RefreshInputMode();
 
-        if (keyboard.IsLoaded && keyboard.IsOpen)
+        if (keyboard.IsLoaded && keyboard.IsVisible)
         {
             keyboard.RequestCandidateRefresh();
         }

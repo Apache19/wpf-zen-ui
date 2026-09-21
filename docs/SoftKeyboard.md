@@ -31,8 +31,7 @@ XAML 使用专属 XML 命名空间，C# API 按职责分布在 `.Controls`、`.C
 
     <keyboard:SoftKeyboard
         Grid.Row="1"
-        AutoShowMode="TouchAndPen"
-        IsOpen="{Binding IsKeyboardOpen}"
+        Visibility="{Binding KeyboardVisibility}"
         TargetScope="{Binding ElementName=FormScope}" />
 </Grid>
 </Window>
@@ -95,15 +94,24 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 输入法的专有模式通过扩展适配。兼容性验证以具体 Windows 和输入法版本为范围，记录见
 [TSF 检查记录](SoftKeyboard.Tsf.md)。
 
-## 目标与自动开关
+## 显示控制与输入目标
 
 - 设置 `Target` 可锁定单个编辑器；留空则跟随 `TargetScope` 内最后聚焦的受支持编辑器。
 - `TargetScope` 为空时使用所在 `Window`；在 WinForms `ElementHost` 或独立
   `HwndSource` 中则使用当前呈现源的根视觉元素。前台安全校验、InputPane 请求与输入法消息
   都使用编辑器所属的 HWND，不要求 WPF `Window`。
-- `AutoShowMode="TouchAndPen"` 仅响应触摸或笔引发的焦点变化；`AnyFocus` 响应任意焦点来源。
-- `AutoHideMode="FocusLeavesScope"` 在焦点离开表单或对话框区域时关闭；`Manual` 由应用控制。
-- 打开、关闭策略独立，手动打开也可以配合自动关闭。
+- 显示状态由应用通过标准 WPF `Visibility`、样式触发器或父容器控制，默认值为 `Visible`。
+  上例的 `KeyboardVisibility` 是视图模型上的 `Visibility` 属性；布尔状态可配合
+  `BooleanToVisibilityConverter` 使用。
+- `Collapsed` 隐藏并释放布局空间；`Hidden` 保留布局空间。父容器隐藏同样会暂停输入活动。
+- 焦点变化只更新输入目标和输入法状态，显隐策略（包括触摸唤起、失焦隐藏）由页面或宿主实现。
+  宿主显示按钮宜设置 `Focusable="False"`，以保留编辑器焦点。
+- 控件以只读 `IsVisible` 管理实际可见期间的工作。隐藏会取消按键手势和异步输入、
+  关闭浮层、释放候选展示及系统键盘抑制；重新显示时按当前目标和输入法状态刷新。
+  取消组合输入仍需原编辑器持有前台焦点，遵循本文的组合输入安全约束。
+- 构造时不生成布局或读取原生输入状态。应用模板时会生成布局以支持 WPF 测量，
+  包括首次以 `Hidden` 加载时所需的占位；原生观察仍以已加载、实际可见且启用为前提。
+  需要提前查询时调用 `RefreshLayout()` 或 `RefreshInputMethods()`。
 
 内置适配器支持 WPF `TextBox`、`RichTextBox`、`PasswordBox` 及其库内派生控件。其它 WPF
 编辑器可实现 `ISoftKeyboardTargetAdapter`；行业专用布局可实现
@@ -129,7 +137,7 @@ keyboard.ExtensionProvider = new CompositeSoftKeyboardExtensionProvider(
 地址快捷键始终输入半角字面文本，不随 Shift 或 IME 模式改为全角标点。
 显式 `Letters` 仍按网址/邮箱作用域提供快捷键，因此从符号页返回时保留专用布局；
 显式 `Numbers`、`Symbols`、`MoreSymbols` 优先于输入作用域。更换编辑器时恢复 `Automatic`。
-切换输入模式保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
+切换输入模式保留当前符号页，不会自动跳回字母页。隐藏由应用设置 `Visibility=Collapsed` 或 `Hidden`；
 默认模板没有额外工具栏、输入法选择页或关闭按钮。
 
 `ISoftKeyboardLayoutProvider.CreateLayout` 只需处理自己负责的上下文，不负责时返回 `null`。
@@ -304,7 +312,7 @@ JIS 与英文键盘配置使用各自的 OEM 排列；原生布局不提供映�
 
 状态展示跟随当前 Dispatcher 的输入上下文，不要求焦点进入 `TargetScope`，也不要求存在
 `ActiveTarget`。首次加载、范围外焦点变化、窗口重新激活和可见性恢复都会刷新展示；
-键盘关闭时也可更新已提交状态。点击执行仍检查有效目标、焦点和原生命令的可用性。
+键盘隐藏时也可更新已提交状态。点击执行仍检查有效目标、焦点和原生命令的可用性。
 
 首次启动时，系统可能已报告活动 Profile，但尚未提供语言栏项目和可解释的 TSF/IMM 状态。
 对于 Windows 文本服务，此时模式键显示双向箭头图标，辅助名称为“切换输入模式（当前模式未知）”。
@@ -482,7 +490,7 @@ public sealed class AppInputModeAdapter : ISoftKeyboardInputModeAdapter
 
 长按有 `Alternates` 的键，在键帽自身模板的 `PART_AlternatePopup` 中展示变体。
 可以移动到变体上松手，也可以松开原键后点击变体提交，
-点击外部关闭；原键不会额外输入。浮层不参与键盘测量，关闭、隐藏、卸载、禁用和替换模板都会清理它。
+点击外部关闭；原键不会额外输入。浮层不参与键盘测量，隐藏、卸载、禁用和替换模板都会清理它。
 Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才启用外部点击关闭，避免立即误关闭。
 自定义键帽模板可以省略该可选部件，此时保留普通按键输入。变体按钮的 `DataContext` 是对应字符串。
 
@@ -491,7 +499,7 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 其他变体继续走字面 Unicode 输入。`Invoke()` 和 UI Automation 也走同一请求入口。
 键盘执行每次请求时仍校验目标、焦点和输入状态。键帽可单独使用，由宿主处理请求。
 
-`InteractionStarted` 通知键盘取消其它键帽的交互；键盘关闭、切换布局、目标变化或窗口失活时，
+`InteractionStarted` 通知键盘取消其它键帽的交互；键盘隐藏、切换布局、目标变化或窗口失活时，
 通过 `CancelInteraction()` 取消活动键帽。键盘不操作键帽的计时器、捕获和浮层。
 键帽依据 WPF 提升后的鼠标事件支持鼠标、笔和主触点，当前采用单活动手势，不提供多指组合键。
 重复默认关闭，由布局模型显式启用；内置布局仅为退格和方向键启用重复。
@@ -529,7 +537,7 @@ TSF 的初始化和激活由 WPF 的 TextStore 管线负责。控件通过缓存
 
 任何提交路径都以 TSF 后续通知决定候选显示，不因为 HRESULT 成功或按键入队就提前清空候选栏。
 
-只有 `SoftKeyboard` 已打开且实际可见时才隐藏输入法的原生候选窗。关闭键盘，或折叠键盘及其
+只有 `SoftKeyboard` 已加载且实际可见时才隐藏输入法的原生候选窗。隐藏键盘，或折叠键盘及其
 任意祖先（例如 Page、ContentDialog 的键盘区域）时，会先尝试恢复原生候选窗再释放内嵌候选；若
 组合输入仍在继续，键盘重新显示后可重新发现仍存续且符合策略的 TSF 候选。
 原生恢复依赖 TIP 正确实现 Show。自动策略会从元素开始时协商是否接管，而非等到隐藏后才尝试补救。
@@ -655,7 +663,7 @@ conversion，也不根据返回值提前发布界面状态。请求失败或调�
 
 候选刷新、自定义异步动作和候选确认仍支持真正的异步等待。新刷新替代旧刷新，新动作替代旧动作；
 候选提交和翻页共享一个输入操作，繁忙期间拒绝第二个请求。取消立即撤销旧操作的结果、错误和刷新
-发布权限，执行者在任务结束后释放自己的资源。关闭、隐藏、禁用、换目标、卸载和失去前台输入所有权
+发布权限，执行者在任务结束后释放自己的资源。隐藏、禁用、换目标、卸载和失去前台输入所有权
 会使相应操作失效。输入法会话在替换来源或卸载时释放；同步回调内发生替换时，在旧调用退出后释放。
 
 候选元素结束与操作取消是不同事件：元素结束立即禁止继续向旧元素输入，但可以作为已发送操作的
@@ -674,16 +682,16 @@ conversion，也不根据返回值提前发布界面状态。请求失败或调�
 记忆中的目标。
 
 候选展示与 TSF 组合文本是两个独立生命周期。控件通过 WPF 文本组合事件跟踪当前编辑器的预编辑
-事务；切换键面、切换输入法、关闭键盘或插入符号和长按替代字符等直接 Unicode 文本前，
+事务；切换键面、切换输入法、隐藏键盘或插入符号和长按替代字符等直接 Unicode 文本前，
 会先向仍保持焦点的输入法发送 Esc。这样由输入法按自身语义删除尚未确认的组合文本，而不是使用
 可能保留拼音字母的 Enter，也不会用仅结束组合标记、但可能留下组合范围文字的强制终止方式。
 控件仅在目标仍有键盘焦点且窗口位于前台时发送取消键，避免把 Esc 泄漏给其他编辑器或应用。
-等待组合取消后执行的输入法操作属于发起时的输入会话。目标更换、关闭、隐藏、禁用、卸载或窗口
+等待组合取消后执行的输入法操作属于发起时的输入会话。目标更换、隐藏、禁用、卸载或窗口
 失活会使待执行操作失效；恢复原状态也不会复活旧操作。执行前还会核对原目标是否仍保持焦点。
 
 ## 系统键盘与兼容性
 
-只有控件已加载、实际可见、`IsOpen=true`、宿主窗口在前台，而且有效编辑目标仍保持键盘焦点时，
+只有控件已加载、实际可见、宿主窗口在前台，而且有效编辑目标仍保持键盘焦点时，
 控件才使用 Windows 10 1607+ 的窗口级 `IInputPaneInterop` / `IInputPane2.TryHide` 请求隐藏系统
 输入面板。Windows 可以拒绝该协商请求；控件不会查找、移动或终止 `TabTip` 窗口。结果由
 `SystemKeyboardSuppressionState` 公开。焦点变化时除即时请求外，还会在本轮 WPF 焦点处理完成后
@@ -696,7 +704,7 @@ conversion，也不根据返回值提前发布界面状态。请求失败或调�
 这属于自动隐藏而非 Windows 的强制禁止显示策略，系统拒绝请求时仍可能显示，异步弹出时也
 可能短暂闪现；`Hidden` 表示隐藏请求被接受，不代表永久锁定系统键盘的可见性。
 
-关闭或折叠控件、折叠其任意祖先、目标失效或焦点离开目标后，控件立即结束自己的抑制状态。
+隐藏或折叠控件、折叠其任意祖先、目标失效或焦点离开目标后，控件立即结束自己的抑制状态。
 仅当本控件此前的 `TryHide` 确实被 Windows 接受、原编辑器仍有效并保持焦点、窗口仍在前台，且
 同一 Dispatcher 没有另一个可见软键盘仍需抑制时，才调用一次 `IInputPane2.TryShow` 尝试恢复
 系统键盘；最终是否显示仍由 Windows 根据物理键盘、用户设置和输入策略决定。窗口失活或控件
@@ -775,18 +783,18 @@ dotnet pack src/Wpf.Zen.Ui.VirtualInput.Extensions/Wpf.Zen.Ui.VirtualInput.Exten
 
 构造阶段不生成布局或读取输入法目录。`CurrentLayout` 初始为共享的 `SoftKeyboardLayout.Empty`
 （无按键、一个逻辑列），`AvailableSupplementalLayouts` 初始为空；读取这两个属性不会隐式触发工作。
-关闭状态下的布局、扩展、目标和页面配置变更只标记失效，保留上次生成的快照。
-首次打开或重新打开时按最新配置生成布局；需提前查询布局或扩展目录的应用可以显式调用 `RefreshLayout()`。
+不可见状态下的布局、扩展、目标和页面配置变更只标记失效，保留上次生成的快照。
+首次应用模板或显示时按最新配置生成布局；需提前查询布局或扩展目录的应用可以显式调用 `RefreshLayout()`。
 已有布局的刷新仍等待当前输入法观察稳定；首次显示可先使用最后已提交的上下文生成基础表面。
-按键路由事件在首次打开时注册一次；Popup 属性描述器在实际连接按键 Popup 时初始化。
-关闭、隐藏或禁用时暂停自动输入法观察；关闭状态的 Loaded 仅保留自动唤起需要的焦点跟踪。
+按键路由事件在加载或首次显示时注册一次；Popup 属性描述器在实际连接按键 Popup 时初始化。
+隐藏或禁用时暂停自动输入法观察；不可见状态的 Loaded 仅保留输入目标的焦点跟踪。
 可用的 Windows 输入表面按需启动共享原生监听，最后一个表面停用时释放监听。
 候选会话在实际使用或显式候选刷新时创建。
 
 Windows 会话实现 `ISoftKeyboardActiveInputMethodSession`：普通刷新和输入前验证只读取活动配置，
 不遍历全部语言和输入法。`InputMethods` 初始为空，仅通过 `RefreshInputMethods()` 或打开输入法
 切换菜单请求完整目录；`ActiveInputMethod` 独立更新，目录中的 IsActive 表示上次枚举时的状态。
-显式刷新可用于未加载/关闭的控件，目录立即发布，模式与键帽仍遵循原来的观察窗口。
+显式刷新可用于未加载/不可见的控件，目录立即发布，模式与键帽仍遵循原来的观察窗口。
 自定义来源可实现该可选接口；仅实现基础会话接口时，仍通过 GetSnapshot 提供观察数据。
 
 WPF 控件和 TSF 调用留在所属 Dispatcher，不通过 Task.Run 转移线程。
@@ -797,19 +805,18 @@ WPF 控件和 TSF 调用留在所属 Dispatcher，不通过 Task.Run 转移线�
 软键盘通过公开属性和布局选择 API 提供配置能力。控件库不提供设置菜单、菜单数据模型或设置提供器。
 应用自行决定配置入口、文案、持久化和交互方式。
 
-图库在点击外部 `DropDownButton` 时显式刷新布局目录并创建菜单，根据当前属性生成选中状态，在选择时调用
-`SetCurrentValue` 修改 `AutoShowMode`、`AutoHideMode`，保留现有属性绑定。
-打开策略包含 `Disabled`、`TouchAndPen` 和 `AnyFocus`；关闭策略独立选择 `Manual` 或 `FocusLeavesScope`。
+图库由页面上的复选框通过 `BooleanToVisibilityConverter` 绑定键盘的 `Visibility`。
+点击外部 `DropDownButton` 时显式刷新布局目录并创建布局选择菜单。
 菜单关闭后由页面恢复编辑器焦点，页面卸载时关闭菜单。
 
 | API | 用途 |
 | --- | --- |
-| `IsOpen` | 控制当前显示状态 |
-| `AutoShowMode` / `AutoHideMode` | 独立配置自动打开与关闭策略 |
-| `AvailableSupplementalLayouts` | 上次生成的可用布局快照，可绑定；初始为空，打开或显式刷新后包含 Automatic、Standard 与适用的扩展布局 |
+| `Visibility` | WPF 标准显示状态，由应用或宿主控制 |
+| `IsVisible` | WPF 只读实际可见性，包含祖先容器和呈现源的约束 |
+| `AvailableSupplementalLayouts` | 上次生成的可用布局快照，可绑定；初始为空，显示或显式刷新后包含 Automatic、Standard 与适用的扩展布局 |
 | `SelectSupplementalLayout(id)` / `SelectedSupplementalLayout` | 验证、选择并读取当前输入法的附加布局选择 |
 
-打开期间布局目录随输入上下文和扩展变化更新；关闭期间按需刷新，已取得的快照不变。
+可见期间布局目录随输入上下文和扩展变化更新；不可见期间按需刷新，已取得的快照不变。
 应用执行延迟的选择前应检查该布局仍可用；`SelectSupplementalLayout` 会验证失效的目录，再安全应用选择。
 选择布局仍会安全取消组合，并在控件生命周期内按输入法记忆；应用负责跨启动持久化。
 

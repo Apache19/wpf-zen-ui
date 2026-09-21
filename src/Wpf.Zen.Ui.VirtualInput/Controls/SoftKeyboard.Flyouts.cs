@@ -30,7 +30,7 @@ public partial class SoftKeyboard
     {
         VerifyAccess();
 
-        if (!IsEnabled || !IsOpen || !IsVisible)
+        if (!IsEnabled || !IsVisible)
         {
             return;
         }
@@ -50,7 +50,7 @@ public partial class SoftKeyboard
     private void OpenInputMethodMenuCore(UIElement anchor, int requestVersion)
     {
         if (IsInputMethodOperationActive || requestVersion != _inputMethodMenuRequestVersion
-            || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible)
+            || !IsLoaded || !IsEnabled || !IsVisible)
         {
             return;
         }
@@ -80,7 +80,7 @@ public partial class SoftKeyboard
             return true;
         });
         if (!refreshed || requestVersion != _inputMethodMenuRequestVersion
-            || !IsLoaded || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
+            || !IsLoaded || !IsEnabled || !IsVisible || !IsWindowForeground())
         {
             return;
         }
@@ -151,7 +151,7 @@ public partial class SoftKeyboard
             var target  = ActiveTarget;
             var adapter = target is null ? null : GetAdapter(target);
 
-            return IsLoaded && IsOpen && IsEnabled && IsVisible
+            return IsLoaded && IsEnabled && IsVisible
                 && target is DependencyObject targetObject
                 && ReferenceEquals(Keyboard.FocusedElement, target)
                 && adapter is not null

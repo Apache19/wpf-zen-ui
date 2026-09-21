@@ -34,7 +34,7 @@ public class SoftKeyboardAsyncSourceTests
             var backend = new SettlingInputMethodBackend();
             var keyboard = CreateKeyboard();
             keyboard.InputMethodSource = new WindowsSoftKeyboardInputMethodSource(backend);
-            keyboard.IsOpen = true;
+            keyboard.Visibility = Visibility.Visible;
             var editor = new TextBox();
             var panel = new StackPanel();
             panel.Children.Add(editor);
@@ -95,7 +95,7 @@ public class SoftKeyboardAsyncSourceTests
             var source = new DeferredCandidateSource();
             var keyboard = CreateKeyboard();
             keyboard.CandidateSource = source;
-            keyboard.IsOpen = true;
+            keyboard.Visibility = Visibility.Visible;
             var editor = new TextBox();
             var panel = new StackPanel();
             panel.Children.Add(editor);
@@ -141,7 +141,7 @@ public class SoftKeyboardAsyncSourceTests
             var source = new DeferredCandidateSource();
             var keyboard = CreateKeyboard();
             keyboard.CandidateSource = source;
-            keyboard.IsOpen = true;
+            keyboard.Visibility = Visibility.Visible;
             var editor = new TextBox();
             var panel = new StackPanel();
             panel.Children.Add(editor);

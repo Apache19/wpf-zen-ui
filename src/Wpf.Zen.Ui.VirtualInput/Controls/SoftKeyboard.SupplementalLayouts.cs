@@ -31,7 +31,7 @@ public partial class SoftKeyboard
     /// </summary>
     /// <remarks>
     /// Initially empty. Opening or RefreshLayout publishes Automatic, Standard and applicable
-    /// extension layouts in declaration order. Closed changes retain the last generated snapshot.
+    /// extension layouts in declaration order. Invisible changes retain the last snapshot.
     /// Updated during layout resolution; applications may bind their own selection UI to this
     /// property and apply an identifier with SelectSupplementalLayout. Previously read snapshots
     /// remain unchanged. Choices can become unavailable when the profile or input scope changes.
@@ -85,7 +85,7 @@ public partial class SoftKeyboard
     {
         VerifyAccess();
 
-        // A choice obtained before closed-state configuration changes must be revalidated.
+        // A choice obtained before invisible configuration changes must be revalidated.
         if (_layoutDirty)
         {
             RefreshLayout();

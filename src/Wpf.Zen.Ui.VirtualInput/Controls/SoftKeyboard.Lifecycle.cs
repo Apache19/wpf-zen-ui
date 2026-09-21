@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
+
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
@@ -31,9 +33,11 @@ public partial class SoftKeyboard
         }
 
         ResolveTarget();
+        EnsureKeyEventHandlers();
+        EnsureLayout();
         RefreshInputMode();
 
-        if (IsOpen)
+        if (IsVisible)
         {
             RequestSystemKeyboardHide();
             RequestCandidateRefresh();
@@ -84,6 +88,11 @@ public partial class SoftKeyboard
     /// </summary>
     private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
     {
+        Debug.WriteLine(
+            $"[SoftKeyboard.Lifecycle] VISIBILITY changed; isVisible={IsVisible}, "
+            + $"visibility={Visibility}, isLoaded={IsLoaded}."
+        );
+
         if (!IsVisible)
         {
             _inputOperationVersion++;
@@ -106,11 +115,15 @@ public partial class SoftKeyboard
         // IsVisible includes ancestor visibility, unlike the local Visibility value. Reacquire the
         // still-active TSF element when a Page/dialog region becomes visible without requiring the
         // user to type another character.
+        EnsureKeyEventHandlers();
+        ResolveTarget();
+        EnsureLayout();
+
         if (IsLoaded)
         {
             RefreshInputMethodState();
 
-            if (IsOpen && ActiveTarget is not null)
+            if (ActiveTarget is not null)
             {
                 RequestCandidateRefresh();
                 RequestSystemKeyboardHide();
@@ -125,7 +138,7 @@ public partial class SoftKeyboard
     {
         _session?.EnsureInputMethodMonitoring();
 
-        if (IsOpen)
+        if (IsVisible)
         {
             // Deactivation occurs after the HWND has lost foreground ownership, when SendInput is
             // no longer safe. Cancel any composition that survived the app switch now, then let the
@@ -183,7 +196,7 @@ public partial class SoftKeyboard
         {
             RefreshInputMethodState();
 
-            if (IsOpen)
+            if (IsVisible)
             {
                 RequestCandidateRefresh();
                 RequestSystemKeyboardHide();

@@ -27,8 +27,6 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
 
     private InputMethodMonitor? _inputMethodMonitor;
 
-    private int _lastTouchOrPenTick;
-
     /// <summary>
     /// Attaches lightweight focus observation; native monitoring starts with an active keyboard.
     /// </summary>
@@ -74,10 +72,11 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     /// </summary>
     internal void EnsureInputMethodMonitoring()
     {
-        var needed = _keyboards.Any(reference => reference.Target is SoftKeyboard keyboard
+        var needed = _keyboards.Any(
+            reference => reference.Target is SoftKeyboard keyboard
             && keyboard.CanObserveInputMethods
-            && keyboard.InputMethodSource is WindowsSoftKeyboardInputMethodSource
-                { UsesNativeNotifications: true });
+            && keyboard.InputMethodSource is WindowsSoftKeyboardInputMethodSource source
+            && source.UsesNativeNotifications);
 
         if (!needed)
         {
@@ -125,8 +124,7 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
     }
 
     /// <summary>
-    /// Routes editor composition and focus events, retaining recent touch or pen intent for
-    /// opening.
+    /// Routes editor composition and focus events to registered keyboards.
     /// </summary>
     private void OnPreProcessInput(object sender, PreProcessInputEventArgs args)
     {
@@ -140,26 +138,17 @@ internal sealed class SoftKeyboardDispatcherSession : IDisposable
             ForEachKeyboard(keyboard => keyboard.OnSessionTextComposition(compositionArgs));
         }
 
-        if (input is TouchEventArgs or StylusEventArgs)
-        {
-            _lastTouchOrPenTick = Environment.TickCount;
-            return;
-        }
-
         if (input.RoutedEvent != Keyboard.GotKeyboardFocusEvent
             || input is not KeyboardFocusChangedEventArgs focusArgs)
         {
             return;
         }
 
-        var elapsed             = unchecked(Environment.TickCount - _lastTouchOrPenTick);
-        var touchOrPenInitiated = elapsed is >= 0 and <= 1000;
-
         EnsureInputMethodMonitoring();
 
         ForEachKeyboard(
             keyboard => keyboard.OnSessionFocusChanged(
-                focusArgs.NewFocus, touchOrPenInitiated
+                focusArgs.NewFocus
             )
         );
     }

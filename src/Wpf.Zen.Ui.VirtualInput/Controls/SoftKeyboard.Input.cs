@@ -31,10 +31,6 @@ public partial class SoftKeyboard
                 {
                     ShowPage(navigation.Page);
                 }
-                else if (button.Tag is SoftKeyboardKeyKind.Close)
-                {
-                    CloseKeyboard();
-                }
                 else if (button.Tag is SoftKeyboardKeyKind.SwitchInputMode)
                 {
                     SwitchInputMode();
@@ -89,7 +85,7 @@ public partial class SoftKeyboard
 
         _inputMethodMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
-        if (!IsOpen || !IsEnabled || !IsVisible)
+        if (!IsEnabled || !IsVisible)
         {
             CancelKeyInteraction();
         }
@@ -102,7 +98,7 @@ public partial class SoftKeyboard
         if (args.OriginalSource is not SoftKeyboardKeyControl keyControl
             || !ReferenceEquals(_activeKeyControl, keyControl)
             || !ReferenceEquals(keyControl.Key, args.Key)
-            || !IsOpen || !IsEnabled || !IsVisible)
+            || !IsEnabled || !IsVisible)
         {
             return;
         }
@@ -175,10 +171,6 @@ public partial class SoftKeyboard
 
             case SoftKeyboardKeyKind.SwitchInputMode:
                 SwitchInputMode();
-                break;
-
-            case SoftKeyboardKeyKind.Close:
-                CloseKeyboard();
                 break;
 
             case SoftKeyboardKeyKind.Custom:
@@ -414,7 +406,7 @@ public partial class SoftKeyboard
         var target  = Target ?? ActiveTarget;
         var adapter = target is null ? null : GetAdapter(target);
 
-        if (!IsLoaded || !IsEnabled || !IsVisible || !IsOpen
+        if (!IsLoaded || !IsEnabled || !IsVisible
             || target is not DependencyObject targetObject
             || adapter is null
             || !IsWithinEffectiveScope(targetObject)

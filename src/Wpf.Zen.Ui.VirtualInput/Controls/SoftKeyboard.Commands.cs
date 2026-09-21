@@ -135,5 +135,5 @@ public partial class SoftKeyboard
         args.Handled = true;
     }
 
-    private bool IsInputSurfaceAvailable => IsOpen && IsEnabled && IsVisible && ActiveTarget is not null;
+    private bool IsInputSurfaceAvailable => IsVisible && IsEnabled && ActiveTarget is not null;
 }

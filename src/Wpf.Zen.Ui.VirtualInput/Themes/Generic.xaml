@@ -266,11 +266,7 @@
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding CornerRadius}"
-                        RenderTransformOrigin="0.5,1"
                         SnapsToDevicePixels="True">
-                        <Border.RenderTransform>
-                            <TranslateTransform />
-                        </Border.RenderTransform>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -368,32 +364,6 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <!--  Closing remains immediate so the IsOpen=false measurement contract stays exactly zero.  -->
-                        <Trigger Property="IsOpen" Value="False">
-                            <Setter TargetName="KeyboardRoot" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <Trigger Property="IsOpen" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation
-                                            FillBehavior="Stop"
-                                            Storyboard.TargetName="KeyboardRoot"
-                                            Storyboard.TargetProperty="Opacity"
-                                            From="0"
-                                            To="1"
-                                            Duration="0:0:0.12" />
-                                        <DoubleAnimation
-                                            FillBehavior="Stop"
-                                            Storyboard.TargetName="KeyboardRoot"
-                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                            From="10"
-                                            To="0"
-                                            Duration="0:0:0.12" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                        </Trigger>
                         <!--
                             Candidate creation and composition updates are transient. Keep the bar's
                             fixed header slot for every input state so every keystroke

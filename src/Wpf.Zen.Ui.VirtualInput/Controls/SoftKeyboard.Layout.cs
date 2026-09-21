@@ -49,8 +49,8 @@ public partial class SoftKeyboard
     /// <remarks>
     /// Call on the owning dispatcher. This cancels held-key interactions before replacing their
     /// data. Providers must not call this while constructing a layout; recursive construction is
-    /// ignored. Closed controls can explicitly build their layout and available choices with this
-    /// method. Requests during an input-method operation wait for its coherent publication.
+    /// ignored. Invisible controls can explicitly build their layout and available choices
+    /// with this method. Requests during an input-method operation wait for its coherent publication.
     /// </remarks>
     public void RefreshLayout()
     {
@@ -65,7 +65,7 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Invalidates the layout, coalescing closed-state changes and native-operation requests.
+    /// Invalidates the layout, coalescing invisible-state changes and native-operation requests.
     /// </summary>
     /// <param name="publishInputMethodState">
     /// True while publishing a complete observed snapshot under the input-method operation gate.
@@ -82,11 +82,11 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Coalesces closed-state changes and enters the layout factory only when requested.
+    /// Coalesces invisible-state changes and enters the layout factory only when requested.
     /// </summary>
     private void EnsureLayout(bool publishInputMethodState = false)
     {
-        if (!_layoutDirty || _isRebuildingLayout || (!IsOpen && !_explicitLayoutRefresh))
+        if (!_layoutDirty || _isRebuildingLayout || (!IsVisible && !_explicitLayoutRefresh))
         {
             return;
         }
@@ -94,7 +94,7 @@ public partial class SoftKeyboard
         if (!publishInputMethodState
             && (IsInputMethodOperationActive || (_inputObservation.IsObserving && _hasBuiltLayout)))
         {
-            // First opening can show the last committed context while native discovery settles.
+            // First presentation can show the last committed context while native discovery settles.
             // Later refreshes keep the existing surface until all observed fields are published.
             _inputMethodLayoutPending = true;
             return;
@@ -104,14 +104,14 @@ public partial class SoftKeyboard
     }
 
     /// <summary>
-    /// Resolves and publishes one requested snapshot; kept outside the closed-state fast path.
+    /// Resolves and publishes one requested snapshot; kept outside the invisible-state fast path.
     /// </summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private void BuildLayoutCore()
     {
-        _layoutDirty = false;
+        _layoutDirty           = false;
         _explicitLayoutRefresh = false;
-        _isRebuildingLayout = true;
+        _isRebuildingLayout    = true;
 
 #if DEBUG
         using var performance = new SoftKeyboardPerformanceScope("RebuildLayout", this);

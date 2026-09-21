@@ -41,11 +41,6 @@ public enum SoftKeyboardKeyKind
     SwitchInputMode,
 
     /// <summary>
-    /// Closes the keyboard.
-    /// </summary>
-    Close,
-
-    /// <summary>
     /// Invokes a custom action through the keyboard's validated input services.
     /// </summary>
     Custom,

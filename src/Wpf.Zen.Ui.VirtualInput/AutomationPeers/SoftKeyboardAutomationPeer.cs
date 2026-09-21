@@ -3,23 +3,19 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Automation;
 using System.Windows.Automation.Peers;
-using System.Windows.Automation.Provider;
 
 namespace Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 
 /// <summary>
-/// Exposes <see cref="SoftKeyboard"/> as an expandable keyboard surface without moving keyboard focus.
+/// Exposes <see cref="SoftKeyboard"/> as a keyboard pane without moving keyboard focus.
 /// </summary>
 /// <remarks>
 /// Individual keys are ordinary button peers supplied by the template. They implement Invoke and
-/// remain non-focusable, while this peer supplies the open/closed state of the composite surface.
+/// remain non-focusable. WPF reports the visibility of the composite surface.
 /// </remarks>
-internal sealed class SoftKeyboardAutomationPeer : FrameworkElementAutomationPeer, IExpandCollapseProvider
+internal sealed class SoftKeyboardAutomationPeer : FrameworkElementAutomationPeer
 {
-    private readonly SoftKeyboard _owner;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SoftKeyboardAutomationPeer"/> class.
     /// </summary>
@@ -27,7 +23,6 @@ internal sealed class SoftKeyboardAutomationPeer : FrameworkElementAutomationPee
     public SoftKeyboardAutomationPeer(SoftKeyboard owner)
         : base(owner)
     {
-        _owner = owner;
     }
 
     /// <inheritdoc />
@@ -40,57 +35,5 @@ internal sealed class SoftKeyboardAutomationPeer : FrameworkElementAutomationPee
     protected override AutomationControlType GetAutomationControlTypeCore()
     {
         return AutomationControlType.Pane;
-    }
-
-    /// <inheritdoc />
-    public override object? GetPattern(PatternInterface patternInterface)
-    {
-        return patternInterface == PatternInterface.ExpandCollapse
-            ? this
-            : base.GetPattern(patternInterface);
-    }
-
-    ExpandCollapseState IExpandCollapseProvider.ExpandCollapseState
-    {
-        get => _owner.IsOpen
-            ? ExpandCollapseState.Expanded
-            : ExpandCollapseState.Collapsed;
-    }
-
-    void IExpandCollapseProvider.Expand()
-    {
-        EnsureEnabled();
-        _owner.SetCurrentValue(SoftKeyboard.IsOpenProperty, true);
-    }
-
-    void IExpandCollapseProvider.Collapse()
-    {
-        EnsureEnabled();
-        _owner.SetCurrentValue(SoftKeyboard.IsOpenProperty, false);
-    }
-
-    /// <summary>
-    /// Raises the standardized open-state notification when <see cref="SoftKeyboard.IsOpen"/> changes.
-    /// </summary>
-    internal static void RaiseIsOpenChanged(SoftKeyboard owner, bool oldValue, bool newValue)
-    {
-        if (oldValue == newValue || FromElement(owner) is not SoftKeyboardAutomationPeer peer)
-        {
-            return;
-        }
-
-        peer.RaisePropertyChangedEvent(
-            ExpandCollapsePatternIdentifiers.ExpandCollapseStateProperty,
-            oldValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed,
-            newValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
-        );
-    }
-
-    private void EnsureEnabled()
-    {
-        if (!_owner.IsEnabled)
-        {
-            throw new ElementNotEnabledException();
-        }
     }
 }

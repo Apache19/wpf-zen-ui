@@ -26,11 +26,11 @@ namespace Wpf.Zen.Ui.UnitTests.VirtualInput;
 public class SoftKeyboardLoadingTests
 {
     /// <summary>
-    /// Construction, configuration, focus and closed-page loading must not acquire input services.
+    /// Construction, configuration, focus and collapsed loading must not acquire input services.
     /// Opening observes active state; only explicit requests enumerate the catalog.
     /// </summary>
     [Fact]
-    public Task ClosedLoadDefersServicesAndOpenReadsOnlyActiveProfile()
+    public Task CollapsedLoadDefersServicesAndShowingReadsOnlyActiveProfile()
     {
         return WpfApplicationTestHost.RunAsync(async () =>
         {
@@ -51,7 +51,7 @@ public class SoftKeyboardLoadingTests
             {
                 InputMethodSource = source,
                 ExtensionProvider = EmptySoftKeyboardExtensionProvider.Default,
-                AutoShowMode = SoftKeyboardAutoShowMode.Disabled
+                Visibility = Visibility.Collapsed,
             };
             var layouts = Substitute.For<ISoftKeyboardLayoutProvider>();
             layouts.CreateLayout(Arg.Any<SoftKeyboardLayoutContext>()).Returns(SoftKeyboardLayout.Empty);
@@ -69,7 +69,7 @@ public class SoftKeyboardLoadingTests
                 await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
                 clock.Advance(500);
                 Assert.True(keyboard.IsLoaded);
-                Assert.False(keyboard.IsOpen);
+                Assert.Equal(Visibility.Collapsed, keyboard.Visibility);
                 source.DidNotReceive().CreateSession();
                 candidates.DidNotReceive().CreateSession(Arg.Any<SoftKeyboardCandidateHost>());
                 Assert.Equal(0, backend.Reads);
@@ -77,7 +77,7 @@ public class SoftKeyboardLoadingTests
                 Assert.Same(SoftKeyboardLayout.Empty, keyboard.CurrentLayout);
                 Assert.Empty(keyboard.AvailableSupplementalLayouts);
 
-                keyboard.IsOpen = true;
+                keyboard.Visibility = Visibility.Visible;
                 clock.Advance(100);
                 Assert.Same(profile, keyboard.ActiveInputMethod);
                 session.Received().GetActiveInputMethod();
@@ -91,9 +91,9 @@ public class SoftKeyboardLoadingTests
                 clock.Advance(100);
                 session.Received(1).GetSnapshot();
 
-                keyboard.IsOpen = false;
+                keyboard.Visibility = Visibility.Collapsed;
                 session.ClearReceivedCalls();
-                keyboard.OnSessionFocusChanged(editor, false);
+                keyboard.OnSessionFocusChanged(editor);
                 keyboard.OnSessionInputMethodStateInvalidated();
                 clock.Advance(500);
                 session.DidNotReceive().GetActiveInputMethod();
@@ -136,12 +136,12 @@ public class SoftKeyboardLoadingTests
         });
     }
     /// <summary>
-    /// Closed changes coalesce, explicit refresh works, and reopening uses the latest context.
+    /// Invisible changes coalesce; explicit refresh and visibility publish the latest context.
     /// </summary>
     [Fact]
-    public void LayoutsAreDeferredUntilOpeningOrExplicitRefresh()
+    public void LayoutsAreDeferredUntilVisibleOrExplicitRefresh()
     {
-        WpfTestThread.Run(() =>
+        WpfApplicationTestHost.Run(() =>
         {
             var contexts = new List<SoftKeyboardLayoutContext>();
             var provider = Substitute.For<ISoftKeyboardLayoutProvider>();
@@ -163,24 +163,32 @@ public class SoftKeyboardLoadingTests
             Assert.Equal(1, keyboard.CurrentLayout.ColumnCount);
             Assert.Empty(keyboard.AvailableSupplementalLayouts);
 
-            keyboard.IsOpen = true;
-            Assert.Equal("latest", Assert.Single(contexts).Page);
-            Assert.Equal("latest", Assert.Single(keyboard.CurrentLayout.Keys).Text);
-            var previous = keyboard.CurrentLayout;
-            keyboard.IsOpen = false;
-            keyboard.ShowPage("closed");
-            Assert.Same(previous, keyboard.CurrentLayout);
-            Assert.Single(contexts);
-            keyboard.RefreshLayout();
-            Assert.Equal(2, contexts.Count);
-            Assert.Equal("closed", Assert.Single(keyboard.CurrentLayout.Keys).Text);
-            Assert.Equal(2, keyboard.AvailableSupplementalLayouts.Count);
+            var window = new Window { Content = keyboard, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                Assert.Equal("latest", Assert.Single(contexts).Page);
+                Assert.Equal("latest", Assert.Single(keyboard.CurrentLayout.Keys).Text);
+                var previous = keyboard.CurrentLayout;
+                keyboard.Visibility = Visibility.Collapsed;
+                keyboard.ShowPage("closed");
+                Assert.Same(previous, keyboard.CurrentLayout);
+                Assert.Single(contexts);
+                keyboard.RefreshLayout();
+                Assert.Equal(2, contexts.Count);
+                Assert.Equal("closed", Assert.Single(keyboard.CurrentLayout.Keys).Text);
+                Assert.Equal(2, keyboard.AvailableSupplementalLayouts.Count);
 
-            keyboard.ShowPage("reopened");
-            Assert.Equal(2, contexts.Count);
-            keyboard.IsOpen = true;
-            Assert.Equal(3, contexts.Count);
-            Assert.Equal("reopened", Assert.Single(keyboard.CurrentLayout.Keys).Text);
+                keyboard.ShowPage("reopened");
+                Assert.Equal(2, contexts.Count);
+                keyboard.Visibility = Visibility.Visible;
+                Assert.Equal(3, contexts.Count);
+                Assert.Equal("reopened", Assert.Single(keyboard.CurrentLayout.Keys).Text);
+            }
+            finally
+            {
+                window.Close();
+            }
         });
     }
 
@@ -188,7 +196,7 @@ public class SoftKeyboardLoadingTests
     /// A provider's recursive request cannot keep forcing automatic builds after closing.
     /// </summary>
     [Fact]
-    public void RecursiveLayoutRefreshDoesNotEscapeClosedStateDeferral()
+    public void RecursiveLayoutRefreshDoesNotEscapeInvisibleStateDeferral()
     {
         WpfTestThread.Run(() =>
         {

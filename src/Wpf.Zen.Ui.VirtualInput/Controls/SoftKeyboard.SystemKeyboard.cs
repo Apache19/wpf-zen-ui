@@ -123,7 +123,6 @@ public partial class SoftKeyboard
             if (!IsLoaded
                 || !IsEnabled
                 || !IsVisible
-                || !IsOpen
                 || ActiveTarget is not DependencyObject targetObject
                 || !ReferenceEquals(Keyboard.FocusedElement, ActiveTarget)
                 || !IsWithinEffectiveScope(targetObject)

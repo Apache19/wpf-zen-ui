@@ -46,8 +46,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -166,9 +165,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
                 : new System.Windows.Controls.Button { Content = "Outside input scope" };
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 TargetScope = editor,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -227,8 +225,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -294,8 +291,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -405,8 +401,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -519,8 +514,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -619,8 +613,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var editor = new TextBox { Height = 70, TextWrapping = TextWrapping.Wrap };
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true, Target = editor,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible, Target = editor,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
             };
             var root = new DockPanel();
@@ -739,9 +732,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var editor = new TextBox { Height = 40 };
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
             };
             var root = new DockPanel();
@@ -818,9 +810,8 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             };
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Target = editor,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default
             };
             var root = new DockPanel();
@@ -1008,8 +999,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();
@@ -1200,8 +1190,7 @@ public class SoftKeyboardNativeImeTests(ITestOutputHelper output)
             var keyboard = new SoftKeyboard
             {
                 Target = editor,
-                IsOpen = true,
-                AutoHideMode = SoftKeyboardAutoHideMode.Manual,
+                Visibility = Visibility.Visible,
                 ExtensionProvider = DefaultSoftKeyboardExtensionProvider.Default,
             };
             var root = new StackPanel();

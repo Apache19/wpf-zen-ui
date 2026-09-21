@@ -24,7 +24,7 @@ public class SoftKeyboardLayoutTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var keyboard = new SoftKeyboard { IsOpen = true };
+            var keyboard = new SoftKeyboard { Visibility = Visibility.Visible };
             var window = new Window { Content = keyboard, ShowInTaskbar = false };
             try
             {
@@ -222,7 +222,7 @@ public class SoftKeyboardLayoutTests
         {
             var keyboard = new SoftKeyboard
             {
-                IsOpen = true,
+                Visibility = Visibility.Visible,
                 Background = Brushes.Red,
                 BorderBrush = Brushes.Blue,
                 BorderThickness = new Thickness(3),

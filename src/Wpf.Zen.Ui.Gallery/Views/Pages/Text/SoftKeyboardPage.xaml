@@ -18,8 +18,12 @@
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="KeyboardVisibilityConverter" />
+    </Page.Resources>
+
     <StackPanel Margin="0,0,0,24">
-        <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts." XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;keyboard:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
+        <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts." XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;keyboard:SoftKeyboard TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
             <Grid x:Name="FormScope">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -89,9 +93,10 @@
                             Focusable="False"
                             IsTabStop="False" />
                         <CheckBox
+                            x:Name="KeyboardVisibleCheckBox"
                             Margin="0,0,24,0"
-                            Content="Keyboard open"
-                            IsChecked="{Binding IsOpen, ElementName=Keyboard, Mode=TwoWay}" />
+                            Content="Show keyboard"
+                            Focusable="False" />
                         <CheckBox
                             x:Name="CandidateWindowBoundsCheckBox"
                             Checked="OnCandidateWindowBoundsChecked"
@@ -109,10 +114,9 @@
                 <keyboard:SoftKeyboard
                     x:Name="Keyboard"
                     Grid.Row="4"
-                    AutoHideMode="Manual"
-                    AutoShowMode="TouchAndPen"
                     ExtensionProvider="{x:Static keyboardExt:DefaultSoftKeyboardExtensionProvider.Default}"
-                    TargetScope="{Binding ElementName=FormScope}" />
+                    TargetScope="{Binding ElementName=FormScope}"
+                    Visibility="{Binding IsChecked, ElementName=KeyboardVisibleCheckBox, Converter={StaticResource KeyboardVisibilityConverter}}" />
             </Grid>
         </controls:ControlExample>
 

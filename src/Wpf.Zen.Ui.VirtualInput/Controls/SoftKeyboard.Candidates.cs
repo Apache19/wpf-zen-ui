@@ -92,7 +92,7 @@ public partial class SoftKeyboard
             new Action(
                 () =>
                 {
-                    if (IsLoaded && IsVisible && IsOpen && ActiveTarget is not null)
+                    if (IsLoaded && IsVisible && ActiveTarget is not null)
                     {
                         RequestCandidateRefresh();
                     }

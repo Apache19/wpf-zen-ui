@@ -40,7 +40,7 @@ public partial class SoftKeyboard
     /// Automatic native observation is needed only by a loaded, usable input surface.
     /// Explicit application refreshes remain available independently of this lifecycle gate.
     /// </summary>
-    internal bool CanObserveInputMethods => IsLoaded && IsOpen && IsVisible && IsEnabled;
+    internal bool CanObserveInputMethods => IsLoaded && IsVisible && IsEnabled;
 
     private int _inputMethodSessionVersion;
     private int _inputMethodOperationDepth;
@@ -147,7 +147,7 @@ public partial class SoftKeyboard
     /// complete.
     /// </summary>
     /// <remarks>
-    /// This explicit request works even before loading or while closed. It publishes the catalog
+    /// This explicit request works even before loading or while invisible. It publishes the catalog
     /// immediately; active-profile and mode presentation may await the observation window.
     /// System notifications read active state independently. Discovery failures preserve the
     /// previous catalog, while a later mode failure does not discard a successful catalog read.

@@ -45,77 +45,6 @@ public partial class SoftKeyboardPage : INavigableView<SoftKeyboardViewModel>
 
         _settingsMenu.Items.Clear();
 
-        var opening = new MenuItem
-        {
-            Header    = "自动打开",
-            Focusable = false
-        };
-
-        opening.Items.Add(
-            CreateSettingChoice(
-                "手动打开",
-                Keyboard.AutoShowMode == SoftKeyboardAutoShowMode.Disabled,
-                () => Keyboard.SetCurrentValue(
-                    SoftKeyboard.AutoShowModeProperty,
-                    SoftKeyboardAutoShowMode.Disabled
-                )
-            )
-        );
-
-        opening.Items.Add(
-            CreateSettingChoice(
-                "触摸或笔输入时打开",
-                Keyboard.AutoShowMode == SoftKeyboardAutoShowMode.TouchAndPen,
-                () => Keyboard.SetCurrentValue(
-                    SoftKeyboard.AutoShowModeProperty,
-                    SoftKeyboardAutoShowMode.TouchAndPen
-                )
-            )
-        );
-
-        opening.Items.Add(
-            CreateSettingChoice(
-                "编辑器获得焦点时打开",
-                Keyboard.AutoShowMode == SoftKeyboardAutoShowMode.AnyFocus,
-                () => Keyboard.SetCurrentValue(
-                    SoftKeyboard.AutoShowModeProperty,
-                    SoftKeyboardAutoShowMode.AnyFocus
-                )
-            )
-        );
-
-        _settingsMenu.Items.Add(opening);
-
-        var closing = new MenuItem
-        {
-            Header    = "自动关闭",
-            Focusable = false
-        };
-
-        closing.Items.Add(
-            CreateSettingChoice(
-                "手动关闭",
-                Keyboard.AutoHideMode == SoftKeyboardAutoHideMode.Manual,
-                () => Keyboard.SetCurrentValue(
-                    SoftKeyboard.AutoHideModeProperty,
-                    SoftKeyboardAutoHideMode.Manual
-                )
-            )
-        );
-
-        closing.Items.Add(
-            CreateSettingChoice(
-                "焦点离开输入区域时关闭",
-                Keyboard.AutoHideMode == SoftKeyboardAutoHideMode.FocusLeavesScope,
-                () => Keyboard.SetCurrentValue(
-                    SoftKeyboard.AutoHideModeProperty,
-                    SoftKeyboardAutoHideMode.FocusLeavesScope
-                )
-            )
-        );
-
-        _settingsMenu.Items.Add(closing);
-
         if (Keyboard.AvailableSupplementalLayouts.Count > 2)
         {
             var layouts = new MenuItem
@@ -221,7 +150,7 @@ public partial class SoftKeyboardPage : INavigableView<SoftKeyboardViewModel>
         {
             Debug.WriteLine(
                 FormattableString.Invariant(
-                    $"[SoftKeyboard.Gallery] Slow INITIALIZATION; elapsedMs={elapsed:F3}, isOpen={Keyboard.IsOpen}."
+                    $"[SoftKeyboard.Gallery] Slow INITIALIZATION; elapsedMs={elapsed:F3}, isVisible={Keyboard.IsVisible}."
                 )
             );
         }

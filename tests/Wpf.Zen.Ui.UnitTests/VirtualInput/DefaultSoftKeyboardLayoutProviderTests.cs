@@ -261,7 +261,6 @@ public class DefaultSoftKeyboardLayoutProviderTests
                 Assert.Equal([0, 1, 2, 3], layout.Keys.Select(key => key.Row).Distinct());
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.SwitchInputMode);
                 Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
-                Assert.DoesNotContain(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.Close);
 
                 foreach (var row in layout.Keys.GroupBy(key => key.Row))
                 {

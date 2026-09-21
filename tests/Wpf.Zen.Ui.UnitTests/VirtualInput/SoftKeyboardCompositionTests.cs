@@ -159,21 +159,24 @@ public class SoftKeyboardCompositionTests
                 var keyboard = new SoftKeyboard
                 {
                     LayoutProvider = new SoftKeyboardLayoutRule(c => c.Page == "app:third", _ => custom),
-                    IsOpen = true,
+                    Visibility = Visibility.Visible,
                 };
 
                 keyboard.ShowPage("app:third");
+                keyboard.RefreshLayout();
 
                 Assert.Same(custom, keyboard.CurrentLayout);
                 Assert.Null(keyboard.LayoutError);
 
                 keyboard.ShowPage("app:missing");
+                keyboard.RefreshLayout();
 
                 Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
                 Assert.IsType<InvalidOperationException>(keyboard.LayoutError);
                 Assert.NotEmpty(keyboard.CurrentLayout.Keys);
 
                 keyboard.ShowPage("app:third");
+                keyboard.RefreshLayout();
 
                 Assert.Same(custom, keyboard.CurrentLayout);
                 Assert.Null(keyboard.LayoutError);
@@ -181,6 +184,8 @@ public class SoftKeyboardCompositionTests
                 keyboard.LayoutProvider =
                     new SoftKeyboardLayoutRule(_ => true, _ => throw new InvalidOperationException("defect")
                     );
+
+                keyboard.RefreshLayout();
 
                 Assert.Equal("defect", keyboard.LayoutError!.Message);
                 Assert.NotEmpty(keyboard.CurrentLayout.Keys);
