@@ -624,6 +624,12 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 // pbShow is an in/out value. Explicitly opt into the TIP's native UI whenever
                 // no visible keyboard can own this element instead of relying on its input.
                 show = 1;
+
+                Debug.WriteLine(
+                    $"[SoftKeyboard.Candidates.Tsf] Native UI allowed at BEGIN; elementId={elementId}, "
+                    + $"reason={(keyboard is null ? "NoKeyboard" : keyboard.IsInputMethodOperationActive ? "InputMethodOperation" : "CandidateUnavailable")}."
+                );
+
                 return 0;
             }
 
@@ -632,6 +638,12 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                 || !ShouldEmbedCandidate(keyboard, behavior))
             {
                 show = 1;
+
+                Debug.WriteLine(
+                    $"[SoftKeyboard.Candidates.Tsf] Native UI allowed at BEGIN; elementId={elementId}, "
+                    + "reason=EmbeddingDeclined."
+                );
+
                 keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
                 return 0;
             }
@@ -654,12 +666,23 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
 
             show = 0;
 
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] Native UI suppressed at BEGIN; elementId={elementId}, "
+                + $"version={_activeCandidateVersion}."
+            );
+
             // Begin negotiates ownership before the TIP has finished initializing its UI.
             // Read candidate contents only after its first UpdateUIElement notification.
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
             show = 1;
+
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] Native UI allowed at BEGIN; elementId={elementId}, "
+                + $"reason=Exception, error={exception.GetType().Name}."
+            );
+
             ClearActiveCandidate();
         }
         finally
@@ -833,7 +856,12 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
                     _activeCandidateCancellation = new CancellationTokenSource();
 #pragma warning restore IDISP003
 
-                    if (behavior.Show(0) < 0)
+                    var hideResult = behavior.Show(0);
+                    Debug.WriteLine(
+                        $"[SoftKeyboard.Candidates.Tsf] Native UI hide requested after discovery; "
+                        + $"result=0x{hideResult:X8}, version={_activeCandidateVersion}."
+                    );
+                    if (hideResult < 0)
                     {
                         RestoreNativeCandidate();
                         ClearActiveCandidate();
@@ -1237,12 +1265,27 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink, IDisp
     /// </summary>
     private void RestoreNativeCandidate()
     {
+        if (_activeBehavior is null)
+        {
+            return;
+        }
+
         try
         {
-            _activeBehavior?.Show(1);
+            var showResult = _activeBehavior.Show(1);
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] Native UI restore requested; "
+                + $"elementId={_activeElementId}, result=0x{showResult:X8}, "
+                + $"version={_activeCandidateVersion}."
+            );
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
+            Debug.WriteLine(
+                $"[SoftKeyboard.Candidates.Tsf] Native UI restore failed; "
+                + $"elementId={_activeElementId}, error={exception.GetType().Name}, "
+                + $"version={_activeCandidateVersion}."
+            );
             // Restoration is best effort: TSF also destroys its UI element at composition end.
         }
     }
