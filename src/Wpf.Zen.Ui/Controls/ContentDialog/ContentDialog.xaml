@@ -141,8 +141,8 @@
         <Setter Property="CornerRadius" Value="{m:DynamicValue PopupCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="MaxWidth" Value="640" />
-        <Setter Property="MaxHeight" Value="850" />
+        <Setter Property="MinWidth" Value="320" />
+        <Setter Property="MinHeight" Value="84" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="HeaderPadding" Value="24,20,48,8" />
