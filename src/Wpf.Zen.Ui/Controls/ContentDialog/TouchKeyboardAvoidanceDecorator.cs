@@ -36,9 +36,9 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
 
     private IDisposable? _subscription;
     private HwndSource?  _source;
-    private Rect _screenBounds = Rect.Empty;
-    private Rect _localBounds = Rect.Empty;
-    private Rect _placement = Rect.Empty;
+    private Rect _screenBounds        = Rect.Empty;
+    private Rect _localBounds         = Rect.Empty;
+    private Rect _placement           = Rect.Empty;
     private Rect _lastLoggedPlacement = Rect.Empty;
     private Size _measuredHost;
     private int  _subscriptionVersion;
@@ -100,7 +100,7 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
     {
         _subscribe = subscribe;
 
-        Loaded += OnLoaded;
+        Loaded   += OnLoaded;
         Unloaded += OnUnloaded;
 
         IsVisibleChanged += OnIsVisibleChanged;
@@ -175,6 +175,7 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
         if (placement != preferred)
         {
             _placement = placement;
+
             if (placement.Width < preferred.Width || placement.Height < preferred.Height)
             {
                 Child.Measure(placement.Size);

@@ -18,13 +18,11 @@ internal sealed class ContentDialogInputIsolation(DependencyObject target, Depen
     private static readonly HashSet<DependencyProperty> InstalledProperties = [];
 
     private static readonly ConditionalWeakTable
-        <
-            DependencyObject, Dictionary<DependencyProperty, int>
-        >
+        <DependencyObject, Dictionary<DependencyProperty, int>>
         Constraints = new();
 
-    private static readonly FieldInfo? CoerceCallbackField =
-        typeof(DependencyProperty).GetField(
+    private static readonly FieldInfo? CoerceCallbackField
+        = typeof(DependencyProperty).GetField(
             "_designerCoerceValueCallback",
             BindingFlags.Instance | BindingFlags.NonPublic
         );
@@ -142,9 +140,9 @@ internal sealed class ContentDialogInputIsolation(DependencyObject target, Depen
                     lock (MetadataLock)
                     {
                         return Constraints.TryGetValue(d, out var properties)
-                               && properties.ContainsKey(property)
-                            ? false
-                            : coerced;
+                            && properties.ContainsKey(property)
+                                ? false
+                                : coerced;
                     }
                 };
 

@@ -44,36 +44,36 @@ public class ContentDialogTransitionPresenter : Control
     private const double OpenOpacity   = 1.0d;
     private const double OpenScale     = 1.0d;
 
-    private static readonly DependencyProperty TransitionProgressProperty =
-        DependencyProperty.Register(
+    private static readonly DependencyProperty TransitionProgressProperty
+        = DependencyProperty.Register(
             "TransitionProgress",
             typeof(double),
             typeof(ContentDialogTransitionPresenter),
             new FrameworkPropertyMetadata(0.0d, OnTransitionProgressChanged)
         );
 
-    private UIElement?          _backdrop;
-    private UIElement?          _dialogRoot;
-    private Transform?          _originalDialogTransform;
-    private ScaleTransform?     _dialogScale;
-    private AnimationClock?     _animationClock;
-    private EventHandler?       _clockCompletedHandler;
+    private UIElement?       _backdrop;
+    private UIElement?       _dialogRoot;
+    private Transform?       _originalDialogTransform;
+    private ScaleTransform?  _dialogScale;
+    private AnimationClock?  _animationClock;
+    private EventHandler?    _clockCompletedHandler;
     private TaskCompletionSource<object?>? _transitionCompletion;
 
-    private double _currentBackdropOpacity = ClosedOpacity;
-    private double _currentDialogOpacity   = ClosedOpacity;
-    private double _currentScale;
-    private double _startBackdropOpacity;
-    private double _startDialogOpacity;
-    private double _startScale;
-    private double _targetBackdropOpacity;
-    private double _targetDialogOpacity;
-    private double _targetScale;
+    private double           _currentBackdropOpacity = ClosedOpacity;
+    private double           _currentDialogOpacity   = ClosedOpacity;
+    private double           _currentScale;
+    private double           _startBackdropOpacity;
+    private double           _startDialogOpacity;
+    private double           _startScale;
+    private double           _targetBackdropOpacity;
+    private double           _targetDialogOpacity;
+    private double           _targetScale;
     private IEasingFunction? _activeEasingFunction;
-    private int  _transitionVersion;
-    private bool _isOpenTarget;
-    private bool _suppressProgressUpdates;
-    private StablePose _stablePose = StablePose.PreparedClosed;
+    private int              _transitionVersion;
+    private bool             _isOpenTarget;
+    private bool             _suppressProgressUpdates;
+    private StablePose       _stablePose = StablePose.PreparedClosed;
 
     private enum StablePose
     {
@@ -109,13 +109,16 @@ public class ContentDialogTransitionPresenter : Control
         Unloaded += OnPresenterUnloaded;
     }
 
-    /// <summary>Identifies the <see cref="Backdrop"/> dependency property.</summary>
-    public static readonly DependencyProperty BackdropProperty = DependencyProperty.Register(
-        nameof(Backdrop),
-        typeof(Brush),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(null)
-    );
+    /// <summary>
+    /// Identifies the <see cref="Backdrop"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty BackdropProperty
+        = DependencyProperty.Register(
+            nameof(Backdrop),
+            typeof(Brush),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(null)
+        );
 
     /// <summary>
     /// Gets or sets the brush painted behind the dialog. The default is <see langword="null"/>.
@@ -127,13 +130,16 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(BackdropProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="Dialog"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogProperty = DependencyProperty.Register(
-        nameof(Dialog),
-        typeof(ContentDialog),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(null)
-    );
+    /// <summary>
+    /// Identifies the <see cref="Dialog"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DialogProperty
+        = DependencyProperty.Register(
+            nameof(Dialog),
+            typeof(ContentDialog),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(null)
+        );
 
     /// <summary>
     /// Gets or sets the dialog displayed by the presentation surface. The default is
@@ -146,17 +152,20 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(DialogProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DialogSizingMode"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogSizingModeProperty = DependencyProperty.Register(
-        nameof(DialogSizingMode),
-        typeof(ContentDialogSizingMode),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(ContentDialogSizingMode.Auto),
-        static value => value is ContentDialogSizingMode.Auto
-            or ContentDialogSizingMode.Stretch
-            or ContentDialogSizingMode.StretchWidth
-            or ContentDialogSizingMode.StretchHeight
-    );
+    /// <summary>
+    /// Identifies the <see cref="DialogSizingMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DialogSizingModeProperty
+        = DependencyProperty.Register(
+            nameof(DialogSizingMode),
+            typeof(ContentDialogSizingMode),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(ContentDialogSizingMode.Auto),
+            static value => value is ContentDialogSizingMode.Auto
+                or ContentDialogSizingMode.Stretch
+                or ContentDialogSizingMode.StretchWidth
+                or ContentDialogSizingMode.StretchHeight
+        );
 
     /// <summary>
     /// Gets or sets the sizing mode that the presentation template applies to its dialog surface.
@@ -174,14 +183,17 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(DialogSizingModeProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="OpenDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty OpenDurationProperty = DependencyProperty.Register(
-        nameof(OpenDuration),
-        typeof(TimeSpan),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(TimeSpan.FromMilliseconds(167.0d)),
-        IsValidDuration
-    );
+    /// <summary>
+    /// Identifies the <see cref="OpenDuration"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OpenDurationProperty
+        = DependencyProperty.Register(
+            nameof(OpenDuration),
+            typeof(TimeSpan),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(TimeSpan.FromMilliseconds(167.0d)),
+            IsValidDuration
+        );
 
     /// <summary>
     /// Gets or sets the duration of a complete transition from the prepared closed pose to the open
@@ -197,14 +209,17 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(OpenDurationProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="CloseDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseDurationProperty = DependencyProperty.Register(
-        nameof(CloseDuration),
-        typeof(TimeSpan),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(TimeSpan.FromMilliseconds(167.0d)),
-        IsValidDuration
-    );
+    /// <summary>
+    /// Identifies the <see cref="CloseDuration"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CloseDurationProperty
+        = DependencyProperty.Register(
+            nameof(CloseDuration),
+            typeof(TimeSpan),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(TimeSpan.FromMilliseconds(167.0d)),
+            IsValidDuration
+        );
 
     /// <summary>
     /// Gets or sets the duration of a complete transition from the open pose to the closed pose.
@@ -216,14 +231,17 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(CloseDurationProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="OpeningScale"/> dependency property.</summary>
-    public static readonly DependencyProperty OpeningScaleProperty = DependencyProperty.Register(
-        nameof(OpeningScale),
-        typeof(double),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(0.94d, OnScaleChanged),
-        IsValidScale
-    );
+    /// <summary>
+    /// Identifies the <see cref="OpeningScale"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OpeningScaleProperty
+        = DependencyProperty.Register(
+            nameof(OpeningScale),
+            typeof(double),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(0.94d, OnScaleChanged),
+            IsValidScale
+        );
 
     /// <summary>
     /// Gets or sets the dialog scale used immediately before an entrance. The default is 0.94.
@@ -235,14 +253,17 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(OpeningScaleProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ClosingScale"/> dependency property.</summary>
-    public static readonly DependencyProperty ClosingScaleProperty = DependencyProperty.Register(
-        nameof(ClosingScale),
-        typeof(double),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(0.97d, OnScaleChanged),
-        IsValidScale
-    );
+    /// <summary>
+    /// Identifies the <see cref="ClosingScale"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ClosingScaleProperty
+        = DependencyProperty.Register(
+            nameof(ClosingScale),
+            typeof(double),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(0.97d, OnScaleChanged),
+            IsValidScale
+        );
 
     /// <summary>
     /// Gets or sets the dialog scale reached at the end of an exit. The default is 0.97.
@@ -254,13 +275,16 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(ClosingScaleProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="OpeningEasingFunction"/> dependency property.</summary>
-    public static readonly DependencyProperty OpeningEasingFunctionProperty = DependencyProperty.Register(
-        nameof(OpeningEasingFunction),
-        typeof(IEasingFunction),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(CreateDefaultOpeningEasingFunction())
-    );
+    /// <summary>
+    /// Identifies the <see cref="OpeningEasingFunction"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OpeningEasingFunctionProperty
+        = DependencyProperty.Register(
+            nameof(OpeningEasingFunction),
+            typeof(IEasingFunction),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(CreateDefaultOpeningEasingFunction())
+        );
 
     /// <summary>
     /// Gets or sets the easing applied to dialog scale during an entrance. The backdrop and dialog
@@ -272,13 +296,16 @@ public class ContentDialogTransitionPresenter : Control
         set => SetValue(OpeningEasingFunctionProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ClosingEasingFunction"/> dependency property.</summary>
-    public static readonly DependencyProperty ClosingEasingFunctionProperty = DependencyProperty.Register(
-        nameof(ClosingEasingFunction),
-        typeof(IEasingFunction),
-        typeof(ContentDialogTransitionPresenter),
-        new FrameworkPropertyMetadata(CreateDefaultClosingEasingFunction())
-    );
+    /// <summary>
+    /// Identifies the <see cref="ClosingEasingFunction"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ClosingEasingFunctionProperty
+        = DependencyProperty.Register(
+            nameof(ClosingEasingFunction),
+            typeof(IEasingFunction),
+            typeof(ContentDialogTransitionPresenter),
+            new FrameworkPropertyMetadata(CreateDefaultClosingEasingFunction())
+        );
 
     /// <summary>
     /// Gets or sets the easing applied to dialog scale during an exit. The backdrop and dialog
@@ -306,8 +333,9 @@ public class ContentDialogTransitionPresenter : Control
 
         base.OnApplyTemplate();
 
-        _backdrop = GetTemplateChild(BackdropPartName) as UIElement;
+        _backdrop   = GetTemplateChild(BackdropPartName) as UIElement;
         _dialogRoot = GetTemplateChild(DialogRootPartName) as UIElement;
+
         AttachDialogScale();
         ApplyStablePose();
     }
@@ -343,11 +371,15 @@ public class ContentDialogTransitionPresenter : Control
         }
     }
 
-    internal Task OpenAsync(bool useTransitions) =>
-        TransitionToAsync(isOpen: true, useTransitions);
+    internal Task OpenAsync(bool useTransitions)
+    {
+        return TransitionToAsync(isOpen: true, useTransitions);
+    }
 
-    internal Task CloseAsync(bool useTransitions) =>
-        TransitionToAsync(isOpen: false, useTransitions);
+    internal Task CloseAsync(bool useTransitions)
+    {
+        return TransitionToAsync(isOpen: false, useTransitions);
+    }
 
     /// <summary>
     /// Redirects an entrance immediately when close wins the host's outcome arbitration. The
@@ -438,25 +470,29 @@ public class ContentDialogTransitionPresenter : Control
             return Task.CompletedTask;
         }
 
-        _startBackdropOpacity = sourceBackdropOpacity;
-        _startDialogOpacity = sourceDialogOpacity;
-        _startScale = sourceScale;
+        _startBackdropOpacity  = sourceBackdropOpacity;
+        _startDialogOpacity    = sourceDialogOpacity;
+        _startScale            = sourceScale;
         _targetBackdropOpacity = targetBackdropOpacity;
-        _targetDialogOpacity = targetDialogOpacity;
-        _targetScale = targetScale;
+        _targetDialogOpacity   = targetDialogOpacity;
+        _targetScale           = targetScale;
+
         _activeEasingFunction = CloneEasingFunction(
             isOpen ? OpeningEasingFunction : ClosingEasingFunction
         );
 
         var version = ++_transitionVersion;
-        var completion = _transitionCompletion =
-            new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completion = _transitionCompletion = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+
         var animation = new DoubleAnimation(
             0.0d,
             1.0d,
             new Duration(duration),
             FillBehavior.Stop
         );
+
         var clock = _animationClock = animation.CreateClock();
 
         _clockCompletedHandler = (_, _) =>
@@ -466,9 +502,11 @@ public class ContentDialogTransitionPresenter : Control
                 CompleteActiveTransition(isOpen);
             }
         };
+
         clock.Completed += _clockCompletedHandler;
 
         SetTransitionProgressBase(0.0d);
+
         ApplyAnimationClock(
             TransitionProgressProperty,
             clock,
@@ -481,18 +519,26 @@ public class ContentDialogTransitionPresenter : Control
     private void CompleteActiveTransition(bool isOpen)
     {
         var completion = _transitionCompletion;
+
         RemoveAnimationClock();
+
         _transitionCompletion = null;
+
         SetStableTarget(isOpen);
+
         completion?.TrySetResult(null);
     }
 
     private void CancelActiveTransition()
     {
         var completion = _transitionCompletion;
+
         _transitionVersion++;
+
         RemoveAnimationClock();
+
         _transitionCompletion = null;
+
         completion?.TrySetResult(null);
     }
 
@@ -509,13 +555,15 @@ public class ContentDialogTransitionPresenter : Control
         }
 
         var clock = _animationClock;
-        _animationClock = null;
+
+        _animationClock        = null;
         _clockCompletedHandler = null;
 
         // ApplyAnimationClock(null) removes animation storage synchronously. ClockController.Remove
         // only changes timing state on the next tick, so it cannot be the operation that restores a
         // stable property value during unload or Dispatcher shutdown.
         _suppressProgressUpdates = true;
+
         try
         {
             ApplyAnimationClock(TransitionProgressProperty, null);
@@ -532,6 +580,7 @@ public class ContentDialogTransitionPresenter : Control
     private void SetTransitionProgressBase(double progress)
     {
         _suppressProgressUpdates = true;
+
         try
         {
             SetCurrentValue(TransitionProgressProperty, progress);
@@ -547,6 +596,7 @@ public class ContentDialogTransitionPresenter : Control
         progress = Clamp(progress, 0.0d, 1.0d);
 
         var scaleProgress = progress;
+
         if (_activeEasingFunction is not null)
         {
             var easedProgress = _activeEasingFunction.Ease(progress);
@@ -576,9 +626,11 @@ public class ContentDialogTransitionPresenter : Control
             case StablePose.Open:
                 ApplyVisualValues(OpenOpacity, OpenOpacity, OpenScale);
                 break;
+
             case StablePose.Closed:
                 ApplyVisualValues(ClosedOpacity, ClosedOpacity, ClosingScale);
                 break;
+
             default:
                 ApplyVisualValues(ClosedOpacity, ClosedOpacity, OpeningScale);
                 break;
@@ -591,8 +643,8 @@ public class ContentDialogTransitionPresenter : Control
         double scale)
     {
         _currentBackdropOpacity = backdropOpacity;
-        _currentDialogOpacity = dialogOpacity;
-        _currentScale = scale;
+        _currentDialogOpacity   = dialogOpacity;
+        _currentScale           = scale;
         ApplyTransitionVisuals(backdropOpacity, dialogOpacity, scale);
     }
 
@@ -604,7 +656,7 @@ public class ContentDialogTransitionPresenter : Control
         }
 
         _originalDialogTransform = _dialogRoot.RenderTransform;
-        _dialogScale = new ScaleTransform(OpenScale, OpenScale);
+        _dialogScale             = new ScaleTransform(OpenScale, OpenScale);
 
         if (_originalDialogTransform is null ||
             ReferenceEquals(_originalDialogTransform, Transform.Identity))
@@ -616,8 +668,10 @@ public class ContentDialogTransitionPresenter : Control
         // The private scale is appended, rather than replacing the template transform, so custom
         // templates may still rotate, translate, or otherwise decorate the dialog surface.
         var transforms = new TransformGroup();
+
         transforms.Children.Add(_originalDialogTransform);
         transforms.Children.Add(_dialogScale);
+
         _dialogRoot.SetCurrentValue(RenderTransformProperty, transforms);
     }
 
@@ -631,17 +685,21 @@ public class ContentDialogTransitionPresenter : Control
             );
         }
 
-        _backdrop = null;
-        _dialogRoot = null;
+        _backdrop                = null;
+        _dialogRoot              = null;
         _originalDialogTransform = null;
-        _dialogScale = null;
+        _dialogScale             = null;
     }
 
-    private bool HasAnimationSurface() =>
-        _backdrop is not null || _dialogRoot is not null;
+    private bool HasAnimationSurface()
+    {
+        return _backdrop is not null || _dialogRoot is not null;
+    }
 
-    private bool IsAtStableTarget(bool isOpen) =>
-        isOpen ? _stablePose == StablePose.Open : _stablePose != StablePose.Open;
+    private bool IsAtStableTarget(bool isOpen)
+    {
+        return isOpen ? _stablePose == StablePose.Open : _stablePose != StablePose.Open;
+    }
 
     private double GetRemainingDistanceRatio(
         bool   isOpen,
@@ -651,9 +709,11 @@ public class ContentDialogTransitionPresenter : Control
     {
         var targetOpacity = isOpen ? OpenOpacity : ClosedOpacity;
         var targetScale   = isOpen ? OpenScale : ClosingScale;
+
         var fullScaleDistance = Math.Abs(
             OpenScale - (isOpen ? OpeningScale : ClosingScale)
         );
+
         var scaleRatio = fullScaleDistance <= double.Epsilon
             ? 0.0d
             : Math.Abs(targetScale - scale) / fullScaleDistance;
@@ -703,12 +763,16 @@ public class ContentDialogTransitionPresenter : Control
         }
     }
 
-    private static bool IsValidDuration(object? value) =>
-        value is TimeSpan duration && duration >= TimeSpan.Zero;
+    private static bool IsValidDuration(object? value)
+    {
+        return value is TimeSpan duration && duration >= TimeSpan.Zero;
+    }
 
-    private static bool IsValidScale(object? value) =>
-        value is double scale && scale > 0.0d &&
-        !double.IsNaN(scale) && !double.IsInfinity(scale);
+    private static bool IsValidScale(object? value)
+    {
+        return value is double scale && scale > 0.0d &&
+            !double.IsNaN(scale) && !double.IsInfinity(scale);
+    }
 
     private static TimeSpan ScaleDuration(TimeSpan duration, double distanceRatio)
     {
@@ -735,22 +799,33 @@ public class ContentDialogTransitionPresenter : Control
         var easing = new BackEase
         {
             Amplitude = 0.35d,
-            EasingMode = EasingMode.EaseOut,
+            EasingMode = EasingMode.EaseOut
         };
+
         easing.Freeze();
+
         return easing;
     }
 
     private static IEasingFunction CreateDefaultClosingEasingFunction()
     {
-        var easing = new CubicEase { EasingMode = EasingMode.EaseIn };
+        var easing = new CubicEase
+        {
+            EasingMode = EasingMode.EaseIn
+        };
+
         easing.Freeze();
+
         return easing;
     }
 
-    private static double Lerp(double from, double to, double progress) =>
-        from + ((to - from) * progress);
+    private static double Lerp(double from, double to, double progress)
+    {
+        return from + ((to - from) * progress);
+    }
 
-    private static double Clamp(double value, double minimum, double maximum) =>
-        Math.Max(minimum, Math.Min(maximum, value));
+    private static double Clamp(double value, double minimum, double maximum)
+    {
+        return Math.Max(minimum, Math.Min(maximum, value));
+    }
 }

@@ -17,9 +17,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public partial class ContentDialogHost
 {
-    private WeakReference<IInputElement>? _focusBeforeDialog;
-    private UIElement? _inputRoot;
-    private int _focusSessionVersion;
+    private WeakReference<IInputElement>?              _focusBeforeDialog;
+    private UIElement?                                 _inputRoot;
+    private int                                        _focusSessionVersion;
     private ConditionalWeakTable<KeyEventArgs, object> _keysAwaitingPostProcessing = new();
 
     /// <summary>
@@ -33,11 +33,11 @@ public partial class ContentDialogHost
     private void StartModalInteraction(Session session, UIElement contentRoot)
     {
         var dialog = session.Dialog;
+
         RememberKeyboardFocus();
 
         _contentRoot = contentRoot;
-
-        _inputRoot = PresentationSource.FromVisual(this)?.RootVisual as UIElement;
+        _inputRoot   = PresentationSource.FromVisual(this)?.RootVisual as UIElement;
 
         AccessKeyManager.AddAccessKeyPressedHandler(dialog, OnAccessKey);
 
@@ -55,8 +55,9 @@ public partial class ContentDialogHost
             CommandManager.AddPreviewExecutedHandler(_inputRoot, OnPreviewExecuted);
         }
 
-        InputManager.Current.PreProcessInput += OnPreProcessInput;
+        InputManager.Current.PreProcessInput  += OnPreProcessInput;
         InputManager.Current.PostProcessInput += OnPostProcessInput;
+
         LayoutUpdated += OnIsolationLayoutUpdated;
 
         // Install all subscriptions before coercion can call application code. Reentrant cleanup
@@ -71,11 +72,14 @@ public partial class ContentDialogHost
     private void StopModalInteraction(Session session)
     {
         var dialog = session.Dialog;
+
         // Unhook global input before restoring properties: application IsEnabledChanged handlers
         // may throw or pump Dispatcher, but must not retain this host through InputManager.
         LayoutUpdated -= OnIsolationLayoutUpdated;
+
         session.IsolationRefreshOperation?.Abort();
         session.IsolationRefreshOperation = null;
+
         AccessKeyManager.RemoveAccessKeyPressedHandler(dialog, OnAccessKey);
 
         dialog.RemoveHandler(Keyboard.KeyDownEvent, new KeyEventHandler(OnKeyDown));
@@ -92,9 +96,10 @@ public partial class ContentDialogHost
 
         _inputRoot = null;
 
-        InputManager.Current.PreProcessInput -= OnPreProcessInput;
+        InputManager.Current.PreProcessInput  -= OnPreProcessInput;
         InputManager.Current.PostProcessInput -= OnPostProcessInput;
-        _keysAwaitingPostProcessing = new();
+
+        _keysAwaitingPostProcessing           =  new();
 
         try
         {
@@ -109,6 +114,7 @@ public partial class ContentDialogHost
     private void RememberKeyboardFocus()
     {
         _focusSessionVersion++;
+
         _focusBeforeDialog = Keyboard.FocusedElement is { } focused
             ? new WeakReference<IInputElement>(focused)
             : null;
@@ -152,7 +158,7 @@ public partial class ContentDialogHost
             // subtree is detached. That fallback is not a user focus choice. Preserve all other outside targets.
             var current = Keyboard.FocusedElement;
             return current is null || ReferenceEquals(current, root)
-                   || Contains(dialog, current as DependencyObject);
+                || Contains(dialog, current as DependencyObject);
         }
     }
 
@@ -179,6 +185,7 @@ public partial class ContentDialogHost
         }
 
         _contentRoot = contentRoot;
+
         if (_session is { } session && IsActive(session))
         {
             RefreshContentIsolation(session);
@@ -208,13 +215,15 @@ public partial class ContentDialogHost
         }
 
         session.NeedsIsolationRefresh = false;
-        session.IsUpdatingIsolation = true;
+        session.IsUpdatingIsolation   = true;
+
         try
         {
             // Snapshot the tree before invoking any property callbacks. LayoutUpdated is WPF's
             // public post-layout notification for template realization and arbitrary descendant
             // changes. Reconcile only changed branches; stable layouts never recoerce properties.
             var targets = new HashSet<DependencyObject>();
+
             if (_contentRoot is { } contentRoot)
             {
                 var titleBarPaths = new HashSet<DependencyObject>();
@@ -416,7 +425,7 @@ public partial class ContentDialogHost
         // InputBindings, including bindings backed by a plain ICommand.
         if (e.Key == Key.Escape)
         {
-            var scope = GetAccessKeyScope(e.OriginalSource, "\x001B", dialog);
+            var  scope         = GetAccessKeyScope(e.OriginalSource, "\x001B", dialog);
             bool isDialogScope = ReferenceEquals(scope, dialog);
 
             // IsDismissible constrains this dialog, not cancellation owned by a nested scope.
@@ -488,6 +497,7 @@ public partial class ContentDialogHost
         // that cannot raise input events also falls back to the dialog, never the active Window.
         var query = new AccessKeyPressedEventArgs(key);
         (source as IInputElement)?.RaiseEvent(query);
+
         return query.Scope ?? dialog;
     }
 
@@ -520,14 +530,14 @@ public partial class ContentDialogHost
     private bool IsBlockedCommandTarget(object source)
     {
         return _session?.Dialog is { } dialog
-               && source is DependencyObject target && !Contains(dialog, target)
-               && (Contains(this, target)
-                   // An explicit Window or ancestor target starts its route above the dialog,
-                   // so the dialog's own command handlers cannot stop it. Limit this additional
-                   // guard to ancestors and dialog-owned focus: sibling regions must remain
-                   // usable, including their window commands after focus moves outside.
-                   || (Contains(target, this)
-                       && Contains(dialog, Keyboard.FocusedElement as DependencyObject)));
+            && source is DependencyObject target && !Contains(dialog, target)
+            && (Contains(this, target)
+                // An explicit Window or ancestor target starts its route above the dialog,
+                // so the dialog's own command handlers cannot stop it. Limit this additional
+                // guard to ancestors and dialog-owned focus: sibling regions must remain
+                // usable, including their window commands after focus moves outside.
+                || (Contains(target, this)
+                    && Contains(dialog, Keyboard.FocusedElement as DependencyObject)));
     }
 
     // Button.OnClick uses this internal WPF command when IsCancel=true and Command=null. Identify its public command
@@ -536,7 +546,7 @@ public partial class ContentDialogHost
     private static bool IsWindowCancel(ICommand command)
     {
         return command is RoutedCommand { OwnerType: var owner, Name: "DialogCancel" }
-               && owner == typeof(Window);
+            && owner == typeof(Window);
     }
 
     private void OnPreviewCanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -547,12 +557,12 @@ public partial class ContentDialogHost
         {
             // Consume even when non-dismissible; otherwise Window's class binding can handle it.
             e.CanExecute = true;
-            e.Handled = true;
+            e.Handled    = true;
         }
         else if (IsBlockedCommandTarget(e.OriginalSource))
         {
             e.CanExecute = false;
-            e.Handled = true;
+            e.Handled    = true;
         }
     }
 
@@ -575,7 +585,7 @@ public partial class ContentDialogHost
     {
         // CommandBindings on the dialog, body, or footer run before this bubbling boundary.
         e.CanExecute = false;
-        e.Handled = true;
+        e.Handled    = true;
     }
 
     private void OnExecutedBoundary(object sender, ExecutedRoutedEventArgs e)

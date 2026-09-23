@@ -32,8 +32,8 @@ public partial class ContentDialogHost : ContentControl
 {
     private UIElement?                        _contentRoot;
     private ContentDialogTransitionPresenter? _dialogPresenter;
-    private Session?                         _session;
-    private bool                             _isPreparingPresentation;
+    private Session?                          _session;
+    private bool                              _isPreparingPresentation;
 
     private sealed class Session(ContentDialog dialog, CancellationToken cancellationToken)
     {
@@ -42,41 +42,43 @@ public partial class ContentDialogHost : ContentControl
 
         // Outcome arbitrates the first close/cancel request; Finished is the public task and is
         // completed only by synchronous cleanup. Dispatcher shutdown cannot strand its continuation.
-        internal TaskCompletionSource<object?> Outcome { get; } =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource<object?> Outcome { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
 
-        internal TaskCompletionSource<object?> Finished { get; } =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource<object?> Finished { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
 
         internal CancellationTokenRegistration Registration { get; set; }
 
         // Each presentation owns its work token and the recipients actually entered. Neither
         // DataContext replacement nor reuse of the dialog may redirect an earlier lifecycle.
-        internal CancellationTokenSource LifecycleCancellation { get; } = new();
-        internal List<IContentDialogAware> LifecycleTargets { get; } = [];
-        internal bool IsLifecycleCancelled { get; set; }
-        internal Exception? LifecycleFailure { get; set; }
+        internal CancellationTokenSource   LifecycleCancellation { get; } = new();
+        internal List<IContentDialogAware> LifecycleTargets      { get; } = [];
+        internal bool                      IsLifecycleCancelled  { get; set; }
+        internal Exception?                LifecycleFailure      { get; set; }
 
         // Synchronous shutdown cannot await Outcome. Cache the accepted business result so the
         // same cleanup path can preserve it when unloading wins the race with the async worker.
         internal object? OutcomeResult { get; set; }
 
-        internal bool IsCleanedUp       { get; set; }
-        internal bool IsRequestingClose { get; set; }
+        internal bool IsCleanedUp                { get; set; }
+        internal bool IsRequestingClose          { get; set; }
         internal bool IsAvailabilityCheckPending { get; set; }
 
         // These belong to the occurrence, not the host: a callback may pump Dispatcher after
         // cleanup and start another presentation before the old isolation traversal unwinds.
         internal Dictionary<DependencyObject, ContentDialogInputIsolation> InputIsolation { get; } = [];
-        internal bool IsUpdatingIsolation   { get; set; }
-        internal bool NeedsIsolationRefresh { get; set; }
+        internal bool                 IsUpdatingIsolation       { get; set; }
+        internal bool                 NeedsIsolationRefresh     { get; set; }
         internal DispatcherOperation? IsolationRefreshOperation { get; set; }
     }
 
     #region DP: CurrentDialog
 
-    private static readonly DependencyPropertyKey CurrentDialogPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    private static readonly DependencyPropertyKey CurrentDialogPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CurrentDialog),
             typeof(ContentDialog),
             typeof(ContentDialogHost),
@@ -86,8 +88,8 @@ public partial class ContentDialogHost : ContentControl
     /// <summary>
     /// Identifies the <see cref="CurrentDialog"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty CurrentDialogProperty =
-        CurrentDialogPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty CurrentDialogProperty
+        = CurrentDialogPropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets the currently displayed dialog, or <see langword="null"/> when no dialog is displayed.
@@ -327,7 +329,7 @@ public partial class ContentDialogHost : ContentControl
                 return;
             }
 
-            dialog.Unloaded += OnDialogUnloaded;
+            dialog.Unloaded         += OnDialogUnloaded;
             dialog.IsVisibleChanged += OnDialogIsVisibleChanged;
 
             SetValue(CurrentDialogPropertyKey, dialog);

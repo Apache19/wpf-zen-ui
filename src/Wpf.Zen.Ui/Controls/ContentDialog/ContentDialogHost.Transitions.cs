@@ -7,12 +7,18 @@ using System.Windows.Media.Animation;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Coordinates the dialog lifecycle with the template-owned transition presenter.</summary>
+/// <summary>
+/// Coordinates the dialog lifecycle with the template-owned transition presenter.
+/// </summary>
 public partial class ContentDialogHost
 {
-    /// <summary>Identifies the <see cref="OpenDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty OpenDurationProperty =
-        ContentDialogTransitionPresenter.OpenDurationProperty.AddOwner(typeof(ContentDialogHost));
+    /// <summary>
+    /// Identifies the <see cref="OpenDuration"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OpenDurationProperty
+        = ContentDialogTransitionPresenter.OpenDurationProperty.AddOwner(
+            typeof(ContentDialogHost)
+        );
 
     /// <summary>
     /// Gets or sets the duration of a complete dialog entrance. The default is 167 milliseconds.
@@ -25,9 +31,13 @@ public partial class ContentDialogHost
         set => SetValue(OpenDurationProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="CloseDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseDurationProperty =
-        ContentDialogTransitionPresenter.CloseDurationProperty.AddOwner(typeof(ContentDialogHost));
+    /// <summary>
+    /// Identifies the <see cref="CloseDuration"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CloseDurationProperty
+        = ContentDialogTransitionPresenter.CloseDurationProperty.AddOwner(
+            typeof(ContentDialogHost)
+        );
 
     /// <summary>
     /// Gets or sets the duration of a complete dialog exit. The default is 167 milliseconds.
@@ -39,9 +49,13 @@ public partial class ContentDialogHost
         set => SetValue(CloseDurationProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="OpeningScale"/> dependency property.</summary>
-    public static readonly DependencyProperty OpeningScaleProperty =
-        ContentDialogTransitionPresenter.OpeningScaleProperty.AddOwner(typeof(ContentDialogHost));
+    /// <summary>
+    /// Identifies the <see cref="OpeningScale"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OpeningScaleProperty
+        = ContentDialogTransitionPresenter.OpeningScaleProperty.AddOwner(
+            typeof(ContentDialogHost)
+        );
 
     /// <summary>
     /// Gets or sets the dialog scale used at the beginning of an entrance. The default is 0.94.
@@ -53,9 +67,13 @@ public partial class ContentDialogHost
         set => SetValue(OpeningScaleProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ClosingScale"/> dependency property.</summary>
-    public static readonly DependencyProperty ClosingScaleProperty =
-        ContentDialogTransitionPresenter.ClosingScaleProperty.AddOwner(typeof(ContentDialogHost));
+    /// <summary>
+    /// Identifies the <see cref="ClosingScale"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ClosingScaleProperty
+        = ContentDialogTransitionPresenter.ClosingScaleProperty.AddOwner(
+            typeof(ContentDialogHost)
+        );
 
     /// <summary>
     /// Gets or sets the dialog scale reached at the end of an exit. The default is 0.97.
@@ -67,9 +85,11 @@ public partial class ContentDialogHost
         set => SetValue(ClosingScaleProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="OpeningEasingFunction"/> dependency property.</summary>
-    public static readonly DependencyProperty OpeningEasingFunctionProperty =
-        ContentDialogTransitionPresenter.OpeningEasingFunctionProperty.AddOwner(
+    /// <summary>
+    /// Identifies the <see cref="OpeningEasingFunction"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OpeningEasingFunctionProperty
+        = ContentDialogTransitionPresenter.OpeningEasingFunctionProperty.AddOwner(
             typeof(ContentDialogHost)
         );
 
@@ -83,9 +103,11 @@ public partial class ContentDialogHost
         set => SetValue(OpeningEasingFunctionProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ClosingEasingFunction"/> dependency property.</summary>
-    public static readonly DependencyProperty ClosingEasingFunctionProperty =
-        ContentDialogTransitionPresenter.ClosingEasingFunctionProperty.AddOwner(
+    /// <summary>
+    /// Identifies the <see cref="ClosingEasingFunction"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ClosingEasingFunctionProperty
+        = ContentDialogTransitionPresenter.ClosingEasingFunctionProperty.AddOwner(
             typeof(ContentDialogHost)
         );
 
@@ -100,16 +122,20 @@ public partial class ContentDialogHost
     }
 
     private bool ShouldAnimateTransition =>
-        IsAnimationEnabled &&
-        SystemParameters.ClientAreaAnimation &&
-        IsLoaded &&
-        IsVisible;
+        IsAnimationEnabled
+        && SystemParameters.ClientAreaAnimation
+        && IsLoaded
+        && IsVisible;
 
-    private Task OpenDialogAsync() =>
-        _dialogPresenter?.OpenAsync(ShouldAnimateTransition) ?? Task.CompletedTask;
+    private Task OpenDialogAsync()
+    {
+        return _dialogPresenter?.OpenAsync(ShouldAnimateTransition) ?? Task.CompletedTask;
+    }
 
-    private Task CloseDialogAsync() =>
-        _dialogPresenter?.CloseAsync(ShouldAnimateTransition) ?? Task.CompletedTask;
+    private Task CloseDialogAsync()
+    {
+        return _dialogPresenter?.CloseAsync(ShouldAnimateTransition) ?? Task.CompletedTask;
+    }
 
     private void RedirectTransitionToClosed()
     {
@@ -122,7 +148,7 @@ public partial class ContentDialogHost
     }
 
     private static void OnIsAnimationEnabledChanged(
-        DependencyObject                   d,
+        DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
         if (!(bool)e.NewValue)
