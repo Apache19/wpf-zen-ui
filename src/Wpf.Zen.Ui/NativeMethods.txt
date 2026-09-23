@@ -98,3 +98,5 @@ MonitorFromRect
 GetMonitorInfo
 MonitorFromWindow
 IsWindowEnabled
+IFrameworkInputPane
+FrameworkInputPane

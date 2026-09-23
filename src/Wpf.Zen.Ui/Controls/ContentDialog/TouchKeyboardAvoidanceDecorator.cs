@@ -1,0 +1,354 @@
+// This Source Code Form is subject to the terms of the MIT License.
+// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+// All Rights Reserved.
+
+using System.Diagnostics;
+using System.Windows.Controls;
+using Windows.Win32;
+using Wpf.Zen.Ui.Interop;
+
+namespace Wpf.Zen.Ui.Controls;
+
+/// <summary>
+/// Moves its child away from the system touch keyboard while preserving its size whenever possible.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Stretch this decorator across the available host and align the child within it. The child is
+/// measured against the full host before each avoidance calculation. Unobstructed content retains
+/// its normal alignment; obstructed content moves the shortest distance above, below, left, or
+/// right of the keyboard. Only when no direction fits is its layout slot reduced to retain the
+/// most area.
+/// </para>
+/// <para>
+/// Child padding or margin supplies clearance from host and keyboard edges. Set
+/// <see cref="OcclusionPadding"/> to allow decorative space to overlap the keyboard while retaining
+/// the complete child layout slot within the host. Explicit sizes and
+/// minimum sizes retain WPF semantics and may cause clipping when the remaining space is too small.
+/// Keep modal backdrops outside this decorator so that they continue to cover the complete host.
+/// Native monitoring runs only while loaded and visible; no keyboard service means normal layout.
+/// </para>
+/// </remarks>
+public class TouchKeyboardAvoidanceDecorator : Decorator
+{
+    private readonly Func<HwndSource, Action<Rect>, IDisposable?> _subscribe;
+
+    private IDisposable? _subscription;
+    private HwndSource?  _source;
+    private Rect _screenBounds = Rect.Empty;
+    private Rect _localBounds = Rect.Empty;
+    private Rect _placement = Rect.Empty;
+    private Rect _lastLoggedPlacement = Rect.Empty;
+    private Size _measuredHost;
+    private int  _subscriptionVersion;
+
+    /// <summary>
+    /// Identifies the <see cref="OcclusionPadding"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty OcclusionPaddingProperty
+        = DependencyProperty.Register(
+            nameof(OcclusionPadding),
+            typeof(Thickness),
+            typeof(TouchKeyboardAvoidanceDecorator),
+            new FrameworkPropertyMetadata(
+                default(Thickness),
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            ),
+            IsValidOcclusionPadding
+        );
+
+    /// <summary>
+    /// Gets or sets the decorative inset of the child's outer layout slot that may overlap the
+    /// keyboard. The default is zero; all sides must be finite and nonnegative.
+    /// </summary>
+    /// <remarks>
+    /// Match this inset to presentation padding reserved for shadows or other decoration. It only
+    /// changes keyboard collision bounds; measurement and the outer host boundary retain that
+    /// padding. When the inset consumes the entire child, no content requires avoidance.
+    /// </remarks>
+    public Thickness OcclusionPadding
+    {
+        get => (Thickness)GetValue(OcclusionPaddingProperty);
+        set => SetValue(OcclusionPaddingProperty, value);
+    }
+
+    /// <summary>
+    /// Rejects insets that cannot describe a finite inner collision rectangle.
+    /// </summary>
+    private static bool IsValidOcclusionPadding(object value)
+    {
+        var padding = (Thickness)value;
+
+        return padding.Left >= 0 &&
+               padding is { Left: < double.PositiveInfinity, Top: >= 0 }
+                   and { Top: < double.PositiveInfinity, Right: >= 0 }
+                   and { Right: < double.PositiveInfinity, Bottom: >= 0 and < double.PositiveInfinity };
+    }
+
+    /// <summary>
+    /// Initializes a decorator that observes the system keyboard for its current HWND.
+    /// </summary>
+    public TouchKeyboardAvoidanceDecorator() : this(SystemInputPaneMonitor.Subscribe)
+    {
+    }
+
+    /// <summary>
+    /// Separates screen-rectangle acquisition from layout so other hosts and tests can supply it.
+    /// </summary>
+    internal TouchKeyboardAvoidanceDecorator(Func<HwndSource, Action<Rect>, IDisposable?> subscribe)
+    {
+        _subscribe = subscribe;
+
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+
+        IsVisibleChanged += OnIsVisibleChanged;
+    }
+
+    /// <summary>
+    /// Measures normal content first, then remeasures only if avoiding the keyboard needs less
+    /// space.
+    /// </summary>
+    protected override Size MeasureOverride(Size constraint)
+    {
+        return MeasurePlacement(constraint);
+    }
+
+    /// <summary>
+    /// Applies avoidance through layout, leaving the child's render transforms available for
+    /// effects.
+    /// </summary>
+    protected override Size ArrangeOverride(Size arrangeSize)
+    {
+        if (_measuredHost != arrangeSize)
+        {
+            MeasurePlacement(arrangeSize);
+        }
+
+        Child?.Arrange(_placement.IsEmpty ? new Rect(arrangeSize) : _placement);
+
+        if (_lastLoggedPlacement != _placement)
+        {
+            if (!_localBounds.IsEmpty || !_lastLoggedPlacement.IsEmpty)
+            {
+                Debug.WriteLine(
+                    $"[TouchKeyboard.Layout] PLACEMENT applied; host={arrangeSize}, "
+                    + $"occlusion={_localBounds}, placement={_placement}."
+                );
+            }
+
+            _lastLoggedPlacement = _placement;
+        }
+
+        return arrangeSize;
+    }
+
+    /// <summary>
+    /// Uses the full host as a stable baseline, so keyboard movement and hiding never accumulate
+    /// offsets or preserve a previously compressed desired size.
+    /// </summary>
+    private Size MeasurePlacement(Size constraint)
+    {
+        _measuredHost = constraint;
+        _placement    = Rect.Empty;
+
+        if (Child is null)
+        {
+            return default;
+        }
+
+        Child.Measure(constraint);
+
+        var desired = Child.DesiredSize;
+
+        var host = new Size(
+            double.IsInfinity(constraint.Width) ? desired.Width : constraint.Width,
+            double.IsInfinity(constraint.Height) ? desired.Height : constraint.Height
+        );
+
+        var preferred = GetPreferredBounds(Child, host);
+        var placement = KeyboardAvoidanceLayout.Place(
+            new Rect(host), preferred, _localBounds, OcclusionPadding
+        );
+
+        if (placement != preferred)
+        {
+            _placement = placement;
+            if (placement.Width < preferred.Width || placement.Height < preferred.Height)
+            {
+                Child.Measure(placement.Size);
+            }
+        }
+
+        // Keep the decorator's own desired size stable. Only the child receives the reduced slot.
+        return desired;
+    }
+
+    /// <summary>
+    /// Predicts the aligned outer child rectangle from its full-host measurement. FrameworkElement
+    /// enforces its own explicit/minimum sizes and clipping when arranged in the selected slot.
+    /// </summary>
+    private static Rect GetPreferredBounds(UIElement child, Size host)
+    {
+        if (child is not FrameworkElement element)
+        {
+            return new Rect(host);
+        }
+
+        var margin = element.Margin;
+        var width  = element.DesiredSize.Width;
+        var height = element.DesiredSize.Height;
+
+        if (element is { HorizontalAlignment: HorizontalAlignment.Stretch, Width: double.NaN })
+        {
+            width = Math.Max(width, Math.Min(host.Width, element.MaxWidth + margin.Left + margin.Right));
+        }
+
+        if (element is { VerticalAlignment: VerticalAlignment.Stretch, Height: double.NaN })
+        {
+            height = Math.Max(height, Math.Min(host.Height, element.MaxHeight + margin.Top + margin.Bottom));
+        }
+
+        width  = Math.Min(host.Width, width);
+        height = Math.Min(host.Height, height);
+
+        var x = element.HorizontalAlignment switch
+        {
+            HorizontalAlignment.Left  => 0,
+            HorizontalAlignment.Right => host.Width - width,
+            _ => (host.Width - width) / 2,
+        };
+
+        var y = element.VerticalAlignment switch
+        {
+            VerticalAlignment.Top    => 0,
+            VerticalAlignment.Bottom => host.Height - height,
+            _ => (host.Height - height) / 2,
+        };
+
+        return new Rect(x, y, width, height);
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        PresentationSource.AddSourceChangedHandler(this, OnSourceChanged);
+        LayoutUpdated += OnLayoutUpdated;
+        UpdateSubscription();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs args)
+    {
+        PresentationSource.RemoveSourceChangedHandler(this, OnSourceChanged);
+        LayoutUpdated -= OnLayoutUpdated;
+        StopSubscription();
+    }
+
+    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
+    {
+        UpdateSubscription();
+    }
+
+    private void OnSourceChanged(object sender, SourceChangedEventArgs args)
+    {
+        UpdateSubscription();
+    }
+
+    /// <summary>
+    /// Rebinds when the presentation moves between HWNDs, including embedded HwndSource hosts.
+    /// Versioning prevents a delayed callback from an old subscription restoring stale occlusion.
+    /// </summary>
+    private void UpdateSubscription()
+    {
+        var source = IsLoaded && IsVisible
+            ? PresentationSource.FromVisual(this) as HwndSource
+            : null;
+
+        if (source == _source)
+        {
+            return;
+        }
+
+        StopSubscription();
+
+        _source = source;
+        if (source is not null)
+        {
+            source.AddHook(OnWindowMessage);
+
+            var version = _subscriptionVersion;
+            _subscription = _subscribe(
+                source,
+                bounds =>
+                {
+                    if (version == _subscriptionVersion)
+                    {
+                        _screenBounds = bounds;
+                        UpdateLocalBounds();
+                    }
+                }
+            );
+        }
+    }
+
+    private void StopSubscription()
+    {
+        _subscriptionVersion++;
+        _subscription?.Dispose();
+        _subscription = null;
+
+        _source?.RemoveHook(OnWindowMessage);
+        _source = null;
+
+        _screenBounds = Rect.Empty;
+
+        UpdateLocalBounds();
+    }
+
+    private void OnLayoutUpdated(object? sender, EventArgs args)
+    {
+        UpdateLocalBounds();
+    }
+
+    /// <summary>
+    /// Reprojects stationary keyboard bounds when the window moves or changes DPI. LayoutUpdated
+    /// additionally handles movement of this decorator within the same HWND.
+    /// </summary>
+    private IntPtr OnWindowMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (message is (int)PInvoke.WM_WINDOWPOSCHANGED or (int)PInvoke.WM_DPICHANGED)
+        {
+            InvalidateMeasure();
+            Dispatcher.BeginInvoke(new Action(UpdateLocalBounds));
+        }
+
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Converts screen points separately to local DIPs, including monitor DPI and window offset.
+    /// Comparing points in one coordinate space avoids treating a screen vector as a position.
+    /// </summary>
+    private void UpdateLocalBounds()
+    {
+        var bounds = Rect.Empty;
+
+        if (!_screenBounds.IsEmpty && PresentationSource.FromVisual(this) is not null)
+        {
+            var topLeft     = PointFromScreen(_screenBounds.TopLeft);
+            var topRight    = PointFromScreen(_screenBounds.TopRight);
+            var bottomLeft  = PointFromScreen(_screenBounds.BottomLeft);
+            var bottomRight = PointFromScreen(_screenBounds.BottomRight);
+
+            bounds = new Rect(topLeft, bottomRight);
+            bounds.Union(topRight);
+            bounds.Union(bottomLeft);
+        }
+
+        if (_localBounds != bounds)
+        {
+            _localBounds = bounds;
+            InvalidateMeasure();
+        }
+    }
+}

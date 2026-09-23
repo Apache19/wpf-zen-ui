@@ -17,24 +17,26 @@
                     <!--  A transparent background keeps the modal surface hit-testable during exit.  -->
                     <Grid Background="Transparent">
                         <Border x:Name="PART_Backdrop" Background="{TemplateBinding Backdrop}" />
-                        <!--
-                            Auto-size the wrapper to the dialog so RenderTransformOrigin remains the
-                            center of the presented surface rather than the center of the host.
-                        -->
-                        <Border
-                            x:Name="PART_DialogRoot"
-                            Padding="24"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            RenderTransformOrigin="0.5,0.5">
-                            <Border.Effect>
-                                <DropShadowEffect
-                                    BlurRadius="24"
-                                    Opacity="0.16"
-                                    ShadowDepth="4" />
-                            </Border.Effect>
-                            <ContentPresenter Content="{TemplateBinding Dialog}" />
-                        </Border>
+                        <controls:TouchKeyboardAvoidanceDecorator OcclusionPadding="{Binding Padding, ElementName=PART_DialogRoot}">
+                            <!--
+                                Auto-size the wrapper to the dialog so RenderTransformOrigin remains the
+                                center of the presented surface rather than the center of the host.
+                            -->
+                            <Border
+                                x:Name="PART_DialogRoot"
+                                Padding="24"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                RenderTransformOrigin="0.5,0.5">
+                                <Border.Effect>
+                                    <DropShadowEffect
+                                        BlurRadius="24"
+                                        Opacity="0.16"
+                                        ShadowDepth="4" />
+                                </Border.Effect>
+                                <ContentPresenter Content="{TemplateBinding Dialog}" />
+                            </Border>
+                        </controls:TouchKeyboardAvoidanceDecorator>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <!--
