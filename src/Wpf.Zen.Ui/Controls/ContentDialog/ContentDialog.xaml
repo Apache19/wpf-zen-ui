@@ -41,65 +41,64 @@
             CornerRadius="{TemplateBinding CornerRadius}"
             SnapsToDevicePixels="True">
             <Grid>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <Border x:Name="headerBorder" Padding="{TemplateBinding HeaderPadding}">
-                        <ContentPresenter
-                            controls:TextBlock.FontTypography="Subtitle"
-                            ContentSource="Header"
-                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                            <ContentPresenter.Resources>
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-                                </Style>
-                            </ContentPresenter.Resources>
-                        </ContentPresenter>
-                    </Border>
+                <Border x:Name="headerBorder" Padding="{TemplateBinding HeaderPadding}">
+                    <ContentPresenter
+                        controls:TextBlock.FontTypography="Subtitle"
+                        ContentSource="Header"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <ContentPresenter.Resources>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                            </Style>
+                        </ContentPresenter.Resources>
+                    </ContentPresenter>
+                </Border>
 
-                    <controls:UiScrollViewer
-                        x:Name="PART_ContentScroll"
-                        Grid.Row="1"
-                        Margin="{TemplateBinding Padding}"
-                        CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
-                        HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                        ScrollSpillMode="Disabled"
-                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
-                        <ContentPresenter
-                            x:Name="PART_ContentPresenter"
-                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            Content="{TemplateBinding Content}"
-                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
-                            <ContentPresenter.Resources>
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="TextWrapping" Value="Wrap" />
-                                </Style>
-                            </ContentPresenter.Resources>
-                        </ContentPresenter>
-                    </controls:UiScrollViewer>
+                <controls:UiScrollViewer
+                    x:Name="PART_ContentScroll"
+                    Grid.Row="1"
+                    Margin="{TemplateBinding Padding}"
+                    CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                    HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                    ScrollSpillMode="Disabled"
+                    VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                    <ContentPresenter
+                        x:Name="PART_ContentPresenter"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Content="{TemplateBinding Content}"
+                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
+                        <ContentPresenter.Resources>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextWrapping" Value="Wrap" />
+                            </Style>
+                        </ContentPresenter.Resources>
+                    </ContentPresenter>
+                </controls:UiScrollViewer>
 
-                    <Border
-                        x:Name="footerBorder"
-                        Grid.Row="2"
-                        Padding="{TemplateBinding FooterPadding}"
-                        Background="{m:DynamicBrush SolidBackgroundFillBase}"
-                        BorderBrush="{m:DynamicBrush CardStrokeDefaultSolid}"
-                        BorderThickness="0,1,0,0"
-                        CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
-                        <ContentPresenter ContentSource="Footer" />
-                    </Border>
-                </Grid>
+                <Border
+                    x:Name="footerBorder"
+                    Grid.Row="2"
+                    Padding="{TemplateBinding FooterPadding}"
+                    Background="{m:DynamicBrush SolidBackgroundFillBase}"
+                    BorderBrush="{m:DynamicBrush CardStrokeDefaultSolid}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
+                    <ContentPresenter ContentSource="Footer" />
+                </Border>
 
                 <!--  对话框右上角的关闭按钮  -->
                 <controls:Button
                     Grid.Row="0"
+                    Grid.RowSpan="3"
                     Margin="8"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
