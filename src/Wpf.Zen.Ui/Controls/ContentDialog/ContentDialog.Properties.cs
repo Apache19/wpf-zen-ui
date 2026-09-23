@@ -71,10 +71,11 @@ public partial class ContentDialog
     /// the usable dialog area rather than covering the host edge-to-edge.
     /// </para>
     /// <para>
-    /// A stretched axis is not limited by the theme's default maximum of 640 by 850 device-independent
-    /// pixels. Explicit local width, height, or maximum-size values have higher WPF property-value
-    /// precedence and remain effective, which permits a large dialog to opt into stretching while
-    /// retaining an application-specific limit.
+    /// The default theme limits automatic width to 640 and automatic height to 850
+    /// device-independent pixels. Each default limit applies only when the corresponding dimension
+    /// is Auto and its axis is not stretched. Setting Width or Height releases that axis's default
+    /// limit; restoring Auto reapplies it. Application-supplied maximums retain their normal WPF
+    /// property-value precedence and continue to constrain explicit and stretched dimensions.
     /// </para>
     /// <para>
     /// Custom <see cref="ContentDialog"/> and <see cref="ContentDialogTransitionPresenter"/>

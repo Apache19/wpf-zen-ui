@@ -19,8 +19,9 @@ namespace Wpf.Zen.Ui.Controls;
 public enum ContentDialogSizingMode
 {
     /// <summary>
-    /// Uses the dialog's desired or explicitly configured size and centers it in the host, subject
-    /// to the theme's default maximum width and height. This is the default mode.
+    /// Uses the dialog's desired or explicitly configured size and centers it in the host.
+    /// The theme's default maximum applies independently to each automatically sized dimension.
+    /// This is the default mode.
     /// </summary>
     Auto,
 
@@ -31,14 +32,14 @@ public enum ContentDialogSizingMode
     Stretch,
 
     /// <summary>
-    /// Stretches the dialog horizontally while retaining automatic, centered height and the theme's
-    /// default maximum height.
+    /// Stretches the dialog horizontally while keeping its height centered. The theme's default
+    /// maximum height applies when Height is Auto.
     /// </summary>
     StretchWidth,
 
     /// <summary>
-    /// Stretches the dialog vertically while retaining automatic, centered width and the theme's
-    /// default maximum width.
+    /// Stretches the dialog vertically while keeping its width centered. The theme's default
+    /// maximum width applies when Width is Auto.
     /// </summary>
     StretchHeight,
 }

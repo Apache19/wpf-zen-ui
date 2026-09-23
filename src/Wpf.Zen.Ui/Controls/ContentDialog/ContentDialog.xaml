@@ -159,20 +159,39 @@
         <Setter Property="Template" Value="{StaticResource DefaultContentDialogTemplate}" />
         <Style.Triggers>
             <!--
-                Infinity restores FrameworkElement's native maximum on a stretched axis. These are
-                style-trigger values rather than local values so an application-supplied MaxWidth or
-                MaxHeight remains authoritative under WPF dependency-property precedence.
+                Default maximums keep automatically sized content compact. Each limit applies only
+                while that dimension is Auto and its axis is not stretched. Explicit dimensions
+                release the corresponding default limit; application-supplied maximums retain
+                their normal WPF dependency-property precedence.
             -->
-            <Trigger Property="SizingMode" Value="StretchWidth">
-                <Setter Property="MaxWidth" Value="Infinity" />
-            </Trigger>
-            <Trigger Property="SizingMode" Value="StretchHeight">
-                <Setter Property="MaxHeight" Value="Infinity" />
-            </Trigger>
-            <Trigger Property="SizingMode" Value="Stretch">
-                <Setter Property="MaxWidth" Value="Infinity" />
-                <Setter Property="MaxHeight" Value="Infinity" />
-            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Width" Value="Auto" />
+                    <Condition Property="SizingMode" Value="Auto" />
+                </MultiTrigger.Conditions>
+                <Setter Property="MaxWidth" Value="640" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Width" Value="Auto" />
+                    <Condition Property="SizingMode" Value="StretchHeight" />
+                </MultiTrigger.Conditions>
+                <Setter Property="MaxWidth" Value="640" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Height" Value="Auto" />
+                    <Condition Property="SizingMode" Value="Auto" />
+                </MultiTrigger.Conditions>
+                <Setter Property="MaxHeight" Value="850" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Height" Value="Auto" />
+                    <Condition Property="SizingMode" Value="StretchWidth" />
+                </MultiTrigger.Conditions>
+                <Setter Property="MaxHeight" Value="850" />
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>
