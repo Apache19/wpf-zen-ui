@@ -15,7 +15,12 @@ internal static class KeyboardAvoidanceLayout
     /// rectangle inside the host. Placement is calculated for the inner content, then expanded
     /// back into the child's ordinary layout slot.
     /// </summary>
-    internal static Rect Place(Rect host, Rect preferred, Rect keyboard, Thickness occlusionPadding)
+    internal static Rect Place(
+        Rect host,
+        Rect preferred,
+        Rect keyboard,
+        Thickness occlusionPadding,
+        Size minimum = default)
     {
         var horizontal = occlusionPadding.Left + occlusionPadding.Right;
         var vertical   = occlusionPadding.Top + occlusionPadding.Bottom;
@@ -39,7 +44,12 @@ internal static class KeyboardAvoidanceLayout
             preferred.Height - vertical
         );
 
-        var innerPlacement = Place(innerHost, innerPreferred, keyboard);
+        var innerMinimum = new Size(
+            Math.Max(0, minimum.Width - horizontal),
+            Math.Max(0, minimum.Height - vertical)
+        );
+
+        var innerPlacement = Place(innerHost, innerPreferred, keyboard, innerMinimum);
         if (innerPlacement == innerPreferred)
         {
             return preferred;
@@ -55,7 +65,8 @@ internal static class KeyboardAvoidanceLayout
 
     /// <summary>
     /// Preserves the preferred rectangle when possible, otherwise chooses the smallest translation.
-    /// If no direction fits, maximizes retained area before comparing displacement. Ties prefer
+    /// If no direction fits, prefers slots satisfying minimum size, then maximizes retained area.
+    /// Displacement breaks area ties. Remaining ties prefer
     /// above, below, left, then right, so identical input always produces identical placement.
     /// </summary>
     /// <remarks>
@@ -63,7 +74,7 @@ internal static class KeyboardAvoidanceLayout
     /// A completely covered host retains its layout because no usable region exists; explicit
     /// child minimums remain the responsibility of WPF's layout and clipping.
     /// </remarks>
-    internal static Rect Place(Rect host, Rect preferred, Rect keyboard)
+    internal static Rect Place(Rect host, Rect preferred, Rect keyboard, Size minimum = default)
     {
         var obstruction = Rect.Intersect(host, keyboard);
         var overlap     = Rect.Intersect(preferred, obstruction);
@@ -84,6 +95,7 @@ internal static class KeyboardAvoidanceLayout
         var best         = preferred;
         var bestArea     = -1d;
         var bestDistance = double.PositiveInfinity;
+        var bestMeetsMinimum = false;
 
         foreach (var region in regions)
         {
@@ -105,12 +117,16 @@ internal static class KeyboardAvoidanceLayout
 
             var area     = width * height;
             var distance = dx * dx + dy * dy;
+            var meetsMinimum = width >= minimum.Width && height >= minimum.Height;
 
-            if (area > bestArea || (area == bestArea && distance < bestDistance))
+            if ((meetsMinimum && !bestMeetsMinimum)
+                || (meetsMinimum == bestMeetsMinimum
+                    && (area > bestArea || (area == bestArea && distance < bestDistance))))
             {
                 best         = new Rect(x, y, width, height);
                 bestArea     = area;
                 bestDistance = distance;
+                bestMeetsMinimum = meetsMinimum;
             }
         }
 

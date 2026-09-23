@@ -23,8 +23,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// a missing part simply omits that visual effect, and a template with neither part completes every
 /// transition immediately. The presenter owns the parts' opacity while it is applied. It appends a
 /// private <see cref="ScaleTransform"/> to <c>PART_DialogRoot</c> and restores the template-supplied
-/// transform when the template changes. The standard template also uses
-/// <see cref="DialogSizingMode"/> to choose which axes of <c>PART_DialogRoot</c> fill the host.
+/// transform when the template changes. Dialog dimensions, alignment and margins determine
+/// the layout of the standard presentation surface.
 /// </para>
 /// <para>
 /// One private, controllable <see cref="AnimationClock"/> drives the whole transition. A direction
@@ -150,37 +150,6 @@ public class ContentDialogTransitionPresenter : Control
     {
         get => (ContentDialog?)GetValue(DialogProperty);
         set => SetValue(DialogProperty, value);
-    }
-
-    /// <summary>
-    /// Identifies the <see cref="DialogSizingMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty DialogSizingModeProperty
-        = DependencyProperty.Register(
-            nameof(DialogSizingMode),
-            typeof(ContentDialogSizingMode),
-            typeof(ContentDialogTransitionPresenter),
-            new FrameworkPropertyMetadata(ContentDialogSizingMode.Auto),
-            static value => value is ContentDialogSizingMode.Auto
-                or ContentDialogSizingMode.Stretch
-                or ContentDialogSizingMode.StretchWidth
-                or ContentDialogSizingMode.StretchHeight
-        );
-
-    /// <summary>
-    /// Gets or sets the sizing mode that the presentation template applies to its dialog surface.
-    /// The default is <see cref="ContentDialogSizingMode.Auto"/>.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="ContentDialogHost"/>'s standard template forwards the current dialog's
-    /// <see cref="ContentDialog.SizingMode"/> value. The property is separate from
-    /// <see cref="Dialog"/> so replacement presenter templates have a direct, bindable layout input
-    /// and do not need a nested binding to the dialog instance.
-    /// </remarks>
-    public ContentDialogSizingMode DialogSizingMode
-    {
-        get => (ContentDialogSizingMode)GetValue(DialogSizingModeProperty);
-        set => SetValue(DialogSizingModeProperty, value);
     }
 
     /// <summary>
@@ -362,6 +331,20 @@ public class ContentDialogTransitionPresenter : Control
         double dialogScale)
     {
         _backdrop?.SetCurrentValue(OpacityProperty, backdropOpacity);
+
+        // The animation surface includes Margin, but zoom around the visible dialog itself.
+        // Visual offsets exclude render transforms, so animation cannot feed back into its pivot.
+        if (_dialogRoot is ContentPresenter { Content: FrameworkElement content } surface
+            && surface.ActualWidth > 0 && surface.ActualHeight > 0)
+        {
+            var offset = VisualTreeHelper.GetOffset(content);
+
+            surface.SetCurrentValue(RenderTransformOriginProperty, new Point(
+                (offset.X + content.ActualWidth / 2) / surface.ActualWidth,
+                (offset.Y + content.ActualHeight / 2) / surface.ActualHeight
+            ));
+        }
+
         _dialogRoot?.SetCurrentValue(OpacityProperty, dialogOpacity);
 
         if (_dialogScale is not null)

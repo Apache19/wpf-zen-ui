@@ -5,6 +5,8 @@
 
 using System.Diagnostics;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Threading;
 using Windows.Win32;
 using Wpf.Zen.Ui.Interop;
 
@@ -16,10 +18,14 @@ namespace Wpf.Zen.Ui.Controls;
 /// <remarks>
 /// <para>
 /// Stretch this decorator across the available host and align the child within it. The child is
-/// measured against the full host before each avoidance calculation. Unobstructed content retains
+/// measured against the full host before each avoidance calculation. A ContentPresenter child uses
+/// its FrameworkElement content's alignment and size constraints, including Margin. Positive
+/// margins reserve keyboard clearance; negative margins retain WPF's overflow semantics.
+/// Unobstructed content retains
 /// its normal alignment; obstructed content moves the shortest distance above, below, left, or
-/// right of the keyboard. Only when no direction fits is its layout slot reduced to retain the
-/// most area.
+/// right of the keyboard. When compression is required, slots satisfying fixed/minimum dimensions
+/// take priority, followed by retained area. A changed keyboard placement also requests visibility
+/// for the focused descendant after layout completes.
 /// </para>
 /// <para>
 /// Child padding or margin supplies clearance from host and keyboard edges. Set
@@ -40,8 +46,10 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
     private Rect _localBounds         = Rect.Empty;
     private Rect _placement           = Rect.Empty;
     private Rect _lastLoggedPlacement = Rect.Empty;
-    private Size _measuredHost;
     private int  _subscriptionVersion;
+    private LayoutIntent? _measuredIntent;
+    private Rect _arrangedPlacement = Rect.Empty;
+    private bool _focusRevealQueued;
 
     /// <summary>
     /// Identifies the <see cref="OcclusionPadding"/> dependency property.
@@ -116,17 +124,23 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
     }
 
     /// <summary>
-    /// Applies avoidance through layout, leaving the child's render transforms available for
-    /// effects.
+    /// Arranges only the slot established by measurement, leaving render transforms for effects.
+    /// Re-measuring at full host size here invalidates descendant scroll/text layout while WPF
+    /// is arranging it. Scroll commands and caret positioning must see the reduced measurement.
     /// </summary>
     protected override Size ArrangeOverride(Size arrangeSize)
     {
-        if (_measuredHost != arrangeSize)
+        Child?.Arrange(_placement.IsEmpty ? new Rect(arrangeSize) : _placement);
+
+        // A keyboard can resize the viewport after the editor already received focus. WPF's
+        // original focus request then predates the new viewport. Request visibility once after
+        // the changed placement settles, without interfering with subsequent manual scrolling.
+        if (_arrangedPlacement != _placement && !_localBounds.IsEmpty)
         {
-            MeasurePlacement(arrangeSize);
+            QueueFocusedElementReveal();
         }
 
-        Child?.Arrange(_placement.IsEmpty ? new Rect(arrangeSize) : _placement);
+        _arrangedPlacement = _placement;
 
         if (_lastLoggedPlacement != _placement)
         {
@@ -145,18 +159,47 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
     }
 
     /// <summary>
+    /// Lets descendant scroll viewers expose the current focus after keyboard-driven layout.
+    /// The deferred request never changes focus and is discarded after hiding or unloading.
+    /// </summary>
+    private void QueueFocusedElementReveal()
+    {
+        if (_focusRevealQueued)
+        {
+            return;
+        }
+
+        _focusRevealQueued = true;
+
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            _focusRevealQueued = false;
+
+            if (IsLoaded && IsVisible && !_localBounds.IsEmpty && Child is { } child
+                && Keyboard.FocusedElement is FrameworkElement focused
+                && (ReferenceEquals(child, focused) || child.IsAncestorOf(focused)))
+            {
+                focused.BringIntoView();
+            }
+        }));
+    }
+
+    /// <summary>
     /// Uses the full host as a stable baseline, so keyboard movement and hiding never accumulate
     /// offsets or preserve a previously compressed desired size.
     /// </summary>
     private Size MeasurePlacement(Size constraint)
     {
-        _measuredHost = constraint;
-        _placement    = Rect.Empty;
+        _placement = Rect.Empty;
+        _measuredIntent = null;
 
         if (Child is null)
         {
             return default;
         }
+
+        var element = GetLayoutElement(Child);
+        _measuredIntent = GetLayoutIntent(element);
 
         Child.Measure(constraint);
 
@@ -169,17 +212,14 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
 
         var preferred = GetPreferredBounds(Child, host);
         var placement = KeyboardAvoidanceLayout.Place(
-            new Rect(host), preferred, _localBounds, OcclusionPadding
+            new Rect(host), preferred, _localBounds, OcclusionPadding, GetMinimumSize(element)
         );
 
-        if (placement != preferred)
-        {
-            _placement = placement;
+        _placement = placement;
 
-            if (placement.Width < preferred.Width || placement.Height < preferred.Height)
-            {
-                Child.Measure(placement.Size);
-            }
+        if (placement.Width < preferred.Width || placement.Height < preferred.Height)
+        {
+            Child.Measure(placement.Size);
         }
 
         // Keep the decorator's own desired size stable. Only the child receives the reduced slot.
@@ -192,14 +232,16 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
     /// </summary>
     private static Rect GetPreferredBounds(UIElement child, Size host)
     {
-        if (child is not FrameworkElement element)
+        // A ContentPresenter preserves the host's logical ownership and provides an animation
+        // surface. Its content owns layout constraints; its measured size includes content Margin.
+        if (GetLayoutElement(child) is not { } element)
         {
             return new Rect(host);
         }
 
         var margin = element.Margin;
-        var width  = element.DesiredSize.Width;
-        var height = element.DesiredSize.Height;
+        var width  = child.DesiredSize.Width;
+        var height = child.DesiredSize.Height;
 
         if (element is { HorizontalAlignment: HorizontalAlignment.Stretch, Width: double.NaN })
         {
@@ -229,6 +271,84 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
         };
 
         return new Rect(x, y, width, height);
+    }
+
+    /// <summary>
+    /// Reads layout intent from presented content while preserving its logical ownership.
+    /// </summary>
+    private static FrameworkElement? GetLayoutElement(UIElement? child)
+    {
+        return child is ContentPresenter { Content: FrameworkElement content }
+            ? content
+            : child as FrameworkElement;
+    }
+
+    /// <summary>
+    /// Captures properties that can change while a compressed child's DesiredSize stays constant.
+    /// Record equality treats Auto (NaN) as equal, so ordinary layout never invalidates itself.
+    /// </summary>
+    private static LayoutIntent? GetLayoutIntent(FrameworkElement? element)
+    {
+        return element is null
+            ? null
+            : new LayoutIntent(
+                element.HorizontalAlignment,
+                element.VerticalAlignment,
+                element.Width,
+                element.Height,
+                element.MinWidth,
+                element.MinHeight,
+                element.MaxWidth,
+                element.MaxHeight,
+                element.Margin,
+                element.LayoutTransform?.Value ?? Matrix.Identity
+            );
+    }
+
+    /// <summary>
+    /// Keeps placement synchronized with runtime bindings even when WPF clips their desired size.
+    /// </summary>
+    private readonly record struct LayoutIntent(
+        HorizontalAlignment Horizontal,
+        VerticalAlignment Vertical,
+        double Width,
+        double Height,
+        double MinWidth,
+        double MinHeight,
+        double MaxWidth,
+        double MaxHeight,
+        Thickness Margin,
+        Matrix Transform
+    );
+
+    /// <summary>
+    /// Includes fixed dimensions and margins in the smallest slot WPF can display without clipping.
+    /// Prefer a usable region over a larger strip narrower than the dialog's minimum width.
+    /// </summary>
+    private static Size GetMinimumSize(FrameworkElement? element)
+    {
+        if (element is null)
+        {
+            return default;
+        }
+
+        var width = double.IsNaN(element.Width)
+            ? element.MinWidth
+            : Math.Max(element.MinWidth, Math.Min(element.Width, element.MaxWidth));
+
+        var height = double.IsNaN(element.Height)
+            ? element.MinHeight
+            : Math.Max(element.MinHeight, Math.Min(element.Height, element.MaxHeight));
+
+        var bounds = element.LayoutTransform?.TransformBounds(new Rect(0, 0, width, height))
+            ?? new Rect(0, 0, width, height);
+
+        var margin = element.Margin;
+
+        return new Size(
+            Math.Max(0, bounds.Width + margin.Left + margin.Right),
+            Math.Max(0, bounds.Height + margin.Top + margin.Bottom)
+        );
     }
 
     private void OnLoaded(object sender, RoutedEventArgs args)
@@ -273,11 +393,13 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
         StopSubscription();
 
         _source = source;
+
         if (source is not null)
         {
             source.AddHook(OnWindowMessage);
 
             var version = _subscriptionVersion;
+
             _subscription = _subscribe(
                 source,
                 bounds =>
@@ -309,6 +431,13 @@ public class TouchKeyboardAvoidanceDecorator : Decorator
     private void OnLayoutUpdated(object? sender, EventArgs args)
     {
         UpdateLocalBounds();
+
+        // Alignment can invalidate only arrange; constraints can leave clipped DesiredSize
+        // unchanged. Neither case necessarily propagates measurement to this decorator.
+        if (GetLayoutIntent(GetLayoutElement(Child)) != _measuredIntent)
+        {
+            InvalidateMeasure();
+        }
     }
 
     /// <summary>

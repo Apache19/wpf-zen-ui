@@ -45,51 +45,6 @@ public partial class ContentDialog
 
     #endregion
 
-    #region DP: SizingMode
-
-    /// <summary>
-    /// Identifies the <see cref="SizingMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty SizingModeProperty = DependencyProperty.Register(
-        nameof(SizingMode),
-        typeof(ContentDialogSizingMode),
-        typeof(ContentDialog),
-        new FrameworkPropertyMetadata(ContentDialogSizingMode.Auto),
-        static value => value is ContentDialogSizingMode.Auto
-            or ContentDialogSizingMode.Stretch
-            or ContentDialogSizingMode.StretchWidth
-            or ContentDialogSizingMode.StretchHeight
-    );
-
-    /// <summary>
-    /// Gets or sets which dimensions of the dialog consume the space available inside the host.
-    /// The default is <see cref="ContentDialogSizingMode.Auto"/>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The default template keeps its outer host padding in every mode. Stretching therefore fills
-    /// the usable dialog area rather than covering the host edge-to-edge.
-    /// </para>
-    /// <para>
-    /// The default theme limits automatic width to 640 and automatic height to 850
-    /// device-independent pixels. Each default limit applies only when the corresponding dimension
-    /// is Auto and its axis is not stretched. Setting Width or Height releases that axis's default
-    /// limit; restoring Auto reapplies it. Application-supplied maximums retain their normal WPF
-    /// property-value precedence and continue to constrain explicit and stretched dimensions.
-    /// </para>
-    /// <para>
-    /// Custom <see cref="ContentDialog"/> and <see cref="ContentDialogTransitionPresenter"/>
-    /// templates should consume this property when they replace the standard sizing surfaces.
-    /// </para>
-    /// </remarks>
-    public ContentDialogSizingMode SizingMode
-    {
-        get => (ContentDialogSizingMode)GetValue(SizingModeProperty);
-        set => SetValue(SizingModeProperty, value);
-    }
-
-    #endregion
-
     #region DP: HeaderPadding
 
     /// <summary>

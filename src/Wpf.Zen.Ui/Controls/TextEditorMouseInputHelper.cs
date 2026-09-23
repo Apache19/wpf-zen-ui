@@ -44,6 +44,15 @@ internal sealed class TextEditorMouseInputHelper
         BindingFlags.Static | BindingFlags.NonPublic
     );
 
+    // The native OnMouseDown handler checks ITextView.IsValid after updating layout before
+    // entering SetCaretPositionOnMouseEvent. UpdateLayout alone does not guarantee validity.
+    private static readonly PropertyInfo? TextViewPropertyInfo = TextEditorType?.GetProperty(
+        "TextView", BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
+    private static readonly PropertyInfo? TextViewIsValidPropertyInfo = typeof(TextBoxBase).Assembly
+        .GetType("System.Windows.Documents.ITextView")?.GetProperty("IsValid");
+
     // Native mouse-down caret placement. It accepts a point in render-scope coordinates, so we can
     // clamp a padding click to the nearest render-scope edge and let WPF choose the insertion
     // position exactly as it would for a real render-scope click.
@@ -152,6 +161,12 @@ internal sealed class TextEditorMouseInputHelper
 
         // Ensure the render scope has valid layout before asking it to interpret a point.
         renderScope.UpdateLayout();
+
+        var textView = TextViewPropertyInfo?.GetValue(textEditor);
+        if (textView is null || TextViewIsValidPropertyInfo?.GetValue(textView) is not true)
+        {
+            return false;
+        }
 
         // Convert the owner-space click to render-scope space and clamp it to the scope's bounds.
         // WPF's SetCaretPositionOnMouseEvent expects render-scope coordinates.

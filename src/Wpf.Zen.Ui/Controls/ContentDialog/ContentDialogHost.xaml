@@ -17,44 +17,14 @@
                     <!--  A transparent background keeps the modal surface hit-testable during exit.  -->
                     <Grid Background="Transparent">
                         <Border x:Name="PART_Backdrop" Background="{TemplateBinding Backdrop}" />
-                        <controls:TouchKeyboardAvoidanceDecorator OcclusionPadding="{Binding Padding, ElementName=PART_DialogRoot}">
-                            <!--
-                                Auto-size the wrapper to the dialog so RenderTransformOrigin remains the
-                                center of the presented surface rather than the center of the host.
-                            -->
-                            <Border
+                        <!--  Keep host clearance separate from the dialog's own Margin.  -->
+                        <controls:TouchKeyboardAvoidanceDecorator Margin="24">
+                            <ContentPresenter
                                 x:Name="PART_DialogRoot"
-                                Padding="24"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                RenderTransformOrigin="0.5,0.5">
-                                <Border.Effect>
-                                    <DropShadowEffect
-                                        BlurRadius="24"
-                                        Opacity="0.16"
-                                        ShadowDepth="4" />
-                                </Border.Effect>
-                                <ContentPresenter Content="{TemplateBinding Dialog}" />
-                            </Border>
+                                Content="{TemplateBinding Dialog}"
+                                RenderTransformOrigin="0.5,0.5" />
                         </controls:TouchKeyboardAvoidanceDecorator>
                     </Grid>
-                    <ControlTemplate.Triggers>
-                        <!--
-                            Stretch the presentation wrapper only on the requested axes. Its padding
-                            remains part of the full host-sized slot and therefore preserves the
-                            dialog's 24-pixel safe area in every sizing mode.
-                        -->
-                        <Trigger Property="DialogSizingMode" Value="StretchWidth">
-                            <Setter TargetName="PART_DialogRoot" Property="HorizontalAlignment" Value="Stretch" />
-                        </Trigger>
-                        <Trigger Property="DialogSizingMode" Value="StretchHeight">
-                            <Setter TargetName="PART_DialogRoot" Property="VerticalAlignment" Value="Stretch" />
-                        </Trigger>
-                        <Trigger Property="DialogSizingMode" Value="Stretch">
-                            <Setter TargetName="PART_DialogRoot" Property="HorizontalAlignment" Value="Stretch" />
-                            <Setter TargetName="PART_DialogRoot" Property="VerticalAlignment" Value="Stretch" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -77,7 +47,6 @@
                             ClosingEasingFunction="{TemplateBinding ClosingEasingFunction}"
                             ClosingScale="{TemplateBinding ClosingScale}"
                             Dialog="{TemplateBinding CurrentDialog}"
-                            DialogSizingMode="{Binding CurrentDialog.SizingMode, RelativeSource={RelativeSource TemplatedParent}}"
                             OpenDuration="{TemplateBinding OpenDuration}"
                             OpeningEasingFunction="{TemplateBinding OpeningEasingFunction}"
                             OpeningScale="{TemplateBinding OpeningScale}" />

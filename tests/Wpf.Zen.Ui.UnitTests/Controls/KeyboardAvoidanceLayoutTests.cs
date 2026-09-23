@@ -94,6 +94,19 @@ public class KeyboardAvoidanceLayoutTests
     }
 
     /// <summary>
+    /// A larger side strip must not win over a usable upper region when minimum width cannot fit.
+    /// </summary>
+    [Fact]
+    public void Compression_PrefersRegionThatSatisfiesMinimumSize()
+    {
+        var host = new Rect(0, 0, 1000, 800);
+        var preferred = new Rect(160, 100, 680, 600);
+        var keyboard = new Rect(350, 280, 650, 520);
+        Assert.Equal(new Rect(160, 0, 680, 280), KeyboardAvoidanceLayout.Place(
+            host, preferred, keyboard, new Thickness(), new Size(360, 84)));
+    }
+
+    /// <summary>
     /// An entirely covered host retains usable layout rather than receiving a zero-sized slot.
     /// </summary>
     [Fact]

@@ -35,6 +35,14 @@ namespace Wpf.Zen.Ui.Controls;
 /// control template.
 /// </para>
 /// <para>
+/// Standard horizontal and vertical alignment position the dialog; both default to Center.
+/// Automatic, non-stretched dimensions have theme maximums of 640 by 850 DIPs. Explicit dimensions
+/// release the corresponding theme limit; application maximums still apply. The host reserves
+/// 24 DIPs at its edges, in addition to this control's Margin. Keyboard avoidance moves the margin
+/// box before reducing its available space and restores normal layout when the keyboard hides.
+/// Explicit and minimum dimensions retain WPF semantics and may clip if safe space is insufficient.
+/// </para>
+/// <para>
 /// This control does not create a native window or establish modality by itself. Call
 /// <see cref="ContentDialogHost.ShowAsync"/> to start a presentation session; the host owns input
 /// isolation, focus restoration and transitions for that session.

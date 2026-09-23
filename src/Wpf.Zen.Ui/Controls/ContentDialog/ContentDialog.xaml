@@ -140,6 +140,16 @@
         <Setter Property="CornerRadius" Value="{m:DynamicValue PopupCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect
+                    BlurRadius="24"
+                    Opacity="0.16"
+                    ShadowDepth="4" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="MinWidth" Value="320" />
         <Setter Property="MinHeight" Value="84" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -167,28 +177,42 @@
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Width" Value="Auto" />
-                    <Condition Property="SizingMode" Value="Auto" />
+                    <Condition Property="HorizontalAlignment" Value="Left" />
                 </MultiTrigger.Conditions>
                 <Setter Property="MaxWidth" Value="640" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Width" Value="Auto" />
-                    <Condition Property="SizingMode" Value="StretchHeight" />
+                    <Condition Property="HorizontalAlignment" Value="Center" />
+                </MultiTrigger.Conditions>
+                <Setter Property="MaxWidth" Value="640" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Width" Value="Auto" />
+                    <Condition Property="HorizontalAlignment" Value="Right" />
                 </MultiTrigger.Conditions>
                 <Setter Property="MaxWidth" Value="640" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Height" Value="Auto" />
-                    <Condition Property="SizingMode" Value="Auto" />
+                    <Condition Property="VerticalAlignment" Value="Top" />
                 </MultiTrigger.Conditions>
                 <Setter Property="MaxHeight" Value="850" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Height" Value="Auto" />
-                    <Condition Property="SizingMode" Value="StretchWidth" />
+                    <Condition Property="VerticalAlignment" Value="Center" />
+                </MultiTrigger.Conditions>
+                <Setter Property="MaxHeight" Value="850" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Height" Value="Auto" />
+                    <Condition Property="VerticalAlignment" Value="Bottom" />
                 </MultiTrigger.Conditions>
                 <Setter Property="MaxHeight" Value="850" />
             </MultiTrigger>
