@@ -14,10 +14,9 @@
 
     <!--
         ====================================================================
-        ThemeManager merges this dictionary into every process-wide resource
-        graph, independent of the selected palette. Keep resources here when
-        they must be available through both Application.Resources and the
-        applicationless SystemResources host.
+        GlobalResourceLoader installs these defaults in the system theme at
+        library initialization and after Windows reloads its theme dictionary.
+        Library component keys are installed when Generic.xaml is loaded.
         ====================================================================
     -->
 

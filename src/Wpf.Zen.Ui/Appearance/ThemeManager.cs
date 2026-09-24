@@ -41,17 +41,12 @@ public sealed class ThemeManager
     private static readonly Uri LightThemeUri          = new(ThemeBaseUri + "Light.xaml", UriKind.Relative);
     private static readonly Uri DarkThemeUri           = new(ThemeBaseUri + "Dark.xaml", UriKind.Relative);
     private static readonly Uri HighContrastThemeUri   = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Relative);
-    private static readonly Uri GlobalResourcesUri     = new(ResourceBaseUri + "GlobalResources.xaml", UriKind.Relative);
     private static readonly Uri NativeControlStylesUri = new(ResourceBaseUri + "NativeControlStyles.xaml", UriKind.Relative);
 
     private static readonly object _lock = new();
 
     private static readonly ResourceDictionary _lightDictionary = [];
     private static readonly ResourceDictionary _darkDictionary  = [];
-
-    // The SystemResources backend receives a separate instance below because WPF seals values loaded into a theme
-    // dictionary and may then share them across dispatchers.
-    private static readonly ResourceDictionary _globalDictionary = [];
 
     // Registration follows object lifetime rather than Loaded/Unloaded lifetime: WPF elements can
     // be unloaded and later reattached without their attached-property callbacks running again.
@@ -75,10 +70,6 @@ public sealed class ThemeManager
             "IsInitializePending",
             BindingFlags.Instance | BindingFlags.NonPublic
         );
-
-    // Never let the private system-owned graph seal or acquire affinity on the public dictionary merged into
-    // Application.Resources.
-    private static ResourceDictionary _globalSystemDictionary = [];
 
     // System ThemeStyle has stricter validation than an Application implicit style (notably it rejects
     // OverridesDefaultStyle). Keep independently loaded dictionaries so compatibility normalization never changes the
@@ -120,29 +111,21 @@ public sealed class ThemeManager
     /// Initializes the process-wide theme resources, including implicit styles for native WPF controls.
     /// </summary>
     /// <remarks>
-    /// Repeated calls are idempotent and repair both resource layers if a host replaced
-    /// <see cref="Application.Resources"/> after initialization. Call this method before loading application resource
-    /// dictionaries whose styles use <c>BasedOn="{StaticResource {x:Type ...}}"</c> to derive from the library's
-    /// native styles; as in WPF itself, a static resource must already exist in the active lookup scope.
+    /// Repeated calls are idempotent and repair theme resources if a host replaced
+    /// <see cref="Application.Resources"/> after initialization. Call this method before loading
+    /// application resource dictionaries whose styles use
+    /// <c>BasedOn="{StaticResource {x:Type ...}}"</c> to derive from the library's native styles;
+    /// as in WPF itself, a static resource must already exist in the active lookup scope.
     /// </remarks>
     public static void Initialize()
     {
         _ = ActivateThemeManagement();
         RebuildThemeDictionaries();
 
+        EnsureThemeResourceHost();
         if (Application.Current is { } application)
         {
-            if (_systemThemeResourceHost is not null
-                || !ContainsMergedDictionary(application.Resources, _globalDictionary))
-            {
-                EnsureGlobalResourceHost();
-            }
-
             ApplyThemeToResources(application.Resources, _themePreference);
-        }
-        else
-        {
-            EnsureGlobalResourceHost();
         }
 
         EffectiveTheme = ResolveEffectiveTheme(_themePreference);
@@ -181,7 +164,7 @@ public sealed class ThemeManager
     /// If reflection is unavailable, the method falls back to a resource-only Application so theming remains
     /// functional rather than failing application startup.
     /// </remarks>
-    private static void EnsureGlobalResourceHost()
+    private static void EnsureThemeResourceHost()
     {
         ResourceDictionary activeResources = GetSystemThemeDictionary();
 
@@ -191,7 +174,6 @@ public sealed class ThemeManager
             // Once that App exists, return SystemResources to Windows ownership and use Application.Resources.
             _systemThemeResourceHost?.Restore();
             _systemThemeResourceHost = null;
-            MergeGlobalDictionary(Application.Current.Resources);
             return;
         }
 
@@ -216,7 +198,6 @@ public sealed class ThemeManager
         }
 
         EnsureApplicationResourceHost();
-        MergeGlobalDictionary(Application.Current!.Resources);
     }
 
     /// <summary>
@@ -350,7 +331,6 @@ public sealed class ThemeManager
 
         if (Application.Current is { } application)
         {
-            MergeGlobalDictionary(application.Resources);
             if (IsThemeManagementActive)
             {
                 ApplyThemeToResources(application.Resources, _themePreference);
@@ -1069,7 +1049,7 @@ public sealed class ThemeManager
 
         // Install the process-wide layer before touching individual roots. DynamicResource expressions and default
         // styles re-evaluated by those root transactions must already observe the new global theme.
-        EnsureGlobalResourceHost();
+        EnsureThemeResourceHost();
 
         foreach (var (_, resources, preference) in CollectTargets())
         {
@@ -1133,8 +1113,6 @@ public sealed class ThemeManager
 
     private static void RebuildThemeDictionaries()
     {
-        EnsureGlobalDictionariesLoaded();
-
         bool highContrast = SystemParameters.HighContrast;
         Color accentColor = highContrast ? default : ResolveAccentColor();
         var configuration = new ThemeResourceConfiguration(
@@ -1169,8 +1147,7 @@ public sealed class ThemeManager
                 darkDictionaries,
                 highContrast,
                 accentColor,
-                nativeControlStyles,
-                globalResources: null
+                nativeControlStyles
             );
         }
 
@@ -1190,8 +1167,7 @@ public sealed class ThemeManager
                 darkSystemDictionaries,
                 highContrast,
                 accentColor,
-                systemNativeControlStyles,
-                _globalSystemDictionary
+                systemNativeControlStyles
             );
 
             lightSystemDictionary = new ResourceDictionary();
@@ -1216,34 +1192,14 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Loads global resources at the same explicit activation boundary as the Light/Dark dictionaries.
+    /// Composes palette resources and optional native control styles for both theme variants.
     /// </summary>
-    /// <remarks>
-    /// Assigning <see cref="ResourceDictionary.Source"/> parses XAML and creates dispatcher-sensitive WPF objects.
-    /// Deferring that work prevents a harmless static property read from binding the theme graph to an arbitrary
-    /// worker or designer thread. The SystemResources backend receives a separate instance because WPF may seal and
-    /// share values stored in a theme dictionary across dispatchers.
-    /// </remarks>
-    private static void EnsureGlobalDictionariesLoaded()
-    {
-        if (_globalDictionary.Source is null)
-        {
-            _globalDictionary.Source = GlobalResourcesUri;
-        }
-
-        if (Application.Current is null && _globalSystemDictionary.Source is null)
-        {
-            _globalSystemDictionary.Source = GlobalResourcesUri;
-        }
-    }
-
     internal static void PopulateThemeDictionaries(
         List<ResourceDictionary> lightDictionaries,
         List<ResourceDictionary> darkDictionaries,
         bool highContrast,
         Color accentColor,
-        ResourceDictionary? nativeControlStyles,
-        ResourceDictionary? globalResources)
+        ResourceDictionary? nativeControlStyles)
     {
         if (highContrast)
         {
@@ -1259,12 +1215,6 @@ public sealed class ThemeManager
             {
                 lightDictionaries.Add(nativeControlStyles);
                 darkDictionaries.Add(nativeControlStyles);
-            }
-
-            if (globalResources is not null)
-            {
-                lightDictionaries.Add(globalResources);
-                darkDictionaries.Add(globalResources);
             }
 
             // High contrast colors belong to the system palette, independently of the requested Light/Dark
@@ -1293,12 +1243,6 @@ public sealed class ThemeManager
             {
                 lightDictionaries.Add(nativeControlStyles);
                 darkDictionaries.Add(nativeControlStyles);
-            }
-
-            if (globalResources is not null)
-            {
-                lightDictionaries.Add(globalResources);
-                darkDictionaries.Add(globalResources);
             }
 
             // UISettings exposes one personalization color, not a documented reusable ramp.
@@ -1466,31 +1410,6 @@ public sealed class ThemeManager
 
         // Insert at beginning so user-defined resources can override theme resources
         target.MergedDictionaries.Insert(0, themeDict);
-    }
-
-    /// <summary>
-    /// Keeps the palette-independent dictionary at low precedence so application-owned merged dictionaries and direct
-    /// resources can still override library defaults through WPF's normal reverse-order resource lookup.
-    /// </summary>
-    private static void MergeGlobalDictionary(ResourceDictionary target)
-    {
-        if (!ContainsMergedDictionary(target, _globalDictionary))
-        {
-            target.MergedDictionaries.Insert(0, _globalDictionary);
-        }
-    }
-
-    private static bool ContainsMergedDictionary(ResourceDictionary target, ResourceDictionary expected)
-    {
-        foreach (ResourceDictionary dictionary in target.MergedDictionaries)
-        {
-            if (ReferenceEquals(dictionary, expected))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool IsThemeDictionaryCurrent(ResourceDictionary target, ResourceDictionary expected)

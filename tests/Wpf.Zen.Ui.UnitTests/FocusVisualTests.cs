@@ -39,7 +39,7 @@ public class FocusVisualTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            ThemeManager.Initialize();
+            LibraryInitializer.EnsureInitialized();
 
             Assert.IsType<Style>(Application.Current!.TryFindResource(SystemParameters.FocusVisualStyleKey));
             var presenterStyle = Assert.IsType<Style>(

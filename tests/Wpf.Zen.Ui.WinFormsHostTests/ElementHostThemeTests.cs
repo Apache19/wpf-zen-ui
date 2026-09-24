@@ -188,7 +188,7 @@ public class ElementHostThemeTests
     /// default <see cref="FrameworkElement.FocusVisualStyle"/> value.
     /// </summary>
     [Fact]
-    public void Initialize_InstallsGlobalFocusVisualStyleWithoutApplicationOrThemeConfiguration()
+    public void LibraryInitialization_InstallsFocusStyleAndSurvivesSystemThemeReload()
     {
         RunOnStaThread(() =>
         {
@@ -196,7 +196,7 @@ public class ElementHostThemeTests
             ResetThemeManagerToUnconfiguredState();
             Assert.Null(Application.Current);
 
-            ThemeManager.Initialize();
+            // Loading the library has already installed the global defaults.
 
             var probe = new Border();
             Style focusVisualStyle = Assert.IsType<Style>(
@@ -211,6 +211,11 @@ public class ElementHostThemeTests
             var template = Assert.IsType<ControlTemplate>(templateSetter.Value);
 
             Assert.IsType<UiFocusVisualPresenter>(template.LoadContent());
+
+            SimulateWpfSystemThemeCacheReset();
+            Assert.Same(focusVisualStyle, probe.TryFindResource(SystemParameters.FocusVisualStyleKey));
+            Assert.False(IsThemeManagementActive());
+            Assert.Null(Application.Current);
         });
     }
 

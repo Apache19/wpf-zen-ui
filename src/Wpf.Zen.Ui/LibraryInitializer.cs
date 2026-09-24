@@ -13,8 +13,8 @@ namespace Wpf.Zen.Ui;
 /// Provides the single entry point for process-wide library initialization.
 /// </summary>
 /// <remarks>
-/// WPF metadata customization and class-handler registration must be completed before an
-/// application creates native controls or dispatches popup input. The module initializer forces
+/// Global resources, metadata and class handlers are installed before an application creates
+/// native controls or dispatches popup input. The module initializer forces
 /// this type's static constructor to run when the assembly is loaded, making that behavior
 /// independent of which library control or theme service an application touches first.
 ///
@@ -25,13 +25,14 @@ internal static class LibraryInitializer
 {
     static LibraryInitializer()
     {
+        GlobalResourceLoader.Initialize();
         TextBlock.InitializeMetadata();
         PopupAlignment.Initialize();
         PopupDismissal.Initialize();
     }
 
     /// <summary>
-    /// Initializes process-wide WPF metadata and input policies when the assembly is loaded, or
+    /// Initializes system theme defaults, WPF metadata and input policies when the assembly loads, or
     /// ensures that initialization has already completed when called explicitly.
     /// </summary>
     /// <remarks>
@@ -39,7 +40,7 @@ internal static class LibraryInitializer
     /// initialization guarantees execution of <see cref="LibraryInitializer"/>'s static constructor.
     ///
     /// The empty body also provides a convenient explicit initialization barrier to existing callers
-    /// without repeating either initialization operation.
+    /// without repeating initialization operations.
     /// </remarks>
     [ModuleInitializer]
     [SuppressMessage(
