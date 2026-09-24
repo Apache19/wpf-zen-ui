@@ -435,6 +435,7 @@ public partial class ContentDialogHost : ContentControl
         }
 
         session.IsCleanedUp = true;
+
         // Settle an otherwise pending outcome before calling application cleanup. Late opening
         // failures are then traced by the observer rather than faulting an abandoned private task.
         session.Outcome.TrySetResult(result);

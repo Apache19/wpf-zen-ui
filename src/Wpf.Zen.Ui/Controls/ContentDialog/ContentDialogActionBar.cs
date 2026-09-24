@@ -54,10 +54,11 @@ public class ContentDialogActionBar : ItemsControl
     /// <summary>
     /// Identifies the <see cref="Columns"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty ColumnsProperty = UniformGrid.ColumnsProperty.AddOwner(
-        typeof(ContentDialogActionBar),
-        new FrameworkPropertyMetadata(3, FrameworkPropertyMetadataOptions.AffectsMeasure)
-    );
+    public static readonly DependencyProperty ColumnsProperty
+        = UniformGrid.ColumnsProperty.AddOwner(
+            typeof(ContentDialogActionBar),
+            new FrameworkPropertyMetadata(3, FrameworkPropertyMetadataOptions.AffectsMeasure)
+        );
 
     /// <summary>
     /// Gets or sets the maximum number of action slots in each row. The default is 3.
@@ -77,10 +78,11 @@ public class ContentDialogActionBar : ItemsControl
     /// <summary>
     /// Identifies the <see cref="RowSpacing"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty RowSpacingProperty = AdaptiveUniformGrid.RowSpacingProperty.AddOwner(
-        typeof(ContentDialogActionBar),
-        new FrameworkPropertyMetadata(8D, FrameworkPropertyMetadataOptions.AffectsMeasure)
-    );
+    public static readonly DependencyProperty RowSpacingProperty
+        = AdaptiveUniformGrid.RowSpacingProperty.AddOwner(
+            typeof(ContentDialogActionBar),
+            new FrameworkPropertyMetadata(8D, FrameworkPropertyMetadataOptions.AffectsMeasure)
+        );
 
     /// <summary>
     /// Gets or sets the distance, in device-independent units, between action rows. The default is 8.
@@ -99,10 +101,11 @@ public class ContentDialogActionBar : ItemsControl
     /// <summary>
     /// Identifies the <see cref="ColumnSpacing"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty ColumnSpacingProperty = AdaptiveUniformGrid.ColumnSpacingProperty.AddOwner(
-        typeof(ContentDialogActionBar),
-        new FrameworkPropertyMetadata(8D, FrameworkPropertyMetadataOptions.AffectsMeasure)
-    );
+    public static readonly DependencyProperty ColumnSpacingProperty
+        = AdaptiveUniformGrid.ColumnSpacingProperty.AddOwner(
+            typeof(ContentDialogActionBar),
+            new FrameworkPropertyMetadata(8D, FrameworkPropertyMetadataOptions.AffectsMeasure)
+        );
 
     /// <summary>
     /// Gets or sets the distance, in device-independent units, between adjacent action slots.
@@ -122,8 +125,8 @@ public class ContentDialogActionBar : ItemsControl
     /// <summary>
     /// Identifies the <see cref="IsRowStretchEnabled"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IsRowStretchEnabledProperty =
-        AdaptiveUniformGrid.IsRowStretchEnabledProperty.AddOwner(
+    public static readonly DependencyProperty IsRowStretchEnabledProperty
+        = AdaptiveUniformGrid.IsRowStretchEnabledProperty.AddOwner(
             typeof(ContentDialogActionBar),
             new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsMeasure)
         );
@@ -158,6 +161,7 @@ public class ContentDialogActionBar : ItemsControl
             typeof(ContentDialogActionBar),
             new FrameworkPropertyMetadata(false)
         );
+
         IsTabStopProperty.OverrideMetadata(
             typeof(ContentDialogActionBar),
             new FrameworkPropertyMetadata(false)
@@ -167,5 +171,7 @@ public class ContentDialogActionBar : ItemsControl
     /// <summary>
     /// Initializes a new instance of the <see cref="ContentDialogActionBar"/> class.
     /// </summary>
-    public ContentDialogActionBar() { }
+    public ContentDialogActionBar()
+    {
+    }
 }
