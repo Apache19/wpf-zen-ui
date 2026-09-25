@@ -21,7 +21,7 @@
                     <Grid Background="Transparent">
                         <Border
                             Name="ContentBorder"
-                            Margin="6,4,6,0"
+                            Margin="6,2"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
@@ -52,7 +52,11 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="PART_ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                             <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />

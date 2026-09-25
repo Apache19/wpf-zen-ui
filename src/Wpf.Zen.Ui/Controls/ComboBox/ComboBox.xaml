@@ -54,8 +54,8 @@
                             x:Name="IconPresenter"
                             VerticalAlignment="Top"
                             Content="{TemplateBinding Icon}"
-                            TextElement.Foreground="{TemplateBinding VisualForeground}"
-                            TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}" />
+                            TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
+                            TextElement.Foreground="{TemplateBinding VisualForeground}" />
                     </Border>
 
                     <!--  Placeholder (watermark) control. Uses Margin to match the TextEditor's default 2,0,2,0 padding.  -->
@@ -165,17 +165,14 @@
                 controls:PopupShadow.IsEnabled="True"
                 controls:PopupSlideAnimator.IsEnabled="True"
                 AllowsTransparency="True"
-                Focusable="False"
                 IsOpen="{TemplateBinding IsDropDownOpen}"
                 Placement="{TemplateBinding Popup.Placement}"
-                PlacementTarget="{Binding ElementName=ContentBorder}"
                 PopupAnimation="{TemplateBinding Popup.PopupAnimation}">
                 <Border
                     x:Name="DropDownBorder"
                     MinWidth="{TemplateBinding ActualWidth}"
                     MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                    Margin="0"
-                    Padding="0,4,0,6"
+                    Padding="0,4"
                     Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
                     BorderBrush="{m:DynamicBrush SurfaceStrokeDefault}"
                     BorderThickness="1"
@@ -276,7 +273,7 @@
 
     <Style x:Key="{x:Static t:StyleKeys.UiComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
         <Setter Property="IconMargin" Value="10,0,0,0" />
-        <!-- ComboBoxItem.xaml is merged above, so the standard implicit type key is available in this dictionary. -->
+        <!--  ComboBoxItem.xaml is merged above, so the standard implicit type key is available in this dictionary.  -->
         <Setter Property="ItemContainerStyle" Value="{StaticResource {x:Type ComboBoxItem}}" />
         <Setter Property="Template" Value="{StaticResource UiComboBoxTemplate}" />
         <Setter Property="MouseOverBackground" Value="{m:DynamicBrush ControlFillPrimary}" />
