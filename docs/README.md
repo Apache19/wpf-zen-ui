@@ -7,6 +7,7 @@
 - [ContentDialog 与模态内容](ContentDialog.md)
 - [Snackbar 与瞬时通知](Snackbar.md)
 - [平滑滚动与虚拟化](ScrollViewer.md)
+- [Popup 跟随宿主](Popup.md)
 - [AdaptiveUniformGrid 与按行均分布局](AdaptiveUniformGrid.md)
 - [SoftKeyboard 嵌入式软键盘](SoftKeyboard.md)
 
