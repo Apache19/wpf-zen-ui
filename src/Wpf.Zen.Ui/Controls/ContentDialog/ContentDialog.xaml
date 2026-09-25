@@ -63,7 +63,7 @@
                 <controls:UiScrollViewer
                     x:Name="PART_ContentScroll"
                     Grid.Row="1"
-                    Margin="{TemplateBinding Padding}"
+                    Padding="{TemplateBinding Padding}"
                     CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                     HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                     ScrollSpillMode="Disabled"
@@ -154,14 +154,14 @@
         <Setter Property="MinHeight" Value="84" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="HeaderPadding" Value="24,20,48,8" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.DirectionalNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Cycle" />
-        <Setter Property="Padding" Value="24,8,24,24" />
-        <Setter Property="FooterPadding" Value="20" />
+        <Setter Property="HeaderPadding" Value="24,20,48,0" />
+        <Setter Property="Padding" Value="24,20" />
+        <Setter Property="FooterPadding" Value="24,20" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
