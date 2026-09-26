@@ -242,8 +242,8 @@ public static class PopupShadow
         // PopupSlideAnimator temporarily hides only PopupRoot, not this detached HWND. While its replacement clock is
         // deferred, keep the companion invisible and wait for the animator's exact pre-reveal synchronization point.
         private bool               _isWaitingForSlideReveal;
-        // Popup HWND movement can generate several window messages for a single open/close transition. Keep only one
-        // deferred bounds refresh so shadow positioning cannot monopolize the dispatcher ahead of input processing.
+        // Coalesce visibility and DPI notifications until WPF has applied their state changes.
+        // Position changes use synchronous native updates and do not enter this queue.
         private bool               _isShadowBoundsUpdatePending;
         private bool               _isDisposed;
 
@@ -841,6 +841,9 @@ public static class PopupShadow
             UpdateShadowBounds(updateZOrder: false);
         }
 
+        /// <summary>
+        /// Refreshes visibility and DPI after WPF has processed the current native message.
+        /// </summary>
         private void QueueShadowBoundsUpdate()
         {
             if (_isShadowBoundsUpdatePending || _isDisposed)
@@ -850,8 +853,8 @@ public static class PopupShadow
 
             _isShadowBoundsUpdatePending = true;
 
-            // Do not use Send here. Fast ComboBox/menu churn can produce a burst of WM_WINDOWPOSCHANGED messages, and
-            // Send-priority shadow work can make the UI feel frozen while WPF is still closing/reopening popup HWNDs.
+            // Native movement is synchronized directly in PopupWndProc. Only state that needs WPF's
+            // message processing to finish is deferred; Loaded runs before the next input batch.
             _ = _dispatcher.BeginInvoke(
                 (Action)(() =>
                 {
@@ -862,15 +865,19 @@ public static class PopupShadow
                         UpdateShadowBounds();
                     }
                 }),
-                DispatcherPriority.Background
+                DispatcherPriority.Loaded
             );
         }
 
-        private void UpdateShadowBounds(bool updateZOrder)
+        /// <summary>
+        /// Synchronizes native bounds, rebuilding the shadow surface only when required.
+        /// </summary>
+        /// <param name="updateZOrder">Whether to insert a newly opened shadow beneath its popup.</param>
+        /// <param name="refreshContent">Whether chrome or DPI state requires a surface refresh.</param>
+        private void UpdateShadowBounds(bool updateZOrder, bool refreshContent = true)
         {
-            // SetWindowPos triggers WM_WINDOWPOSCHANGED, which PopupWndProc picks up and re-dispatches
-            // right back to UpdateShadowBounds. The _isUpdatingShadow guard breaks that feedback loop so a
-            // single bounds refresh does not chain into itself.
+            // Native positioning can reenter window hooks while Windows adjusts owned windows.
+            // Guard the SetWindowPos call so a nested popup notification cannot recurse into it.
             if (_isUpdatingShadow || _chrome == null || _popupSource == null || _shadowSource == null || _shadowRoot == null)
             {
                 return;
@@ -902,10 +909,15 @@ public static class PopupShadow
             var shadowWidth     = popupRect.Width + (int)Math.Ceiling(deviceThickness.Left + deviceThickness.Right);
             var shadowHeight    = popupRect.Height + (int)Math.Ceiling(deviceThickness.Top + deviceThickness.Bottom);
 
-            _shadowRoot.Width  = Math.Max(0D, shadowWidth / dpi.DpiScaleX);
-            _shadowRoot.Height = Math.Max(0D, shadowHeight / dpi.DpiScaleY);
+            var logicalWidth    = Math.Max(0D, shadowWidth / dpi.DpiScaleX);
+            var logicalHeight   = Math.Max(0D, shadowHeight / dpi.DpiScaleY);
 
-            UpdateShadowContentBounds(default);
+            if (refreshContent || _shadowRoot.Width != logicalWidth || _shadowRoot.Height != logicalHeight)
+            {
+                _shadowRoot.Width  = logicalWidth;
+                _shadowRoot.Height = logicalHeight;
+                UpdateShadowContentBounds(_isRenderingSubscribed ? GetPopupRootAnimationOffset() : default);
+            }
 
             // SWP_NOOWNERZORDER prevents Windows from adjusting z-order based on the owner chain. Without it,
             // even a bounds-only SetWindowPos call can cause the window manager to re-sort owned windows and
@@ -1474,17 +1486,25 @@ public static class PopupShadow
             );
         }
 
+        /// <summary>
+        /// Moves the companion during native placement and defers WPF-dependent state refreshes.
+        /// </summary>
         private IntPtr PopupWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             switch ((uint)msg)
             {
-                case PInvoke.WM_SHOWWINDOW:
                 case PInvoke.WM_WINDOWPOSCHANGED:
-                case PInvoke.WM_MOVE:
-                case PInvoke.WM_SIZE:
+                    // Popup.Reposition calls SetWindowPos synchronously on the UI thread. At this
+                    // notification GetWindowRect already contains the committed bounds. Moving the
+                    // companion now avoids a dispatcher/frame delay during continuous input.
+                    // DefWindowProc derives WM_MOVE/WM_SIZE from this message; observing those too
+                    // would repeat the same update. Leave handled unchanged for WPF processing.
+                    UpdateShadowBounds(updateZOrder: false, refreshContent: false);
+                    break;
+
+                case PInvoke.WM_SHOWWINDOW:
                 case PInvoke.WM_DPICHANGED:
-                    // These messages can arrive in bursts during fast popup open/close cycles. Coalesce them at a
-                    // lower priority so shadow repositioning does not starve input while the HWND state settles.
+                    // Visibility and visual DPI may still describe the state before this message.
                     QueueShadowBoundsUpdate();
                     break;
 

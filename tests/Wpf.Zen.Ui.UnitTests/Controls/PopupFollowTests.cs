@@ -23,6 +23,52 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class PopupFollowTests
 {
     /// <summary>
+    /// Ensures native movement updates the shadow before yielding to dispatcher work.
+    /// </summary>
+    [Fact]
+    public void ShadowMovesSynchronouslyWithoutRebuildingClip()
+    {
+        WpfTestThread.Run(async () =>
+        {
+            var target = new Border { Width = 100, Height = 30 };
+            var window = CreateWindow(target);
+            var child = new Border { Width = 60, Height = 25, Background = Brushes.White };
+            var popup = CreatePopup(target, child);
+            popup.AllowsTransparency = true;
+            PopupShadow.SetIsEnabled(popup, true);
+            try
+            {
+                window.Show();
+                popup.IsOpen = true;
+                await Task.Delay(200);
+                Drain();
+                var shadow = GetShadowRoot(popup);
+                var initialPopup = child.PointToScreen(default);
+                var initialShadow = shadow.PointToScreen(default);
+                var clip = shadow.Clip;
+
+                // No dispatcher drain between moves: an eventual-position assertion would miss
+                // the visible lag caused by queuing shadow updates below input/render priority.
+                for (var i = 1; i <= 20; i++)
+                {
+                    popup.HorizontalOffset = i * 2;
+                    popup.VerticalOffset = i;
+                    var delta = child.PointToScreen(default) - initialPopup;
+                    Assert.True(delta.Length > 0);
+                    AssertNear(delta, shadow.PointToScreen(default) - initialShadow);
+                    Assert.Same(clip, shadow.Clip);
+                }
+            }
+            finally
+            {
+                popup.IsOpen = false;
+                PopupShadow.SetIsEnabled(popup, false);
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
     /// Verifies movement with alignment, gaps, bindings, slide animation and shadow enabled.
     /// </summary>
     [Theory]
