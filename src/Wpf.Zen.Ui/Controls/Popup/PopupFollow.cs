@@ -33,13 +33,18 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public static class PopupFollow
 {
-    #pragma warning disable WPF0061 // Document the behavior and its lifetime at the accessors.
+#pragma warning disable WPF0061 // Document the behavior and its lifetime at the accessors.
 
     /// <summary>
     /// Identifies the opt-in attached property for target following. The default is false.
     /// </summary>
-    public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
-        "IsEnabled", typeof(bool), typeof(PopupFollow), new PropertyMetadata(false, OnIsEnabledChanged));
+    public static readonly DependencyProperty IsEnabledProperty
+        = DependencyProperty.RegisterAttached(
+            "IsEnabled",
+            typeof(bool),
+            typeof(PopupFollow),
+            new PropertyMetadata(false, OnIsEnabledChanged)
+        );
 
     /// <summary>
     /// Gets whether the specified Popup follows its placement target while open.
@@ -64,10 +69,15 @@ public static class PopupFollow
         element.SetValue(IsEnabledProperty, value);
     }
 
-    #pragma warning restore WPF0061
+#pragma warning restore WPF0061
 
-    private static readonly DependencyProperty ControllerProperty = DependencyProperty.RegisterAttached(
-        "Controller", typeof(FollowController), typeof(PopupFollow), new PropertyMetadata(null));
+    private static readonly DependencyProperty ControllerProperty
+        = DependencyProperty.RegisterAttached(
+            "Controller",
+            typeof(FollowController),
+            typeof(PopupFollow),
+            new PropertyMetadata(null)
+        );
 
     // Popup.cs: Reposition checks IsOpen and HWND lifetime before entering UpdatePosition.
     // Calling that entry point leaves every placement input and its value source intact.
@@ -80,12 +90,20 @@ public static class PopupFollow
     {
         try
         {
-            var method = typeof(Popup).GetMethod("Reposition",
-                BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+            var method = typeof(Popup).GetMethod(
+                "Reposition",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                Type.EmptyTypes,
+                null
+            );
+
             return (Action<Popup>?)method?.CreateDelegate(typeof(Action<Popup>));
         }
-        catch (Exception exception) when (exception is MemberAccessException
-            or ArgumentException or System.Security.SecurityException)
+        catch (Exception exception) when (
+            exception is MemberAccessException
+                or ArgumentException
+                or System.Security.SecurityException)
         {
             // Restricted reflection or a changed runtime signature disables only this behavior.
             return null;
@@ -125,11 +143,12 @@ public static class PopupFollow
     private sealed class FollowController
     {
         private readonly Popup _popup;
-        private Observation? _observation;
-        private DispatcherOperation? _pending;
-        private Visual? _target;
+
+        private Observation?                                 _observation;
+        private DispatcherOperation?                         _pending;
+        private Visual?                                      _target;
         private (Point Origin, Point X, Point Y, Size Size)? _geometry;
-        private bool _updating;
+        private bool                                         _updating;
 
         /// <summary>
         /// Associates tracking state with one Popup without starting global observation.
@@ -144,10 +163,11 @@ public static class PopupFollow
         /// </summary>
         public void Attach()
         {
-            _popup.Opened += OnOpened;
-            _popup.Closed += OnClosed;
-            _popup.Loaded += OnLoaded;
+            _popup.Opened   += OnOpened;
+            _popup.Closed   += OnClosed;
+            _popup.Loaded   += OnLoaded;
             _popup.Unloaded += OnUnloaded;
+
             Start();
         }
 
@@ -156,10 +176,11 @@ public static class PopupFollow
         /// </summary>
         public void Detach()
         {
-            _popup.Opened -= OnOpened;
-            _popup.Closed -= OnClosed;
-            _popup.Loaded -= OnLoaded;
+            _popup.Opened   -= OnOpened;
+            _popup.Closed   -= OnClosed;
+            _popup.Loaded   -= OnLoaded;
             _popup.Unloaded -= OnUnloaded;
+
             Stop();
         }
 
@@ -205,8 +226,8 @@ public static class PopupFollow
             _observation?.Detach();
             _observation = null;
             _pending?.Abort();
-            _pending = null;
-            _target = null;
+            _pending  = null;
+            _target   = null;
             _geometry = null;
         }
 
@@ -238,20 +259,21 @@ public static class PopupFollow
             }
 
             // Match Popup.GetTarget, including a visual parent separated by a Visual3D node.
-            DependencyObject? parent = _popup.PlacementTarget ?? VisualTreeHelper.GetParent(_popup);
+            var parent = _popup.PlacementTarget ?? VisualTreeHelper.GetParent(_popup);
             while (parent is not null && parent is not Visual)
             {
                 parent = VisualTreeHelper.GetParent(parent);
             }
 
-            var target = parent as Visual;
-            var source = target is null ? null : PresentationSource.FromVisual(target) as HwndSource;
+            var target        = parent as Visual;
+            var source        = target is null ? null : PresentationSource.FromVisual(target) as HwndSource;
             var sourceChanged = _observation.SetSource(source);
+
             if (source is null || target is null || _popup.Placement is PlacementMode.Absolute
                 or PlacementMode.AbsolutePoint or PlacementMode.Mouse or PlacementMode.MousePoint)
             {
                 _geometry = null;
-                _target = null;
+                _target   = null;
                 return;
             }
 
@@ -259,7 +281,7 @@ public static class PopupFollow
             try
             {
                 geometry = (target.PointToScreen(default), target.PointToScreen(new Point(1, 0)),
-                    target.PointToScreen(new Point(0, 1)), (target as UIElement)?.RenderSize ?? default);
+                            target.PointToScreen(new Point(0, 1)), (target as UIElement)?.RenderSize ?? default);
             }
             catch (InvalidOperationException)
             {
@@ -273,7 +295,7 @@ public static class PopupFollow
                 return;
             }
 
-            _target = target;
+            _target   = target;
             _geometry = geometry;
             _updating = true;
             try
@@ -292,16 +314,16 @@ public static class PopupFollow
         private sealed class Observation
         {
             private readonly WeakReference<FollowController> _owner;
-            private WeakReference<HwndSource>? _source;
+            private          WeakReference<HwndSource>?      _source;
 
             /// <summary>
             /// Subscribes through a weak owner reference for the current open interval.
             /// </summary>
             public Observation(FollowController owner)
             {
-                _owner = new WeakReference<FollowController>(owner);
+                _owner                      =  new WeakReference<FollowController>(owner);
                 CompositionTarget.Rendering += OnRendering;
-                owner._popup.LayoutUpdated += OnLayoutUpdated;
+                owner._popup.LayoutUpdated  += OnLayoutUpdated;
             }
 
             /// <summary>
@@ -311,15 +333,18 @@ public static class PopupFollow
             {
                 HwndSource? previous = null;
                 _source?.TryGetTarget(out previous);
+
                 if (ReferenceEquals(source, previous))
                 {
                     return false;
                 }
 
                 previous?.RemoveHook(OnWindowMessage);
+
                 // Rendering must not retain a source's visual tree, which may contain the Popup.
                 _source = source is null ? null : new WeakReference<HwndSource>(source);
                 source?.AddHook(OnWindowMessage);
+
                 return true;
             }
 
@@ -329,6 +354,7 @@ public static class PopupFollow
             public void Detach()
             {
                 CompositionTarget.Rendering -= OnRendering;
+
                 if (_owner.TryGetTarget(out var owner))
                 {
                     owner._popup.LayoutUpdated -= OnLayoutUpdated;
@@ -361,8 +387,7 @@ public static class PopupFollow
                 }
             }
 
-            private IntPtr OnWindowMessage(
-                IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+            private IntPtr OnWindowMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
             {
                 if ((uint)msg is PInvoke.WM_WINDOWPOSCHANGED or PInvoke.WM_DPICHANGED)
                 {
