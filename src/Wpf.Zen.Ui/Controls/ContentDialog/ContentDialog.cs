@@ -41,6 +41,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// 24 DIPs at its edges, in addition to this control's Margin. Keyboard avoidance moves the margin
 /// box before reducing its available space and restores normal layout when the keyboard hides.
 /// Explicit and minimum dimensions retain WPF semantics and may clip if safe space is insufficient.
+/// The host's default transition template supplies the outer shadow after dialog layout clipping.
 /// </para>
 /// <para>
 /// This control does not create a native window or establish modality by itself. Call

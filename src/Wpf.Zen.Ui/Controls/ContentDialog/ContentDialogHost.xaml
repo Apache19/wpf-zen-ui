@@ -22,7 +22,20 @@
                             <ContentPresenter
                                 x:Name="PART_DialogRoot"
                                 Content="{TemplateBinding Dialog}"
-                                RenderTransformOrigin="0.5,0.5" />
+                                RenderTransformOrigin="0.5,0.5">
+                                <!--
+                                    Generate the shadow after the dialog's layout clip. Fractional
+                                    content sizes can require that clip even when ClipToBounds is
+                                    false; an effect on the dialog itself would also be clipped.
+                                    This surface keeps the shadow inside the opacity/scale transition.
+                                -->
+                                <ContentPresenter.Effect>
+                                    <DropShadowEffect
+                                        BlurRadius="24"
+                                        Opacity="0.24"
+                                        ShadowDepth="4" />
+                                </ContentPresenter.Effect>
+                            </ContentPresenter>
                         </controls:TouchKeyboardAvoidanceDecorator>
                     </Grid>
                 </ControlTemplate>

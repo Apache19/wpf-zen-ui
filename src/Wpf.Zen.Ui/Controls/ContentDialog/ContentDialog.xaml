@@ -142,14 +142,6 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect
-                    BlurRadius="24"
-                    Opacity="0.16"
-                    ShadowDepth="4" />
-            </Setter.Value>
-        </Setter>
         <Setter Property="MinWidth" Value="320" />
         <Setter Property="MinHeight" Value="84" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
