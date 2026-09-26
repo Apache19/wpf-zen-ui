@@ -16,6 +16,40 @@ namespace Wpf.Zen.Ui.UnitTests;
 
 public class PopupPlacementTrackerTests
 {
+    /// <summary>
+    /// Verifies that changing axes or disabling one gap preserves the other gap and base rectangle.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HorizontalGapTracksPlacementAndRestoresRectangle(bool useFlyout)
+    {
+        WpfTestThread.Run(() =>
+        {
+            DependencyObject owner = useFlyout ? new Flyout() : new Popup();
+            var rectangle = new Rect(10D, 20D, 80D, 40D);
+            owner.SetValue(Popup.PlacementRectangleProperty, rectangle);
+            owner.SetValue(Popup.PlacementProperty, PlacementMode.Right);
+
+            PopupPlacementGap.SetHorizontal(owner, 6D);
+            PopupPlacementGap.SetVertical(owner, 4D);
+            Assert.Equal(new Rect(4D, 20D, 92D, 40D), owner.GetValue(Popup.PlacementRectangleProperty));
+
+            owner.SetValue(Popup.PlacementProperty, PlacementMode.Left);
+            Assert.Equal(new Rect(4D, 20D, 92D, 40D), owner.GetValue(Popup.PlacementRectangleProperty));
+            owner.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
+            Assert.Equal(new Rect(10D, 16D, 80D, 48D), owner.GetValue(Popup.PlacementRectangleProperty));
+
+            PopupPlacementGap.SetVertical(owner, 0D);
+            Assert.Equal(rectangle, owner.GetValue(Popup.PlacementRectangleProperty));
+            owner.SetValue(Popup.PlacementProperty, PlacementMode.Right);
+            Assert.Equal(new Rect(4D, 20D, 92D, 40D), owner.GetValue(Popup.PlacementRectangleProperty));
+
+            PopupPlacementGap.SetHorizontal(owner, 0D);
+            Assert.Equal(rectangle, owner.GetValue(Popup.PlacementRectangleProperty));
+        });
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
