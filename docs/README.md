@@ -9,6 +9,7 @@
 - [平滑滚动与虚拟化](ScrollViewer.md)
 - [Popup 跟随宿主](Popup.md)
 - [AdaptiveUniformGrid 与按行均分布局](AdaptiveUniformGrid.md)
+- [胶囊圆角 PillCornerConverter](PillCorner.md)
 - [SoftKeyboard 嵌入式软键盘](SoftKeyboard.md)
 
 Documentation is being rebuilt. Stay tuned.

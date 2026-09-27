@@ -15,8 +15,6 @@
 
     <Duration x:Key="ScrollAnimationDuration">0:0:0.16</Duration>
 
-    <converters:PillCornerConverter x:Key="PillCornerConverter" Factor="0.55" />
-
     <Style x:Key="ScrollBarTransparentRepeatButton" TargetType="{x:Type RepeatButton}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
@@ -58,14 +56,8 @@
                             x:Name="ThumbBorder"
                             Width="4"
                             HorizontalAlignment="Center"
-                            Background="{TemplateBinding Foreground}">
-                            <Border.CornerRadius>
-                                <MultiBinding Converter="{StaticResource PillCornerConverter}">
-                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
-                                    <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
-                                </MultiBinding>
-                            </Border.CornerRadius>
-                        </Border>
+                            Background="{TemplateBinding Foreground}"
+                            CornerRadius="{converters:PillCornerConverter Factor=0.55}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ScrollBar}}}" Value="True">
@@ -118,14 +110,8 @@
                             x:Name="ThumbBorder"
                             Height="4"
                             VerticalAlignment="Center"
-                            Background="{TemplateBinding Foreground}">
-                            <Border.CornerRadius>
-                                <MultiBinding Converter="{StaticResource PillCornerConverter}">
-                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
-                                    <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
-                                </MultiBinding>
-                            </Border.CornerRadius>
-                        </Border>
+                            Background="{TemplateBinding Foreground}"
+                            CornerRadius="{converters:PillCornerConverter Factor=0.55}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ScrollBar}}}" Value="True">
@@ -180,14 +166,8 @@
                 Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                Opacity="0">
-                <Border.CornerRadius>
-                    <MultiBinding Converter="{StaticResource PillCornerConverter}">
-                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
-                        <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
-                    </MultiBinding>
-                </Border.CornerRadius>
-            </Border>
+                CornerRadius="{converters:PillCornerConverter Factor=0.55}"
+                Opacity="0" />
             <RepeatButton
                 x:Name="UpButton"
                 Grid.Row="0"
@@ -313,14 +293,8 @@
                 Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                Opacity="0">
-                <Border.CornerRadius>
-                    <MultiBinding Converter="{StaticResource PillCornerConverter}">
-                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
-                        <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
-                    </MultiBinding>
-                </Border.CornerRadius>
-            </Border>
+                CornerRadius="{converters:PillCornerConverter Factor=0.55}"
+                Opacity="0" />
             <RepeatButton
                 x:Name="LeftButton"
                 Grid.Column="0"
