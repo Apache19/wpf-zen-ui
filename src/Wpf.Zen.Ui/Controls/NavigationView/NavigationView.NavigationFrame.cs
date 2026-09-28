@@ -142,6 +142,10 @@ public partial class NavigationView
         _navigationAwareContent = eventArgs.Content;
         _navigationAwareTarget  = enteredTarget;
 
+        // Only committed Frame content may contribute to the header. A cancelled navigation
+        // leaves the previous page and its contribution in place.
+        UpdatePageHeader(eventArgs.Content as FrameworkElement);
+
         var enterOperation = eventArgs.Content is null
             ? null
             : new NavigationEnterOperation(eventArgs.Content, enteredTarget);

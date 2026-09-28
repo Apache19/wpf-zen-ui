@@ -18,7 +18,19 @@
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
+    <ui:NavigationView.PageHeaderContent>
+        <ui:Button
+            x:Name="HeaderActionButton"
+            Content="{Binding HeaderActionText}"
+            Command="{Binding HeaderActionCommand}" />
+    </ui:NavigationView.PageHeaderContent>
+
     <StackPanel Margin="0,0,0,24">
+        <ui:InfoBar
+            Margin="0,0,0,16"
+            Content="{Binding HeaderActionMessage}"
+            Severity="Success" />
+
         <controls:ControlExample
             Margin="0,0,0,42"
             Padding="0"
