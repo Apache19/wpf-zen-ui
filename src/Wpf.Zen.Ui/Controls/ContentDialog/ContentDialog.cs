@@ -26,10 +26,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// <para>
 /// The default template deliberately supplies a standard three-region dialog composition.
-/// <see cref="HeaderPadding"/>, inherited <see cref="Control.Padding"/> and
-/// <see cref="FooterPadding"/> control the surrounding space for those regions, while
-/// <see cref="CornerRadius"/> describes the shell shape and the body is scrollable so its header
-/// and footer remain fixed under a height constraint. Use
+/// <see cref="HeaderPadding"/> and inherited <see cref="Control.Padding"/> control the header
+/// and body spacing. The <see cref="ContentDialogFooterContainer"/> theme style controls footer spacing
+/// and appearance. <see cref="CornerRadius"/> describes the shell shape; the body is scrollable
+/// so its header and footer remain fixed under a height constraint. Use
 /// <see cref="ContentDialogActionBar"/> for a conventional collection of footer actions. Arbitrary
 /// slot content remains supported; layouts that cross region boundaries should replace the
 /// control template.

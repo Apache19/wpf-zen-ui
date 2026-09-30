@@ -45,7 +45,7 @@ public partial class ContentDialogTests
         var header = FindDialogTemplateElement<ContentPresenter>(dialog, element => element.ContentSource == "Header");
         var dismiss = FindDialogTemplateElement<Wpf.Zen.Ui.Controls.Button>(
             dialog, element => AutomationProperties.GetAutomationId(element) == "DismissButton");
-        var footer = Assert.IsType<Border>(dialog.Template.FindName("footerBorder", dialog));
+        var footer = Assert.IsType<ContentDialogFooterContainer>(dialog.Template.FindName("footerBorder", dialog));
         var shell = Assert.IsType<ClippingBorder>(VisualTreeHelper.GetChild(dialog, 0));
 
         Point headerOrigin = header.TranslatePoint(default, dialog);
@@ -54,11 +54,11 @@ public partial class ContentDialogTests
             dismissOrigin.Y < headerOrigin.Y,
             $"The dismiss surface ({dismissOrigin.Y}) must remain above the header baseline ({headerOrigin.Y})."
         );
-        Assert.Equal(new Thickness(24D, 20D, 48D, 8D), dialog.HeaderPadding);
-        Assert.Equal(new Thickness(20D), dialog.FooterPadding);
-        Assert.Equal(dialog.FooterPadding, footer.Padding);
+        Assert.Equal(new Thickness(24D, 20D, 48D, 0D), dialog.HeaderPadding);
+        Assert.Equal(new Thickness(24D, 20D, 24D, 20D), footer.Padding);
+        Assert.Equal(new Thickness(0D, 1D, 0D, 0D), footer.BorderThickness);
         Assert.Equal(dialog.CornerRadius, shell.CornerRadius);
-        Assert.Equal(new CornerRadius(0D, 0D, 12D, 16D), footer.CornerRadius);
+        Assert.Equal(default(CornerRadius), footer.CornerRadius);
 
         dialog.Close();
         Pump(task);

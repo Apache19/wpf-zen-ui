@@ -176,7 +176,7 @@ public class TouchKeyboardAvoidanceDecoratorTests
 
             var scroll = Assert.IsAssignableFrom<System.Windows.Controls.ScrollViewer>(
                 dialog.Template.FindName("PART_ContentScroll", dialog));
-            var footer = Assert.IsType<Border>(dialog.Template.FindName("footerBorder", dialog));
+            var footer = Assert.IsType<ContentDialogFooterContainer>(dialog.Template.FindName("footerBorder", dialog));
             Point footerBottom = footer.TranslatePoint(new Point(0, footer.ActualHeight), scope.Decorator);
             Assert.True(scroll.ScrollableHeight > 0);
             Assert.True(footer.ActualHeight > 0);

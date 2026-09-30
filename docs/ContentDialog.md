@@ -10,7 +10,24 @@
 | 正文 | 继承的 `Content`、`ContentTemplate`、`ContentTemplateSelector`、`ContentStringFormat` |
 | 页脚 | `Footer`、`FooterTemplate`、`FooterTemplateSelector`、`FooterStringFormat` |
 
-Footer 与 Header 一样维护逻辑子节点。直接放入的元素可继承 DataContext、查找资源并参与逻辑树遍历；更换 Footer 会解除旧节点的所有权。显式 DataTemplate 优先于选择器；格式串用于 WPF 默认的文本呈现。Footer 为 null 时默认模板折叠页脚。默认模板拥有页脚背景、分隔线和 `FooterPadding`，Footer 内容只需声明内部构成。
+Footer 与 Header 一样维护逻辑子节点。直接放入的元素可继承 DataContext、查找资源并参与逻辑树遍历；更换 Footer 会解除旧节点的所有权。显式 DataTemplate 优先于选择器；格式串用于 WPF 默认的文本呈现。Footer 为 null 时默认模板折叠页脚。默认模板使用 `ContentDialogFooterContainer` 容器，其主题样式提供背景、上边框，以及水平方向 24 DIPs、垂直方向 20 DIPs 的 Padding；Footer 内容只需声明内部构成。
+
+页脚容器的外观和间距通过普通 WPF Style 定制。将隐式样式放在对话框 Resources 中可定制单个对话框，放在应用资源中可统一定制。未设置的属性继续使用容器的默认主题样式，无须声明 BasedOn。例如，表单对话框可移除背景和分隔线，并独立调整页脚间距：
+
+```xml
+<ui:ContentDialog Header="编辑资料">
+    <ui:ContentDialog.Resources>
+        <Style TargetType="{x:Type ui:ContentDialogFooterContainer}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="24,12" />
+        </Style>
+    </ui:ContentDialog.Resources>
+    <!-- 正文和 Footer -->
+</ui:ContentDialog>
+```
+
+`ContentDialogFooterContainer` 在初始化时自动建立以运行时类型为键的动态 Style 资源引用，查找范围可跨越模板边界，资源替换后会自动更新。自定义模板只需放入该容器，无须额外绑定 Style。容器或模板已显式指定的 Style（包括显式 null）会保留；显式 null 只取消普通样式，默认主题样式仍遵循 WPF 的规则。
 
 按钮直接使用 WPF Button 或库内 Button，自行拥有 Style、Appearance、Icon、Command、CommandParameter、CommandTarget、CanExecute 和自动化属性。标准按钮区使用 `ContentDialogActionBar`：它是完整的 `ItemsControl`，既可直接添加元素，也支持 `ItemsSource`、ItemTemplate/Selector、ItemStringFormat 和 ItemContainerStyle/Selector。默认 `AdaptiveUniformGrid` 每行最多放置 3 项，间距为 8；不完整行中的项目平分整行宽度。可通过 `Columns`、`RowSpacing`、`ColumnSpacing` 和 `IsRowStretchEnabled` 调整，或替换 ItemsPanel。Footer 仍可直接放入任意元素，用于组合复选框、帮助链接、进度条或完全不同的布局。
 
@@ -226,7 +243,7 @@ private async Task SaveAsync()
 
 ## 模板与动画
 
-`ContentDialog` 的默认模板是带明确视觉取舍的标准对话框布局，而不是任意布局生成器。Header、Content 和 Footer 决定各区域内部的内容；需要跨区域排版时替换 ControlTemplate。`HeaderPadding`、继承的 `Padding`、`FooterPadding` 分别控制三个区域的外壳间距，`CornerRadius` 控制对话框外壳圆角，默认模板会把其中两个底部圆角同步给 Footer 背景。正文默认由 UiScrollViewer 包裹，使对话框受到 MaxHeight 限制时仍固定标题和操作区；ScrollViewer 附加属性可配置其滚动行为。右上角关闭按钮独立贴近外壳顶部，标题使用更低的默认起始位置，并通过 HeaderPadding 的右侧空间避免重叠，不会根据任意 Header 内容与按钮做垂直对齐。
+`ContentDialog` 的默认模板是带明确视觉取舍的标准对话框布局，而不是任意布局生成器。Header、Content 和 Footer 决定各区域内部的内容；需要跨区域排版时替换 ControlTemplate。`HeaderPadding`、继承的 `Padding` 分别控制标题和正文的外壳间距，页脚间距由 `ContentDialogFooterContainer` 样式中的 Padding 控制。`CornerRadius` 控制对话框外壳圆角，外层 ClippingBorder 统一裁剪各区域，页脚容器默认使用直角。正文默认由 UiScrollViewer 包裹，使对话框受到 MaxHeight 限制时仍固定标题和操作区；ScrollViewer 附加属性可配置其滚动行为。右上角关闭按钮独立贴近外壳顶部，标题使用更低的默认起始位置，并通过 HeaderPadding 的右侧空间避免重叠，不会根据任意 Header 内容与按钮做垂直对齐。
 
 - Dialog 的 `PART_ContentPresenter` 是可选的正文 ContentPresenter，用于定位 DataTemplate 实现的初始焦点。自定义模板缺少它时搜索直接 Content，再退到 Dialog。
 - Host 的 `PART_ContentRoot` 是必需的 UIElement，只能包裹普通页面。Host 在该部件下隔离被覆盖内容；标题栏窗口外壳保持启用，标题栏用户内容与其它页面分支被禁用。缺少该部件时拒绝展示。

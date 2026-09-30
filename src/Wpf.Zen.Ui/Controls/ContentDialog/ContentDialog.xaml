@@ -7,6 +7,13 @@
 
     <converters:BoolToVisibilityConverter x:Key="DialogBoolToVisibilityConverter" />
 
+    <Style TargetType="{x:Type controls:ContentDialogFooterContainer}">
+        <Setter Property="Background" Value="{m:DynamicBrush SolidBackgroundFillBase}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefaultSolid}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="Padding" Value="24,20" />
+    </Style>
+
     <Style TargetType="{x:Type controls:ContentDialogActionBar}">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -84,16 +91,9 @@
                     </ContentPresenter>
                 </controls:UiScrollViewer>
 
-                <Border
-                    x:Name="footerBorder"
-                    Grid.Row="2"
-                    Padding="{TemplateBinding FooterPadding}"
-                    Background="{m:DynamicBrush SolidBackgroundFillBase}"
-                    BorderBrush="{m:DynamicBrush CardStrokeDefaultSolid}"
-                    BorderThickness="0,1,0,0"
-                    CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
+                <controls:ContentDialogFooterContainer x:Name="footerContainer" Grid.Row="2">
                     <ContentPresenter ContentSource="Footer" />
-                </Border>
+                </controls:ContentDialogFooterContainer>
 
                 <!--  对话框右上角的关闭按钮  -->
                 <controls:Button
@@ -130,7 +130,7 @@
                 <Setter TargetName="headerBorder" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="Footer" Value="{x:Null}">
-                <Setter TargetName="footerBorder" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="footerContainer" Property="Visibility" Value="Collapsed" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -153,7 +153,6 @@
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Cycle" />
         <Setter Property="HeaderPadding" Value="24,20,48,0" />
         <Setter Property="Padding" Value="24,20" />
-        <Setter Property="FooterPadding" Value="24,20" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />

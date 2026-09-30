@@ -30,12 +30,12 @@ public partial class ContentDialog
         );
 
     /// <summary>
-    /// Gets or sets the radius applied to the standard dialog shell and its footer background.
+    /// Gets or sets the radius applied to the standard dialog shell.
     /// The default is supplied by the active control theme.
     /// </summary>
     /// <remarks>
-    /// The default template copies the bottom two radii to the footer so its background follows
-    /// the outer shell. A replacement template may consume this property differently.
+    /// The default template clips all three content regions to the shell's inner edge.
+    /// A replacement template may consume this property differently.
     /// </remarks>
     public CornerRadius CornerRadius
     {
@@ -73,38 +73,6 @@ public partial class ContentDialog
     {
         get => (Thickness)GetValue(HeaderPaddingProperty);
         set => SetValue(HeaderPaddingProperty, value);
-    }
-
-    #endregion
-
-    #region DP: FooterPadding
-
-    /// <summary>
-    /// Identifies the <see cref="FooterPadding"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty FooterPaddingProperty = DependencyProperty.Register(
-        nameof(FooterPadding),
-        typeof(Thickness),
-        typeof(ContentDialog),
-        new FrameworkPropertyMetadata(
-            new Thickness(0),
-            FrameworkPropertyMetadataOptions.AffectsMeasure
-        )
-    );
-
-    /// <summary>
-    /// Gets or sets the space between the standard footer chrome and <see cref="Footer"/>. The
-    /// default is 20 pixels on every side.
-    /// </summary>
-    /// <remarks>
-    /// Footer content owns only its internal composition; this property lets the dialog template
-    /// consistently own the surrounding footer spacing. It affects layout, does not inherit, can
-    /// be animated, and is consumed only by templates that bind it.
-    /// </remarks>
-    public Thickness FooterPadding
-    {
-        get => (Thickness)GetValue(FooterPaddingProperty);
-        set => SetValue(FooterPaddingProperty, value);
     }
 
     #endregion
