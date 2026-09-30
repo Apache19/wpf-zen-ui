@@ -151,7 +151,7 @@
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.DirectionalNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Cycle" />
-        <Setter Property="HeaderPadding" Value="24,20,48,0" />
+        <Setter Property="HeaderPadding" Value="24,20,24,0" />
         <Setter Property="Padding" Value="24,20" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
