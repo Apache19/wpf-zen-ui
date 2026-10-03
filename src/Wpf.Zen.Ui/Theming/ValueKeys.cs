@@ -14,6 +14,8 @@ namespace Wpf.Zen.Ui.Theming;
 /// </remarks>
 public static class ValueKeys
 {
+    public static ComponentResourceKey DefaultControlMinHeight                  { get; } = Create(nameof(DefaultControlMinHeight));
+
     public static ComponentResourceKey DefaultIconFontSize                      { get; } = Create(nameof(DefaultIconFontSize));
     public static ComponentResourceKey ControlContentThemeFontSize              { get; } = Create(nameof(ControlContentThemeFontSize));
     public static ComponentResourceKey ControlCornerRadius                      { get; } = Create(nameof(ControlCornerRadius));

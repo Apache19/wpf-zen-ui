@@ -13,6 +13,7 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
+    <system:Double x:Key="{x:Static t:ValueKeys.DefaultControlMinHeight}">34</system:Double>
     <system:Double x:Key="{x:Static t:ValueKeys.DefaultIconFontSize}">16</system:Double>
 
     <system:Double x:Key="{x:Static t:ValueKeys.ControlContentThemeFontSize}">14</system:Double>
