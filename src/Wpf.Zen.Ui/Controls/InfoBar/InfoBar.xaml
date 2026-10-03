@@ -16,6 +16,7 @@
     <converters:DoubleToDoubleConverter x:Key="IconSizeConverter" Add="2" />
 
     <Style x:Key="DefaultInfoBarCloseButtonStyle" TargetType="{x:Type primitives:ButtonBase}">
+        <Setter Property="MinHeight" Value="0" />
         <Setter Property="Padding" Value="4" />
         <Setter Property="controls:Button.Appearance" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />

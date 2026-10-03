@@ -16,6 +16,8 @@ using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace Wpf.Zen.Ui.Controls;
 
+// todo: 继续优化，UI 和逻辑分离
+
 /// <summary>
 /// Owns one modal invocation. Only standard results can complete this window.
 /// </summary>
@@ -86,6 +88,7 @@ internal partial class MessageBoxWindow : FluentWindow
                     Text         = label,
                     TextWrapping = TextWrapping.Wrap
                 },
+                MinHeight           = 0,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Padding             = new Thickness(16, 7, 16, 7),
                 IsDefault           = result == selected,

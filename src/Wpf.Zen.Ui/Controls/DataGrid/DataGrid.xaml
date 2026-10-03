@@ -41,6 +41,7 @@
     <!--  END REMOVE COLORS  -->
 
     <Style x:Key="DataGridSelectAllButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="MinHeight" Value="0" />
         <Setter Property="Padding" Value="0,0,-4,0" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -958,7 +959,9 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
-    <Style x:Key="DefaultDataGridTextEditingElementStyle" TargetType="{x:Type TextBox}" />
+    <Style x:Key="DefaultDataGridTextEditingElementStyle" TargetType="{x:Type TextBox}">
+        <Setter Property="MinHeight" Value="0" />
+    </Style>
 
     <Style x:Key="DefaultUiDataGridCellStyle" BasedOn="{StaticResource DefaultDataGridCellStyle}" TargetType="{x:Type DataGridCell}">
         <Setter Property="Padding" Value="0" />

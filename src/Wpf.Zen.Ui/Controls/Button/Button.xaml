@@ -106,6 +106,7 @@
     </ControlTemplate>
 
     <Style x:Key="{x:Static t:StyleKeys.UiButtonStyle}" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:Button}">
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />

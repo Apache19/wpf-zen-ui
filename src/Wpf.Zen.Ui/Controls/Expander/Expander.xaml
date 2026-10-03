@@ -33,6 +33,7 @@
 
     <Style x:Key="ExpanderHeaderToggleButtonStyle" TargetType="{x:Type controls:ToggleButton}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="MinHeight" Value="0" />
         <Setter Property="CornerRadius" Value="{Binding Path=(Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" />
         <Setter Property="Template">
             <Setter.Value>

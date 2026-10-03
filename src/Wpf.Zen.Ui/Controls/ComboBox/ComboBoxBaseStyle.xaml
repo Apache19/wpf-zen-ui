@@ -4,6 +4,7 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style x:Key="ComboBoxBaseStyle" TargetType="{x:Type ComboBox}">
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
@@ -19,7 +20,7 @@
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
-        <Setter Property="VerticalContentAlignment" Value="Top" />
- </Style>
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
 
 </ResourceDictionary>

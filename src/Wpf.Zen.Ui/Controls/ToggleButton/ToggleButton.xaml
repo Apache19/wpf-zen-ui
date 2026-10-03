@@ -30,6 +30,7 @@
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />

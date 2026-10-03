@@ -192,6 +192,7 @@
                         Margin="0,4,0,0"
                         Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding SelectedSymbolXaml, Mode=OneWay}"
+                        VerticalContentAlignment="Top"
                         TextWrapping="WrapWithOverflow"
                         UseTextBlockAppearance="True" />
                 </Grid>

@@ -17,6 +17,7 @@
     <system:Double x:Key="TreeViewItemFontSize">14</system:Double>
 
     <Style x:Key="ExpandCollapseToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="MinHeight" Value="0" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

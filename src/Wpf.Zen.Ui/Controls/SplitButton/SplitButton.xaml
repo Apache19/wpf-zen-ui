@@ -32,8 +32,9 @@
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="IsTabStop" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -53,6 +54,7 @@
                         <controls:Button
                             x:Name="PART_PrimaryButton"
                             Grid.Column="0"
+                            MinHeight="0"
                             Padding="{TemplateBinding Padding}"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -104,6 +106,7 @@
                             x:Name="PART_DropDownButton"
                             Grid.Column="2"
                             MinWidth="32"
+                            MinHeight="0"
                             Padding="11,0"
                             VerticalContentAlignment="Center"
                             Appearance="{TemplateBinding Appearance}"

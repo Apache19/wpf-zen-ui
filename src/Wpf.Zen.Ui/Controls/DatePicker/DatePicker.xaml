@@ -105,6 +105,7 @@
                     -->
                     <DatePickerTextBox
                         x:Name="PART_TextBox"
+                        MinHeight="0"
                         Padding="{TemplateBinding Padding}"
                         HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -205,6 +206,7 @@
 
     <Style TargetType="{x:Type DatePicker}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="IsTodayHighlighted" Value="True" />
         <Setter Property="SelectedDateFormat" Value="Short" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />

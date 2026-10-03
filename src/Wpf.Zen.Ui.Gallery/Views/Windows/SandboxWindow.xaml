@@ -58,10 +58,12 @@
                     Height="82"
                     Margin="0,14,0,0"
                     Padding="10"
+                    VerticalContentAlignment="Top"
                     AcceptsReturn="True"
                     InputMethod.IsInputMethodEnabled="True"
                     Text="在此输入，并保持键盘焦点。切换到微软日语后继续输入，以观察激活与合成消息。"
-                    TextWrapping="Wrap" />
+                    TextWrapping="Wrap"
+                    VerticalScrollBarVisibility="Auto" />
             </StackPanel>
         </Border>
 

@@ -80,6 +80,7 @@
                     <controls:TextBox
                         x:Name="PART_EditableTextBox"
                         Grid.Column="0"
+                        MinHeight="0"
                         Padding="{TemplateBinding Padding}"
                         HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -115,6 +116,7 @@
                         Name="ToggleButton"
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
+                        MinHeight="0"
                         ClickMode="Press"
                         Focusable="False"
                         IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"

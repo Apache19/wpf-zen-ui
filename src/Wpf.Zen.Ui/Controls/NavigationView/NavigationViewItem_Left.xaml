@@ -220,6 +220,7 @@
             <Button
                 x:Name="PART_HeaderButton"
                 Grid.Row="0"
+                MinHeight="0"
                 HorizontalContentAlignment="Stretch"
                 Background="{m:DynamicBrush SubtleFillTransparent}"
                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -278,6 +279,7 @@
         <Grid>
             <Button
                 x:Name="PART_HeaderButton"
+                MinHeight="0"
                 HorizontalContentAlignment="Stretch"
                 Background="{m:DynamicBrush SubtleFillTransparent}"
                 BorderBrush="{TemplateBinding BorderBrush}"

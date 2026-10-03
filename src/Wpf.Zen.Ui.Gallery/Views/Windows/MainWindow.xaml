@@ -128,24 +128,12 @@
                     </ui:ComboBox>
                     <ui:Button
                         Grid.Column="1"
-                        Padding="9"
                         VerticalAlignment="Center"
                         Click="ThemeButton_OnClick"
                         Icon="{ui:FluentIconSource WeatherSunny24}" />
                 </Grid>
 
             </ui:TitleBar>
-
-            <tray:NotifyIcon
-                Grid.Row="0"
-                FocusOnLeftClick="True"
-                Icon="pack://application:,,,/Assets/wpfui.png"
-                MenuOnRightClick="True"
-                TooltipText="WPF Zen UI Gallery">
-                <tray:NotifyIcon.Menu>
-                    <ContextMenu DataContext="{Binding DataContext, Source={x:Reference NavigationView}}" ItemsSource="{Binding ViewModel.TrayMenuItems, Mode=OneWay}" />
-                </tray:NotifyIcon.Menu>
-            </tray:NotifyIcon>
 
             <ui:SnackbarPresenter
                 x:Name="SnackbarPresenter"

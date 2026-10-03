@@ -13,6 +13,7 @@
             <Button
                 x:Name="PART_HeaderButton"
                 Height="60"
+                MinHeight="0"
                 Padding="4"
                 Background="Transparent"
                 BorderBrush="{TemplateBinding BorderBrush}"

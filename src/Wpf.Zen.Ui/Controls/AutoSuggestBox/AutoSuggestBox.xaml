@@ -54,6 +54,7 @@
     <Style x:Key="{x:Static t:StyleKeys.UiAutoSuggestBoxStyle}" TargetType="{x:Type controls:AutoSuggestBox}">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="MaxSuggestionListHeight" Value="247" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -69,6 +70,7 @@
                         <controls:TextBox
                             x:Name="PART_TextBox"
                             Grid.Row="0"
+                            MinHeight="0"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                             IsClearButtonEnabled="{TemplateBinding IsClearButtonEnabled}"

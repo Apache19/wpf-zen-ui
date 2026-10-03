@@ -24,6 +24,7 @@
                     <StackPanel Background="{TemplateBinding Background}" Orientation="Horizontal">
                         <Button
                             x:Name="PART_Button"
+                            MinHeight="0"
                             Padding="{TemplateBinding Padding}"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"

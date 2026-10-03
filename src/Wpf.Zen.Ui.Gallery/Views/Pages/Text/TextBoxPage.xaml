@@ -48,10 +48,11 @@
         <controls:ControlExample
             Margin="0,36,0,0"
             HeaderText="A multi-line TextBox."
-            XamlCode="&lt;ui:TextBox PlaceholderText=&quot;Type something...&quot;TextWrapping=&quot;Wrap&quot; /&gt;">
+            XamlCode="&lt;ui:TextBox MinHeight=&quot;100&quot; MaxHeight=&quot;150&quot; VerticalContentAlignment=&quot;Top&quot; AcceptsReturn=&quot;True&quot; PlaceholderText=&quot;Type something...&quot; TextWrapping=&quot;Wrap&quot; HorizontalScrollBarVisibility=&quot;Disabled&quot; VerticalScrollBarVisibility=&quot;Auto&quot; /&gt;">
             <ui:TextBox
                 MinHeight="100"
                 MaxHeight="150"
+                VerticalContentAlignment="Top"
                 ui:ScrollViewerAssist.HideButtons="True"
                 AcceptsReturn="True"
                 HorizontalScrollBarVisibility="Disabled"

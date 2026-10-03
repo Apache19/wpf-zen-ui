@@ -30,6 +30,7 @@
                         <controls:Button
                             x:Name="PART_LikeButton"
                             Grid.Column="0"
+                            MinHeight="0"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             Foreground="{TemplateBinding Foreground}">
@@ -42,6 +43,7 @@
                         <controls:Button
                             x:Name="PART_DislikeButton"
                             Grid.Column="1"
+                            MinHeight="0"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             Foreground="{TemplateBinding Foreground}">

@@ -225,7 +225,9 @@
         <Setter Property="DisabledBackground" Value="{m:DynamicBrush ControlFillDisabled}" />
         <Setter Property="DisabledBorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

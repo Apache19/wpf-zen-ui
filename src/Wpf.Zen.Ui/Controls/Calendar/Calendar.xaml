@@ -359,6 +359,7 @@
                                 <controls:Button
                                     x:Name="PART_HeaderButton"
                                     Grid.Column="0"
+                                    MinHeight="0"
                                     Margin="7,6,3,7"
                                     Padding="8,7,8,8"
                                     HorizontalAlignment="Stretch"
@@ -377,6 +378,7 @@
                                     x:Name="PART_PreviousButton"
                                     Grid.Column="1"
                                     Width="32"
+                                    MinHeight="0"
                                     Margin="7,6,7,7"
                                     Padding="0"
                                     HorizontalAlignment="Stretch"
@@ -411,6 +413,7 @@
                                     x:Name="PART_NextButton"
                                     Grid.Column="2"
                                     Width="32"
+                                    MinHeight="0"
                                     Margin="7,6,7,7"
                                     Padding="0"
                                     HorizontalAlignment="Stretch"

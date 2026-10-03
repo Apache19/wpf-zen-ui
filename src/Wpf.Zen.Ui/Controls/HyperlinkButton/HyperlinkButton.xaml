@@ -15,6 +15,7 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style BasedOn="{m:StaticStyle UiButton}" TargetType="{x:Type controls:HyperlinkButton}">
+        <Setter Property="MinHeight" Value="0" />
         <Setter Property="IconMargin" Value="0,0,8,0" />
         <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />

@@ -59,6 +59,7 @@
 
     <Style x:Key="NativeButtonBaseStyle" TargetType="{x:Type ButtonBase}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
