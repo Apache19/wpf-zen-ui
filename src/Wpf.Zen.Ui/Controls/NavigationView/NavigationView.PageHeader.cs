@@ -24,8 +24,8 @@ public partial class NavigationView
     /// The element must not also appear in the page body. Routed commands follow the visual tree
     /// chosen by the application; use an explicit command target to reach page command bindings.
     /// </remarks>
-    public static readonly DependencyProperty PageHeaderContentProperty =
-        DependencyProperty.RegisterAttached(
+    public static readonly DependencyProperty PageHeaderContentProperty
+        = DependencyProperty.RegisterAttached(
             "PageHeaderContent",
             typeof(FrameworkElement),
             typeof(NavigationView),
@@ -63,8 +63,8 @@ public partial class NavigationView
         page.SetValue(PageHeaderContentProperty, content);
     }
 
-    private static readonly DependencyPropertyKey CurrentPageHeaderContentPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    private static readonly DependencyPropertyKey CurrentPageHeaderContentPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CurrentPageHeaderContent),
             typeof(FrameworkElement),
             typeof(NavigationView),
@@ -95,6 +95,22 @@ public partial class NavigationView
     private BindingExpressionBase? _pageHeaderDataContextBinding;
 
     /// <summary>
+    /// Tracks header ownership for committed Frame pages, including ReplaceContent destinations.
+    /// </summary>
+    private static readonly DependencyProperty PageHeaderOwnerProperty
+        = DependencyProperty.RegisterAttached(
+            "PageHeaderOwner",
+            typeof(WeakReference<NavigationView>),
+            typeof(NavigationView),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Stores the committed page whose attached header declarations notify this navigation view.
+    /// </summary>
+    private FrameworkElement? _pageHeaderPage;
+
+    /// <summary>
     /// Keeps the exposed contribution current when the active page replaces its element.
     /// </summary>
     private static void OnPageHeaderContentChanged(
@@ -103,18 +119,53 @@ public partial class NavigationView
     {
         if (page is FrameworkElement element)
         {
-            var owner = GetNavigationParent(element);
-            if (owner is not null && ReferenceEquals(owner._navigationAwareContent, element))
+            var owner = GetPageHeaderOwner(element);
+            if (owner is not null)
             {
-                owner.UpdatePageHeader(element);
+                owner.UpdatePageHeaderContent(element);
             }
         }
     }
 
     /// <summary>
-    /// Publishes a committed page's element and bridges its inherited data context to the page.
+    /// Publishes both independent contributions when WPF commits a navigation.
     /// </summary>
     private void UpdatePageHeader(FrameworkElement? page)
+    {
+        if (!ReferenceEquals(_pageHeaderPage, page))
+        {
+            if (_pageHeaderPage is not null && ReferenceEquals(GetPageHeaderOwner(_pageHeaderPage), this))
+            {
+                _pageHeaderPage.ClearValue(PageHeaderOwnerProperty);
+            }
+
+            _pageHeaderPage = page;
+            page?.SetValue(PageHeaderOwnerProperty, new WeakReference<NavigationView>(this));
+        }
+
+        UpdatePageHeaderContent(page);
+        UpdatePageHeaderItems(page);
+    }
+
+    /// <summary>
+    /// Resolves the active declaration owner without retaining a navigation view from cached pages.
+    /// </summary>
+    private static NavigationView? GetPageHeaderOwner(FrameworkElement page)
+    {
+        var reference = (WeakReference<NavigationView>?)page.GetValue(PageHeaderOwnerProperty);
+        if (reference is not null && reference.TryGetTarget(out var owner)
+            && ReferenceEquals(owner._pageHeaderPage, page))
+        {
+            return owner;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Publishes a page's single element and bridges its inherited data context to the page.
+    /// </summary>
+    private void UpdatePageHeaderContent(FrameworkElement? page)
     {
         var previous = CurrentPageHeaderContent;
         // The contributed element is hosted outside the page's visual tree. Remove our
@@ -122,11 +173,7 @@ public partial class NavigationView
         // retains the previous page. Leave a binding installed later by the page intact.
         if (previous is not null && _pageHeaderDataContextBinding is not null)
         {
-            var binding = BindingOperations.GetBindingExpressionBase(previous, DataContextProperty);
-            if (ReferenceEquals(binding, _pageHeaderDataContextBinding))
-            {
-                BindingOperations.ClearBinding(previous, DataContextProperty);
-            }
+            ReleasePageHeaderDataContext(previous, _pageHeaderDataContextBinding);
         }
 
         _pageHeaderDataContextBinding = null;
@@ -135,29 +182,41 @@ public partial class NavigationView
         var content = page is null ? null : GetPageHeaderContent(page);
         if (page is not null && content is not null)
         {
-            var source = DependencyPropertyHelper.GetValueSource(
-                content,
-                DataContextProperty
-            );
-
-            // An explicitly assigned DataContext belongs to the page and takes precedence.
-            if (source.BaseValueSource is BaseValueSource.Default or BaseValueSource.Inherited)
-            {
-                // Presentation in the application's header changes DataContext inheritance to
-                // the header host. Bind to the page instead so the contributed element uses the
-                // page's view model and follows later changes to the page's DataContext.
-                _pageHeaderDataContextBinding = BindingOperations.SetBinding(
-                    content,
-                    DataContextProperty,
-                    new Binding(nameof(FrameworkElement.DataContext)) { Source = page }
-                );
-            }
-
+            _pageHeaderDataContextBinding = BindPageHeaderDataContext(page, content);
             SetValue(CurrentPageHeaderContentPropertyKey, content);
         }
 
         Debug.WriteLine(
             $"[NavigationView.Header] PAGE contribution published; pageType={page?.GetType().Name ?? "null"}, hasContent={content is not null}."
         );
+    }
+
+    /// <summary>
+    /// Makes an inherited context follow the page while respecting explicit element contexts.
+    /// </summary>
+    private static BindingExpressionBase? BindPageHeaderDataContext(FrameworkElement page, FrameworkElement element)
+    {
+        var source = DependencyPropertyHelper.GetValueSource(element, DataContextProperty);
+        if (source.BaseValueSource is not (BaseValueSource.Default or BaseValueSource.Inherited))
+        {
+            return null;
+        }
+
+        return BindingOperations.SetBinding(
+            element,
+            DataContextProperty,
+            new Binding(nameof(FrameworkElement.DataContext)) { Source = page }
+        );
+    }
+
+    /// <summary>
+    /// Removes a bridge only if the page has not replaced that binding while it was presented.
+    /// </summary>
+    private static void ReleasePageHeaderDataContext(FrameworkElement element, BindingExpressionBase binding)
+    {
+        if (ReferenceEquals(BindingOperations.GetBindingExpressionBase(element, DataContextProperty), binding))
+        {
+            BindingOperations.ClearBinding(element, DataContextProperty);
+        }
     }
 }

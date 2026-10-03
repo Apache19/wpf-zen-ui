@@ -9,12 +9,13 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 /// <summary>
-/// Provides the NavigationView gallery page and its contributed header action.
+/// Provides the NavigationView gallery page and both forms of page-owned header contribution.
 /// </summary>
 public partial class NavigationViewViewModel : ViewModel
 {
     private string _headerActionText = "Show page message";
     private string? _headerActionMessage;
+    private string _headerSubtitle = "PageHeaderContent and PageHeaderItems share this header layout.";
     private int _headerActionCount;
 
     /// <summary>
@@ -39,6 +40,15 @@ public partial class NavigationViewViewModel : ViewModel
     }
 
     /// <summary>
+    /// Gets the subtitle contributed below the breadcrumb by the page's header collection.
+    /// </summary>
+    public string HeaderSubtitle
+    {
+        get => _headerSubtitle;
+        private set => SetProperty(ref _headerSubtitle, value);
+    }
+
+    /// <summary>
     /// Gets the command bound by the page-owned button in the gallery header.
     /// </summary>
     public ICommand HeaderActionCommand { get; }
@@ -58,5 +68,6 @@ public partial class NavigationViewViewModel : ViewModel
     {
         _headerActionCount++;
         HeaderActionMessage = $"The page header action was clicked {_headerActionCount} time(s).";
+        HeaderSubtitle = $"Page action executed {_headerActionCount} time(s). Both header mechanisms use the page model.";
     }
 }

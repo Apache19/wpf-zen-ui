@@ -52,11 +52,15 @@
                 Transition="FadeInWithSlide">
                 <ui:NavigationView.Header>
                     <StackPanel Margin="0,0,0,20">
-                        <DockPanel>
-                            <ContentPresenter
-                                VerticalAlignment="Center"
-                                Content="{Binding ElementName=NavigationView, Path=CurrentPageHeaderContent}"
-                                DockPanel.Dock="Right" />
+                        <Grid ui:PanelItems.Source="{Binding ElementName=NavigationView, Path=CurrentPageHeaderItems}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
                             <ui:BreadcrumbBar
                                 d:ItemsSource="{d:SampleData}"
                                 ui:IconPresenter.IconSize="18"
@@ -79,7 +83,7 @@
                                     </Style>
                                 </ui:BreadcrumbBar.Style>
                             </ui:BreadcrumbBar>
-                        </DockPanel>
+                        </Grid>
                         <controls:PageControlDocumentation Margin="0,10,0,0" NavigationView="{Binding ElementName=NavigationView}" />
                     </StackPanel>
                 </ui:NavigationView.Header>

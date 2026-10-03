@@ -18,12 +18,22 @@
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
-    <ui:NavigationView.PageHeaderContent>
+    <!-- The shell's Grid defines the coordinates used by these direct header children. -->
+    <ui:NavigationView.PageHeaderItems>
         <ui:Button
-            x:Name="HeaderActionButton"
-            Content="{Binding HeaderActionText}"
-            Command="{Binding HeaderActionCommand}" />
-    </ui:NavigationView.PageHeaderContent>
+            Grid.Column="1"
+            Grid.RowSpan="2"
+            Margin="16,0,0,0"
+            VerticalAlignment="Center"
+            Command="{Binding HeaderActionCommand}"
+            Content="Run page action" />
+        <TextBlock
+            Grid.Row="1"
+            Margin="4 0 0 0"
+            Foreground="{ui:DynamicBrush TextFillSecondary}"
+            Text="{Binding HeaderSubtitle}"
+            TextWrapping="Wrap" />
+    </ui:NavigationView.PageHeaderItems>
 
     <StackPanel Margin="0,0,0,24">
         <ui:InfoBar
