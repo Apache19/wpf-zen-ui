@@ -108,6 +108,24 @@ Windows classic samples:`E:\Repos\Windows-classic-samples`
   ```
 **此事项只针对方法，单行属性和访问器仍可使用表达式形式**
 
+### 禁止“一行流”代码
+
+禁止把多个有独立含义的操作压缩在同一表达式中，例如连续进行类型转换、容器查找和方法调用，或在调用参数中嵌套复杂计算、条件选择与其他调用。
+应按操作步骤拆分语句，使用能表达用途的局部变量保存中间结果，使读者能够顺序理解数据来源、转换过程和最终用途。
+此规则也适用于属性访问器、条件表达式和跨多行书写的嵌套表达式；仅将长表达式换行不算完成整理。
+简单的属性访问、依赖属性包装、单次调用和清晰的基础运算可以保留简洁形式，不必机械拆分。
+
+- 反例：
+  ```csharp
+  (((ItemContainerGenerator)ItemContainerGenerator).ContainerFromIndex(index) as FrameworkElement)?.BringIntoView();
+  ```
+- 正例：
+  ```csharp
+  var generator = (ItemContainerGenerator)ItemContainerGenerator;
+  var element   = generator.ContainerFromIndex(index) as FrameworkElement;
+  element?.BringIntoView();
+  ```
+
 ### 调试日志
 
 日志输出应符合以下结构化日志风格：
