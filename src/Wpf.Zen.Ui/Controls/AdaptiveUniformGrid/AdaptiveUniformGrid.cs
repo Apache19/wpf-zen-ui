@@ -16,7 +16,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// With <see cref="IsRowStretchEnabled"/> enabled, original child indices (including collapsed
 /// children) determine row membership. Every logical row contains the computed column count of
 /// children except for a possibly incomplete final row. Each populated row divides its width
-/// equally among its non-collapsed children, after subtracting column spacing. Entirely collapsed rows disappear;
+/// equally among its non-collapsed children, after subtracting column spacing. Entirely collapsed
+/// rows disappear;
 /// remaining rows have equal heights. Rows with different non-collapsed counts can therefore
 /// have different slot widths without changing their original child membership.
 /// <see cref="Visibility.Hidden"/> still occupies a cell, as it does in WPF's UniformGrid.
@@ -54,7 +55,36 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class AdaptiveUniformGrid : UniformGrid
 {
-    /// <summary>Identifies the <see cref="RowSpacing"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="SpacingBrush"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SpacingBrushProperty = DependencyProperty.Register(
+        nameof(SpacingBrush),
+        typeof(Brush),
+        typeof(AdaptiveUniformGrid),
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender)
+    );
+
+    /// <summary>
+    /// Gets or sets the brush used to fill row and column spacing. The default is null.
+    /// </summary>
+    /// <remarks>
+    /// Spacing is painted above Background and below children, within the panel bounds.
+    /// Cell interiors, including child margins and alignment space, remain unpainted.
+    /// In stretch mode column gaps follow each populated row's actual cell widths.
+    /// In regular mode gaps follow the configured grid, including reserved empty cells.
+    /// A single geometry fill keeps translucent brushes uniform at gap intersections and
+    /// maps relative brush coordinates to the combined spacing bounds.
+    /// </remarks>
+    public Brush? SpacingBrush
+    {
+        get => (Brush?)GetValue(SpacingBrushProperty);
+        set => SetValue(SpacingBrushProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="RowSpacing"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty RowSpacingProperty = DependencyProperty.Register(
         nameof(RowSpacing),
         typeof(double),
@@ -64,7 +94,8 @@ public class AdaptiveUniformGrid : UniformGrid
     );
 
     /// <summary>
-    /// Gets or sets the distance, in device-independent units, between row slots. The default is zero.
+    /// Gets or sets the distance, in device-independent units, between row slots. The default is
+    /// zero.
     /// </summary>
     /// <remarks>
     /// The value must be finite and nonnegative. It affects measurement and arrangement, does not
@@ -77,7 +108,9 @@ public class AdaptiveUniformGrid : UniformGrid
         set => SetValue(RowSpacingProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ColumnSpacing"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="ColumnSpacing"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty ColumnSpacingProperty = DependencyProperty.Register(
         nameof(ColumnSpacing),
         typeof(double),
@@ -92,7 +125,8 @@ public class AdaptiveUniformGrid : UniformGrid
     /// </summary>
     /// <remarks>
     /// The value must be finite and nonnegative. It affects measurement and arrangement, does not
-    /// inherit, and can be animated. Stretching changes cell widths, never the spacing between them.
+    /// inherit, and can be animated. Stretching changes cell widths, never the spacing between
+    /// them.
     /// Spacing is retained if the available width is too small; cell widths then become zero.
     /// </remarks>
     public double ColumnSpacing
@@ -101,7 +135,9 @@ public class AdaptiveUniformGrid : UniformGrid
         set => SetValue(ColumnSpacingProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="IsRowStretchEnabled"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsRowStretchEnabled"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsRowStretchEnabledProperty = DependencyProperty.Register(
         nameof(IsRowStretchEnabled),
         typeof(bool),
@@ -118,7 +154,8 @@ public class AdaptiveUniformGrid : UniformGrid
     /// trailing cells, as in UniformGrid, and FirstColumn controls the leading empty cells.
     /// When true, FirstColumn is ignored without changing its value or binding, and original
     /// child indices alone determine row membership. Spacing remains effective in either mode.
-    /// This property affects measurement and arrangement, does not inherit, and supports discrete animation.
+    /// This property affects measurement and arrangement, does not inherit, and supports discrete
+    /// animation.
     /// </remarks>
     public bool IsRowStretchEnabled
     {
@@ -127,14 +164,32 @@ public class AdaptiveUniformGrid : UniformGrid
     }
 
     private readonly List<RowLayout> _populatedRows = new();
+
     private int _columns;
     private int _rows;
     private int _firstColumn;
+
     private bool _isMeasuringChildren;
     private bool _measureNeedsRetry;
 
+    private Geometry? _spacingGeometry;
+
     /// <summary>
-    /// Retains child layout notifications that WPF would otherwise suppress during this panel's measure pass.
+    /// Paints the background and the spacing captured by the latest arrangement.
+    /// </summary>
+    /// <param name="drawingContext">The drawing context supplied by WPF.</param>
+    protected override void OnRender(DrawingContext drawingContext)
+    {
+        base.OnRender(drawingContext);
+        if (SpacingBrush is { } brush && _spacingGeometry is { } geometry)
+        {
+            drawingContext.DrawGeometry(brush, null, geometry);
+        }
+    }
+
+    /// <summary>
+    /// Retains child layout notifications that WPF would otherwise suppress during this panel's
+    /// measure pass.
     /// </summary>
     /// <param name="child">The direct child whose desired size or collapsed state changed.</param>
     protected override void OnChildDesiredSizeChanged(UIElement child)
@@ -200,7 +255,10 @@ public class AdaptiveUniformGrid : UniformGrid
         }
     }
 
-    /// <summary>Measures one grouping; callers repeat it when child initialization changes the layout inputs.</summary>
+    /// <summary>
+    /// Measures one grouping; callers repeat it when child initialization changes the layout
+    /// inputs.
+    /// </summary>
     private Size MeasureChildren(Size constraint)
     {
         UpdateDimensions();
@@ -268,7 +326,9 @@ public class AdaptiveUniformGrid : UniformGrid
         return new Size(maxWidth, GetTotalExtent(maxHeight, _rows, RowSpacing));
     }
 
-    /// <summary>Distributes the final space into layout slots without changing child sizing properties.</summary>
+    /// <summary>
+    /// Distributes the final space into layout slots without changing child sizing properties.
+    /// </summary>
     /// <param name="arrangeSize">Final size allocated to the panel.</param>
     /// <returns>The allocated size.</returns>
     protected override Size ArrangeOverride(Size arrangeSize)
@@ -281,6 +341,7 @@ public class AdaptiveUniformGrid : UniformGrid
         }
 
         var cellHeight = GetCellExtent(arrangeSize.Height, _rows, RowSpacing);
+        UpdateSpacingGeometry(arrangeSize, cellHeight);
 
         if (!IsRowStretchEnabled)
         {
@@ -352,12 +413,94 @@ public class AdaptiveUniformGrid : UniformGrid
         return arrangeSize;
     }
 
+    /// <summary>
+    /// Captures disjoint gap rectangles using the same dimensions and offsets as child layout.
+    /// </summary>
+    private void UpdateSpacingGeometry(Size size, double cellHeight)
+    {
+        _spacingGeometry = null;
+        if (_rows > 0 && size.Width > 0 && size.Height > 0
+            && (RowSpacing > 0 || ColumnSpacing > 0))
+        {
+            var geometry = new StreamGeometry { FillRule = FillRule.Nonzero };
+            using (var context = geometry.Open())
+            {
+                var rowCount = IsRowStretchEnabled ? Math.Max(_rows, _populatedRows.Count) : _rows;
+                for (var row = 0; row < rowCount; row++)
+                {
+                    var top = GetOffset(row, cellHeight, RowSpacing);
+                    if (top >= size.Height)
+                    {
+                        break;
+                    }
+
+                    if (RowSpacing > 0 && row < rowCount - 1)
+                    {
+                        AddSpacingRectangle(context, size, 0, top + cellHeight,
+                            size.Width, RowSpacing);
+                    }
+
+                    var columns = IsRowStretchEnabled
+                        ? (row < _populatedRows.Count ? _populatedRows[row].CellCount : 0)
+                        : _columns;
+                    if (ColumnSpacing <= 0 || cellHeight <= 0 || columns < 2)
+                    {
+                        continue;
+                    }
+
+                    var cellWidth = GetCellExtent(size.Width, columns, ColumnSpacing);
+                    for (var column = 0; column < columns - 1; column++)
+                    {
+                        var left = GetOffset(column, cellWidth, ColumnSpacing) + cellWidth;
+                        if (left >= size.Width)
+                        {
+                            break;
+                        }
+
+                        // Vertical gaps stop at the row edge; horizontal gaps own intersections.
+                        AddSpacingRectangle(context, size, left, top, ColumnSpacing, cellHeight);
+                    }
+                }
+            }
+
+            geometry.Freeze();
+            _spacingGeometry = geometry;
+        }
+
+        // Reflow can move gaps without changing RenderSize, for example after collapsing a child.
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Appends a rectangle clipped to the panel bounds, including undersized layout constraints.
+    /// </summary>
+    private static void AddSpacingRectangle(
+        StreamGeometryContext context, Size bounds, double x, double y, double width, double height)
+    {
+        width = Math.Min(width, bounds.Width - x);
+        height = Math.Min(height, bounds.Height - y);
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        context.BeginFigure(new Point(x, y), true, true);
+        context.LineTo(new Point(x + width, y), false, false);
+        context.LineTo(new Point(x + width, y + height), false, false);
+        context.LineTo(new Point(x, y + height), false, false);
+    }
+
+    /// <summary>
+    /// Accepts finite, nonnegative spacing values for the layout calculations.
+    /// </summary>
     private static bool IsValidSpacing(object? value)
     {
         return value is double spacing && spacing >= 0D && !double.IsInfinity(spacing);
     }
 
-    /// <summary>Resolves the native grid dimensions, then removes only fully collapsed logical rows.</summary>
+    /// <summary>
+    /// Resolves the native grid dimensions, then removes only fully collapsed logical rows.
+    /// </summary>
     private void UpdateDimensions()
     {
         _populatedRows.Clear();
@@ -467,13 +610,19 @@ public class AdaptiveUniformGrid : UniformGrid
 
     private readonly struct RowLayout(int start, int end, int cellCount)
     {
-        /// <summary>Gets the inclusive index in the unfiltered child collection.</summary>
+        /// <summary>
+        /// Gets the inclusive index in the unfiltered child collection.
+        /// </summary>
         public int Start { get; } = start;
 
-        /// <summary>Gets the exclusive index; collapsed children remain inside this range.</summary>
+        /// <summary>
+        /// Gets the exclusive index; collapsed children remain inside this range.
+        /// </summary>
         public int End { get; } = end;
 
-        /// <summary>Gets the number of equal slots for the row's non-collapsed children.</summary>
+        /// <summary>
+        /// Gets the number of equal slots for the row's non-collapsed children.
+        /// </summary>
         public int CellCount { get; } = cellCount;
     }
 }

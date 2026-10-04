@@ -14,6 +14,73 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class AdaptiveUniformGridTests
 {
+    [Fact]
+    public void SpacingBrush_PaintsOnlyGapsAndRefreshesAfterReflow()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var panel = CreatePanel(6);
+            Layout(panel, new Size(320, 110));
+            Assert.Null(panel.SpacingBrush);
+            Assert.Equal(0, ReadAlpha(panel, 105, 25));
+
+            panel.SpacingBrush = new SolidColorBrush(Color.FromArgb(128, 255, 0, 0));
+            panel.UpdateLayout();
+            Assert.Equal(128, ReadAlpha(panel, 105, 25));
+            Assert.Equal(128, ReadAlpha(panel, 105, 55));
+            Assert.Equal(128, ReadAlpha(panel, 50, 55));
+            Assert.Equal(0, ReadAlpha(panel, 50, 25));
+
+            panel.Children[1].Visibility = Visibility.Collapsed;
+            panel.UpdateLayout();
+            Assert.Equal(0, ReadAlpha(panel, 105, 25));
+            Assert.Equal(128, ReadAlpha(panel, 160, 25));
+            Assert.Equal(128, ReadAlpha(panel, 105, 85));
+
+            ((SolidColorBrush)panel.SpacingBrush).Color = Colors.Red;
+            panel.UpdateLayout();
+            Assert.Equal(255, ReadAlpha(panel, 160, 25));
+
+            panel.SpacingBrush = null;
+            panel.UpdateLayout();
+            Assert.Equal(0, ReadAlpha(panel, 160, 25));
+        });
+    }
+
+    [Fact]
+    public void SpacingBrush_RegularGridPreservesEmptyCellsAndBackground()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var panel = CreatePanel(4);
+            panel.IsRowStretchEnabled = false;
+            panel.FirstColumn = 1;
+            panel.Background = Brushes.Blue;
+            panel.SpacingBrush = Brushes.Red;
+            Layout(panel, new Size(320, 110));
+
+            var drawing = VisualTreeHelper.GetDrawing(panel);
+            Assert.NotNull(drawing);
+            var gaps = Assert.IsType<GeometryDrawing>(drawing.Children[1]);
+            Assert.True(gaps.Geometry.FillContains(new Point(105, 25)));
+            Assert.True(gaps.Geometry.FillContains(new Point(215, 85)));
+            Assert.False(gaps.Geometry.FillContains(new Point(50, 25)));
+            Assert.False(gaps.Geometry.FillContains(new Point(270, 85)));
+            Assert.Equal(255, ReadAlpha(panel, 50, 25));
+        });
+    }
+
+    // Sample actual WPF rasterization so overlapping translucent fills are detected.
+    private static byte ReadAlpha(AdaptiveUniformGrid panel, int x, int y)
+    {
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+            320, 110, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(panel);
+        var pixel = new byte[4];
+        bitmap.CopyPixels(new Int32Rect(x, y, 1, 1), pixel, 4, 0);
+        return pixel[3];
+    }
+
     [Theory]
     [InlineData(Visibility.Visible)]
     [InlineData(Visibility.Hidden)]
