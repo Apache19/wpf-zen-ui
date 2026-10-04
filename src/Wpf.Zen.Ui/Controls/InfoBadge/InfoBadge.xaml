@@ -4,10 +4,9 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
-    <!-- Shared colors remain overridable through the control's brush properties. -->
+    <!-- Severity colors pair a subtle background with a matching border and foreground. -->
     <Style TargetType="{x:Type controls:InfoBadge}">
-        <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformationalForeground}" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillInverse}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -84,17 +83,30 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <Trigger Property="Severity" Value="Informational">
+                <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformationalBackground}" />
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush SystemFillInformationalBorder}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush SystemFillInformationalForeground}" />
+            </Trigger>
             <Trigger Property="Severity" Value="Attention">
-                <Setter Property="Background" Value="{m:DynamicBrush SystemFillAttentionForeground}" />
+                <Setter Property="Background" Value="{m:DynamicBrush SystemFillAttentionBackground}" />
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush SystemFillAttentionBorder}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush SystemFillAttentionForeground}" />
             </Trigger>
             <Trigger Property="Severity" Value="Success">
-                <Setter Property="Background" Value="{m:DynamicBrush SystemFillSuccessForeground}" />
+                <Setter Property="Background" Value="{m:DynamicBrush SystemFillSuccessBackground}" />
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush SystemFillSuccessBorder}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush SystemFillSuccessForeground}" />
             </Trigger>
             <Trigger Property="Severity" Value="Caution">
-                <Setter Property="Background" Value="{m:DynamicBrush SystemFillCautionForeground}" />
+                <Setter Property="Background" Value="{m:DynamicBrush SystemFillCautionBackground}" />
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush SystemFillCautionBorder}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush SystemFillCautionForeground}" />
             </Trigger>
             <Trigger Property="Severity" Value="Critical">
-                <Setter Property="Background" Value="{m:DynamicBrush SystemFillCriticalForeground}" />
+                <Setter Property="Background" Value="{m:DynamicBrush SystemFillCriticalBackground}" />
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush SystemFillCriticalBorder}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush SystemFillCriticalForeground}" />
             </Trigger>
         </Style.Triggers>
     </Style>

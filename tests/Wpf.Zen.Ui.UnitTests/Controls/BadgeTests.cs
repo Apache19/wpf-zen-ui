@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -222,10 +222,10 @@ public class BadgeTests
     }
 
     /// <summary>
-    /// Checks Fluent and third-party sources without adding child visuals.
+    /// Checks simultaneous text and icon drawing, source replacement and removal.
     /// </summary>
     [Fact]
-    public void Icon_UsesSharedFontSourceAndRevertsToText()
+    public void Icon_DrawsAlongsideTextWithoutChildVisuals()
     {
         WpfTestThread.Run(() =>
         {
@@ -234,12 +234,228 @@ public class BadgeTests
             byte[] iconPixels = Render(badge, 100, 40);
             Assert.Contains(iconPixels, pixel => pixel != 0);
             badge.Text = "Different text";
-            Assert.Equal(iconPixels, Render(badge, 100, 40));
+            Assert.NotEqual(iconPixels, Render(badge, 100, 40));
             badge.Icon = new TestFontIcon();
             Assert.NotEqual(iconPixels, Render(badge, 100, 40));
             badge.Icon = null;
             Assert.NotEqual(iconPixels, Render(badge, 100, 40));
             Assert.Equal(0, VisualTreeHelper.GetChildrenCount(badge));
+        });
+    }
+
+    /// <summary>
+    /// Checks automatic capsules in both orientations and circles after resizing the same badge.
+    /// </summary>
+    [Fact]
+    public void CornerRadius_NullAdaptsToRenderSizeAndCanBeRestored()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = new Badge { OverridesDefaultStyle = true, Background = Brushes.Blue };
+            Assert.Null(badge.CornerRadius);
+            var reference = new Border { Background = Brushes.Blue };
+            foreach (var size in new[] { new Size(80, 30), new Size(30, 80), new Size(40, 40) })
+            {
+                int width = (int)size.Width;
+                int height = (int)size.Height;
+                double radius = Math.Min(width, height) / 2.0;
+                reference.CornerRadius = new CornerRadius(radius);
+                byte[] expected = Render(reference, width, height);
+                Assert.Equal(expected, Render(badge, width, height));
+                badge.CornerRadius = new CornerRadius(0);
+                Assert.NotEqual(expected, Render(badge, width, height));
+                badge.CornerRadius = null;
+                Assert.Equal(expected, Render(badge, width, height));
+            }
+        });
+    }
+
+    /// <summary>
+    /// Keeps the automatic outside contour circular despite nonuniform border widths.
+    /// </summary>
+    [Fact]
+    public void CornerRadius_AutomaticOuterContourIsIndependentOfBorderThickness()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = new Badge
+            {
+                OverridesDefaultStyle = true, BorderBrush = Brushes.Blue,
+                BorderThickness = new Thickness(1, 3, 5, 7),
+            };
+            Render(badge, 40, 40);
+            var drawing = VisualTreeHelper.GetDrawing(badge);
+            var outline = Assert.IsType<GeometryDrawing>(Assert.Single(drawing.Children));
+            var geometry = outline.Geometry;
+            // Circle points at equal angular positions must have the same outside boundary.
+            Assert.False(geometry.FillContains(new Point(5, 5)));
+            Assert.False(geometry.FillContains(new Point(35, 5)));
+            Assert.False(geometry.FillContains(new Point(5, 35)));
+            Assert.False(geometry.FillContains(new Point(35, 35)));
+            Assert.True(geometry.FillContains(new Point(6, 6)));
+            Assert.True(geometry.FillContains(new Point(34, 6)));
+            Assert.True(geometry.FillContains(new Point(6, 34)));
+            Assert.True(geometry.FillContains(new Point(34, 34)));
+        });
+    }
+
+    /// <summary>
+    /// Reserves the gap only for two nonempty layouts, including empty Fluent glyph sources.
+    /// </summary>
+    [Fact]
+    public void IconSpacing_MeasuresCombinedContentAndIgnoresAbsentContent()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = new Badge { OverridesDefaultStyle = true, Text = "Status", FontSize = 16 };
+            var available = new Size(500, 100);
+            badge.Measure(available);
+            var textSize = badge.DesiredSize;
+            badge.Text = "";
+            badge.Icon = new TestFontIcon();
+            badge.Measure(available);
+            var iconSize = badge.DesiredSize;
+            badge.Text = "Status";
+            badge.IconSpacing = 7;
+            badge.Measure(available);
+            Assert.Equal(textSize.Width + iconSize.Width + 7, badge.DesiredSize.Width, 5);
+            Assert.Equal(Math.Max(textSize.Height, iconSize.Height), badge.DesiredSize.Height, 5);
+            badge.IconSpacing = 13;
+            badge.Measure(available);
+            Assert.Equal(textSize.Width + iconSize.Width + 13, badge.DesiredSize.Width, 5);
+            badge.Icon = new FluentIconSource(FluentSymbolRegular.Empty);
+            badge.Measure(available);
+            Assert.Equal(textSize, badge.DesiredSize);
+            badge.Icon = null;
+            badge.Measure(available);
+            Assert.Equal(textSize, badge.DesiredSize);
+            badge.Text = "";
+            badge.Icon = new TestFontIcon();
+            badge.Measure(available);
+            Assert.Equal(iconSize, badge.DesiredSize);
+        });
+    }
+
+    /// <summary>
+    /// Checks two retained glyph runs and group alignment as spacing changes in either direction.
+    /// </summary>
+    [Theory]
+    [InlineData(FlowDirection.LeftToRight, BadgeIconPlacement.Left)]
+    [InlineData(FlowDirection.RightToLeft, BadgeIconPlacement.Left)]
+    [InlineData(FlowDirection.LeftToRight, BadgeIconPlacement.Right)]
+    [InlineData(FlowDirection.RightToLeft, BadgeIconPlacement.Right)]
+    public void IconSpacing_DrawsBothRunsAndCentersTheCombinedRow(FlowDirection direction,
+        BadgeIconPlacement placement)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = new Badge
+            {
+                OverridesDefaultStyle = true, Text = "A", Icon = new TestFontIcon(),
+                FontSize = 16, IconSpacing = 4, FlowDirection = direction,
+                IconPlacement = placement,
+                Padding = new Thickness(8),
+            };
+            Render(badge, 160, 60);
+            var drawing = VisualTreeHelper.GetDrawing(badge);
+            var before = new List<GlyphRun>();
+            CollectGlyphRuns(drawing, before);
+            Assert.Equal(2, before.Count);
+            badge.IconSpacing = 14;
+            Render(badge, 160, 60);
+            drawing = VisualTreeHelper.GetDrawing(badge);
+            var after = new List<GlyphRun>();
+            CollectGlyphRuns(drawing, after);
+            Assert.Equal(2, after.Count);
+            double shift = direction == FlowDirection.LeftToRight ? -5 : 5;
+            if (placement == BadgeIconPlacement.Right)
+            {
+                shift = -shift;
+            }
+
+            Assert.Equal(before[0].BaselineOrigin.X + shift, after[0].BaselineOrigin.X, 5);
+            Assert.Equal(before[1].BaselineOrigin.X - shift, after[1].BaselineOrigin.X, 5);
+            Assert.Equal(before[0].BaselineOrigin.Y, after[0].BaselineOrigin.Y, 5);
+            Assert.Equal(before[1].BaselineOrigin.Y, after[1].BaselineOrigin.Y, 5);
+            var iconBounds = after[0].ComputeInkBoundingBox();
+            iconBounds.Offset(after[0].BaselineOrigin.X, after[0].BaselineOrigin.Y);
+            var textBounds = after[1].ComputeInkBoundingBox();
+            textBounds.Offset(after[1].BaselineOrigin.X, after[1].BaselineOrigin.Y);
+            if (shift < 0)
+            {
+                Assert.True(iconBounds.Right < textBounds.Left);
+            }
+            else
+            {
+                Assert.True(textBounds.Right < iconBounds.Left);
+            }
+
+            Assert.Equal(0, VisualTreeHelper.GetChildrenCount(badge));
+        });
+    }
+
+    /// <summary>
+    /// Verifies inherited presentation settings, local overrides and live fallback in drawings.
+    /// </summary>
+    [Fact]
+    public void IconPresentation_SharesAttachedPropertiesAndFallsBackToTextProperties()
+    {
+        WpfTestThread.Run(() =>
+        {
+            Assert.Same(IconPresenter.IconSizeProperty, Badge.IconSizeProperty);
+            Assert.Same(IconPresenter.IconForegroundProperty, Badge.IconForegroundProperty);
+            var badge = new Badge
+            {
+                OverridesDefaultStyle = true, Text = "A", Icon = new TestFontIcon(),
+                FontSize = 16, Foreground = Brushes.Blue,
+            };
+            var host = new Border { Child = badge };
+            AssertIconPresentation(badge, 16, Brushes.Blue, 16, Brushes.Blue);
+            IconPresenter.SetIconSize(host, 24);
+            IconPresenter.SetIconForeground(host, Brushes.Red);
+            AssertIconPresentation(badge, 24, Brushes.Red, 16, Brushes.Blue);
+            badge.IconSize = 32;
+            badge.IconForeground = Brushes.Green;
+            badge.FontSize = 18;
+            badge.Foreground = Brushes.Purple;
+            AssertIconPresentation(badge, 32, Brushes.Green, 18, Brushes.Purple);
+            badge.ClearValue(Badge.IconSizeProperty);
+            badge.ClearValue(Badge.IconForegroundProperty);
+            AssertIconPresentation(badge, 24, Brushes.Red, 18, Brushes.Purple);
+            badge.IconSize = double.NaN;
+            badge.IconForeground = null;
+            AssertIconPresentation(badge, 18, Brushes.Purple, 18, Brushes.Purple);
+            badge.FontSize = 20;
+            badge.Foreground = Brushes.Orange;
+            AssertIconPresentation(badge, 20, Brushes.Orange, 20, Brushes.Orange);
+            IconPresenter.SetIconSize(badge, 28);
+            IconPresenter.SetIconForeground(badge, Brushes.Black);
+            AssertIconPresentation(badge, 28, Brushes.Black, 20, Brushes.Orange);
+        });
+    }
+
+    /// <summary>
+    /// Checks that resizing the icon updates desired size while preserving text metrics.
+    /// </summary>
+    [Fact]
+    public void IconSize_UpdatesCombinedMeasurement()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = new Badge
+            {
+                OverridesDefaultStyle = true, Text = "A", Icon = new TestFontIcon(), FontSize = 12,
+            };
+            var available = new Size(500, 100);
+            badge.Measure(available);
+            var original = badge.DesiredSize;
+            badge.IconSize = 48;
+            badge.Measure(available);
+            Assert.True(badge.DesiredSize.Width > original.Width);
+            Assert.True(badge.DesiredSize.Height > original.Height);
+            badge.IconSize = double.NaN;
+            badge.Measure(available);
+            Assert.Equal(original, badge.DesiredSize);
         });
     }
 
@@ -293,12 +509,13 @@ public class BadgeTests
                 Source = new Uri("pack://application:,,,/Wpf.Zen.Ui;component/Controls/Badge/Badge.xaml"),
             };
             var badge = new Badge { OverridesDefaultStyle = true, Style = (Style)resources[typeof(Badge)] };
-            badge.Resources[BrushKeys.SystemFillColorInformationalBackgroundBrush] = Brushes.Blue;
-            badge.Resources[BrushKeys.SystemFillColorCriticalBackgroundBrush] = Brushes.Red;
+            Assert.Null(badge.CornerRadius);
+            badge.Resources[BrushKeys.SystemFillColorInformationalForegroundBrush] = Brushes.Blue;
+            badge.Resources[BrushKeys.SystemFillColorCriticalForegroundBrush] = Brushes.Red;
             Assert.Same(Brushes.Blue, badge.Background);
             badge.Severity = BadgeSeverity.Critical;
             Assert.Same(Brushes.Red, badge.Background);
-            badge.Resources[BrushKeys.SystemFillColorCriticalBackgroundBrush] = Brushes.Green;
+            badge.Resources[BrushKeys.SystemFillColorCriticalForegroundBrush] = Brushes.Green;
             Assert.Same(Brushes.Green, badge.Background);
             badge.Background = Brushes.Purple;
             badge.Severity = BadgeSeverity.Success;
@@ -321,6 +538,13 @@ public class BadgeTests
             Assert.Throws<ArgumentException>(() => badge.BorderThickness = new Thickness(double.NaN));
             Assert.Throws<ArgumentException>(() => badge.CornerRadius = new CornerRadius(double.PositiveInfinity));
             Assert.Throws<ArgumentException>(() => badge.Severity = (BadgeSeverity)99);
+            Assert.Throws<ArgumentException>(() => badge.IconSpacing = -1);
+            Assert.Throws<ArgumentException>(() => badge.IconSpacing = double.NaN);
+            Assert.Throws<ArgumentException>(() => badge.IconSpacing = double.PositiveInfinity);
+            Assert.Throws<ArgumentException>(() => badge.IconSize = 0);
+            Assert.Throws<ArgumentException>(() => badge.IconSize = -1);
+            Assert.Throws<ArgumentException>(() => badge.IconSize = double.PositiveInfinity);
+            Assert.Throws<ArgumentException>(() => badge.IconPlacement = (BadgeIconPlacement)99);
         });
     }
 
@@ -371,6 +595,41 @@ public class BadgeTests
         CollectGlyphRuns(drawing, runs);
         var run = Assert.Single(runs);
         Assert.Equal(expectedGlyphTypeface.FontUri, run.GlyphTypeface.FontUri);
+    }
+
+    /// <summary>
+    /// Inspects retained glyph sizes and brushes to verify text and icon styling independently.
+    /// </summary>
+    private static void AssertIconPresentation(Badge badge, double iconSize, Brush iconBrush,
+        double textSize, Brush textBrush)
+    {
+        Render(badge, 200, 80);
+        var drawing = VisualTreeHelper.GetDrawing(badge);
+        var runs = new List<GlyphRunDrawing>();
+        CollectGlyphDrawings(drawing, runs);
+        Assert.Equal(2, runs.Count);
+        Assert.Equal(iconSize, runs[0].GlyphRun.FontRenderingEmSize);
+        Assert.Equal(iconBrush, runs[0].ForegroundBrush);
+        Assert.Equal(textSize, runs[1].GlyphRun.FontRenderingEmSize);
+        Assert.Equal(textBrush, runs[1].ForegroundBrush);
+    }
+
+    /// <summary>
+    /// Collects glyph drawings with their brushes through the badge's clipping groups.
+    /// </summary>
+    private static void CollectGlyphDrawings(Drawing drawing, List<GlyphRunDrawing> runs)
+    {
+        if (drawing is GlyphRunDrawing glyphDrawing)
+        {
+            runs.Add(glyphDrawing);
+        }
+        else if (drawing is DrawingGroup group)
+        {
+            foreach (var child in group.Children)
+            {
+                CollectGlyphDrawings(child, runs);
+            }
+        }
     }
 
     private sealed class TestFontIcon : FontIconSource
