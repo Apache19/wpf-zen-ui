@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo;
 
-[GalleryPage("Shows the app progress on a task.", SymbolRegular.ArrowDownload24)]
+[GalleryPage("Shows the app progress on a task.", FluentSymbolRegular.ArrowDownload24)]
 public partial class ProgressBarPage : INavigableView<ProgressBarViewModel>
 {
     public ProgressBarViewModel ViewModel { get; }

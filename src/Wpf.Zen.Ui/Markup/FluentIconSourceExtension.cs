@@ -14,7 +14,8 @@ namespace Wpf.Zen.Ui.Markup;
 /// <remarks>
 /// The extension returns data, not a visual element. Consequently the value is valid in style
 /// setters and may be presented more than once. The family-specific extension name also keeps
-/// future icon systems independent: each can introduce its own source and implicit data template.
+/// future icon systems independent: each can introduce its own source while sharing the
+/// FontIconSource data template.
 /// </remarks>
 /// <example>
 /// <code lang="xml">
@@ -26,36 +27,52 @@ namespace Wpf.Zen.Ui.Markup;
 [MarkupExtensionReturnType(typeof(FluentIconSource))]
 public sealed class FluentIconSourceExtension : MarkupExtension
 {
-    /// <summary>Initializes a new instance of the <see cref="FluentIconSourceExtension"/> class.</summary>
-    public FluentIconSourceExtension() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentIconSourceExtension"/> class.
+    /// </summary>
+    public FluentIconSourceExtension()
+    {
+    }
 
-    /// <summary>Initializes a new instance of the <see cref="FluentIconSourceExtension"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentIconSourceExtension"/> class.
+    /// </summary>
     /// <param name="symbol">The Fluent glyph identity to provide.</param>
-    public FluentIconSourceExtension(SymbolRegular symbol)
+    public FluentIconSourceExtension(FluentSymbolRegular symbol)
     {
         Symbol = symbol;
     }
 
-    /// <summary>Initializes a new instance of the <see cref="FluentIconSourceExtension"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentIconSourceExtension"/> class.
+    /// </summary>
     /// <param name="symbol">The Fluent glyph identity to provide.</param>
     /// <param name="filled"><see langword="true"/> to prefer the filled form.</param>
-    public FluentIconSourceExtension(SymbolRegular symbol, bool filled)
+    public FluentIconSourceExtension(FluentSymbolRegular symbol, bool filled)
         : this(symbol)
     {
         Filled = filled;
     }
 
-    /// <summary>Gets or sets the Fluent glyph identity returned by the source.</summary>
+    /// <summary>
+    /// Gets or sets the Fluent glyph identity returned by the source.
+    /// </summary>
     [ConstructorArgument("symbol")]
-    public SymbolRegular Symbol { get; set; }
+    public FluentSymbolRegular Symbol { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether the source prefers the filled form by default.</summary>
+    /// <summary>
+    /// Gets or sets a value indicating whether the source prefers the filled form by default.
+    /// </summary>
     [ConstructorArgument("filled")]
     public bool Filled { get; set; }
 
-    /// <summary>Creates the immutable source consumed by the Fluent icon data template.</summary>
+    /// <summary>
+    /// Creates the immutable source consumed by font icon hosts.
+    /// </summary>
     /// <param name="serviceProvider">Services supplied by the XAML object writer.</param>
     /// <returns>A reusable Fluent icon source.</returns>
-    public override object ProvideValue(IServiceProvider serviceProvider) =>
-        new FluentIconSource(Symbol, Filled);
+    public override object ProvideValue(IServiceProvider serviceProvider)
+    {
+        return new FluentIconSource(Symbol, Filled);
+    }
 }

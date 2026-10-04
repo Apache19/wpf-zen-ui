@@ -24,10 +24,7 @@
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}">
             <Grid Margin="{Binding Indentation, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Background="Transparent">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition
-                        x:Name="IconColumn"
-                        Width="40"
-                        SharedSizeGroup="Icon" />
+                    <ColumnDefinition x:Name="IconColumn" Width="40" SharedSizeGroup="Icon" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition x:Name="ExpandColumn" Width="0" />
@@ -72,7 +69,7 @@
                     benefit from a Chevron. Compact presentations intentionally keep the icon-only
                     surface used before the control-model refactor.
                 -->
-                <controls:FluentIcon
+                <controls:FontIcon
                     x:Name="ChevronIcon"
                     Grid.Column="3"
                     HorizontalAlignment="Center"
@@ -80,12 +77,12 @@
                     FontSize="12"
                     IsHitTestVisible="False"
                     RenderTransformOrigin="0.5,0.5"
-                    Symbol="ChevronDown24"
+                    Source="{m:FluentIconSource ChevronDown24}"
                     Visibility="Collapsed">
-                    <controls:FluentIcon.RenderTransform>
+                    <controls:FontIcon.RenderTransform>
                         <RotateTransform Angle="0" />
-                    </controls:FluentIcon.RenderTransform>
-                </controls:FluentIcon>
+                    </controls:FontIcon.RenderTransform>
+                </controls:FontIcon>
             </Grid>
         </Border>
         <ControlTemplate.Triggers>

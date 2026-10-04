@@ -10,7 +10,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Button with drop down.", SymbolRegular.Filter16)]
+[GalleryPage("Button with drop down.", FluentSymbolRegular.Filter16)]
 public partial class DropDownButtonPage : INavigableView<DropDownButtonViewModel>
 {
     public DropDownButtonViewModel ViewModel { get; }

@@ -93,7 +93,7 @@
                         AutomationProperties.AutomationId="NavigationAutoSuggestBox"
                         PlaceholderText="Search">
                         <ui:AutoSuggestBox.Icon>
-                            <ui:FluentIcon Symbol="Search24" />
+                            <ui:FontIcon Source="{ui:FluentIconSource Search24}" />
                         </ui:AutoSuggestBox.Icon>
                     </ui:AutoSuggestBox>
                 </ui:NavigationView.AutoSuggestBox>

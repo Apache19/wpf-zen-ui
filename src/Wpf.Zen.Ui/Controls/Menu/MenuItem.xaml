@@ -53,10 +53,7 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="MenuItemFocusVisualStyle"
-        BasedOn="{StaticResource TopLevelMenuItemFocusVisualStyle}"
-        TargetType="{x:Type controls:FocusVisualPresenter}">
+    <Style x:Key="MenuItemFocusVisualStyle" BasedOn="{StaticResource TopLevelMenuItemFocusVisualStyle}" TargetType="{x:Type controls:FocusVisualPresenter}">
         <Setter Property="Margin" Value="4,1" />
     </Style>
 
@@ -86,13 +83,13 @@
                         ContentSource="Icon"
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         TextElement.FontSize="16" />
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Symbol="Checkmark24"
+                        Source="{m:FluentIconSource Checkmark24}"
                         Visibility="Collapsed" />
                     <ContentPresenter
                         x:Name="HeaderPresenter"
@@ -106,8 +103,8 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupSlideAnimator.IsEnabled="{TemplateBinding controls:PopupSlideAnimator.IsEnabled}"
                 controls:PopupShadow.IsEnabled="True"
+                controls:PopupSlideAnimator.IsEnabled="{TemplateBinding controls:PopupSlideAnimator.IsEnabled}"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"
@@ -201,13 +198,13 @@
                         ContentSource="Icon"
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         TextElement.FontSize="16" />
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Symbol="Checkmark24"
+                        Source="{m:FluentIconSource Checkmark24}"
                         Visibility="Collapsed" />
                     <ContentPresenter
                         x:Name="HeaderPresenter"
@@ -278,13 +275,13 @@
                     </Grid.ColumnDefinitions>
 
                     <!--  选中对勾应该与图标在同一列  -->
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Symbol="Checkmark24"
+                        Source="{m:FluentIconSource Checkmark24}"
                         Visibility="Collapsed" />
 
                     <controls:IconPresenter
@@ -373,13 +370,13 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
                     </Grid.ColumnDefinitions>
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Symbol="Checkmark24"
+                        Source="{m:FluentIconSource Checkmark24}"
                         Visibility="Collapsed" />
 
                     <controls:IconPresenter
@@ -400,19 +397,19 @@
                         RecognizesAccessKey="True"
                         UseLayoutRounding="True" />
 
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="Chevron"
                         Grid.Column="2"
                         Margin="25,0,0,0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
-                        Symbol="ChevronRight20" />
+                        Source="{m:FluentIconSource ChevronRight20}" />
                 </Grid>
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupSlideAnimator.IsEnabled="{TemplateBinding controls:PopupSlideAnimator.IsEnabled}"
                 controls:PopupShadow.IsEnabled="True"
+                controls:PopupSlideAnimator.IsEnabled="{TemplateBinding controls:PopupSlideAnimator.IsEnabled}"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"

@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("A rich editing control.", SymbolRegular.DrawText24)]
+[GalleryPage("A rich editing control.", FluentSymbolRegular.DrawText24)]
 public partial class RichTextBoxPage : INavigableView<RichTextBoxViewModel>
 {
     public RichTextBoxViewModel ViewModel { get; }

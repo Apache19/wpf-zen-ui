@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Collections;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
 
-[GalleryPage("Collapsable list.", SymbolRegular.TextBulletListTree24)]
+[GalleryPage("Collapsable list.", FluentSymbolRegular.TextBulletListTree24)]
 public partial class TreeListPage : INavigableView<TreeListViewModel>
 {
     public TreeListViewModel ViewModel { get; }

@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("Plain text field.", SymbolRegular.TextColor24)]
+[GalleryPage("Plain text field.", FluentSymbolRegular.TextColor24)]
 public partial class TextBoxPage : INavigableView<TextBoxViewModel>
 {
     public TextBoxViewModel ViewModel { get; }

@@ -19,17 +19,17 @@ internal static class KeyboardLayoutParts
     // Icon sources are immutable presentation data. Sharing them avoids rebuilding identical
     // descriptors whenever Shift or the requested surface regenerates the layout; the implicit
     // FluentIconSource data template still creates an independent visual for every key button.
-    internal static readonly FluentIconSource ShiftIcon        = new(SymbolRegular.KeyboardShift24);
-    internal static readonly FluentIconSource ShiftOnceIcon    = new(SymbolRegular.KeyboardShiftUppercase24);
-    internal static readonly FluentIconSource ShiftLockedIcon  = new(SymbolRegular.KeyboardShiftUppercase24, filled: true);
-    internal static readonly FluentIconSource BackspaceIcon    = new(SymbolRegular.Backspace24);
-    internal static readonly FluentIconSource InputMethodsIcon = new(SymbolRegular.Globe24);
-    internal static readonly FluentIconSource MoveLeftIcon     = new(SymbolRegular.ArrowLeft24);
-    internal static readonly FluentIconSource MoveRightIcon    = new(SymbolRegular.ArrowRight24);
-    internal static readonly FluentIconSource PrevSymbolsIcon  = new(SymbolRegular.CaretLeft24, filled: true);
-    internal static readonly FluentIconSource MoreSymbolsIcon  = new(SymbolRegular.CaretRight24, filled: true);
-    internal static readonly FluentIconSource SpaceIcon        = new(SymbolRegular.Spacebar24);
-    internal static readonly FluentIconSource EnterIcon        = new(SymbolRegular.ArrowEnterLeft24);
+    internal static readonly FluentIconSource ShiftIcon        = new(FluentSymbolRegular.KeyboardShift24);
+    internal static readonly FluentIconSource ShiftOnceIcon    = new(FluentSymbolRegular.KeyboardShiftUppercase24);
+    internal static readonly FluentIconSource ShiftLockedIcon  = new(FluentSymbolRegular.KeyboardShiftUppercase24, filled: true);
+    internal static readonly FluentIconSource BackspaceIcon    = new(FluentSymbolRegular.Backspace24);
+    internal static readonly FluentIconSource InputMethodsIcon = new(FluentSymbolRegular.Globe24);
+    internal static readonly FluentIconSource MoveLeftIcon     = new(FluentSymbolRegular.ArrowLeft24);
+    internal static readonly FluentIconSource MoveRightIcon    = new(FluentSymbolRegular.ArrowRight24);
+    internal static readonly FluentIconSource PrevSymbolsIcon  = new(FluentSymbolRegular.CaretLeft24, filled: true);
+    internal static readonly FluentIconSource MoreSymbolsIcon  = new(FluentSymbolRegular.CaretRight24, filled: true);
+    internal static readonly FluentIconSource SpaceIcon        = new(FluentSymbolRegular.Spacebar24);
+    internal static readonly FluentIconSource EnterIcon        = new(FluentSymbolRegular.ArrowEnterLeft24);
 
     /// <summary>
     /// Creates a mode-switch key from the independently resolved command presentation.

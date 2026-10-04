@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("Control for numeric input.", SymbolRegular.NumberSymbol24)]
+[GalleryPage("Control for numeric input.", FluentSymbolRegular.NumberSymbol24)]
 public partial class NumberBoxPage : INavigableView<NumberBoxViewModel>
 {
     public NumberBoxViewModel ViewModel { get; }

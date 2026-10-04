@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Layout;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Layout;
 
-[GalleryPage("Expander control.", SymbolRegular.Code24)]
+[GalleryPage("Expander control.", FluentSymbolRegular.Code24)]
 public partial class ExpanderPage : INavigableView<ExpanderViewModel>
 {
     public ExpanderPage(ExpanderViewModel viewModel)

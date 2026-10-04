@@ -11,7 +11,7 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Provides an attached property that automatically sets a <see cref="FluentIcon"/>
+/// Provides an attached property that automatically sets a <see cref="FontIcon"/>
 /// on a <see cref="MenuItem"/> when its <see cref="MenuItem.Command"/> matches a
 /// well-known built-in WPF command (Cut, Copy, Paste, Delete, etc.).
 /// <para>
@@ -24,8 +24,8 @@ public static class MenuItemCommandIcon
     /// <summary>
     /// Identifies the AutoSetIcon attached property.
     /// </summary>
-    public static readonly DependencyProperty AutoSetIconProperty =
-        DependencyProperty.RegisterAttached(
+    public static readonly DependencyProperty AutoSetIconProperty
+        = DependencyProperty.RegisterAttached(
             "AutoSetIcon",
             typeof(bool),
             typeof(MenuItemCommandIcon),
@@ -34,35 +34,36 @@ public static class MenuItemCommandIcon
 
     /// <summary>
     /// Maps well-known <see cref="RoutedCommand"/> singletons to their corresponding
-    /// <see cref="SymbolRegular"/> icon.
+    /// <see cref="FluentSymbolRegular"/> icon.
     /// </summary>
-    private static readonly Dictionary<RoutedCommand, SymbolRegular> CommandIconMap = new()
+    private static readonly Dictionary<RoutedCommand, FluentSymbolRegular> CommandIconMap = new()
     {
         // ApplicationCommands
-        [ApplicationCommands.Cut] = SymbolRegular.Cut24,
-        [ApplicationCommands.Copy] = SymbolRegular.Copy24,
-        [ApplicationCommands.Paste] = SymbolRegular.ClipboardPaste24,
-        [ApplicationCommands.Delete] = SymbolRegular.Delete24,
-        [ApplicationCommands.Undo] = SymbolRegular.ArrowUndo24,
-        [ApplicationCommands.Redo] = SymbolRegular.ArrowRedo24,
-        [ApplicationCommands.SelectAll] = SymbolRegular.SelectAllOn24,
-        [ApplicationCommands.Open] = SymbolRegular.Open24,
-        [ApplicationCommands.Save] = SymbolRegular.Save24,
-        [ApplicationCommands.SaveAs] = SymbolRegular.Save24,
-        [ApplicationCommands.Close] = SymbolRegular.Dismiss24,
-        [ApplicationCommands.New] = SymbolRegular.New24,
-        [ApplicationCommands.Print] = SymbolRegular.Print24,
-        [ApplicationCommands.Find] = SymbolRegular.Search24,
-        [ApplicationCommands.Replace] = SymbolRegular.Search24,
+        [ApplicationCommands.Cut]       = FluentSymbolRegular.Cut24,
+        [ApplicationCommands.Copy]      = FluentSymbolRegular.Copy24,
+        [ApplicationCommands.Paste]     = FluentSymbolRegular.ClipboardPaste24,
+        [ApplicationCommands.Delete]    = FluentSymbolRegular.Delete24,
+        [ApplicationCommands.Undo]      = FluentSymbolRegular.ArrowUndo24,
+        [ApplicationCommands.Redo]      = FluentSymbolRegular.ArrowRedo24,
+        [ApplicationCommands.SelectAll] = FluentSymbolRegular.SelectAllOn24,
+        [ApplicationCommands.Open]      = FluentSymbolRegular.Open24,
+        [ApplicationCommands.Save]      = FluentSymbolRegular.Save24,
+        [ApplicationCommands.SaveAs]    = FluentSymbolRegular.Save24,
+        [ApplicationCommands.Close]     = FluentSymbolRegular.Dismiss24,
+        [ApplicationCommands.New]       = FluentSymbolRegular.New24,
+        [ApplicationCommands.Print]     = FluentSymbolRegular.Print24,
+        [ApplicationCommands.Find]      = FluentSymbolRegular.Search24,
+        [ApplicationCommands.Replace]   = FluentSymbolRegular.Search24,
 
         // NavigationCommands
-        [NavigationCommands.Refresh] = SymbolRegular.ArrowClockwise24,
+        [NavigationCommands.Refresh] = FluentSymbolRegular.ArrowClockwise24,
 
         // EditingCommands
-        [EditingCommands.ToggleBold] = SymbolRegular.TextBold24,
-        [EditingCommands.ToggleItalic] = SymbolRegular.TextItalic24,
-        [EditingCommands.ToggleUnderline] = SymbolRegular.TextUnderline24,
+        [EditingCommands.ToggleBold]      = FluentSymbolRegular.TextBold24,
+        [EditingCommands.ToggleItalic]    = FluentSymbolRegular.TextItalic24,
+        [EditingCommands.ToggleUnderline] = FluentSymbolRegular.TextUnderline24,
     };
+
 
     /// <summary>
     /// Gets the value of the AutoSetIcon attached property for a given dependency object.
@@ -84,7 +85,7 @@ public static class MenuItemCommandIcon
 
     /// <summary>
     /// Attempts to set the <see cref="MenuItem.Icon"/> property to a matching
-    /// <see cref="FluentIcon"/> when the <see cref="MenuItem.Command"/> is a
+    /// <see cref="FontIcon"/> when the <see cref="MenuItem.Command"/> is a
     /// recognized built-in command and the Icon has not already been set by the user.
     /// </summary>
     /// <param name="menuItem">The menu item to inspect and potentially decorate.</param>

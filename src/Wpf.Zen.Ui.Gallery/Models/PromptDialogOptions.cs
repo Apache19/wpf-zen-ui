@@ -38,7 +38,7 @@ public sealed record PromptDialogOptions(
     /// <summary>
     /// Gets the optional Fluent icon displayed beside the message.
     /// </summary>
-    public SymbolRegular? Icon { get; init; }
+    public FluentSymbolRegular? Icon { get; init; }
 
     /// <summary>
     /// Gets the optional secondary action.

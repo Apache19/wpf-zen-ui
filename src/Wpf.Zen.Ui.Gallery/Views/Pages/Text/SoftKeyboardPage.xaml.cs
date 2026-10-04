@@ -15,7 +15,7 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 /// <summary>
 /// Demonstrates the embedded soft keyboard and its native IME diagnostic tools.
 /// </summary>
-[GalleryPage("Embedded, focus-preserving touch keyboard for WPF editors.", SymbolRegular.Keyboard24)]
+[GalleryPage("Embedded, focus-preserving touch keyboard for WPF editors.", FluentSymbolRegular.Keyboard24)]
 public partial class SoftKeyboardPage : INavigableView<SoftKeyboardViewModel>
 {
     private CandidateWindowBoundsTracker? _candidateWindowBoundsTracker;

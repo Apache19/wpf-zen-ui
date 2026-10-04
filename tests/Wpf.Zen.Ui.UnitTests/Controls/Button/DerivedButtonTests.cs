@@ -48,11 +48,11 @@ public class DerivedButtonTests
                 var firstIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
                 var secondIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
 
-                Assert.Equal(SymbolRegular.CalendarRtl24, firstIcon.Symbol);
-                Assert.Equal(SymbolRegular.CalendarRtl24, secondIcon.Symbol);
+                Assert.Equal(FluentSymbolRegular.CalendarRtl24, firstIcon.Symbol);
+                Assert.Equal(FluentSymbolRegular.CalendarRtl24, secondIcon.Symbol);
                 Assert.Same(firstIcon, secondIcon);
 
-                var customIcon = new FluentIcon(SymbolRegular.Clock24);
+                var customIcon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Clock24));
                 var calendarDatePicker = new CalendarDatePicker();
                 calendarDatePicker.Icon = customIcon;
 
@@ -177,7 +177,7 @@ public class DerivedButtonTests
                 var hyperlinkButton = new HyperlinkButton();
                 var calendarDatePicker = new CalendarDatePicker();
                 var toggleButton = new Wpf.Zen.Ui.Controls.ToggleButton();
-                toggleButton.Icon = new FluentIcon(SymbolRegular.Calendar24);
+                toggleButton.Icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Calendar24));
                 var button = new Wpf.Zen.Ui.Controls.Button();
                 var textBox = new Wpf.Zen.Ui.Controls.TextBox();
                 var root = new System.Windows.Controls.StackPanel();
@@ -207,10 +207,10 @@ public class DerivedButtonTests
                 Assert.True(textBox.ApplyTemplate());
 
                 Assert.Null(button.Template.FindName("rightIconPresenter", button));
-                var dropDownChevron = Assert.IsType<FluentIcon>(
+                var dropDownChevron = Assert.IsType<FontIcon>(
                     dropDownButton.Template.FindName("DropDownChevron", dropDownButton)
                 );
-                Assert.Equal(SymbolRegular.ChevronDown24, dropDownChevron.Symbol);
+                Assert.Equal(FluentSymbolRegular.ChevronDown24, ((FluentIconSource)dropDownChevron.Source!).Symbol);
                 Assert.Equal(Visibility.Visible, dropDownChevron.Visibility);
 
                 dropDownButton.IsDropDownArrowVisible = false;

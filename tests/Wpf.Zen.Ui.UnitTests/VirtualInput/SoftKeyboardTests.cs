@@ -2621,7 +2621,7 @@ public class SoftKeyboardTests
     [Fact]
     public void KeyContent_AcceptsPresentationDataAndRejectsMissingTextContent()
     {
-        var content = new FluentIconSource(SymbolRegular.Backspace24);
+        var content = new FluentIconSource(FluentSymbolRegular.Backspace24);
         var key = new SoftKeyboardKey(
             SoftKeyboardKeyKind.VirtualKey,
             content,
@@ -2661,31 +2661,31 @@ public class SoftKeyboardTests
         IReadOnlyList<SoftKeyboardKey> lockedKeys = lockedLayout.Keys;
 
         Assert.Equal(
-            SymbolRegular.KeyboardShift24,
+            FluentSymbolRegular.KeyboardShift24,
             Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Kind == SoftKeyboardKeyKind.Shift).Content)
                 .Symbol
         );
         Assert.Equal(
-            SymbolRegular.Backspace24,
+            FluentSymbolRegular.Backspace24,
             Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Back).Content).Symbol
         );
         Assert.Equal(
-            SymbolRegular.ArrowLeft24,
+            FluentSymbolRegular.ArrowLeft24,
             Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Left).Content).Symbol
         );
         Assert.Equal(
-            SymbolRegular.ArrowRight24,
+            FluentSymbolRegular.ArrowRight24,
             Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Right).Content).Symbol
         );
         Assert.Equal(
-            SymbolRegular.ArrowEnterLeft24,
+            FluentSymbolRegular.ArrowEnterLeft24,
             Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Enter).Content).Symbol
         );
 
         FluentIconSource lockedShift = Assert.IsType<FluentIconSource>(
             Assert.Single(lockedKeys, key => key.Kind == SoftKeyboardKeyKind.Shift).Content
         );
-        Assert.Equal(SymbolRegular.KeyboardShiftUppercase24, lockedShift.Symbol);
+        Assert.Equal(FluentSymbolRegular.KeyboardShiftUppercase24, lockedShift.Symbol);
         Assert.True(lockedShift.Filled);
     }
 
@@ -2716,10 +2716,10 @@ public class SoftKeyboardTests
                     Descendants<SoftKeyboardKeyControl>(keyboard),
                     item => ReferenceEquals(item.DataContext, backspace)
                 );
-                FluentIcon icon = Assert.Single(Descendants<FluentIcon>(button));
+                FontIcon icon = Assert.Single(Descendants<FontIcon>(button));
 
                 Assert.Same(backspace.Content, button.Content);
-                Assert.Equal(SymbolRegular.Backspace24, icon.Symbol);
+                Assert.Equal(FluentSymbolRegular.Backspace24, ((FluentIconSource)icon.Source!).Symbol);
                 Assert.Equal(20d, icon.IconSize);
             }
             finally

@@ -40,7 +40,7 @@ public sealed class PromptDialogViewModel
 
         Title         = options.Title;
         Message       = options.Message;
-        Icon          = options.Icon ?? SymbolRegular.Empty;
+        Icon          = options.Icon ?? FluentSymbolRegular.Empty;
         HasIcon       = options.Icon.HasValue;
         IsDismissible = options.IsDismissible;
 
@@ -75,7 +75,12 @@ public sealed class PromptDialogViewModel
     /// <summary>
     /// Gets the Fluent icon displayed beside the message.
     /// </summary>
-    public SymbolRegular Icon { get; }
+    public FluentSymbolRegular Icon { get; }
+
+    /// <summary>
+    /// Gets the font icon description for this dialog presentation.
+    /// </summary>
+    public FontIconSource IconSource => new FluentIconSource(Icon);
 
     /// <summary>
     /// Gets a value indicating whether the icon slot is visible.

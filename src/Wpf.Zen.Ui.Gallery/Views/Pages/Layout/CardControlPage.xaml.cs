@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.Layout;
 /// <summary>
 /// Interaction logic for CardControlPage.xaml
 /// </summary>
-[GalleryPage("Card control.", SymbolRegular.CheckboxIndeterminate24)]
+[GalleryPage("Card control.", FluentSymbolRegular.CheckboxIndeterminate24)]
 public partial class CardControlPage : INavigableView<CardControlViewModel>
 {
     public CardControlPage(CardControlViewModel viewModel)

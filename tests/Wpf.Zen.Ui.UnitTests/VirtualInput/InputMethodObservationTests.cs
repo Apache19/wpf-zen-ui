@@ -60,7 +60,7 @@ public class InputMethodObservationTests
             await scope.DrainAsync();
 
             var unknown = Assert.IsType<Wpf.Zen.Ui.Controls.FluentIconSource>(ModeCap(scope.Keyboard).Content);
-            Assert.Equal(Wpf.Zen.Ui.Controls.SymbolRegular.ArrowSwap24, unknown.Symbol);
+            Assert.Equal(Wpf.Zen.Ui.Controls.FluentSymbolRegular.ArrowSwap24, unknown.Symbol);
             var initial = scope.Keyboard.InputModeButton;
             var reads = backend.StateReads;
             backend.StateReader = (_, _) => conversion is null

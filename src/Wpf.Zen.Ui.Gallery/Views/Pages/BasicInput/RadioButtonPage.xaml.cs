@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Set of options as buttons.", SymbolRegular.RadioButton24)]
+[GalleryPage("Set of options as buttons.", FluentSymbolRegular.RadioButton24)]
 public partial class RadioButtonPage : INavigableView<RadioButtonViewModel>
 {
     public RadioButtonViewModel ViewModel { get; }

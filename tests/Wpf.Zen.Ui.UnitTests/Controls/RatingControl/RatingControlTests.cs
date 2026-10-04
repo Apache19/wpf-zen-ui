@@ -11,6 +11,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using Wpf.Zen.Ui.Controls;
+using Wpf.Zen.Ui.Extensions;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.RatingControlControl;
 
@@ -368,7 +369,7 @@ public class RatingControlTests
                         Precision = RatingPrecision.QuarterStar,
                     }
                 );
-                FluentIcon[] icons = FindVisualDescendants<FluentIcon>(control).ToArray();
+                FontIcon[] icons = FindVisualDescendants<FontIcon>(control).ToArray();
                 RatingItem[] items = icons.Select(icon => Assert.IsType<RatingItem>(icon.DataContext)).ToArray();
 
                 Assert.Null(control.Rating);
@@ -382,8 +383,8 @@ public class RatingControlTests
                     icon => AssertFullStar(icon),
                     icon =>
                     {
-                        Assert.Equal(SymbolRegular.StarOneQuarter24, icon.Symbol);
-                        Assert.False(icon.Filled);
+                        Assert.Equal(FluentSymbolRegular.StarOneQuarter24, ((FluentIconSource)icon.Source!).Symbol);
+                        Assert.Equal(icon.Source!.Glyph, icon.Text);
                     }
                 );
             }
@@ -449,24 +450,24 @@ public class RatingControlTests
                 );
 
                 Assert.Collection(
-                    FindVisualDescendants<FluentIcon>(control),
+                    FindVisualDescendants<FontIcon>(control),
                     icon => AssertFullStar(icon),
                     icon =>
                     {
-                        Assert.Equal(SymbolRegular.StarThreeQuarter24, icon.Symbol);
-                        Assert.False(icon.Filled);
+                        Assert.Equal(FluentSymbolRegular.StarThreeQuarter24, ((FluentIconSource)icon.Source!).Symbol);
+                        Assert.Equal(icon.Source!.Glyph, icon.Text);
                     },
                     icon =>
                     {
-                        Assert.Equal(SymbolRegular.Star24, icon.Symbol);
-                        Assert.False(icon.Filled);
+                        Assert.Equal(FluentSymbolRegular.Star24, ((FluentIconSource)icon.Source!).Symbol);
+                        Assert.Equal(icon.Source!.Glyph, icon.Text);
                     }
                 );
 
                 control.MaximumRating = 4;
                 control.UpdateLayout();
 
-                Assert.Equal(4, FindVisualDescendants<FluentIcon>(control).Count());
+                Assert.Equal(4, FindVisualDescendants<FontIcon>(control).Count());
                 Assert.Equal(1.75, control.Rating);
             }
         );
@@ -490,7 +491,7 @@ public class RatingControlTests
                         Rating = rating,
                     }
                 );
-                FluentIcon partialIcon = FindVisualDescendants<FluentIcon>(control)
+                FontIcon partialIcon = FindVisualDescendants<FontIcon>(control)
                     .Single(icon => ((RatingItem)icon.DataContext).State != RatingItemState.Empty);
 
                 var rtlTransform = Assert.IsType<ScaleTransform>(partialIcon.RenderTransform);
@@ -523,7 +524,7 @@ public class RatingControlTests
                 );
 
                 Assert.All(
-                    FindVisualDescendants<FluentIcon>(control),
+                    FindVisualDescendants<FontIcon>(control),
                     icon => Assert.False(icon.RenderTransform is ScaleTransform { ScaleX: -1 })
                 );
             }
@@ -628,10 +629,10 @@ public class RatingControlTests
         }
     }
 
-    private static void AssertFullStar(FluentIcon icon)
+    private static void AssertFullStar(FontIcon icon)
     {
-        Assert.Equal(SymbolRegular.Star24, icon.Symbol);
-        Assert.True(icon.Filled);
+        Assert.Equal(FluentSymbolRegular.Star24, ((FluentIconSource)icon.Source!).Symbol);
+        Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Star24), icon.Text);
     }
 
     private static void RunOnStaThread(Action action) => WpfTestThread.Run(action);

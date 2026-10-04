@@ -78,13 +78,13 @@
                                 Content="{TemplateBinding Content}"
                                 TextElement.Foreground="{TemplateBinding Foreground}" />
 
-                            <controls:FluentIcon
+                            <controls:FontIcon
                                 x:Name="ChevronIcon"
                                 Grid.Column="2"
                                 Margin="{StaticResource CardActionChevronMargin}"
                                 VerticalAlignment="Center"
                                 FontSize="{StaticResource CardActionChevronSize}"
-                                Symbol="ChevronRight24" />
+                                Source="{m:FluentIconSource ChevronRight24}" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>

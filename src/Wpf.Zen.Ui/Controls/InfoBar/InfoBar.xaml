@@ -60,10 +60,10 @@
                                 Margin="{TemplateBinding IconMargin}"
                                 VerticalAlignment="Top"
                                 TextElement.FontSize="{TemplateBinding FontSize, Converter={StaticResource IconSizeConverter}}">
-                                <controls:FluentIcon
-                                    x:Name="FluentIcon"
+                                <controls:FontIcon
+                                    x:Name="FontIcon"
                                     VerticalAlignment="Top"
-                                    Filled="True"
+                                    Variant="Filled"
                                     Visibility="Collapsed" />
                                 <ContentPresenter
                                     x:Name="CustomIconPresenter"
@@ -106,7 +106,7 @@
                         </Trigger>
 
                         <Trigger Property="Icon" Value="{x:Null}">
-                            <Setter TargetName="FluentIcon" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="FontIcon" Property="Visibility" Value="Visible" />
                             <Setter TargetName="CustomIconPresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>
 
@@ -124,25 +124,25 @@
                         </Trigger>
 
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="FluentIcon" Property="Symbol" Value="Info24" />
+                            <Setter TargetName="FontIcon" Property="Source" Value="{m:FluentIconSource Info24}" />
                             <Setter TargetName="IconHost" Property="TextElement.Foreground" Value="{m:DynamicBrush SystemFillAttentionForeground}" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillAttentionBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush SystemFillAttentionBorder}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="FluentIcon" Property="Symbol" Value="CheckmarkCircle24" />
+                            <Setter TargetName="FontIcon" Property="Source" Value="{m:FluentIconSource CheckmarkCircle24}" />
                             <Setter TargetName="IconHost" Property="TextElement.Foreground" Value="{m:DynamicBrush SystemFillSuccessForeground}" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillSuccessBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush SystemFillSuccessBorder}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Warning">
-                            <Setter TargetName="FluentIcon" Property="Symbol" Value="ErrorCircle24" />
+                            <Setter TargetName="FontIcon" Property="Source" Value="{m:FluentIconSource ErrorCircle24}" />
                             <Setter TargetName="IconHost" Property="TextElement.Foreground" Value="{m:DynamicBrush SystemFillCautionForeground}" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCautionBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush SystemFillCautionBorder}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Error">
-                            <Setter TargetName="FluentIcon" Property="Symbol" Value="DismissCircle24" />
+                            <Setter TargetName="FontIcon" Property="Source" Value="{m:FluentIconSource DismissCircle24}" />
                             <Setter TargetName="IconHost" Property="TextElement.Foreground" Value="{m:DynamicBrush SystemFillCriticalForeground}" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCriticalBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush SystemFillCriticalBorder}" />

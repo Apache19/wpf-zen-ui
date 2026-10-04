@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Collections;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
 
-[GalleryPage("Selectable list.", SymbolRegular.AppsListDetail24)]
+[GalleryPage("Selectable list.", FluentSymbolRegular.AppsListDetail24)]
 public partial class ListBoxPage : INavigableView<ListBoxViewModel>
 {
     public ListBoxViewModel ViewModel { get; }

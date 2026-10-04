@@ -134,15 +134,15 @@
                             BorderThickness="0"
                             Focusable="False"
                             IsTabStop="False">
-                            <controls:FluentIcon FontSize="16" Symbol="CalendarRtl24" />
+                            <controls:FontIcon FontSize="16" Source="{m:FluentIconSource CalendarRtl24}" />
                         </controls:Button>
                     </Border>
 
                     <Popup
                         x:Name="PART_Popup"
                         Grid.Column="0"
-                        controls:PopupSlideAnimator.IsEnabled="True"
                         controls:PopupShadow.IsEnabled="True"
+                        controls:PopupSlideAnimator.IsEnabled="True"
                         AllowsTransparency="True"
                         Placement="Bottom"
                         PlacementTarget="{Binding ElementName=RootBorder}"

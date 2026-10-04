@@ -7,13 +7,12 @@ namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
 /// Represents a list of regular Fluent System Icons <c>v.1.1.316</c>.
-/// <para>May be converted to <see langword="char"/> using <c>GetGlyph()</c> or to <see langword="string"/> using <c>GetString()</c></para>
 /// </summary>
 #pragma warning disable CS1591
-public enum SymbolRegular
+public enum FluentSymbolRegular
 {
     /// <summary>
-    /// Actually, this icon is not empty, but makes it easier to navigate.
+    /// Represents an empty icon; FluentIconSource renders it as empty text.
     /// </summary>
     Empty = 0x0,
 

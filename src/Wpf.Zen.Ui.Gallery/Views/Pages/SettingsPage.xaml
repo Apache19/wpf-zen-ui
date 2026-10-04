@@ -148,7 +148,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="File a bug or request a new sample" />
-                        <ui:FluentIcon Grid.Column="1" Symbol="Link24" />
+                        <ui:FontIcon Grid.Column="1" Source="{ui:FluentIconSource Link24}" />
                     </Grid>
                 </ui:HyperlinkButton>
                 <ui:HyperlinkButton
@@ -166,7 +166,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Check out the docs" />
-                        <ui:FluentIcon Grid.Column="1" Symbol="Link24" />
+                        <ui:FontIcon Grid.Column="1" Source="{ui:FluentIconSource Link24}" />
                     </Grid>
                 </ui:HyperlinkButton>
                 <TextBlock Margin="16" Text="{Binding AppVersion}" />

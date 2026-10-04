@@ -20,7 +20,7 @@ public partial class SoftKeyboard
     /// </summary>
     private static readonly SoftKeyboardInputModeButton UnknownInputModeButton = new(
         "windows:input-mode:unknown",
-        new FluentIconSource(SymbolRegular.ArrowSwap24),
+        new FluentIconSource(FluentSymbolRegular.ArrowSwap24),
         "切换输入模式（当前模式未知）"
     );
 

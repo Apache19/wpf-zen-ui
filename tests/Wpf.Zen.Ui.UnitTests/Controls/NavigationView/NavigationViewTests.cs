@@ -1624,8 +1624,8 @@ public class NavigationViewTests
                 Assert.Equal(0, clicked.Index);
 
                 clicked = null;
-                var separator = Assert.IsType<FluentIcon>(
-                    FindVisualDescendant<FluentIcon>(firstContainer)
+                var separator = Assert.IsType<FontIcon>(
+                    FindVisualDescendant<FontIcon>(firstContainer)
                 );
                 Assert.False(separator.IsHitTestVisible);
 

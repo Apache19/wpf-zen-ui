@@ -13,7 +13,7 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
 /// Demonstrates automatic responsive item sizing and row virtualization with a synthetic movie
 /// poster library.
 /// </summary>
-[GalleryPage("Responsive virtualized layout with automatic item sizing.", SymbolRegular.MoviesAndTv24)]
+[GalleryPage("Responsive virtualized layout with automatic item sizing.", FluentSymbolRegular.MoviesAndTv24)]
 public partial class VirtualizingWrapPanelPage : INavigableView<VirtualizingWrapPanelViewModel>
 {
     /// <summary>

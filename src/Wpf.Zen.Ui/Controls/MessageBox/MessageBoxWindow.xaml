@@ -49,7 +49,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ui:FluentIcon
+                <ui:FontIcon
                     x:Name="MessageIcon"
                     Margin="0,0,16,0"
                     VerticalAlignment="Top"

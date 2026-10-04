@@ -61,14 +61,16 @@ internal partial class MessageBoxWindow : FluentWindow
             ? TextAlignment.Right
             : TextAlignment.Left;
 
-        MessageIcon.Symbol = icon switch
+        FluentSymbolRegular symbol = icon switch
         {
-            MessageBoxImage.Error    => SymbolRegular.ErrorCircle24,
-            MessageBoxImage.Question => SymbolRegular.QuestionCircle24,
-            MessageBoxImage.Warning  => SymbolRegular.Warning24,
+            MessageBoxImage.Error    => FluentSymbolRegular.ErrorCircle24,
+            MessageBoxImage.Question => FluentSymbolRegular.QuestionCircle24,
+            MessageBoxImage.Warning  => FluentSymbolRegular.Warning24,
 
-            _ => SymbolRegular.Info24,
+            _ => FluentSymbolRegular.Info24,
         };
+
+        MessageIcon.Source = new FluentIconSource(symbol);
 
         MessageIcon.Visibility = icon == MessageBoxImage.None ? Visibility.Collapsed : Visibility.Visible;
 

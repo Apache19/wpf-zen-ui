@@ -48,7 +48,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:CardAction Grid.Column="0">
                     <ui:CardAction.Icon>
-                        <ui:FluentIcon FontSize="43" Symbol="DocumentEdit20" />
+                        <ui:FontIcon FontSize="43" Source="{ui:FluentIconSource DocumentEdit20}" />
                     </ui:CardAction.Icon>
                     <StackPanel>
                         <ui:TextBlock

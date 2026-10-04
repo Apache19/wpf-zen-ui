@@ -66,17 +66,17 @@
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
-                        <controls:FluentIcon
+                        <controls:FontIcon
                             x:Name="icon"
                             Margin="4,0"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Foreground="{m:DynamicBrush TextFillSecondary}"
                             IsHitTestVisible="False"
-                            Symbol="ChevronRight24" />
+                            Source="{m:FluentIconSource ChevronRight24}" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="FlowDirection" Value="RightToLeft">
-                            <Setter TargetName="icon" Property="Symbol" Value="ChevronLeft24" />
+                            <Setter TargetName="icon" Property="Source" Value="{m:FluentIconSource ChevronLeft24}" />
                         </Trigger>
                         <Trigger Property="IsLast" Value="True">
                             <Setter TargetName="icon" Property="Visibility" Value="Collapsed" />

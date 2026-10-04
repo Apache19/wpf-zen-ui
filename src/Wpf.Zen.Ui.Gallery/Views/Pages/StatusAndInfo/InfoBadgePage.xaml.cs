@@ -14,7 +14,7 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo;
 /// </summary>
 [GalleryPage(
     "An non-intrusive UI to display notifications or bring focus to an area",
-    SymbolRegular.NumberCircle124
+    FluentSymbolRegular.NumberCircle124
 )]
 public partial class InfoBadgePage : INavigableView<InfoBadgeViewModel>
 {

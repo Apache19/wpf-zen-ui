@@ -41,7 +41,7 @@
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="An Expander with an Icon, a header text, a description, a control, and content areas"
-            XamlCode="&lt;Expander&gt;&#x0a;    &lt;Expander.Header&gt;&#x0a;        &lt;ui:FluentIcon Symbol=&quot;PlaySettings20&quot; /&gt;&#x0a;    &lt;/Expander.Header&gt;&#x0a;&lt;/Expander&gt;">
+            XamlCode="&lt;Expander&gt;&#x0a;    &lt;Expander.Header&gt;&#x0a;        &lt;ui:FontIcon Symbol=&quot;PlaySettings20&quot; /&gt;&#x0a;    &lt;/Expander.Header&gt;&#x0a;&lt;/Expander&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -55,11 +55,11 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <ui:FluentIcon
+                            <ui:FontIcon
                                 Grid.Column="0"
                                 Margin="0,0,14,0"
                                 IconSize="24"
-                                Symbol="PlaySettings20" />
+                                Source="{ui:FluentIconSource PlaySettings20}" />
 
                             <Grid Grid.Column="1">
                                 <Grid.RowDefinitions>

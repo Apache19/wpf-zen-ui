@@ -25,22 +25,22 @@
                         icons here so replacing ItemTemplate also replaces the visual vocabulary
                         without any icon-system dependency in RatingControl or its item model.
                     -->
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="Icon"
                         RenderTransformOrigin="0.5,0.5"
-                        Symbol="Star24" />
+                        Source="{m:FluentIconSource Star24}" />
                     <DataTemplate.Triggers>
                         <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.QuarterStar}">
-                            <Setter TargetName="Icon" Property="Symbol" Value="StarOneQuarter24" />
+                            <Setter TargetName="Icon" Property="Source" Value="{m:FluentIconSource StarOneQuarter24}" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.HalfStar}">
-                            <Setter TargetName="Icon" Property="Symbol" Value="StarHalf24" />
+                            <Setter TargetName="Icon" Property="Source" Value="{m:FluentIconSource StarHalf24}" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.ThreeQuarterStar}">
-                            <Setter TargetName="Icon" Property="Symbol" Value="StarThreeQuarter24" />
+                            <Setter TargetName="Icon" Property="Source" Value="{m:FluentIconSource StarThreeQuarter24}" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.FullStar}">
-                            <Setter TargetName="Icon" Property="Filled" Value="True" />
+                            <Setter TargetName="Icon" Property="Variant" Value="Filled" />
                         </DataTrigger>
 
                         <DataTrigger Binding="{Binding DisplayMode}" Value="{x:Static controls:RatingItemDisplayMode.Rating}">
@@ -118,7 +118,7 @@
                                 that predictable mapping and gives zero an equally stable location
                                 for every Precision. The template trigger below swaps the columns
                                 in RTL because WPF does not reorder Grid children automatically.
-
+                                
                                 Background is intentionally transparent rather than null: an empty
                                 Border otherwise contributes layout but cannot become the original
                                 source of a mouse event. Custom templates may change its size or

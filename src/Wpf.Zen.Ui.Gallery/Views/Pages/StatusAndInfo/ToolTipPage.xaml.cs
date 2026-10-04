@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo;
 
-[GalleryPage("Information in popup window.", SymbolRegular.Comment24)]
+[GalleryPage("Information in popup window.", FluentSymbolRegular.Comment24)]
 public partial class ToolTipPage : INavigableView<ToolTipViewModel>
 {
     public ToolTipViewModel ViewModel { get; }

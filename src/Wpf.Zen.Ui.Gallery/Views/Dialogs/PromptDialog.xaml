@@ -19,12 +19,12 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <ui:FluentIcon
+        <ui:FontIcon
             Margin="0,1,16,0"
             VerticalAlignment="Top"
             FontSize="28"
             Foreground="{ui:DynamicBrush TextFillSecondary}"
-            Symbol="{Binding Icon}"
+            Source="{Binding IconSource}"
             Visibility="{Binding HasIcon, Converter={ui:BoolToVisibilityConverter}}" />
 
         <TextBlock

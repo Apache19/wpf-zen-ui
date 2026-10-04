@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.DialogsAndFlyouts;
 
-[GalleryPage("Contextual popup.", SymbolRegular.AppTitle24)]
+[GalleryPage("Contextual popup.", FluentSymbolRegular.AppTitle24)]
 public partial class FlyoutPage : INavigableView<FlyoutViewModel>
 {
     public FlyoutViewModel ViewModel { get; }

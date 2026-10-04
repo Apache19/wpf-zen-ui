@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Sliding control.", SymbolRegular.HandDraw24)]
+[GalleryPage("Sliding control.", FluentSymbolRegular.HandDraw24)]
 public partial class SliderPage : INavigableView<SliderViewModel>
 {
     public SliderViewModel ViewModel { get; }

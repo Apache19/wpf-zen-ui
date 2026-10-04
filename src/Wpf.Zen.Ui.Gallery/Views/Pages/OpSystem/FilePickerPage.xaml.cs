@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.OpSystem;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.OpSystem;
 
-[GalleryPage("System file picker.", SymbolRegular.DocumentAdd24)]
+[GalleryPage("System file picker.", FluentSymbolRegular.DocumentAdd24)]
 public partial class FilePickerPage : INavigableView<FilePickerViewModel>
 {
     public FilePickerViewModel ViewModel { get; }

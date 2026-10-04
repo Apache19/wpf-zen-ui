@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Button with binary choice.", SymbolRegular.CheckmarkSquare24)]
+[GalleryPage("Button with binary choice.", FluentSymbolRegular.CheckmarkSquare24)]
 public partial class CheckBoxPage : INavigableView<CheckBoxViewModel>
 {
     public CheckBoxViewModel ViewModel { get; }

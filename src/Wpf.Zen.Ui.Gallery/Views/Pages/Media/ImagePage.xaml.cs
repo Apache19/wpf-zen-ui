@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Media;
 
-[GalleryPage("Image presenter.", SymbolRegular.ImageMultiple24)]
+[GalleryPage("Image presenter.", FluentSymbolRegular.ImageMultiple24)]
 public partial class ImagePage : INavigableView<ImageViewModel>
 {
     public ImageViewModel ViewModel { get; }

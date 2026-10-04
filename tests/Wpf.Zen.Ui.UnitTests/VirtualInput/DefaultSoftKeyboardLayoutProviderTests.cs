@@ -238,7 +238,7 @@ public class DefaultSoftKeyboardLayoutProviderTests
 
         var icon = Assert.IsType<FluentIconSource>(pageKey.Content);
 
-        Assert.Equal(more ? SymbolRegular.CaretLeft24 : SymbolRegular.CaretRight24, icon.Symbol);
+        Assert.Equal(more ? FluentSymbolRegular.CaretLeft24 : FluentSymbolRegular.CaretRight24, icon.Symbol);
         Assert.True(icon.Filled);
     }
 

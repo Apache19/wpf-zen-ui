@@ -39,9 +39,11 @@ public partial class StatusAndInfoPage : INavigableView<StatusAndInfoViewModel>
                 MainTitle.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, newTitle);
             }
 
-            if (selectedItem.Icon is SymbolRegular selectedIcon && MainFluentIcon.Symbol != selectedIcon)
+            if (selectedItem.Icon is FluentSymbolRegular selectedIcon
+                && (MainFontIcon.Source is not FluentIconSource current || current.Symbol != selectedIcon))
             {
-                MainFluentIcon.SetCurrentValue(FluentIcon.SymbolProperty, selectedIcon);
+                var source = new FluentIconSource(selectedIcon);
+                MainFontIcon.SetCurrentValue(FontIcon.SourceProperty, source);
             }
         }
 

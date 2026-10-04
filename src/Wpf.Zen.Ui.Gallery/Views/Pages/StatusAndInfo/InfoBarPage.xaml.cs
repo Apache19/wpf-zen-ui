@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo;
 
-[GalleryPage("Inline message card.", SymbolRegular.ErrorCircle24)]
+[GalleryPage("Inline message card.", FluentSymbolRegular.ErrorCircle24)]
 public partial class InfoBarPage : INavigableView<InfoBarViewModel>
 {
     public InfoBarViewModel ViewModel { get; }

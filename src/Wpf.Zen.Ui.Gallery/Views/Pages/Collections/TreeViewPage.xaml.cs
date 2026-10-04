@@ -10,7 +10,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Collections;
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
 
 #if DEBUG
-[GalleryPage("List inside the TreeView.", SymbolRegular.TextBulletListTree24)]
+[GalleryPage("List inside the TreeView.", FluentSymbolRegular.TextBulletListTree24)]
 #endif
 public partial class TreeViewPage : INavigableView<TreeViewViewModel>
 {

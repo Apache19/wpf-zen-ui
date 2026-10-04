@@ -16,16 +16,16 @@ var workingDirectory =
     ?? throw new InvalidOperationException("Could not determine the working directory.");
 
 var regularIcons = new FontSource(
-    "SymbolRegular",
-    "Represents a list of regular Fluent System Icons <c>v.{{FLUENT_SYSTEM_ICONS_VERSION}}</c>.\n<para>May be converted to <see langword=\"char\"/> using <c>GetGlyph()</c> or to <see langword=\"string\"/> using <c>GetString()</c></para>",
+    "FluentSymbolRegular",
+    "Represents a list of regular Fluent System Icons <c>v.{{FLUENT_SYSTEM_ICONS_VERSION}}</c>.",
     @"https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/fonts/FluentSystemIcons-Regular.json",
-    "generated\\SymbolRegular.cs"
+    "generated\\FluentSymbolRegular.cs"
 );
 var filledIcons = new FontSource(
-    "SymbolFilled",
-    "Represents a list of filled Fluent System Icons <c>v.{{FLUENT_SYSTEM_ICONS_VERSION}}</c>.\n<para>May be converted to <see langword=\"char\"/> using <c>GetGlyph()</c> or to <see langword=\"string\"/> using <c>GetString()</c></para>",
+    "FluentSymbolFilled",
+    "Represents a list of filled Fluent System Icons <c>v.{{FLUENT_SYSTEM_ICONS_VERSION}}</c>.",
     @"https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/fonts/FluentSystemIcons-Filled.json",
-    "generated\\SymbolFilled.cs"
+    "generated\\FluentSymbolFilled.cs"
 );
 
 Task<string> FetchVersion()
@@ -126,7 +126,7 @@ async Task WriteToFile(FontSource singleFont, string fileRootDirectory)
         .AppendLine("public enum " + enumName)
         .AppendLine("{")
         .AppendLine("    /// <summary>")
-        .AppendLine("    /// Actually, this icon is not empty, but makes it easier to navigate.")
+        .AppendLine("    /// Represents an empty icon; FluentIconSource renders it as empty text.")
         .AppendLine("    /// </summary>")
         .AppendLine("    Empty = 0x0,")
         .AppendLine()

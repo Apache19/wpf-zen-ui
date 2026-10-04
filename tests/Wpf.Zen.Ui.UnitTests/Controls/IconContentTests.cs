@@ -18,10 +18,10 @@ public class IconContentTests
     [Fact]
     public void FluentIconSourceExtension_ReturnsReusableIconData()
     {
-        var extension = new FluentIconSourceExtension(SymbolRegular.Settings24, filled: true);
+        var extension = new FluentIconSourceExtension(FluentSymbolRegular.Settings24, filled: true);
 
         var icon = Assert.IsType<FluentIconSource>(extension.ProvideValue(null!));
-        Assert.Equal(SymbolRegular.Settings24, icon.Symbol);
+        Assert.Equal(FluentSymbolRegular.Settings24, icon.Symbol);
         Assert.True(icon.Filled);
     }
 
@@ -34,13 +34,13 @@ public class IconContentTests
             style.Setters.Add(
                 new Setter(
                     Wpf.Zen.Ui.Controls.Button.IconProperty,
-                    new FluentIconSourceExtension(SymbolRegular.Settings24).ProvideValue(null!)
+                    new FluentIconSourceExtension(FluentSymbolRegular.Settings24).ProvideValue(null!)
                 )
             );
             var button = new Wpf.Zen.Ui.Controls.Button { Style = style };
 
             var icon = Assert.IsType<FluentIconSource>(button.Icon);
-            Assert.Equal(SymbolRegular.Settings24, icon.Symbol);
+            Assert.Equal(FluentSymbolRegular.Settings24, icon.Symbol);
             Assert.False(icon.Filled);
         });
     }
@@ -123,12 +123,12 @@ public class IconContentTests
     }
 
     [Fact]
-    public void FluentIcon_UsesNativeTextInheritanceWithoutLocalCopies()
+    public void FontIcon_UsesNativeTextInheritanceWithoutLocalCopies()
     {
         RunOnStaThread(() =>
         {
             var foreground = new SolidColorBrush(Colors.Crimson);
-            var icon = new FluentIcon(SymbolRegular.Home24);
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24));
             var presenter = new ContentPresenter { Content = icon };
 
             presenter.SetValue(TextElement.FontSizeProperty, 27D);
@@ -148,7 +148,7 @@ public class IconContentTests
     {
         RunOnStaThread(() =>
         {
-            var icon = new FluentIcon(SymbolRegular.Home24);
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24));
             var text = new System.Windows.Controls.TextBlock { Text = "Home" };
             var host = new StackPanel { Children = { icon, text } };
 
@@ -181,11 +181,11 @@ public class IconContentTests
     }
 
     [Fact]
-    public void FluentIcon_IconPresentationPreservesAndRestoresNativeFontValues()
+    public void FontIcon_IconPresentationPreservesAndRestoresNativeFontValues()
     {
         RunOnStaThread(() =>
         {
-            var icon = new FluentIcon(SymbolRegular.Home24)
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24))
             {
                 FontSize = 30D,
                 FontWeight = FontWeights.Bold,
@@ -237,10 +237,10 @@ public class IconContentTests
                 window.Show();
                 breadcrumbBar.UpdateLayout();
 
-                var separator = Assert.IsType<FluentIcon>(
-                    FindVisualDescendant<FluentIcon>(
+                var separator = Assert.IsType<FontIcon>(
+                    FindVisualDescendant<FontIcon>(
                         breadcrumbBar,
-                        icon => icon.Symbol == SymbolRegular.ChevronRight24
+                        icon => icon.Source is FluentIconSource { Symbol: FluentSymbolRegular.ChevronRight24 }
                     )
                 );
 
@@ -263,17 +263,17 @@ public class IconContentTests
     }
 
     [Fact]
-    public void FluentIcon_UpdatesItsExistingTextElementWhenSymbolChanges()
+    public void FontIcon_UpdatesItsExistingTextElementWhenSymbolChanges()
     {
         RunOnStaThread(() =>
         {
-            var icon = new FluentIcon(SymbolRegular.Home24);
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24));
             string initialText = icon.Text;
 
-            icon.Symbol = SymbolRegular.Settings24;
+            icon.Source = new FluentIconSource(FluentSymbolRegular.Settings24);
 
             Assert.NotEqual(initialText, icon.Text);
-            Assert.Equal(SymbolRegular.Settings24.GetString(), icon.Text);
+            Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Settings24), icon.Text);
         });
     }
 
@@ -282,7 +282,7 @@ public class IconContentTests
     {
         RunOnStaThread(() =>
         {
-            var iconData = new FluentIconSource(SymbolRegular.Home24, filled: true);
+            var iconData = new FluentIconSource(FluentSymbolRegular.Home24, filled: true);
             var firstPresenter = new ContentPresenter { Content = iconData };
             var secondPresenter = new ContentPresenter { Content = iconData };
             var host = new StackPanel { Children = { firstPresenter, secondPresenter } };
@@ -293,13 +293,13 @@ public class IconContentTests
                 window.Show();
                 host.UpdateLayout();
 
-                var firstIcon = Assert.IsType<FluentIcon>(FindVisualDescendant<FluentIcon>(firstPresenter));
-                var secondIcon = Assert.IsType<FluentIcon>(FindVisualDescendant<FluentIcon>(secondPresenter));
+                var firstIcon = Assert.IsType<FontIcon>(FindVisualDescendant<FontIcon>(firstPresenter));
+                var secondIcon = Assert.IsType<FontIcon>(FindVisualDescendant<FontIcon>(secondPresenter));
 
-                Assert.Equal(SymbolRegular.Home24, firstIcon.Symbol);
-                Assert.Equal(SymbolRegular.Home24, secondIcon.Symbol);
-                Assert.True(firstIcon.Filled);
-                Assert.True(secondIcon.Filled);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), firstIcon.Source!.WithVariant(IconVariant.Regular).Glyph);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), secondIcon.Source!.WithVariant(IconVariant.Regular).Glyph);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), firstIcon.Text);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), secondIcon.Text);
                 Assert.NotSame(firstIcon, secondIcon);
             }
             finally
@@ -320,7 +320,7 @@ public class IconContentTests
             };
             var presenter = new ContentPresenter
             {
-                Content = new FluentIconSource(SymbolRegular.Home24),
+                Content = new FluentIconSource(FluentSymbolRegular.Home24),
             };
             presenter.Resources.Add(localTemplate.DataTemplateKey, localTemplate);
             var window = CreateHiddenWindow(presenter);
@@ -331,7 +331,7 @@ public class IconContentTests
                 presenter.UpdateLayout();
 
                 Assert.NotNull(FindVisualDescendant<Border>(presenter));
-                Assert.Null(FindVisualDescendant<FluentIcon>(presenter));
+                Assert.Null(FindVisualDescendant<FontIcon>(presenter));
             }
             finally
             {
@@ -341,11 +341,11 @@ public class IconContentTests
     }
 
     [Fact]
-    public void IconPresenter_PropagatesVariantToGeneratedFluentIconWithoutMutatingSource()
+    public void IconPresenter_PropagatesVariantToGeneratedFontIconWithoutMutatingSource()
     {
         RunOnStaThread(() =>
         {
-            var iconSource = new FluentIconSource(SymbolRegular.Home24);
+            var iconSource = new FluentIconSource(FluentSymbolRegular.Home24);
             var presenter = new IconPresenter { Content = iconSource };
             var window = CreateHiddenWindow(presenter);
 
@@ -354,21 +354,21 @@ public class IconContentTests
                 window.Show();
                 presenter.UpdateLayout();
 
-                var generatedIcon = Assert.IsType<FluentIcon>(
-                    FindVisualDescendant<FluentIcon>(presenter)
+                var generatedIcon = Assert.IsType<FontIcon>(
+                    FindVisualDescendant<FontIcon>(presenter)
                 );
-                Assert.Equal(SymbolRegular.Home24, generatedIcon.Symbol);
-                Assert.False(generatedIcon.Filled);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), generatedIcon.Source!.WithVariant(IconVariant.Regular).Glyph);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), generatedIcon.Text);
 
                 presenter.Variant = IconVariant.Filled;
 
                 Assert.Equal(IconVariant.Filled, generatedIcon.Variant);
-                Assert.True(generatedIcon.Filled);
-                Assert.Equal(SymbolRegular.Home24, iconSource.Symbol);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), generatedIcon.Text);
+                Assert.Equal(FluentSymbolRegular.Home24, iconSource.Symbol);
                 Assert.False(iconSource.Filled);
 
                 presenter.Variant = IconVariant.Default;
-                Assert.False(generatedIcon.Filled);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), generatedIcon.Text);
             }
             finally
             {
@@ -380,11 +380,11 @@ public class IconContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void FluentIcon_CombinesItsDefaultWithPresenterVariant(bool filled)
+    public void FontIcon_CombinesItsDefaultWithPresenterVariant(bool filled)
     {
         RunOnStaThread(() =>
         {
-            var icon = new FluentIcon(SymbolRegular.Home24, filled);
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24, filled));
             var presenter = new IconPresenter { Content = icon };
             var window = CreateHiddenWindow(presenter);
 
@@ -394,16 +394,16 @@ public class IconContentTests
                 presenter.UpdateLayout();
 
                 presenter.Variant = IconVariant.Filled;
-                Assert.True(icon.Filled);
-                Assert.Equal(filled, icon.ReadLocalValue(FluentIcon.FilledProperty));
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), icon.Text);
+                Assert.Equal(filled, ((FluentIconSource)icon.Source!).Filled);
 
                 presenter.Variant = IconVariant.Regular;
-                Assert.False(icon.Filled);
-                Assert.Equal(filled, icon.ReadLocalValue(FluentIcon.FilledProperty));
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), icon.Text);
+                Assert.Equal(filled, ((FluentIconSource)icon.Source!).Filled);
 
                 presenter.Variant = IconVariant.Default;
-                Assert.Equal(filled, icon.Filled);
-                Assert.Equal(filled, icon.ReadLocalValue(FluentIcon.FilledProperty));
+                Assert.Equal(icon.Source!.Glyph, icon.Text);
+                Assert.Equal(filled, ((FluentIconSource)icon.Source!).Filled);
             }
             finally
             {
@@ -413,30 +413,30 @@ public class IconContentTests
     }
 
     [Fact]
-    public void FluentIcon_PreservesFilledBindingDuringPresenterVariantChanges()
+    public void FontIcon_PreservesSourceBindingDuringPresenterVariantChanges()
     {
         RunOnStaThread(() =>
         {
-            var source = new Border { Tag = false };
-            var icon = new FluentIcon(SymbolRegular.Home24);
+            var source = new Border { Tag = new FluentIconSource(FluentSymbolRegular.Home24) };
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24));
             BindingOperations.SetBinding(
                 icon,
-                FluentIcon.FilledProperty,
+                FontIcon.SourceProperty,
                 new Binding(nameof(FrameworkElement.Tag)) { Source = source }
             );
 
             icon.Variant = IconVariant.Filled;
 
-            Assert.True(icon.Filled);
-            Assert.True(BindingOperations.IsDataBound(icon, FluentIcon.FilledProperty));
+            Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), icon.Text);
+            Assert.True(BindingOperations.IsDataBound(icon, FontIcon.SourceProperty));
 
             icon.Variant = IconVariant.Default;
 
-            Assert.False(icon.Filled);
-            Assert.True(BindingOperations.IsDataBound(icon, FluentIcon.FilledProperty));
+            Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), icon.Text);
+            Assert.True(BindingOperations.IsDataBound(icon, FontIcon.SourceProperty));
 
-            source.Tag = true;
-            Assert.True(icon.Filled);
+            source.Tag = new FluentIconSource(FluentSymbolRegular.Home24, true);
+            Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), icon.Text);
         });
     }
 
@@ -470,6 +470,113 @@ public class IconContentTests
                 window.Close();
             }
         });
+    }
+
+    /// <summary>
+    /// A new font family uses the library's base template and all hosts without a custom visual.
+    /// Its optional resource key is available to external subclasses as well as library sources.
+    /// </summary>
+    [Fact]
+    public void ExternalFontSource_UsesBaseTemplateAndScopedFontsAcrossAllHosts()
+    {
+        RunOnStaThread(() =>
+        {
+            var source = new TestFontSource();
+            var presenter = new ContentPresenter { Content = source };
+            var span = new FontIconSpan(source);
+            var text = new System.Windows.Controls.TextBlock();
+            text.Inlines.Add(span);
+            var badge = new Badge { Icon = source };
+            var host = new StackPanel { Children = { presenter, text, badge } };
+            var scopedFont = new FontFamily("Segoe UI Symbol");
+            host.Resources[TestFontSource.ResourceKey] = scopedFont;
+            var window = CreateHiddenWindow(host);
+
+            try
+            {
+                window.Show();
+                host.UpdateLayout();
+                var icon = Assert.IsType<FontIcon>(FindVisualDescendant<FontIcon>(presenter));
+                Assert.Same(source, icon.Source);
+                Assert.Equal(source.Glyph, icon.Text);
+                Assert.Equal(source.Glyph, span.Text);
+                Assert.Same(scopedFont, icon.FontFamily);
+                Assert.Same(scopedFont, span.FontFamily);
+                Assert.True(badge.DesiredSize.Width > 0);
+
+                // An unsupported presentation request must leave a third-party source usable.
+                IconPresenter.SetVariant(host, IconVariant.Filled);
+                Assert.Equal(source.Glyph, icon.Text);
+                Assert.Equal(source.Glyph, span.Text);
+                Assert.Same(source, icon.Source);
+
+                host.Resources.Remove(TestFontSource.ResourceKey);
+                Assert.Same(source.FontFamily, icon.FontFamily);
+                Assert.Same(source.FontFamily, span.FontFamily);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Clearing and replacing Source must release old resource expressions and update inline text.
+    /// Separate hosts may select different variants of the same immutable source.
+    /// </summary>
+    [Fact]
+    public void SourceReplacement_ClearsOldFontAndKeepsSharedPresentationsIndependent()
+    {
+        RunOnStaThread(() =>
+        {
+            var source = new FluentIconSource(FluentSymbolRegular.Home24);
+            var icon = new FontIcon(source) { Variant = IconVariant.Filled };
+            var span = new FontIconSpan(source);
+            Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), icon.Text);
+            Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), span.Text);
+            Assert.NotEqual(icon.FontFamily, span.FontFamily);
+            Assert.False(source.Filled);
+
+            var custom = new TestFontSource();
+            icon.Source = custom;
+            span.Source = custom;
+            Assert.Equal(custom.Glyph, icon.Text);
+            Assert.Equal(custom.Glyph, span.Text);
+            Assert.Same(custom.FontFamily, icon.FontFamily);
+            Assert.Same(custom.FontFamily, span.FontFamily);
+
+            var inheritedFont = new FontFamily("Arial");
+            var text = new System.Windows.Controls.TextBlock { FontFamily = inheritedFont };
+            text.Inlines.Add(span);
+            var host = new StackPanel { Children = { icon, text } };
+            host.SetValue(TextElement.FontFamilyProperty, inheritedFont);
+            icon.Source = null;
+            span.Source = null;
+            Assert.Empty(icon.Text);
+            Assert.Empty(span.Text);
+            Assert.Same(inheritedFont, icon.FontFamily);
+            Assert.Same(inheritedFont, span.FontFamily);
+
+            icon.Source = new FluentIconSource(FluentSymbolRegular.Empty, true);
+            span.Source = icon.Source;
+            Assert.Empty(icon.Text);
+            Assert.Empty(span.Text);
+        });
+    }
+
+    /// <summary>
+    /// Minimal external family: only glyph and font are required, resource overrides are optional.
+    /// </summary>
+    private sealed class TestFontSource : FontIconSource
+    {
+        internal static readonly object ResourceKey = new object();
+
+        public override string Glyph => "★";
+
+        public override FontFamily FontFamily { get; } = new FontFamily("Segoe UI");
+
+        public override object FontFamilyResourceKey => ResourceKey;
     }
 
     private static Window CreateHiddenWindow(object content)

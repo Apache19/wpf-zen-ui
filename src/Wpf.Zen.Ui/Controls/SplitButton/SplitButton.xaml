@@ -128,7 +128,7 @@
                             PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
                             PressedForeground="{TemplateBinding PressedForeground}">
                             <controls:Button.Icon>
-                                <controls:FluentIcon FontSize="10" Symbol="ChevronDown24" />
+                                <controls:FontIcon FontSize="10" Source="{m:FluentIconSource ChevronDown24}" />
                             </controls:Button.Icon>
                         </controls:Button>
                     </Grid>

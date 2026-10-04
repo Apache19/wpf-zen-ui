@@ -64,19 +64,19 @@ public partial class MainWindowViewModel : ViewModel
     [ObservableProperty]
     public partial ObservableCollection<object> MenuItems { get; set; } =
     [
-        new NavigationItem("Home", SymbolRegular.Home24, typeof(DashboardPage)),
-        new NavigationItem("Design guidance", SymbolRegular.DesignIdeas24)
+        new NavigationItem("Home", FluentSymbolRegular.Home24, typeof(DashboardPage)),
+        new NavigationItem("Design guidance", FluentSymbolRegular.DesignIdeas24)
         {
             Children = new object[]
             {
-                new NavigationItem("Typography", SymbolRegular.TextFont24,  typeof(TypographyPage)),
-                new NavigationItem("Icons",      SymbolRegular.Diversity24, typeof(IconsPage)),
-                new NavigationItem("Colors",     SymbolRegular.Color24,     typeof(ColorsPage)),
+                new NavigationItem("Typography", FluentSymbolRegular.TextFont24,  typeof(TypographyPage)),
+                new NavigationItem("Icons",      FluentSymbolRegular.Diversity24, typeof(IconsPage)),
+                new NavigationItem("Colors",     FluentSymbolRegular.Color24,     typeof(ColorsPage)),
             },
         },
-        new NavigationItem("All samples", SymbolRegular.List24, typeof(AllControlsPage)),
+        new NavigationItem("All samples", FluentSymbolRegular.List24, typeof(AllControlsPage)),
         new UiSeparator(),
-        new NavigationItem("Basic Input", SymbolRegular.CheckboxChecked24, typeof(BasicInputPage))
+        new NavigationItem("Basic Input", FluentSymbolRegular.CheckboxChecked24, typeof(BasicInputPage))
         {
             Children = new object[]
             {
@@ -89,7 +89,7 @@ public partial class MainWindowViewModel : ViewModel
                 new NavigationItem("Slider",         typeof(SliderPage))
             },
         },
-        new NavigationItem("Collections", SymbolRegular.Table24, typeof(CollectionsPage))
+        new NavigationItem("Collections", FluentSymbolRegular.Table24, typeof(CollectionsPage))
         {
             Children = new object[]
             {
@@ -101,7 +101,7 @@ public partial class MainWindowViewModel : ViewModel
                 #endif
             },
         },
-        new NavigationItem("Date & time", SymbolRegular.CalendarClock24, typeof(DateAndTimePage))
+        new NavigationItem("Date & time", FluentSymbolRegular.CalendarClock24, typeof(DateAndTimePage))
         {
             Children = new object[]
             {
@@ -109,7 +109,7 @@ public partial class MainWindowViewModel : ViewModel
                 new NavigationItem("DatePicker",         typeof(DatePickerPage)), new NavigationItem("TimePicker",       typeof(TimePickerPage)),
             },
         },
-        new NavigationItem("Dialogs & flyouts", SymbolRegular.Chat24, typeof(DialogsAndFlyoutsPage))
+        new NavigationItem("Dialogs & flyouts", FluentSymbolRegular.Chat24, typeof(DialogsAndFlyoutsPage))
         {
             Children = new object[]
             {
@@ -118,7 +118,7 @@ public partial class MainWindowViewModel : ViewModel
             },
         },
         #if DEBUG
-        new NavigationItem("Layout", SymbolRegular.News24, typeof(LayoutPage))
+        new NavigationItem("Layout", FluentSymbolRegular.News24, typeof(LayoutPage))
         {
             Children = new object[]
             {
@@ -127,14 +127,14 @@ public partial class MainWindowViewModel : ViewModel
             },
         },
         #endif
-        new NavigationItem("Media", SymbolRegular.PlayCircle24, typeof(MediaPage))
+        new NavigationItem("Media", FluentSymbolRegular.PlayCircle24, typeof(MediaPage))
         {
             Children = new object[]
             {
                 new NavigationItem("Image", typeof(ImagePage)), new NavigationItem("Canvas", typeof(CanvasPage)),
             },
         },
-        new NavigationItem("Navigation", SymbolRegular.Navigation24, typeof(NavigationPage))
+        new NavigationItem("Navigation", FluentSymbolRegular.Navigation24, typeof(NavigationPage))
         {
             Children = new object[]
             {
@@ -144,7 +144,7 @@ public partial class MainWindowViewModel : ViewModel
                 new NavigationItem("TabControl",    typeof(TabControlPage)),
             },
         },
-        new NavigationItem("Status & info", SymbolRegular.ChatBubblesQuestion24, typeof(StatusAndInfoPage))
+        new NavigationItem("Status & info", FluentSymbolRegular.ChatBubblesQuestion24, typeof(StatusAndInfoPage))
         {
             Children = new object[]
             {
@@ -153,7 +153,7 @@ public partial class MainWindowViewModel : ViewModel
                 new NavigationItem("ToolTip",     typeof(ToolTipPage)),
             },
         },
-        new NavigationItem("Text", SymbolRegular.DrawText24, typeof(TextPage))
+        new NavigationItem("Text", FluentSymbolRegular.DrawText24, typeof(TextPage))
         {
             Children = new object[]
             {
@@ -164,20 +164,20 @@ public partial class MainWindowViewModel : ViewModel
                 new NavigationItem("TextBox",        typeof(TextBoxPage)),
             },
         },
-        new NavigationItem("System", SymbolRegular.Desktop24, typeof(OpSystemPage))
+        new NavigationItem("System", FluentSymbolRegular.Desktop24, typeof(OpSystemPage))
         {
             Children = new object[]
             {
                 new NavigationItem("Clipboard", typeof(ClipboardPage)), new NavigationItem("FilePicker", typeof(FilePickerPage)),
             },
         },
-        new NavigationItem("Windows", SymbolRegular.WindowApps24, typeof(WindowsPage)),
+        new NavigationItem("Windows", FluentSymbolRegular.WindowApps24, typeof(WindowsPage)),
     ];
 
     [ObservableProperty]
     public partial ObservableCollection<object> FooterMenuItems { get; set; } =
     [
-        new NavigationItem("Settings", SymbolRegular.Settings24, typeof(SettingsPage)),
+        new NavigationItem("Settings", FluentSymbolRegular.Settings24, typeof(SettingsPage)),
     ];
 
     [ObservableProperty]
@@ -187,20 +187,20 @@ public partial class MainWindowViewModel : ViewModel
         {
             Header = "Home",
             Tag    = "tray_home",
-            Icon   = new FluentIconSource(SymbolRegular.Home24),
+            Icon   = new FluentIconSource(FluentSymbolRegular.Home24),
         },
         new MenuItem()
         {
             Header = "Settings",
             Tag    = "tray_settings",
-            Icon   = new FluentIconSource(SymbolRegular.Settings24),
+            Icon   = new FluentIconSource(FluentSymbolRegular.Settings24),
         },
         new UiSeparator(),
         new MenuItem()
         {
             Header = "Close",
             Tag    = "tray_close",
-            Icon   = new FluentIconSource(SymbolRegular.Dismiss24),
+            Icon   = new FluentIconSource(FluentSymbolRegular.Dismiss24),
         }
     ];
 

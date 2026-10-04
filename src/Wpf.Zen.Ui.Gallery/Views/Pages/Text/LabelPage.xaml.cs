@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("Caption of an item.", SymbolRegular.TextBaseline20)]
+[GalleryPage("Caption of an item.", FluentSymbolRegular.TextBaseline20)]
 public partial class LabelPage : INavigableView<LabelViewModel>
 {
     public LabelViewModel ViewModel { get; }

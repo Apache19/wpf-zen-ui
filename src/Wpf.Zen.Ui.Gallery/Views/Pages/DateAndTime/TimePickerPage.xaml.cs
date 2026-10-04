@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.DateAndTime;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.DateAndTime;
 
-[GalleryPage("allows a user to pick a time value.", SymbolRegular.Clock24)]
+[GalleryPage("allows a user to pick a time value.", FluentSymbolRegular.Clock24)]
 public partial class TimePickerPage : INavigableView<TimePickerViewModel>
 {
     public TimePickerViewModel ViewModel { get; init; }

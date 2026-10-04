@@ -184,11 +184,11 @@
                         CornerRadius="0,3,3,0"
                         SnapsToDevicePixels="true">
                         <Grid>
-                            <controls:FluentIcon
+                            <controls:FontIcon
                                 Margin="0"
                                 VerticalAlignment="Bottom"
                                 Foreground="{TemplateBinding Foreground}"
-                                Symbol="ChevronDown20" />
+                                Source="{m:FluentIconSource ChevronDown20}" />
                             <ContentPresenter />
                         </Grid>
                         <!--

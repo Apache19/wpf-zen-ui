@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Button with binary choice.", SymbolRegular.Filter16)]
+[GalleryPage("Button with binary choice.", FluentSymbolRegular.Filter16)]
 public partial class ComboBoxPage : INavigableView<ComboBoxViewModel>
 {
     public ComboBoxViewModel ViewModel { get; }

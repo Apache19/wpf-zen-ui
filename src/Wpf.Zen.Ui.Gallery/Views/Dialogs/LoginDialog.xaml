@@ -18,11 +18,10 @@
             Height="56"
             Background="{ui:DynamicBrush TextFillPrimary}"
             CornerRadius="28">
-            <ui:FluentIcon
-                Filled="True"
+            <ui:FontIcon
                 FontSize="36"
                 Foreground="{ui:DynamicBrush SolidBackgroundFillBase}"
-                Symbol="ShieldPerson20" />
+                Source="{ui:FluentIconSource ShieldPerson20, Filled=True}" />
         </Border>
         <TextBlock
             Margin="0,16,0,4"

@@ -56,7 +56,7 @@ public class ExpanderContentHostTests
                         expander.Template.FindName("headerToggleButton", expander)
                     );
                     header.ApplyTemplate();
-                    var chevron = Assert.IsType<FluentIcon>(
+                    var chevron = Assert.IsType<FontIcon>(
                         header.Template.FindName("chevronIcon", header)
                     );
                     var host = Assert.IsType<ExpanderContentHost>(
@@ -85,7 +85,7 @@ public class ExpanderContentHostTests
                         Assert.Equal(direction, host.ExpandDirection);
                         Assert.Equal(GetExpectedHeaderDock(direction), DockPanel.GetDock(header));
                         Assert.Equal(GetExpectedContentDock(direction), DockPanel.GetDock(host));
-                        Assert.Equal(GetExpectedChevron(direction), chevron.Symbol);
+                        Assert.Equal(GetExpectedChevron(direction), ((FluentIconSource)chevron.Source!).Symbol);
                         Assert.Equal(
                             GetExpectedHeaderCornerRadius(direction),
                             header.CornerRadius
@@ -503,14 +503,14 @@ public class ExpanderContentHostTests
         };
     }
 
-    private static SymbolRegular GetExpectedChevron(ExpandDirection direction)
+    private static FluentSymbolRegular GetExpectedChevron(ExpandDirection direction)
     {
         return direction switch
         {
-            ExpandDirection.Down => SymbolRegular.ChevronDown24,
-            ExpandDirection.Up => SymbolRegular.ChevronUp24,
-            ExpandDirection.Left => SymbolRegular.ChevronLeft24,
-            ExpandDirection.Right => SymbolRegular.ChevronRight24,
+            ExpandDirection.Down => FluentSymbolRegular.ChevronDown24,
+            ExpandDirection.Up => FluentSymbolRegular.ChevronUp24,
+            ExpandDirection.Left => FluentSymbolRegular.ChevronLeft24,
+            ExpandDirection.Right => FluentSymbolRegular.ChevronRight24,
             _ => throw new ArgumentOutOfRangeException(nameof(direction)),
         };
     }

@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Collections;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
 
-[GalleryPage("Complex data presenter.", SymbolRegular.GridKanban20)]
+[GalleryPage("Complex data presenter.", FluentSymbolRegular.GridKanban20)]
 public partial class DataGridPage : INavigableView<DataGridViewModel>
 {
     public DataGridViewModel ViewModel { get; }

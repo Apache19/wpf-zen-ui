@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("Control with suggestions.", SymbolRegular.TextBulletListSquare24)]
+[GalleryPage("Control with suggestions.", FluentSymbolRegular.TextBulletListSquare24)]
 public partial class AutoSuggestBoxPage : INavigableView<AutoSuggestBoxViewModel>
 {
     public AutoSuggestBoxViewModel ViewModel { get; }

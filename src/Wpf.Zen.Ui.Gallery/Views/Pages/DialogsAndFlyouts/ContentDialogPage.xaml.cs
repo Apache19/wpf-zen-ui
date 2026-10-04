@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.DialogsAndFlyouts;
 
-[GalleryPage("Card covering the app content.", SymbolRegular.CalendarMultiple24)]
+[GalleryPage("Card covering the app content.", FluentSymbolRegular.CalendarMultiple24)]
 public partial class ContentDialogPage : INavigableView<ContentDialogViewModel>
 {
     public ContentDialogPage(ContentDialogViewModel viewModel)

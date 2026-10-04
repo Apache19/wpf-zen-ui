@@ -8,9 +8,9 @@ using Wpf.Zen.Ui.Controls;
 namespace Wpf.Zen.Ui.Gallery.ControlsLookup;
 
 [AttributeUsage(AttributeTargets.Class)]
-internal sealed class GalleryPageAttribute(string description, SymbolRegular icon) : Attribute
+internal sealed class GalleryPageAttribute(string description, FluentSymbolRegular icon) : Attribute
 {
     public string Description { get; } = description;
 
-    public SymbolRegular Icon { get; } = icon;
+    public FluentSymbolRegular Icon { get; } = icon;
 }

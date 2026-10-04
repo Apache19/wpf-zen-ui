@@ -10,7 +10,7 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.DesignGuidance"
     Title="IconsPage"
-    controls:PageControlDocumentation.DocumentationType="{x:Type ui:FluentIcon}"
+    controls:PageControlDocumentation.DocumentationType="{x:Type ui:FontIcon}"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:IconsViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
@@ -101,7 +101,7 @@
                                 CommandParameter="{Binding Path=Id, Mode=OneTime}"
                                 ToolTip="{Binding Name, Mode=OneTime}"
                                 ToolTipService.InitialShowDelay="240">
-                                <ui:FluentIcon FontSize="28" Symbol="{Binding Icon, Mode=OneTime}" />
+                                <ui:FontIcon FontSize="28" Source="{Binding IconSource, Mode=OneTime}" />
                             </ui:Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -142,13 +142,12 @@
                         Grid.Row="0"
                         FontTypography="BodyStrong"
                         Text="{Binding SelectedSymbolName, Mode=OneWay}" />
-                    <ui:FluentIcon
+                    <ui:FontIcon
                         Grid.Row="1"
                         Margin="0,30,0,24"
                         HorizontalAlignment="Left"
-                        Filled="{Binding IsIconFilled, Mode=OneWay}"
                         FontSize="62"
-                        Symbol="{Binding SelectedSymbol, Mode=OneWay}" />
+                        Source="{Binding SelectedIcon, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="2"
                         FontTypography="BodyStrong"

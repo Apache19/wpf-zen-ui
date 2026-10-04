@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Like or dislike.", SymbolRegular.ThumbLike24)]
+[GalleryPage("Like or dislike.", FluentSymbolRegular.ThumbLike24)]
 public partial class ThumbRatePage : INavigableView<ThumbRateViewModel>
 {
     public ThumbRateViewModel ViewModel { get; }

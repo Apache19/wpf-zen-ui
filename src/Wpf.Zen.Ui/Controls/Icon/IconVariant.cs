@@ -17,12 +17,18 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public enum IconVariant
 {
-    /// <summary>Uses the variant selected by the icon source or icon element itself.</summary>
+    /// <summary>
+    /// Uses the variant selected by the icon source.
+    /// </summary>
     Default,
 
-    /// <summary>Requests the regular or outline representation when the icon family provides one.</summary>
+    /// <summary>
+    /// Requests the regular or outline representation when the icon family provides one.
+    /// </summary>
     Regular,
 
-    /// <summary>Requests the filled representation when the icon family provides one.</summary>
+    /// <summary>
+    /// Requests the filled representation when the icon family provides one.
+    /// </summary>
     Filled,
 }

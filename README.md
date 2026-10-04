@@ -25,7 +25,7 @@ the value when XAML loads and does not track later changes.
 
 ## Documentation
 
-- [FluentIcon and icon presentation](docs/FluentIcon.md)
+- [Font icons and icon presentation](docs/FontIcon.md)
 - [Navigation, semantic routes, and breadcrumbs](docs/Navigation.md)
 - [ContentDialog and modal content](docs/ContentDialog.md)
 - [Snackbar notifications](docs/Snackbar.md)

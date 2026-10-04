@@ -63,7 +63,7 @@
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                     TextElement.Foreground="{TemplateBinding VisualForeground}" />
 
-                <controls:FluentIcon
+                <controls:FontIcon
                     x:Name="DropDownChevron"
                     Grid.Column="2"
                     Margin="8,0,0,0"
@@ -71,7 +71,7 @@
                     FontSize="10"
                     Foreground="{TemplateBinding VisualForeground}"
                     IsHitTestVisible="False"
-                    Symbol="ChevronDown24" />
+                    Source="{m:FluentIconSource ChevronDown24}" />
             </Grid>
         </controls:UiBorder>
         <ControlTemplate.Triggers>
@@ -143,7 +143,7 @@
         <Setter Property="controls:PopupPlacementGap.Vertical" Value="4" />
         <Setter Property="PopupAnimation" Value="Fade" />
         <Setter Property="controls:PopupShadow.IsEnabled" Value="True" />
-        <!-- ActualPlacement remains None unless the Popup window tracker is enabled. -->
+        <!--  ActualPlacement remains None unless the Popup window tracker is enabled.  -->
         <Setter Property="controls:PopupPlacementTracker.IsEnabled" Value="True" />
     </Style>
 

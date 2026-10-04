@@ -148,10 +148,10 @@
                     HorizontalContentAlignment="Stretch"
                     ToolTip="Refresh required">
                     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <ui:FluentIcon
+                        <ui:FontIcon
                             Grid.Column="0"
                             HorizontalAlignment="Center"
-                            Symbol="ArrowSync24" />
+                            Source="{ui:FluentIconSource ArrowSync24}" />
                         <ui:InfoBadge
                             Margin="0,-10,5,0"
                             HorizontalAlignment="Right"
@@ -169,12 +169,28 @@
                 <ui:InfoBadge.ContentTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <ui:FluentIcon Margin="0,0,4,0" Symbol="Checkmark16" />
+                            <ui:FontIcon Margin="0,0,4,0" Source="{ui:FluentIconSource Checkmark16}" />
                             <TextBlock Text="{Binding}" VerticalAlignment="Center" />
                         </StackPanel>
                     </DataTemplate>
                 </ui:InfoBadge.ContentTemplate>
             </ui:InfoBadge>
+        </controls:ControlExample>
+        <controls:ControlExample
+            Margin="0,0,0,42"
+            HeaderText="Badge: Lightweight Text and Font Icons"
+            XamlCode="&lt;ui:Badge Text=&quot;Ready&quot; Severity=&quot;Success&quot; /&gt;\n&lt;ui:Badge Icon=&quot;{ui:FluentIconSource Checkmark16}&quot; Severity=&quot;Success&quot; /&gt;">
+            <StackPanel Orientation="Horizontal">
+                <ui:Badge Margin="0,0,8,0" Text="Info" />
+                <ui:Badge Margin="0,0,8,0" Text="New" Severity="Attention" />
+                <ui:Badge Margin="0,0,8,0" Text="Ready" Severity="Success" />
+                <ui:Badge Margin="0,0,8,0" Text="Warning" Severity="Caution" />
+                <ui:Badge Margin="0,0,8,0" Text="Error" Severity="Critical" />
+                <ui:Badge Margin="0,0,8,0" Icon="{ui:FluentIconSource Checkmark16}"
+                          Severity="Success" Width="28" Height="28" />
+                <ui:Badge Text="Right" Width="100" Height="32" Padding="8,2"
+                          HorizontalContentAlignment="Right" VerticalContentAlignment="Center" />
+            </StackPanel>
         </controls:ControlExample>
     </StackPanel>
 </Page>

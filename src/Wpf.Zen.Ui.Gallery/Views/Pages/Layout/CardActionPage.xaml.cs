@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.Layout;
 /// <summary>
 /// Interaction logic for CardActionPage.xaml
 /// </summary>
-[GalleryPage("Card action control.", SymbolRegular.Code24)]
+[GalleryPage("Card action control.", FluentSymbolRegular.Code24)]
 public partial class CardActionPage : INavigableView<CardActionViewModel>
 {
     public CardActionPage(CardActionViewModel viewModel)

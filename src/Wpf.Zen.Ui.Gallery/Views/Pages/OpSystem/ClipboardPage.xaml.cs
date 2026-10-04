@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.OpSystem;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.OpSystem;
 
-[GalleryPage("System clipboard.", SymbolRegular.Desktop24)]
+[GalleryPage("System clipboard.", FluentSymbolRegular.Desktop24)]
 public partial class ClipboardPage : INavigableView<ClipboardViewModel>
 {
     public ClipboardViewModel ViewModel { get; }

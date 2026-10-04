@@ -51,7 +51,7 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="{TemplateBinding Border.CornerRadius}">
-                                    <controls:FluentIcon
+                                    <controls:FontIcon
                                         x:Name="ControlIcon"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
@@ -60,7 +60,7 @@
                                         FontSize="13"
                                         FontWeight="Bold"
                                         Foreground="{m:DynamicBrush TextOnAccentPrimary}"
-                                        Symbol="Checkmark48"
+                                        Source="{m:FluentIconSource Checkmark48}"
                                         Visibility="Collapsed" />
                                 </Border>
                             </Border>
@@ -82,7 +82,7 @@
                             <Setter Property="MinWidth" Value="30" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="{x:Null}">
-                            <Setter TargetName="ControlIcon" Property="Symbol" Value="Subtract16" />
+                            <Setter TargetName="ControlIcon" Property="Source" Value="{m:FluentIconSource Subtract16}" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
                             <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />

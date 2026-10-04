@@ -87,18 +87,9 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/TreeView/TreeViewItem.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!--
-        FluentIconSource is reusable icon data rather than a shared visual. WPF's native
-        ContentPresenter looks up an implicit DataTemplate for the content's runtime type
-        before falling back to its text representation. Keeping this mapping in Generic.xaml
-        makes every ordinary content presenter understand FluentIconSource while preserving the
-        standard override order: an explicit ContentTemplate, a selector, or a nearer implicit
-        template supplied by the application still takes precedence over this library default.
-
-        Each application of the template creates a distinct FluentIcon, so the same data value
-        can safely be used by styles and by multiple controls without visual-parent conflicts.
-    -->
-    <DataTemplate DataType="{x:Type controls:FluentIconSource}">
-        <controls:FluentIcon Filled="{Binding Filled}" Symbol="{Binding Symbol}" />
+    <!-- A base-type template also presents third-party FontIconSource implementations. -->
+    <DataTemplate DataType="{x:Type controls:FontIconSource}">
+        <controls:FontIcon Source="{Binding}" />
     </DataTemplate>
+
 </ResourceDictionary>

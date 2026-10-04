@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 
-[GalleryPage("Tab control like in browser.", SymbolRegular.TabDesktopBottom24)]
+[GalleryPage("Tab control like in browser.", FluentSymbolRegular.TabDesktopBottom24)]
 public partial class TabControlPage : INavigableView<TabControlViewModel>
 {
     public TabControlViewModel ViewModel { get; }

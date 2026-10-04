@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Toggleable button.", SymbolRegular.ToggleRight24)]
+[GalleryPage("Toggleable button.", FluentSymbolRegular.ToggleRight24)]
 public partial class ToggleButtonPage : INavigableView<ToggleButtonViewModel>
 {
     public ToggleButtonViewModel ViewModel { get; }

@@ -35,14 +35,14 @@
                         <Style TargetType="ui:ToggleButton">
                             <Setter Property="Icon">
                                 <Setter.Value>
-                                    <ui:FluentIcon Filled="False" Symbol="LockOpen24" />
+                                    <ui:FontIcon Source="{ui:FluentIconSource LockOpen24}" />
                                 </Setter.Value>
                             </Setter>
                             <Style.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter Property="Icon">
                                         <Setter.Value>
-                                            <ui:FluentIcon Filled="True" Symbol="LockClosed24" />
+                                            <ui:FontIcon Source="{ui:FluentIconSource LockClosed24, Filled=True}" />
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>

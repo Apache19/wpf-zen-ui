@@ -95,7 +95,7 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
             }
         )
         {
-            Icon = SymbolRegular.Info24,
+            Icon = FluentSymbolRegular.Info24,
         };
 
         PromptDialogResult result = await dialogService.ShowPromptAsync(options).ConfigureAwait(true);
@@ -115,7 +115,7 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
             }
         )
         {
-            Icon            = SymbolRegular.Question24,
+            Icon            = FluentSymbolRegular.Question24,
             MaxWidth        = 440,
             SecondaryButton = new PromptDialogButtonOptions("Not now"),
             CloseButton     = new PromptDialogButtonOptions("Cancel"),
@@ -137,7 +137,7 @@ public partial class ContentDialogViewModel(IGalleryDialogService dialogService)
             }
         )
         {
-            Icon        = SymbolRegular.Delete24,
+            Icon        = FluentSymbolRegular.Delete24,
             MaxWidth    = 400,
             CloseButton = new PromptDialogButtonOptions("Cancel"),
         };

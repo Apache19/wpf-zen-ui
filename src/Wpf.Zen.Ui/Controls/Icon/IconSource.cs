@@ -16,14 +16,18 @@ namespace Wpf.Zen.Ui.Controls;
 /// gives icon families a common semantic boundary without forcing them into one rendering model.
 /// </para>
 /// <para>
-/// A concrete source should be immutable, or otherwise safe to share, and should provide an
-/// implicit <see cref="DataTemplate"/> that creates a new visual for every presentation. If the
-/// family supports presentation variants, that visual can consume
-/// <see cref="IconPresenter.VariantProperty"/>.
+/// A concrete source should be immutable, or otherwise safe to share. Font-based families derive
+/// from <see cref="FontIconSource"/> and share the library's implicit FontIcon template. Other
+/// rendering models supply an implicit <see cref="DataTemplate"/> that creates a visual per host;
+/// those visuals may consume <see cref="IconPresenter.VariantProperty"/> when appropriate.
 /// </para>
 /// </remarks>
 public abstract class IconSource
 {
-    /// <summary>Initializes a new instance of the <see cref="IconSource"/> class.</summary>
-    protected IconSource() { }
+    /// <summary>
+    /// Initializes a presentation-independent icon description.
+    /// </summary>
+    protected IconSource()
+    {
+    }
 }

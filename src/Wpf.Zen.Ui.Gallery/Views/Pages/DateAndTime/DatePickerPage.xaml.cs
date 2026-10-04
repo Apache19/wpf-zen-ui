@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.DateAndTime;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.DateAndTime;
 
-[GalleryPage("Control that lets pick a date.", SymbolRegular.CalendarSearch20)]
+[GalleryPage("Control that lets pick a date.", FluentSymbolRegular.CalendarSearch20)]
 public partial class DatePickerPage : INavigableView<DatePickerViewModel>
 {
     public DatePickerViewModel ViewModel { get; }

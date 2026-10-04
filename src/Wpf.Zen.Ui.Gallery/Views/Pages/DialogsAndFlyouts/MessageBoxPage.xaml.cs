@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.DialogsAndFlyouts;
 
-[GalleryPage("Message box.", SymbolRegular.CalendarInfo20)]
+[GalleryPage("Message box.", FluentSymbolRegular.CalendarInfo20)]
 public partial class MessageBoxPage : INavigableView<MessageBoxViewModel>
 {
     public MessageBoxViewModel ViewModel { get; }

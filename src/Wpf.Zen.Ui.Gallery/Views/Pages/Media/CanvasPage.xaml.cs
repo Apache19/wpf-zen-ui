@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Media;
 
-[GalleryPage("Canvas presenter.", SymbolRegular.InkStroke24)]
+[GalleryPage("Canvas presenter.", FluentSymbolRegular.InkStroke24)]
 public partial class CanvasPage : INavigableView<CanvasViewModel>
 {
     public CanvasViewModel ViewModel { get; }

@@ -15,9 +15,9 @@ public partial class WindowsViewModel(WindowsProviderService windowsProviderServ
     [ObservableProperty]
     public partial WindowCard[] WindowCards { get; set; } =
     [
-        new("Editor", "Text editor with tabbed background.", SymbolRegular.ScanText24, "editor"),
+        new("Editor", "Text editor with tabbed background.", FluentSymbolRegular.ScanText24, "editor"),
 #if DEBUG
-        new("Sandbox", "Sandbox for controls testing.", SymbolRegular.ScanText24, "sandbox"),
+        new("Sandbox", "Sandbox for controls testing.", FluentSymbolRegular.ScanText24, "sandbox"),
 #endif
     ];
 

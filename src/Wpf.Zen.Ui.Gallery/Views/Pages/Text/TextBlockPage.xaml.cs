@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("Control for displaying text.", SymbolRegular.TextCaseLowercase24)]
+[GalleryPage("Control for displaying text.", FluentSymbolRegular.TextCaseLowercase24)]
 public partial class TextBlockPage : INavigableView<TextBlockViewModel>
 {
     public TextBlockViewModel ViewModel { get; }

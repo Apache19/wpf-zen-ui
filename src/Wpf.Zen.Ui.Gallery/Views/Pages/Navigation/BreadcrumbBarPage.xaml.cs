@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 
-[GalleryPage("Shows the trail of navigation taken to the current location.", SymbolRegular.Navigation24)]
+[GalleryPage("Shows the trail of navigation taken to the current location.", FluentSymbolRegular.Navigation24)]
 public partial class BreadcrumbBarPage : INavigableView<BreadcrumbBarViewModel>
 {
     public BreadcrumbBarViewModel ViewModel { get; }

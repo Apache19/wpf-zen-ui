@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 
-[GalleryPage("A control for entering passwords.", SymbolRegular.Password24)]
+[GalleryPage("A control for entering passwords.", FluentSymbolRegular.Password24)]
 public partial class PasswordBoxPage : INavigableView<PasswordBoxViewModel>
 {
     public PasswordBoxViewModel ViewModel { get; }

@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.DateAndTime;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.DateAndTime;
 
-[GalleryPage("Button opening Calendar.", SymbolRegular.CalendarRtl24)]
+[GalleryPage("Button opening Calendar.", FluentSymbolRegular.CalendarRtl24)]
 public partial class CalendarDatePickerPage : INavigableView<CalendarDatePickerViewModel>
 {
     public CalendarDatePickerViewModel ViewModel { get; init; }

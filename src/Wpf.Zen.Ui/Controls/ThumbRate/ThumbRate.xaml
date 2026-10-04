@@ -34,10 +34,10 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             Foreground="{TemplateBinding Foreground}">
-                            <controls:FluentIcon
+                            <controls:FontIcon
                                 x:Name="ThumbsUpButtonIcon"
                                 FontSize="{TemplateBinding FontSize}"
-                                Symbol="ThumbLike24" />
+                                Source="{m:FluentIconSource ThumbLike24}" />
                         </controls:Button>
 
                         <controls:Button
@@ -47,18 +47,18 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             Foreground="{TemplateBinding Foreground}">
-                            <controls:FluentIcon
+                            <controls:FontIcon
                                 x:Name="ThumbsDownButtonIcon"
                                 FontSize="{TemplateBinding FontSize}"
-                                Symbol="ThumbDislike24" />
+                                Source="{m:FluentIconSource ThumbDislike24}" />
                         </controls:Button>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="State" Value="Liked">
-                            <Setter TargetName="ThumbsUpButtonIcon" Property="Filled" Value="True" />
+                            <Setter TargetName="ThumbsUpButtonIcon" Property="Variant" Value="Filled" />
                         </Trigger>
                         <Trigger Property="State" Value="Disliked">
-                            <Setter TargetName="ThumbsDownButtonIcon" Property="Filled" Value="True" />
+                            <Setter TargetName="ThumbsDownButtonIcon" Property="Variant" Value="Filled" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

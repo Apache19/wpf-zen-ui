@@ -704,7 +704,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="navigationCacheMode">The caching behavior used for the target page.</param>
     public NavigationViewItem(
         object?             header,
-        SymbolRegular       icon,
+        FluentSymbolRegular icon,
         Type?               targetPageType = null,
         IEnumerable?        itemsSource = null,
         string?             targetPageTag = null,
@@ -744,10 +744,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="targetPageType">The optional page type activated by the item.</param>
     /// <param name="itemsSource">The optional source used to generate child items.</param>
     public NavigationViewItem(
-        SymbolRegular icon,
-        Type?         targetPageType = null,
-        IEnumerable?  itemsSource    = null)
-        : this((object?)null, icon, targetPageType, itemsSource)
+        FluentSymbolRegular icon,
+        Type?               targetPageType = null,
+        IEnumerable?        itemsSource    = null) : this((object?)null, icon, targetPageType, itemsSource)
     {
     }
 
@@ -777,7 +776,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="name">The text displayed in the item header.</param>
     /// <param name="icon">The Fluent symbol displayed beside the header.</param>
     /// <param name="targetPageType">The page type activated by the header action.</param>
-    public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType)
+    public NavigationViewItem(string name, FluentSymbolRegular icon, Type targetPageType)
         : this((object?)name, icon, targetPageType)
     {
     }
@@ -791,7 +790,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="targetPageType">The page type activated by the header action.</param>
     /// <param name="itemsSource">The source used by the standard WPF items pipeline to generate children.</param>
     // ReSharper disable once UnusedMember.Global
-    public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IEnumerable itemsSource)
+    public NavigationViewItem(string name, FluentSymbolRegular icon, Type targetPageType, IEnumerable itemsSource)
         : this((object?)name, icon, targetPageType, itemsSource)
     {
     }

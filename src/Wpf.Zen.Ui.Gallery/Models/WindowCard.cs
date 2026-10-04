@@ -17,7 +17,7 @@ public record WindowCard
 
     public string Value { get; set; }
 
-    public WindowCard(string name, string description, SymbolRegular icon, string value)
+    public WindowCard(string name, string description, FluentSymbolRegular icon, string value)
     {
         Name = name;
         Description = description;

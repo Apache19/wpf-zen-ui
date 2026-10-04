@@ -122,18 +122,18 @@
                             <Setter Property="Content">
                                 <Setter.Value>
                                     <Grid>
-                                        <controls:FluentIcon>
-                                            <controls:FluentIcon.Style>
-                                                <Style TargetType="{x:Type controls:FluentIcon}">
-                                                    <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                        <controls:FontIcon>
+                                            <controls:FontIcon.Style>
+                                                <Style TargetType="{x:Type controls:FontIcon}">
+                                                    <Setter Property="Source" Value="{m:FluentIconSource IosArrowLtr24}" />
                                                     <Style.Triggers>
                                                         <Trigger Property="FlowDirection" Value="RightToLeft">
-                                                            <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                                            <Setter Property="Source" Value="{m:FluentIconSource IosArrowRtl24}" />
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </controls:FluentIcon.Style>
-                                        </controls:FluentIcon>
+                                            </controls:FontIcon.Style>
+                                        </controls:FontIcon>
                                         <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
                                         <TextBlock Text="{Binding Page}" Visibility="Hidden" />
                                     </Grid>
@@ -145,18 +145,18 @@
                             <Setter Property="Content">
                                 <Setter.Value>
                                     <Grid>
-                                        <controls:FluentIcon>
-                                            <controls:FluentIcon.Style>
-                                                <Style TargetType="{x:Type controls:FluentIcon}">
-                                                    <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                        <controls:FontIcon>
+                                            <controls:FontIcon.Style>
+                                                <Style TargetType="{x:Type controls:FontIcon}">
+                                                    <Setter Property="Source" Value="{m:FluentIconSource IosArrowRtl24}" />
                                                     <Style.Triggers>
                                                         <Trigger Property="FlowDirection" Value="RightToLeft">
-                                                            <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                                            <Setter Property="Source" Value="{m:FluentIconSource IosArrowLtr24}" />
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </controls:FluentIcon.Style>
-                                        </controls:FluentIcon>
+                                            </controls:FontIcon.Style>
+                                        </controls:FontIcon>
                                         <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
                                         <TextBlock Text="{Binding Page}" Visibility="Hidden" />
                                     </Grid>
@@ -173,7 +173,7 @@
                                 <Setter.Value>
                                     <Grid>
                                         <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
-                                        <controls:FluentIcon Symbol="IosArrowRtl24" Visibility="Hidden" />
+                                        <controls:FontIcon Source="{m:FluentIconSource IosArrowRtl24}" Visibility="Hidden" />
                                         <TextBlock Text="{Binding Page}" />
                                     </Grid>
                                 </Setter.Value>
@@ -189,12 +189,12 @@
         <!--  CornerRadius 不应用在按钮本体上，而是用来传递到焦点视觉样式  -->
         <controls:Button
             Padding="{Binding Padding, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
             AutomationProperties.Name="{Binding Description}"
             BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
             BorderThickness="0,0,1,0"
             Content="{Binding Page}"
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
-            controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
             IsEnabled="{Binding IsEnabled}"
             Tag="{Binding Page}">
             <controls:Button.Style>
@@ -214,10 +214,10 @@
         <!--  CornerRadius 不应用在按钮本体上，而是用来传递到焦点视觉样式  -->
         <controls:Button
             Padding="{Binding Padding, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
             AutomationProperties.Name="{Binding Description}"
             BorderThickness="0,0,0,0"
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
-            controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
             IsEnabled="{Binding IsEnabled}"
             Tag="{Binding Page}">
             <controls:Button.Style>
@@ -342,27 +342,27 @@
                         x:Name="PART_PreviousButton"
                         Grid.Column="0"
                         Padding="{TemplateBinding Padding}"
+                        controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
                         AutomationProperties.Name="{TemplateBinding PreviousPageText}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="0,0,1,0"
                         CornerRadius="{TemplateBinding Border.CornerRadius}"
-                        controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
                         IsEnabled="{TemplateBinding CanGoPrevious}"
                         Style="{StaticResource PagingBoxButtonStyle}">
                         <TextBlock>
-                            <controls:FluentIconSpan FontSize="13">
-                                <controls:FluentIconSpan.Style>
-                                    <Style TargetType="{x:Type controls:FluentIconSpan}">
-                                        <Setter Property="Symbol" Value="IosArrowLtr24" />
+                            <controls:FontIconSpan FontSize="13">
+                                <controls:FontIconSpan.Style>
+                                    <Style TargetType="{x:Type controls:FontIconSpan}">
+                                        <Setter Property="Source" Value="{m:FluentIconSource IosArrowLtr24}" />
                                         <Style.Triggers>
                                             <Trigger Property="FlowDirection" Value="RightToLeft">
-                                                <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                                <Setter Property="Source" Value="{m:FluentIconSource IosArrowRtl24}" />
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
-                                </controls:FluentIconSpan.Style>
-                            </controls:FluentIconSpan>
+                                </controls:FontIconSpan.Style>
+                            </controls:FontIconSpan>
                             <Run Text="{TemplateBinding PreviousPageText}" />
                         </TextBlock>
                     </controls:Button>
@@ -377,9 +377,9 @@
                         AutomationProperties.Name="{TemplateBinding CurrentPageInputAutomationName}"
                         Background="Transparent"
                         BorderThickness="0"
-                        IsClearButtonEnabled="False"
                         CornerRadius="0"
                         DisabledBackground="Transparent"
+                        IsClearButtonEnabled="False"
                         IsEnabled="{TemplateBinding CanChangeCurrentPage}"
                         TextAlignment="Center"
                         ToolTip="{TemplateBinding CurrentPageInputToolTip}" />
@@ -389,28 +389,28 @@
                         x:Name="PART_NextButton"
                         Grid.Column="2"
                         Padding="{TemplateBinding Padding}"
+                        controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
                         AutomationProperties.Name="{TemplateBinding NextPageText}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="1,0,0,0"
                         CornerRadius="{TemplateBinding Border.CornerRadius}"
-                        controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
                         IsEnabled="{TemplateBinding CanGoNext}"
                         Style="{StaticResource PagingBoxButtonStyle}">
                         <TextBlock>
                             <Run Text="{TemplateBinding NextPageText}" />
-                            <controls:FluentIconSpan FontSize="13">
-                                <controls:FluentIconSpan.Style>
-                                    <Style TargetType="{x:Type controls:FluentIconSpan}">
-                                        <Setter Property="Symbol" Value="IosArrowRtl24" />
+                            <controls:FontIconSpan FontSize="13">
+                                <controls:FontIconSpan.Style>
+                                    <Style TargetType="{x:Type controls:FontIconSpan}">
+                                        <Setter Property="Source" Value="{m:FluentIconSource IosArrowRtl24}" />
                                         <Style.Triggers>
                                             <Trigger Property="FlowDirection" Value="RightToLeft">
-                                                <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                                <Setter Property="Source" Value="{m:FluentIconSource IosArrowLtr24}" />
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
-                                </controls:FluentIconSpan.Style>
-                            </controls:FluentIconSpan>
+                                </controls:FontIconSpan.Style>
+                            </controls:FontIconSpan>
                         </TextBlock>
                     </controls:Button>
                 </Grid>

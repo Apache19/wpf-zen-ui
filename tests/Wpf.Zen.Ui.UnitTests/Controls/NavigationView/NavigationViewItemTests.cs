@@ -17,6 +17,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using Wpf.Zen.Ui.Controls;
+using Wpf.Zen.Ui.Extensions;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 
@@ -293,23 +294,23 @@ public class NavigationViewItemTests
 
             var symbolGroup = new NavigationViewItem(
                 "Symbol group",
-                SymbolRegular.Folder24,
+                FluentSymbolRegular.Folder24,
                 itemsSource: children
             );
 
             Assert.Equal("Symbol group", symbolGroup.Header);
             Assert.Equal(
-                SymbolRegular.Folder24,
+                FluentSymbolRegular.Folder24,
                 Assert.IsType<FluentIconSource>(symbolGroup.Icon).Symbol
             );
             Assert.Null(symbolGroup.TargetPageType);
             Assert.Same(children, symbolGroup.ItemsSource);
 
-            var iconOnly = new NavigationViewItem(SymbolRegular.Heart24, typeof(Border));
+            var iconOnly = new NavigationViewItem(FluentSymbolRegular.Heart24, typeof(Border));
 
             Assert.Null(iconOnly.Header);
             Assert.Equal(
-                SymbolRegular.Heart24,
+                FluentSymbolRegular.Heart24,
                 Assert.IsType<FluentIconSource>(iconOnly.Icon).Symbol
             );
             Assert.Equal(typeof(Border), iconOnly.TargetPageType);
@@ -867,8 +868,8 @@ public class NavigationViewItemTests
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var initialChildren = new ObservableCollection<object> { new NavigationItem("Initial") };
             var replacementChildren = new ObservableCollection<object> { new NavigationItem("Replacement") };
-            object initialIcon = SymbolRegular.Home24;
-            object replacementIcon = SymbolRegular.Settings24;
+            object initialIcon = FluentSymbolRegular.Home24;
+            object replacementIcon = FluentSymbolRegular.Settings24;
             var item = new NavigationItem("Root")
             {
                 Children = initialChildren,
@@ -1369,7 +1370,7 @@ public class NavigationViewItemTests
                     parent.Template.FindName("PART_HeaderButton", parent)
                 );
                 _ = headerButton.ApplyTemplate();
-                var chevron = Assert.IsAssignableFrom<FluentIcon>(
+                var chevron = Assert.IsAssignableFrom<FontIcon>(
                     headerButton.Template.FindName("ChevronIcon", headerButton)
                 );
                 var itemsPresenter = Assert.IsAssignableFrom<ItemsPresenter>(
@@ -1951,7 +1952,7 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem { Header = "Parent" };
             var child = new NavigationViewItem { Header = "Child" };
-            child.Icon = SymbolRegular.Home24;
+            child.Icon = FluentSymbolRegular.Home24;
             var grandchild = new NavigationViewItem { Header = "Grandchild" };
             child.Items.Add(grandchild);
             parent.Items.Add(child);
@@ -2000,7 +2001,7 @@ public class NavigationViewItemTests
                         MenuItem.IsSubmenuOpenProperty
                     )
                 );
-                Assert.Equal(SymbolRegular.Home24, Assert.IsType<SymbolRegular>(childMenuItem.Icon));
+                Assert.Equal(FluentSymbolRegular.Home24, Assert.IsType<FluentSymbolRegular>(childMenuItem.Icon));
 
                 var grandchildMenuItem = Assert.IsType<MenuItem>(Assert.Single(childMenuItem.Items));
                 Assert.Same(grandchild, grandchildMenuItem.DataContext);
@@ -2642,7 +2643,7 @@ public class NavigationViewItemTests
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var itemStyle = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]);
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
-            var icon = new FluentIcon(SymbolRegular.Home24);
+            var icon = new FontIcon(new FluentIconSource(FluentSymbolRegular.Home24));
             var parent = new NavigationViewItem { Style = itemStyle };
             parent.Icon = icon;
             var child = new NavigationViewItem { Style = itemStyle };
@@ -2705,13 +2706,13 @@ public class NavigationViewItemTests
                 );
                 Assert.Equal(IconVariant.Filled, iconPresenter.Variant);
                 Assert.Equal(IconVariant.Filled, icon.Variant);
-                Assert.True(icon.Filled);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), icon.Text);
 
                 parent.Deactivate(navigationView);
-                Assert.True(icon.Filled);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolFilled.Home24), icon.Text);
 
                 child.Deactivate(navigationView);
-                Assert.False(icon.Filled);
+                Assert.Equal(char.ConvertFromUtf32((int)FluentSymbolRegular.Home24), icon.Text);
 
                 parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
             }

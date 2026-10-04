@@ -21,7 +21,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </example>
 public class CalendarDatePicker : ToggleButton
 {
-    private static readonly FluentIconSource DefaultIcon = new(SymbolRegular.CalendarRtl24);
+    private static readonly FluentIconSource DefaultIcon = new(FluentSymbolRegular.CalendarRtl24);
 
     private Popup? _popup;
 

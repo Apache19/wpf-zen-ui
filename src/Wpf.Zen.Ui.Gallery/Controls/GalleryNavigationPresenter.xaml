@@ -30,9 +30,9 @@
                                     CommandParameter="{Binding PageType, Mode=OneTime}"
                                     IsChevronVisible="True">
                                     <ui:CardAction.Icon>
-                                        <ui:FluentIcon
+                                        <ui:FontIcon
                                             FontSize="30"
-                                            Symbol="{Binding Icon, Mode=OneTime}"
+                                            Source="{Binding IconSource, Mode=OneTime}"
                                             TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}" />
                                     </ui:CardAction.Icon>
                                     <StackPanel>

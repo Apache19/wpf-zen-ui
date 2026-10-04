@@ -210,12 +210,12 @@ public class ButtonAuditTests
         {
             var button = new DropDownButton
             {
-                Icon = new FluentIconSource(SymbolRegular.Add24),
+                Icon = new FluentIconSource(FluentSymbolRegular.Add24),
                 MouseOverForeground = Brushes.Red,
             };
             ApplyTheme(button);
             var presenter = Assert.IsType<IconPresenter>(button.Template.FindName("iconPresenter", button));
-            var chevron = Assert.IsType<FluentIcon>(button.Template.FindName("DropDownChevron", button));
+            var chevron = Assert.IsType<FontIcon>(button.Template.FindName("DropDownChevron", button));
             Assert.Equal(default(Thickness), presenter.Margin);
             SetHovered(button, true);
             Assert.Same(Brushes.Red, TextElement.GetForeground(presenter));

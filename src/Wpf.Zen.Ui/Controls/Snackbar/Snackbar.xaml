@@ -114,7 +114,7 @@
                                     Appearance="{TemplateBinding Appearance}"
                                     Foreground="{TemplateBinding Foreground}">
                                     <controls:Button.Icon>
-                                        <controls:FluentIcon Symbol="Dismiss48" />
+                                        <controls:FontIcon Source="{m:FluentIconSource Dismiss48}" />
                                     </controls:Button.Icon>
                                 </controls:Button>
                             </Grid>

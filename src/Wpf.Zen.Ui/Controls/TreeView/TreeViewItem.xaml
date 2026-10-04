@@ -33,11 +33,11 @@
                         <Grid.RenderTransform>
                             <RotateTransform Angle="0" />
                         </Grid.RenderTransform>
-                        <controls:FluentIcon
+                        <controls:FontIcon
                             x:Name="ChevronIcon"
                             VerticalAlignment="Center"
                             FontSize="{StaticResource TreeViewItemChevronSize}"
-                            Symbol="ChevronRight28" />
+                            Source="{m:FluentIconSource ChevronRight28}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
@@ -240,7 +240,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <ContentPresenter
-                                    x:Name="FluentIcon"
+                                    x:Name="FontIcon"
                                     Grid.Column="0"
                                     Margin="{TemplateBinding IconMargin}"
                                     Content="{TemplateBinding Icon}"
@@ -314,8 +314,8 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Icon" Value="{x:Null}">
-                            <Setter TargetName="FluentIcon" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="FluentIcon" Property="Margin" Value="0" />
+                            <Setter TargetName="FontIcon" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="FontIcon" Property="Margin" Value="0" />
                         </Trigger>
                         <Trigger Property="HasItems" Value="False">
                             <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />

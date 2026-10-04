@@ -52,11 +52,10 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
     /// <param name="targetPageType">Page type activated by this item.</param>
     /// <param name="children">Optional semantic child collection.</param>
     public NavigationItem(
-        object?       content,
-        SymbolRegular icon,
-        Type?         targetPageType = null,
-        IEnumerable?  children       = null)
-        : this(content, targetPageType)
+        object?             content,
+        FluentSymbolRegular icon,
+        Type?               targetPageType = null,
+        IEnumerable?        children       = null) : this(content, targetPageType)
     {
         Icon = new FluentIconSource(icon);
         Children = children;

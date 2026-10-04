@@ -8,39 +8,84 @@ using Wpf.Zen.Ui.Gallery.Models;
 
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages.DesignGuidance;
 
+/// <summary>
+/// Supports icon catalogue search, selection and copyable XAML examples.
+/// </summary>
 public partial class IconsViewModel : ViewModel
 {
+    /// <summary>
+    /// Gets the selected family, symbol and variant as one reusable description.
+    /// </summary>
+    public FontIconSource SelectedIcon => new FluentIconSource(SelectedSymbol, IsIconFilled);
+
+    partial void OnIsIconFilledChanged(bool value)
+    {
+        UpdateSymbolData();
+    }
+
     private int _selectedIconId = 0;
 
     private string _autoSuggestBoxText = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the selected Fluent symbol.
+    /// </summary>
     [ObservableProperty]
-    public partial SymbolRegular SelectedSymbol { get; set; } = SymbolRegular.Empty;
+    [NotifyPropertyChangedFor(nameof(SelectedIcon))]
+    public partial FluentSymbolRegular SelectedSymbol { get; set; } = FluentSymbolRegular.Empty;
 
+    /// <summary>
+    /// Gets or sets the selected symbol name.
+    /// </summary>
     [ObservableProperty]
     public partial string SelectedSymbolName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the hexadecimal code point displayed in the details.
+    /// </summary>
     [ObservableProperty]
     public partial string SelectedSymbolUnicodePoint { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the XML character entity displayed in the details.
+    /// </summary>
     [ObservableProperty]
     public partial string SelectedSymbolTextGlyph { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the copyable FontIcon markup for the current selection.
+    /// </summary>
     [ObservableProperty]
     public partial string SelectedSymbolXaml { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets whether the selected source uses the filled font.
+    /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedIcon))]
     public partial bool IsIconFilled { get; set; } = false;
 
+    /// <summary>
+    /// Gets or sets the complete catalogue.
+    /// </summary>
     [ObservableProperty]
     public partial List<DisplayableIcon> IconsCollection { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the catalogue entries matching the current search.
+    /// </summary>
     [ObservableProperty]
     public partial List<DisplayableIcon> FilteredIconsCollection { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the names offered by search suggestions.
+    /// </summary>
     [ObservableProperty]
     public partial List<string> IconNames { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the query and refreshes the matching catalogue entries.
+    /// </summary>
     public string AutoSuggestBoxText
     {
         get => _autoSuggestBoxText;
@@ -51,19 +96,23 @@ public partial class IconsViewModel : ViewModel
         }
     }
 
+    /// <summary>
+    /// Initializes the searchable catalogue from the Fluent symbol enumeration.
+    /// </summary>
     public IconsViewModel()
     {
         _ = Task.Run(() =>
         {
             var id = 0;
-            var names = Enum.GetNames(typeof(SymbolRegular));
+            var names = Enum.GetNames(typeof(FluentSymbolRegular));
             var icons = new List<DisplayableIcon>();
 
             names = names.OrderBy(n => n).ToArray();
 
             foreach (string iconName in names)
             {
-                SymbolRegular icon = SymbolGlyph.Parse(iconName);
+                var icon = (FluentSymbolRegular)Enum.Parse(typeof(FluentSymbolRegular), iconName);
+                var source = new FluentIconSource(icon);
 
                 icons.Add(
                     new DisplayableIcon
@@ -71,7 +120,7 @@ public partial class IconsViewModel : ViewModel
                         Id = id++,
                         Name = iconName,
                         Icon = icon,
-                        Symbol = ((char)icon).ToString(),
+                        Symbol = source.Glyph,
                         Code = ((int)icon).ToString("X4"),
                     }
                 );
@@ -90,6 +139,10 @@ public partial class IconsViewModel : ViewModel
         });
     }
 
+    /// <summary>
+    /// Selects a catalogue item and refreshes its details and font source.
+    /// </summary>
+    /// <param name="parameter">The catalogue identity to select.</param>
     [RelayCommand]
     public void OnIconSelected(int parameter)
     {
@@ -111,8 +164,9 @@ public partial class IconsViewModel : ViewModel
         SelectedSymbolName = selectedSymbol.Name;
         SelectedSymbolUnicodePoint = selectedSymbol.Code;
         SelectedSymbolTextGlyph = $"&#x{selectedSymbol.Code};";
+        string variant = IsIconFilled ? ", Filled=True" : string.Empty;
         SelectedSymbolXaml =
-            $"<ui:FluentIcon Symbol=\"{selectedSymbol.Name}\"{(IsIconFilled ? " Filled=\"True\"" : string.Empty)}/>";
+            $"<ui:FontIcon Source=\"{{ui:FluentIconSource {selectedSymbol.Name}{variant}}}\" />";
     }
 
     private void UpdateSearchResults(string searchedText)

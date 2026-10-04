@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 
-[GalleryPage("Contains a collection of MenuItem elements.", SymbolRegular.RowTriple24)]
+[GalleryPage("Contains a collection of MenuItem elements.", FluentSymbolRegular.RowTriple24)]
 public partial class MenuPage : INavigableView<MenuViewModel>
 {
     public MenuViewModel ViewModel { get; }

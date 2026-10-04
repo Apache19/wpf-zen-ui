@@ -67,16 +67,16 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 CornerRadius="6">
-                                <controls:FluentIcon
+                                <controls:FontIcon
                                     x:Name="chevronIcon"
                                     IconForeground="{m:DynamicBrush TextFillSecondary}"
                                     IconSize="12"
                                     RenderTransformOrigin="0.5, 0.5"
-                                    Symbol="ChevronDown24">
-                                    <controls:FluentIcon.RenderTransform>
+                                    Source="{m:FluentIconSource ChevronDown24}">
+                                    <controls:FontIcon.RenderTransform>
                                         <RotateTransform Angle="0" />
-                                    </controls:FluentIcon.RenderTransform>
-                                </controls:FluentIcon>
+                                    </controls:FontIcon.RenderTransform>
+                                </controls:FontIcon>
                             </Border>
                         </Grid>
                     </Border>
@@ -95,14 +95,14 @@
                         </Trigger>
 
                         <DataTrigger Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Up">
-                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronUp24" />
+                            <Setter TargetName="chevronIcon" Property="Source" Value="{m:FluentIconSource ChevronUp24}" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Left">
                             <Setter TargetName="chevronBorder" Property="Grid.Column" Value="0" />
                             <Setter TargetName="chevronBorder" Property="Grid.ColumnSpan" Value="2" />
                             <Setter TargetName="contentPresenter" Property="Grid.Row" Value="1" />
                             <Setter TargetName="contentPresenter" Property="Grid.ColumnSpan" Value="2" />
-                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronLeft24" />
+                            <Setter TargetName="chevronIcon" Property="Source" Value="{m:FluentIconSource ChevronLeft24}" />
                             <Setter Property="VerticalContentAlignment" Value="Stretch" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Right">
@@ -110,7 +110,7 @@
                             <Setter TargetName="chevronBorder" Property="Grid.ColumnSpan" Value="2" />
                             <Setter TargetName="contentPresenter" Property="Grid.Row" Value="1" />
                             <Setter TargetName="contentPresenter" Property="Grid.ColumnSpan" Value="2" />
-                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronRight24" />
+                            <Setter TargetName="chevronIcon" Property="Source" Value="{m:FluentIconSource ChevronRight24}" />
                             <Setter Property="VerticalContentAlignment" Value="Stretch" />
                         </DataTrigger>
 
@@ -119,14 +119,14 @@
                                 <Condition Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Left" />
                                 <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource Self}}" Value="RightToLeft" />
                             </MultiDataTrigger.Conditions>
-                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronRight24" />
+                            <Setter TargetName="chevronIcon" Property="Source" Value="{m:FluentIconSource ChevronRight24}" />
                         </MultiDataTrigger>
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Right" />
                                 <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource Self}}" Value="RightToLeft" />
                             </MultiDataTrigger.Conditions>
-                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronLeft24" />
+                            <Setter TargetName="chevronIcon" Property="Source" Value="{m:FluentIconSource ChevronLeft24}" />
                         </MultiDataTrigger>
 
                         <Trigger Property="IsChecked" Value="True">
@@ -135,7 +135,7 @@
                                     <Storyboard>
                                         <ani:InterruptibleDoubleAnimation
                                             Storyboard.TargetName="chevronIcon"
-                                            Storyboard.TargetProperty="(controls:FluentIcon.RenderTransform).(RotateTransform.Angle)"
+                                            Storyboard.TargetProperty="(controls:FontIcon.RenderTransform).(RotateTransform.Angle)"
                                             From="0"
                                             To="180"
                                             Duration="00:00:00.167" />
@@ -147,7 +147,7 @@
                                     <Storyboard>
                                         <ani:InterruptibleDoubleAnimation
                                             Storyboard.TargetName="chevronIcon"
-                                            Storyboard.TargetProperty="(controls:FluentIcon.RenderTransform).(RotateTransform.Angle)"
+                                            Storyboard.TargetProperty="(controls:FontIcon.RenderTransform).(RotateTransform.Angle)"
                                             From="180"
                                             To="0"
                                             Duration="00:00:00.167" />

@@ -17,9 +17,9 @@
     <FontFamily x:Key="{x:Static theming:FontFamilyKeys.SegoeFluentIcons}">Segoe Fluent Icons</FontFamily>
 
     <!--  https://github.com/microsoft/fluentui-system-icons  -->
-    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIcons}">pack://application:,,,/Wpf.Zen.Ui;component/Resources/Fonts/#FluentSystemIcons-Regular</FontFamily>
+    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIcons}">/Wpf.Zen.Ui;component/Resources/Fonts/#FluentSystemIcons-Regular</FontFamily>
 
     <!--  https://github.com/microsoft/fluentui-system-icons  -->
-    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIconsFilled}">pack://application:,,,/Wpf.Zen.Ui;component/Resources/Fonts/#FluentSystemIcons-Filled</FontFamily>
+    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIconsFilled}">/Wpf.Zen.Ui;component/Resources/Fonts/#FluentSystemIcons-Filled</FontFamily>
 
 </ResourceDictionary>

@@ -7,4 +7,4 @@ using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.Gallery.ControlsLookup;
 
-internal record GalleryPage(string Name, string Description, SymbolRegular Icon, Type PageType);
+internal record GalleryPage(string Name, string Description, FluentSymbolRegular Icon, Type PageType);

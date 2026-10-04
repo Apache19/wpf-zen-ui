@@ -129,12 +129,12 @@ snackbars.Show(
     "连接失败",
     "请检查网络设置后重试。",
     ControlAppearance.Danger,
-    new FluentIconSource(SymbolRegular.Warning24),
+    new FluentIconSource(FluentSymbolRegular.Warning24),
     TimeSpan.FromSeconds(8));
 ```
 
 `icon` 是普通内容槽，推荐传入可安全复用的 `FluentIconSource`，而不是已经属于另一个视觉树
-的 `FluentIcon` 元素。
+的 `FontIcon` 元素。
 
 常用 `ControlAppearance` 值包括 `Normal`、`Info`、`Success`、`Caution` 和 `Danger`。
 外观只表达通知语义，不替代清晰的标题和消息。
@@ -161,7 +161,7 @@ var snackbar = new Snackbar(RootSnackbarPresenter)
     Title = "正在同步",
     Content = "剩余 3 个文件",
     Appearance = ControlAppearance.Info,
-    Icon = new FluentIconSource(SymbolRegular.ArrowSync24),
+    Icon = new FluentIconSource(FluentSymbolRegular.ArrowSync24),
     Timeout = TimeSpan.FromSeconds(4),
     IsCloseButtonEnabled = true,
 };

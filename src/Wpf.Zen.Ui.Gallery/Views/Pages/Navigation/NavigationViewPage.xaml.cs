@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 
-[GalleryPage("Main navigation for the app.", SymbolRegular.PanelLeft24)]
+[GalleryPage("Main navigation for the app.", FluentSymbolRegular.PanelLeft24)]
 public partial class NavigationViewPage : INavigableView<NavigationViewViewModel>
 {
     public NavigationViewViewModel ViewModel { get; }

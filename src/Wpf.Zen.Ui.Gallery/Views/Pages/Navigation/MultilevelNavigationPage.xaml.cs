@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 
-[GalleryPage("Navigation with multi level Breadcrumb.", SymbolRegular.PanelRightContract24)]
+[GalleryPage("Navigation with multi level Breadcrumb.", FluentSymbolRegular.PanelRightContract24)]
 public partial class MultilevelNavigationPage : INavigableView<MultilevelNavigationSample>
 {
     public MultilevelNavigationPage(MultilevelNavigationSample viewModel)

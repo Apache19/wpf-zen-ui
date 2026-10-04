@@ -9,7 +9,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
-[GalleryPage("Opens a link.", SymbolRegular.Link24)]
+[GalleryPage("Opens a link.", FluentSymbolRegular.Link24)]
 public partial class HyperlinkButtonPage : INavigableView<HyperlinkButtonViewModel>
 {
     public HyperlinkButtonViewModel ViewModel { get; }

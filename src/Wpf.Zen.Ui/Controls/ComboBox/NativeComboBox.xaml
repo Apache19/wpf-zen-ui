@@ -62,7 +62,7 @@
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
 
                     <!--  Drop-down chevron icon. Flips with a rotation animation when toggled.  -->
-                    <controls:FluentIcon
+                    <controls:FontIcon
                         x:Name="ChevronIcon"
                         Grid.Column="1"
                         Margin="8,0,10,0"
@@ -70,11 +70,11 @@
                         IconForeground="{m:DynamicBrush TextFillSecondary}"
                         IconSize="11"
                         RenderTransformOrigin="0.5, 0.5"
-                        Symbol="ChevronDown24">
-                        <controls:FluentIcon.RenderTransform>
+                        Source="{m:FluentIconSource ChevronDown24}">
+                        <controls:FontIcon.RenderTransform>
                             <RotateTransform Angle="0" />
-                        </controls:FluentIcon.RenderTransform>
-                    </controls:FluentIcon>
+                        </controls:FontIcon.RenderTransform>
+                    </controls:FontIcon>
 
                     <!--  Editable text box input area, visible only when the ComboBox is in editable mode.  -->
                     <controls:TextBox
@@ -182,7 +182,7 @@
                         <Storyboard>
                             <ani:InterruptibleDoubleAnimation
                                 Storyboard.TargetName="ChevronIcon"
-                                Storyboard.TargetProperty="(controls:FluentIcon.RenderTransform).(RotateTransform.Angle)"
+                                Storyboard.TargetProperty="(controls:FontIcon.RenderTransform).(RotateTransform.Angle)"
                                 From="0"
                                 To="180"
                                 Duration="00:00:00.167" />
@@ -194,7 +194,7 @@
                         <Storyboard>
                             <ani:InterruptibleDoubleAnimation
                                 Storyboard.TargetName="ChevronIcon"
-                                Storyboard.TargetProperty="(controls:FluentIcon.RenderTransform).(RotateTransform.Angle)"
+                                Storyboard.TargetProperty="(controls:FontIcon.RenderTransform).(RotateTransform.Angle)"
                                 From="180"
                                 To="0"
                                 Duration="00:00:00.167" />

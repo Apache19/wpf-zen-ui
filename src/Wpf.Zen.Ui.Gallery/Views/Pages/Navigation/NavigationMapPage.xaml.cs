@@ -10,7 +10,7 @@ using Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 
-[GalleryPage("Visualizes a semantic navigation graph as an interactive application map.", SymbolRegular.Map24)]
+[GalleryPage("Visualizes a semantic navigation graph as an interactive application map.", FluentSymbolRegular.Map24)]
 public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
 {
     /// <summary>Initializes a new instance of the <see cref="NavigationMapPage"/> class.</summary>
