@@ -33,9 +33,6 @@ public static class StyleKeys
     public static ComponentResourceKey DefaultUiTextBoxStyle           { get; } = Create(nameof(DefaultUiTextBoxStyle));
     public static ComponentResourceKey UiRichTextBoxStyle              { get; } = Create(nameof(UiRichTextBoxStyle));
     public static ComponentResourceKey UiDynamicScrollViewerStyle      { get; } = Create(nameof(UiDynamicScrollViewerStyle));
-    public static ComponentResourceKey IconInfoBadgeStyle              { get; } = Create(nameof(IconInfoBadgeStyle));
-    public static ComponentResourceKey ValueInfoBadgeStyle             { get; } = Create(nameof(ValueInfoBadgeStyle));
-    public static ComponentResourceKey DotInfoBadgeStyle               { get; } = Create(nameof(DotInfoBadgeStyle));
     public static ComponentResourceKey UiSplitButtonStyle              { get; } = Create(nameof(UiSplitButtonStyle));
     public static ComponentResourceKey UiAutoSuggestBoxStyle           { get; } = Create(nameof(UiAutoSuggestBoxStyle));
     public static ComponentResourceKey UiBadgeStyle                    { get; } = Create(nameof(UiBadgeStyle));

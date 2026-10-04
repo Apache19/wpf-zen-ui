@@ -9,7 +9,6 @@
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming;assembly=Wpf.Zen.Ui"
     Title="InfoBadgePage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:InfoBadge}"
     d:Background="{ui:DynamicBrush WindowBackground}"
@@ -37,7 +36,7 @@
                     <ui:NavigationViewItem Header="Dashboard" Icon="{ui:FluentIconSource Home24}" />
                     <ui:NavigationViewItem Header="Items" Icon="{ui:FluentIconSource Library24}">
                         <ui:NavigationViewItem.InfoBadge>
-                            <ui:InfoBadge Severity="Attention" Value="3" />
+                            <ui:InfoBadge Severity="Attention" Content="3" />
                         </ui:NavigationViewItem.InfoBadge>
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
@@ -55,32 +54,35 @@
         </controls:ControlExample>
         <controls:ControlExample
             Margin="0,0,0,42"
-            HeaderText="Different InfoBadge Styles"
-            XamlCode="&amp;lt;ui:InfoBadge Value=&amp;quot;{Binding ElementName=ValueNumberBox, Path=Value, Mode=TwoWay}&amp;quot; /&amp;gt; \n&amp;lt;ui:NumberBox x:Name=&amp;quot;ValueNumberBox&amp;quot; Value=&amp;quot;1&amp;quot; Minimum=&amp;quot;-1&amp;quot; ValueChanged=&amp;quot;ValueNumberBox_ValueChanged&amp;quot; /&amp;gt;">
+            HeaderText="InfoBadge Content and Icon Placement"
+            XamlCode="&lt;ui:InfoBadge Icon=&quot;{ui:FluentIconSource Alert16}&quot; /&gt;\n&lt;ui:InfoBadge Content=&quot;1&quot; /&gt;\n&lt;ui:InfoBadge Width=&quot;6&quot; Height=&quot;6&quot; Padding=&quot;0&quot; CornerRadius=&quot;3&quot; /&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ui:InfoBadge Margin="10" Icon="{ui:FluentIconSource Checkmark16}"
+                                  Content="Left icon" Severity="{Binding Severity}" />
+                    <ui:InfoBadge Margin="10" Icon="{ui:FluentIconSource Checkmark16}"
+                                  Content="Right icon" IconPlacement="Right" Severity="{Binding Severity}" />
+                    <ui:InfoBadge Margin="10" Width="48" Height="20" CornerRadius="4"
+                                  Severity="{Binding Severity}" />
                     <ui:InfoBadge
                         Margin="10"
                         CornerRadius="30"
                         Icon="{ui:FluentIconSource Alert16}"
-                        Severity="{Binding InfoBadgeSeverity}"
-                        Style="{DynamicResource {x:Static theming:StyleKeys.IconInfoBadgeStyle}}" />
+                        Severity="{Binding Severity}" />
 
                     <ui:InfoBadge
                         Margin="10"
-                        Severity="{Binding InfoBadgeSeverity}"
-                        Style="{DynamicResource {x:Static theming:StyleKeys.ValueInfoBadgeStyle}}"
-                        Value="1" />
+                        Severity="{Binding Severity}"
+                        Content="1" />
 
                     <ui:InfoBadge
                         Margin="10"
-                        Severity="{Binding InfoBadgeSeverity}"
-                        Style="{DynamicResource {x:Static theming:StyleKeys.DotInfoBadgeStyle}}"
-                        Value="2" />
+                        Severity="{Binding Severity}"
+                        Width="6" Height="6" Padding="0" CornerRadius="3" />
                 </WrapPanel>
                 <StackPanel Grid.Column="1" Margin="12,0,0,0">
 
@@ -88,7 +90,7 @@
                     <ComboBox
                         MinWidth="140"
                         Margin="0,8,0,0"
-                        SelectedIndex="{Binding InfoBadgeSeverityComboBoxSelectedIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding SeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Attention" />
                         <ComboBoxItem Content="Informational" />
                         <ComboBoxItem Content="Success" />
@@ -100,8 +102,8 @@
         </controls:ControlExample>
         <controls:ControlExample
             Margin="0,0,0,42"
-            HeaderText="InfoBadge with Dynamic Value"
-            XamlCode="&amp;lt;ui:InfoBadge Value=&amp;quot;{Binding ElementName=ValueNumberBox, Path=Value, Mode=TwoWay}&amp;quot; /&amp;gt; \n&amp;lt;ui:NumberBox x:Name=&amp;quot;ValueNumberBox&amp;quot; Value=&amp;quot;1&amp;quot; Minimum=&amp;quot;-1&amp;quot; ValueChanged=&amp;quot;ValueNumberBox_ValueChanged&amp;quot; /&amp;gt;">
+            HeaderText="InfoBadge with Dynamic Content"
+            XamlCode="&lt;ui:InfoBadge Content=&quot;{Binding Value, ElementName=ValueNumberBox}&quot; /&gt;\n&lt;ui:NumberBox x:Name=&quot;ValueNumberBox&quot; Value=&quot;1&quot; Minimum=&quot;0&quot; Maximum=&quot;100&quot; /&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -109,10 +111,10 @@
                 </Grid.ColumnDefinitions>
                 <ui:InfoBadge
                     Padding="6,0"
-                    Severity="{Binding InfoBadgeSeverity}"
-                    Value="{Binding Value, ElementName=ValueNumberBox}" />
+                    Severity="{Binding Severity}"
+                    Content="{Binding Value, ElementName=ValueNumberBox}" />
                 <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                    <ui:TextBlock Text="InfoBadge Value" />
+                    <ui:TextBlock Text="InfoBadge Content" />
                     <ui:NumberBox
                         x:Name="ValueNumberBox"
                         Maximum="100"
@@ -122,7 +124,7 @@
                     <ComboBox
                         MinWidth="140"
                         Margin="0,8,0,0"
-                        SelectedIndex="{Binding InfoBadgeSeverityComboBoxSelectedIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding SeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Attention" />
                         <ComboBoxItem Content="Informational" />
                         <ComboBoxItem Content="Success" />
@@ -134,8 +136,8 @@
         </controls:ControlExample>
         <controls:ControlExample
             Margin="0,0,0,42"
-            HeaderText="Placing an InfoBadge Inside Another"
-            XamlCode="&amp;lt;ui:InfoBadge Value=&amp;quot;{Binding ElementName=ValueNumberBox, Path=Value, Mode=TwoWay}&amp;quot; /&amp;gt; \n&amp;lt;ui:NumberBox x:Name=&amp;quot;ValueNumberBox&amp;quot; Value=&amp;quot;1&amp;quot; Minimum=&amp;quot;-1&amp;quot; ValueChanged=&amp;quot;ValueNumberBox_ValueChanged&amp;quot; /&amp;gt;">
+            HeaderText="Placing an InfoBadge on a Button"
+            XamlCode="&lt;ui:InfoBadge HorizontalAlignment=&quot;Right&quot; VerticalAlignment=&quot;Top&quot; Severity=&quot;Critical&quot; Width=&quot;6&quot; Height=&quot;6&quot; Padding=&quot;0&quot; CornerRadius=&quot;3&quot; /&gt;">
             <Grid>
                 <ui:Button
                     Width="200"
@@ -155,11 +157,24 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Top"
                             Severity="Critical"
-                            Style="{DynamicResource {x:Static theming:StyleKeys.DotInfoBadgeStyle}}"
-                            Value="{Binding Value, ElementName=ValueNumberBox}" />
+                            Width="6" Height="6" Padding="0" CornerRadius="3" />
                     </Grid>
                 </ui:Button>
             </Grid>
+        </controls:ControlExample>
+        <controls:ControlExample
+            Margin="0,0,0,42"
+            HeaderText="InfoBadge with a ContentTemplate">
+            <ui:InfoBadge Content="New" Severity="Success" Padding="6,2" CornerRadius="4">
+                <ui:InfoBadge.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:FluentIcon Margin="0,0,4,0" Symbol="Checkmark16" />
+                            <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ui:InfoBadge.ContentTemplate>
+            </ui:InfoBadge>
         </controls:ControlExample>
     </StackPanel>
 </Page>
