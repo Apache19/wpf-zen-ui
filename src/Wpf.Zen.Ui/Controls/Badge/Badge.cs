@@ -88,7 +88,7 @@ public class Badge : Decorator
             nameof(Text), typeof(string), typeof(Badge),
             new FrameworkPropertyMetadata(string.Empty,
                 FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
-                OnTextChanged
+                OnTextPropertyChanged
             )
         );
 
@@ -100,6 +100,27 @@ public class Badge : Decorator
         get => (string)GetValue(TextProperty);
         set => SetValue(TextProperty, value);
     }
+
+    private static readonly DependencyPropertyKey HasContentPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(HasContent), typeof(bool), typeof(Badge),
+            new FrameworkPropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="HasContent"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HasContentProperty
+        = HasContentPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether the badge has text or a drawable icon glyph.
+    /// </summary>
+    /// <remarks>
+    /// Empty strings and icon sources with an empty glyph do not count as content. The value can
+    /// be consumed by styles to distinguish a compact status dot from a text or icon badge.
+    /// </remarks>
+    public bool HasContent => (bool)GetValue(HasContentProperty);
 
     /// <summary>
     /// Identifies the <see cref="Icon"/> dependency property.
@@ -455,7 +476,7 @@ public class Badge : Decorator
         = TextElement.FontSizeProperty.AddOwner(
             typeof(Badge),
             new FrameworkPropertyMetadata(
-                SystemFonts.MessageFontSize,
+                14D,
                 FrameworkPropertyMetadataOptions.Inherits | FrameworkPropertyMetadataOptions.AffectsMeasure
                 | FrameworkPropertyMetadataOptions.AffectsRender,
                 OnTextChanged
@@ -712,9 +733,14 @@ public class Badge : Decorator
             return _formattedIcon;
         }
 
-        var icon  = Icon;
-        var glyph = icon?.Glyph;
-        if (icon is null || string.IsNullOrEmpty(glyph))
+        var icon = Icon;
+        if (icon is null)
+        {
+            return null;
+        }
+
+        var glyph = icon.Glyph;
+        if (string.IsNullOrEmpty(glyph))
         {
             return null;
         }
@@ -729,7 +755,6 @@ public class Badge : Decorator
         }
 
         var foreground = IconForeground ?? Foreground;
-        // todo: glyph 可能为 null
         _formattedIcon = CreateText(glyph, typeface, FlowDirection.LeftToRight, size, foreground);
         return _formattedIcon;
     }
@@ -828,7 +853,30 @@ public class Badge : Decorator
             badge.ClearValue(IconFontFamilyProperty);
         }
 
+        badge.UpdateHasContent();
         OnTextChanged(sender, args);
+    }
+
+    /// <summary>
+    /// Updates the public content state before invalidating cached text layout.
+    /// </summary>
+    private static void OnTextPropertyChanged(
+        DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        var badge = (Badge)sender;
+        badge.UpdateHasContent();
+        OnTextChanged(sender, args);
+    }
+
+    /// <summary>
+    /// Synchronizes the style-facing state with the content that can produce a glyph run.
+    /// </summary>
+    private void UpdateHasContent()
+    {
+        var hasText      = !string.IsNullOrEmpty(Text);
+        var iconGlyph    = Icon?.Glyph;
+        var hasIconGlyph = !string.IsNullOrEmpty(iconGlyph);
+        SetValue(HasContentPropertyKey, hasText || hasIconGlyph);
     }
 
     /// <summary>
@@ -933,7 +981,7 @@ public class Badge : Decorator
             && IsFiniteNonnegative(thickness.Right) && IsFiniteNonnegative(thickness.Bottom);
     }
 
-    private static bool IsValidCornerRadius(object value)
+    private static bool IsValidCornerRadius(object? value)
     {
         if (value is null)
         {

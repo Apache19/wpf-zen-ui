@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,6 +19,81 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 /// </summary>
 public class BadgeTests
 {
+    /// <summary>
+    /// Tracks only text and icon sources that can contribute visible content to the badge.
+    /// </summary>
+    [Fact]
+    public void HasContent_TracksDrawableTextAndIconGlyphs()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = new Badge();
+            Assert.False(badge.HasContent);
+
+            badge.Text = "Status";
+            Assert.True(badge.HasContent);
+
+            badge.Text = string.Empty;
+            Assert.False(badge.HasContent);
+
+            badge.Icon = new FluentIconSource(FluentSymbolRegular.Empty);
+            Assert.False(badge.HasContent);
+
+            badge.Icon = new TestFontIcon();
+            Assert.True(badge.HasContent);
+
+            badge.Icon = null;
+            Assert.False(badge.HasContent);
+        });
+    }
+
+    /// <summary>
+    /// Applies the six-DIP dot defaults only while the badge has no drawable content.
+    /// </summary>
+    [Fact]
+    public void DefaultStyle_EmptyContentMeasuresAsSixDipDot()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var badge = CreateStyledBadge();
+            badge.Measure(new Size(100, 100));
+
+            Assert.Equal(new Thickness(), badge.Padding);
+            Assert.Equal(6, badge.MinWidth);
+            Assert.Equal(6, badge.MinHeight);
+            Assert.Equal(new Size(6, 6), badge.DesiredSize);
+
+            badge.Text = "1";
+            badge.Measure(new Size(100, 100));
+
+            Assert.Equal(new Thickness(4, 2, 4, 2), badge.Padding);
+            Assert.Equal(6, badge.MinWidth);
+            Assert.Equal(6, badge.MinHeight);
+            Assert.True(badge.DesiredSize.Width > 6);
+            Assert.True(badge.DesiredSize.Height > 6);
+        });
+    }
+
+    /// <summary>
+    /// Keeps derived-style minimum dimensions above the library's ordinary default setters.
+    /// </summary>
+    [Fact]
+    public void DefaultStyle_DerivedStyleOverridesMinimumDimensions()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var style = new Style(typeof(Badge), CreateBadgeStyle());
+            style.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 9D));
+            style.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, 11D));
+            var badge = new Badge { Style = style };
+            badge.Measure(new Size(100, 100));
+
+            Assert.Equal(9, badge.MinWidth);
+            Assert.Equal(11, badge.MinHeight);
+            Assert.Equal(new Size(9, 11), badge.DesiredSize);
+        });
+    }
+
     /// <summary>
     /// Keeps element, inline, and self-drawn icons synchronized with scoped font resources.
     /// </summary>
@@ -562,6 +638,30 @@ public class BadgeTests
         var pixels = new byte[width * height * 4];
         bitmap.CopyPixels(pixels, width * 4, 0);
         return pixels;
+    }
+
+    /// <summary>
+    /// Loads the production theme explicitly because these tests run without an application host.
+    /// </summary>
+    private static Badge CreateStyledBadge()
+    {
+        return new Badge { Style = CreateBadgeStyle() };
+    }
+
+    /// <summary>
+    /// Loads the production badge style explicitly for tests that run without an application host.
+    /// </summary>
+    private static Style CreateBadgeStyle()
+    {
+        RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
+
+        var applicationUri = new Uri("application:///", UriKind.Absolute);
+        var resourceUri = new Uri(
+            "/Wpf.Zen.Ui;component/Themes/Generic.xaml", UriKind.Relative
+        );
+        var themeUri = System.IO.Packaging.PackUriHelper.Create(applicationUri, resourceUri);
+        var resources = new ResourceDictionary { Source = themeUri };
+        return Assert.IsType<Style>(resources[typeof(Badge)]);
     }
 
     /// <summary>

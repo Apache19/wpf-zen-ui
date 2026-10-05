@@ -5,16 +5,17 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <!-- Solid severity fills use contrasting text and no default border. -->
+    <!--  Solid severity fills use contrasting text and no default border.  -->
     <Style x:Key="{x:Static t:StyleKeys.UiBadgeStyle}" TargetType="{x:Type controls:Badge}">
+        <Setter Property="MinWidth" Value="6" />
+        <Setter Property="MinHeight" Value="6" />
         <Setter Property="Padding" Value="4,2" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillInverse}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Style.Triggers>
+            <Trigger Property="HasContent" Value="False">
+                <Setter Property="Padding" Value="0" />
+            </Trigger>
             <Trigger Property="Severity" Value="Informational">
                 <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformationalForeground}" />
             </Trigger>
