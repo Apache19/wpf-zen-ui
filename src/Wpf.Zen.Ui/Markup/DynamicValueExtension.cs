@@ -51,6 +51,7 @@ internal static class ValueTokenResourceKey
     {
         return token switch
         {
+            ValueToken.DefaultControlMinWidth                   => ValueKeys.DefaultControlMinWidth,
             ValueToken.DefaultControlMinHeight                  => ValueKeys.DefaultControlMinHeight,
             ValueToken.DefaultIconFontSize                      => ValueKeys.DefaultIconFontSize,
             ValueToken.ControlContentThemeFontSize              => ValueKeys.ControlContentThemeFontSize,

@@ -11,6 +11,10 @@ namespace Wpf.Zen.Ui.Theming;
 public enum ValueToken
 {
     None,
+    /// <summary>
+    /// The default control minimum width, expressed in device-independent units; defaults to 32.
+    /// </summary>
+    DefaultControlMinWidth,
     DefaultControlMinHeight,
     DefaultIconFontSize,
     ControlContentThemeFontSize,
