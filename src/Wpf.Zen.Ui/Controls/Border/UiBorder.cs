@@ -55,9 +55,8 @@ public enum BorderPlacement
 /// without reserving layout space for <see cref="Border.BorderThickness"/>.
 /// </summary>
 /// <remarks>
-/// The control intentionally keeps <see cref="Border.Padding"/> semantics aligned with <see cref="Border"/> in all
-/// placement modes. Only <see cref="Border.BorderThickness"/> changes behavior in <see cref="BorderPlacement.Outside"/>
-/// and <see cref="BorderPlacement.Inside"/>: it is ignored by layout, then interpreted only by the render path.
+/// Padding follows native Border behavior unless <see cref="IsPaddingCompressible"/> is enabled.
+/// Outside and Inside placement ignore border thickness during layout and apply it during rendering.
 /// </remarks>
 public class UiBorder : Border
 {
@@ -70,8 +69,11 @@ public class UiBorder : Border
         "_flags",
         BindingFlags.Instance | BindingFlags.NonPublic
     );
+
     private static readonly bool DoNotApplyLayoutRoundingToBorderThickness =
         IsAppContextSwitchEnabled(DoNotApplyLayoutRoundingToBorderThicknessSwitchName);
+
+    private readonly CompressiblePaddingLayout _paddingLayout = new();
 
     private StreamGeometry? _backgroundGeometryCache;
     private StreamGeometry? _borderGeometryCache;
@@ -128,9 +130,47 @@ public class UiBorder : Border
         set => SetValue(BorderPlacementProperty, value);
     }
 
+    /// <summary>
+    /// Identifies the <see cref="IsPaddingCompressible"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsPaddingCompressibleProperty =
+        DependencyProperty.Register(
+            nameof(IsPaddingCompressible),
+            typeof(bool),
+            typeof(UiBorder),
+            new FrameworkPropertyMetadata(
+                false,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets whether content takes priority over padding when layout space is limited.
+    /// </summary>
+    /// <remarks>
+    /// The default is false. When enabled, each pair of padding edges shrinks proportionally
+    /// toward zero and recovers when space returns. The configured Padding value stays unchanged.
+    /// Content is measured before padding is reserved, which can delay text wrapping.
+    /// Compression uses the constraints supplied by WPF; ancestor clipping and explicit minimum
+    /// sizes may prevent the decorator from receiving the smaller visible size.
+    /// </remarks>
+    public bool IsPaddingCompressible
+    {
+        get => (bool)GetValue(IsPaddingCompressibleProperty);
+        set => SetValue(IsPaddingCompressibleProperty, value);
+    }
+
     /// <inheritdoc />
     protected override Size MeasureOverride(Size constraint)
     {
+        if (IsPaddingCompressible)
+        {
+            var border = BorderPlacement == BorderPlacement.Native
+                ? GetRoundedBorderThickness()
+                : default;
+            return _paddingLayout.Measure(Child, constraint, border, Padding);
+        }
+
         // Native mode is deliberately delegated to Border instead of reimplementing it. Native Border has several
         // framework-specific details here, including layout rounding of BorderThickness.
         if (BorderPlacement == BorderPlacement.Native)
@@ -141,7 +181,7 @@ public class UiBorder : Border
         // Render-only placement modes remove only BorderThickness from layout. Padding still participates in measure
         // exactly as it does on Border, so existing content spacing behavior remains predictable when stroke thickness
         // is animated or otherwise changed at run time.
-        Size padding = CollapseThickness(Padding);
+        var padding = CollapseThickness(Padding);
 
         if (Child is not UIElement child)
         {
@@ -164,6 +204,28 @@ public class UiBorder : Border
     /// <inheritdoc />
     protected override Size ArrangeOverride(Size finalSize)
     {
+        if (IsPaddingCompressible)
+        {
+            var border = default(Thickness);
+            if (BorderPlacement == BorderPlacement.Native)
+            {
+                // Border prepares private geometry caches in ArrangeOverride. Preserve that
+                // rendering path, then replace its fixed-padding child slot. This can arrange
+                // the child twice, but never changes Padding or invalidates measure mid-layout.
+                base.ArrangeOverride(finalSize);
+                border = GetRoundedBorderThickness();
+            }
+
+            var bounds  = new Rect(finalSize);
+            var inner   = DeflateRect(bounds, border);
+            var padding = _paddingLayout.GetPadding(inner.Size, Padding);
+
+            var content = DeflateRect(inner, padding);
+            Child?.Arrange(content);
+
+            return finalSize;
+        }
+
         // Keep native behavior intact for Native mode. This also preserves any future framework fixes in Border.
         if (BorderPlacement == BorderPlacement.Native)
         {
@@ -219,16 +281,17 @@ public class UiBorder : Border
     {
         try
         {
-            if (
-                PropertyMetadataFlagsField?.FieldType is not { IsEnum: true } flagsType
-                || PropertyMetadataFlagsField.GetValue(metadata) is not { } flags
-            )
+            if (PropertyMetadataFlagsField?.FieldType is not { IsEnum: true } flagsType
+                || PropertyMetadataFlagsField.GetValue(metadata) is not { } flags)
             {
                 return;
             }
 
-            uint value = Convert.ToUInt32(flags);
-            PropertyMetadataFlagsField.SetValue(metadata, Enum.ToObject(flagsType, value & ~AffectsMeasureMetadataFlag));
+            var value = Convert.ToUInt32(flags);
+            PropertyMetadataFlagsField.SetValue(
+                metadata,
+                Enum.ToObject(flagsType, value & ~AffectsMeasureMetadataFlag)
+            );
 
             // Treat a changed internal bit layout as a failed reflection attempt. The fallback remains WPF's original,
             // conservative AffectsMeasure behavior and therefore cannot leave layout in an invalid state.
@@ -275,13 +338,13 @@ public class UiBorder : Border
 
     private Thickness GetRoundedBorderThickness()
     {
-        Thickness borderThickness = BorderThickness;
+        var borderThickness = BorderThickness;
         if (!UseLayoutRounding || DoNotApplyLayoutRoundingToBorderThickness)
         {
             return borderThickness;
         }
 
-        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        var dpi = VisualTreeHelper.GetDpi(this);
 
         // UIElement.RoundLayoutValue is internal. The arithmetic below mirrors it without reflection, while the
         // AppContext switch above preserves Border's compatibility behavior for applications that explicitly opt out
@@ -296,18 +359,16 @@ public class UiBorder : Border
 
     private void EnsureGeometryCache()
     {
-        Size renderSize = RenderSize;
-        CornerRadius cornerRadius = CornerRadius;
-        Thickness borderThickness = GetRoundedBorderThickness();
-        BorderPlacement borderPlacement = BorderPlacement;
+        var renderSize      = RenderSize;
+        var cornerRadius    = CornerRadius;
+        var borderThickness = GetRoundedBorderThickness();
+        var borderPlacement = BorderPlacement;
 
-        if (
-            _isGeometryCacheValid
+        if (_isGeometryCacheValid
             && _cachedRenderSize == renderSize
             && _cachedCornerRadius == cornerRadius
             && _cachedBorderThickness == borderThickness
-            && _cachedBorderPlacement == borderPlacement
-        )
+            && _cachedBorderPlacement == borderPlacement)
         {
             return;
         }
@@ -342,7 +403,7 @@ public class UiBorder : Border
             FillRule = FillRule.EvenOdd
         };
 
-        using (StreamGeometryContext context = geometry.Open())
+        using (var context = geometry.Open())
         {
             // Native Border treats CornerRadius as the centerline radius and shrinks its background by half of
             // BorderThickness. The render-only modes treat CornerRadius as the outer edge, then cut a full-thickness
@@ -350,7 +411,7 @@ public class UiBorder : Border
             // the same inner edge.
             GenerateGeometry(context, bounds, new CornerRadii(cornerRadius));
 
-            Rect innerBounds = DeflateRect(bounds, borderThickness);
+            var innerBounds = DeflateRect(bounds, borderThickness);
             if (IsRenderable(innerBounds))
             {
                 GenerateGeometry(context, innerBounds, new CornerRadii(cornerRadius, borderThickness));
@@ -366,7 +427,7 @@ public class UiBorder : Border
     {
         if (BorderPlacement == BorderPlacement.Outside)
         {
-            Rect backgroundBounds = DeflateRect(bounds, borderThickness);
+            var backgroundBounds = DeflateRect(bounds, borderThickness);
             if (!IsRenderable(backgroundBounds))
             {
                 return null;
@@ -390,7 +451,7 @@ public class UiBorder : Border
             FillRule = FillRule.EvenOdd
         };
 
-        using (StreamGeometryContext context = geometry.Open())
+        using (var context = geometry.Open())
         {
             GenerateGeometry(context, bounds, radii);
         }
@@ -419,33 +480,33 @@ public class UiBorder : Border
 
         if (topLeft.X > topRight.X)
         {
-            double value = radii.LeftTop / (radii.LeftTop + radii.RightTop) * rect.Width;
+            var value = radii.LeftTop / (radii.LeftTop + radii.RightTop) * rect.Width;
             topLeft.X  = value;
             topRight.X = value;
         }
 
         if (rightTop.Y > rightBottom.Y)
         {
-            double value = radii.TopRight / (radii.TopRight + radii.BottomRight) * rect.Height;
+            var value = radii.TopRight / (radii.TopRight + radii.BottomRight) * rect.Height;
             rightTop.Y    = value;
             rightBottom.Y = value;
         }
 
         if (bottomRight.X < bottomLeft.X)
         {
-            double value = radii.LeftBottom / (radii.LeftBottom + radii.RightBottom) * rect.Width;
+            var value = radii.LeftBottom / (radii.LeftBottom + radii.RightBottom) * rect.Width;
             bottomRight.X = value;
             bottomLeft.X  = value;
         }
 
         if (leftBottom.Y < leftTop.Y)
         {
-            double value = radii.TopLeft / (radii.TopLeft + radii.BottomLeft) * rect.Height;
+            var value = radii.TopLeft / (radii.TopLeft + radii.BottomLeft) * rect.Height;
             leftBottom.Y = value;
             leftTop.Y    = value;
         }
 
-        Vector offset = new(rect.TopLeft.X, rect.TopLeft.Y);
+        var offset = new Vector(rect.TopLeft.X, rect.TopLeft.Y);
         topLeft     += offset;
         topRight    += offset;
         rightTop    += offset;
@@ -458,8 +519,8 @@ public class UiBorder : Border
         context.BeginFigure(topLeft, true, true);
         context.LineTo(topRight, true, false);
 
-        double radiusX = rect.TopRight.X - topRight.X;
-        double radiusY = rightTop.Y - rect.TopRight.Y;
+        var radiusX = rect.TopRight.X - topRight.X;
+        var radiusY = rightTop.Y - rect.TopRight.Y;
         if (!IsZero(radiusX) || !IsZero(radiusY))
         {
             context.ArcTo(rightTop, new Size(radiusX, radiusY), 0, false, SweepDirection.Clockwise, true, false);
@@ -522,20 +583,20 @@ public class UiBorder : Border
             return true;
         }
 
-        double epsilon = (Math.Abs(value1) + Math.Abs(value2) + 10.0) * DoubleEpsilon;
-        double delta   = value1 - value2;
+        var epsilon = (Math.Abs(value1) + Math.Abs(value2) + 10.0) * DoubleEpsilon;
+        var delta   = value1 - value2;
 
         return -epsilon < delta && epsilon > delta;
     }
 
     private static bool IsAppContextSwitchEnabled(string switchName)
     {
-        return AppContext.TryGetSwitch(switchName, out bool isEnabled) && isEnabled;
+        return AppContext.TryGetSwitch(switchName, out var isEnabled) && isEnabled;
     }
 
     private static double RoundLayoutValue(double value, double dpiScale)
     {
-        double roundedValue = AreClose(dpiScale, 1.0) ? Math.Round(value) : Math.Round(value * dpiScale) / dpiScale;
+        var roundedValue = AreClose(dpiScale, 1.0) ? Math.Round(value) : Math.Round(value * dpiScale) / dpiScale;
 
         if (double.IsNaN(roundedValue) || double.IsInfinity(roundedValue) || AreClose(roundedValue, double.MaxValue))
         {

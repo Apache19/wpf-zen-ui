@@ -19,6 +19,7 @@ namespace Wpf.Zen.Ui.Controls;
 [ContentProperty(nameof(Child))]
 public sealed class ClippingBorder : Decorator
 {
+    private readonly CompressiblePaddingLayout _paddingLayout = new();
     private const string DoNotApplyLayoutRoundingToBorderThicknessSwitchName =
         "Switch.MS.Internal.DoNotApplyLayoutRoundingToMarginsAndBorderThickness";
 
@@ -177,6 +178,32 @@ public sealed class ClippingBorder : Decorator
         set => SetValue(PaddingProperty, value);
     }
 
+    /// <summary>
+    /// Identifies the <see cref="IsPaddingCompressible"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsPaddingCompressibleProperty =
+        UiBorder.IsPaddingCompressibleProperty.AddOwner(
+            typeof(ClippingBorder),
+            new FrameworkPropertyMetadata(
+                false, FrameworkPropertyMetadataOptions.AffectsMeasure)
+        );
+
+    /// <summary>
+    /// Gets or sets whether content takes priority over padding when layout space is limited.
+    /// </summary>
+    /// <remarks>
+    /// The default is false. Each pair of padding edges shrinks proportionally toward zero
+    /// and recovers when space returns, without changing Padding or the rounded clipping outline.
+    /// Content is measured before padding is reserved, which can delay text wrapping.
+    /// Compression uses the constraints supplied by WPF; ancestor clipping and explicit minimum
+    /// sizes may prevent the decorator from receiving the smaller visible size.
+    /// </remarks>
+    public bool IsPaddingCompressible
+    {
+        get => (bool)GetValue(IsPaddingCompressibleProperty);
+        set => SetValue(IsPaddingCompressibleProperty, value);
+    }
+
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
     public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.Register(
@@ -268,6 +295,12 @@ public sealed class ClippingBorder : Decorator
     /// <inheritdoc />
     protected override Size MeasureOverride(Size constraint)
     {
+        if (IsPaddingCompressible)
+        {
+            var layoutBorder = GetLayoutBorderThickness();
+            return _paddingLayout.Measure(_child, constraint, layoutBorder, Padding);
+        }
+
         var border      = GetLayoutBorderThickness();
         var borderSize  = CollapseThickness(border);
         var paddingSize = CollapseThickness(Padding);
@@ -297,7 +330,12 @@ public sealed class ClippingBorder : Decorator
         var cornerRadius = CornerRadius;
         var outerRect    = new Rect(finalSize);
         var innerRect    = DeflateRect(outerRect, border);
-        var contentRect  = DeflateRect(innerRect, Padding);
+
+        var padding = IsPaddingCompressible
+            ? _paddingLayout.GetPadding(innerRect.Size, Padding)
+            : Padding;
+
+        var contentRect = DeflateRect(innerRect, padding);
 
         // ContainerVisual has no layout participation and shares this control's coordinate system. Arrange the
         // public child in the actual content rectangle so its own layout rounding, margin, and alignment logic see
