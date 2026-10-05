@@ -126,7 +126,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type DataGridCell}">
                     <Grid>
-                        <Border
+                        <controls:UiBorder
                             x:Name="Border"
                             Padding="{TemplateBinding Padding}"
                             HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
@@ -134,12 +134,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            SnapsToDevicePixels="True">
+                            SnapsToDevicePixels="True"
+                            IsPaddingCompressible="True">
                             <ContentPresenter
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </Border>
+                        </controls:UiBorder>
                         <!--
                             This overlay avoids moving cell content when cell-selection mode adds
                             its one-pixel Fluent selection rectangle.
@@ -562,13 +563,14 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type DataGridColumnHeader}">
                     <Grid>
-                        <Border
+                        <controls:UiBorder
                             x:Name="HeaderBorder"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="0">
+                            CornerRadius="0"
+                            IsPaddingCompressible="True">
                             <Grid
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -592,7 +594,7 @@
                                     </controls:FontIcon.RenderTransform>
                                 </controls:FontIcon>
                             </Grid>
-                        </Border>
+                        </controls:UiBorder>
 
                         <Thumb
                             x:Name="PART_LeftHeaderGripper"

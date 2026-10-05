@@ -65,7 +65,8 @@
                         BorderPlacement="Outside"
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding CornerRadius}"
-                        SnapsToDevicePixels="True">
+                        SnapsToDevicePixels="True"
+                        IsPaddingCompressible="True">
                         <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />

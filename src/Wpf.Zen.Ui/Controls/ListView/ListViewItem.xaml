@@ -16,14 +16,15 @@
     <converters:DoubleToDoubleConverter x:Key="ListViewItemSelectionIndicatorHeightConverter" Multiply="0.375" />
 
     <ControlTemplate x:Key="DefaultListViewItemTemplate" TargetType="{x:Type ListViewItem}">
-        <Border
+        <controls:UiBorder
             x:Name="RowBorder"
             Padding="{TemplateBinding Padding}"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding Border.CornerRadius}"
-            SnapsToDevicePixels="True">
+            SnapsToDevicePixels="True"
+            IsPaddingCompressible="True">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -52,7 +53,7 @@
                     RecognizesAccessKey="True"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </Grid>
-        </Border>
+        </controls:UiBorder>
         <ControlTemplate.Triggers>
             <MultiTrigger>
                 <MultiTrigger.Conditions>

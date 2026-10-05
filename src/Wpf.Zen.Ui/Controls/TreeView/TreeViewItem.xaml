@@ -224,7 +224,7 @@
                             ClickMode="Press"
                             IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
                             Style="{StaticResource ExpandCollapseToggleButtonStyle}" />
-                        <Border
+                        <controls:UiBorder
                             x:Name="Bd"
                             Grid.Row="0"
                             Grid.Column="1"
@@ -232,7 +232,8 @@
                             Background="{m:DynamicBrush SubtleFillTransparent}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{m:DynamicValue ControlCornerRadius}">
+                            CornerRadius="{m:DynamicValue ControlCornerRadius}"
+                            IsPaddingCompressible="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -252,7 +253,7 @@
                                     HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                     ContentSource="Header" />
                             </Grid>
-                        </Border>
+                        </controls:UiBorder>
                         <ItemsPresenter
                             x:Name="ItemsHost"
                             Grid.Row="1"

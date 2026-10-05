@@ -26,7 +26,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TabItem}">
                     <Grid x:Name="Root">
-                        <Border
+                        <controls:UiBorder
                             x:Name="Border"
                             MinHeight="36"
                             Margin="0"
@@ -34,7 +34,8 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="1,1,1,0"
-                            CornerRadius="8,8,0,0">
+                            CornerRadius="8,8,0,0"
+                            IsPaddingCompressible="True">
                             <ContentPresenter
                                 x:Name="ContentSite"
                                 Margin="0"
@@ -42,7 +43,7 @@
                                 VerticalAlignment="Center"
                                 ContentSource="Header"
                                 RecognizesAccessKey="True" />
-                        </Border>
+                        </controls:UiBorder>
 
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="SelectionStates">

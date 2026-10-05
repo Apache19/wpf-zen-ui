@@ -36,7 +36,7 @@
 
     <ControlTemplate x:Key="RadioMenuItemTopLevelItemTemplate" TargetType="{x:Type controls:RadioMenuItem}">
         <Grid Background="Transparent">
-            <Border
+            <controls:UiBorder
                 x:Name="TopLevelItemBorder"
                 Margin="2"
                 Padding="{TemplateBinding Padding}"
@@ -44,7 +44,8 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="6"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                IsPaddingCompressible="True">
                 <Grid Margin="10,9">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -82,7 +83,7 @@
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         UseLayoutRounding="True" />
                 </Grid>
-            </Border>
+            </controls:UiBorder>
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="Header" Value="{x:Null}">
@@ -110,7 +111,7 @@
 
     <ControlTemplate x:Key="RadioMenuItemSubmenuItemTemplate" TargetType="{x:Type controls:RadioMenuItem}">
         <Grid Background="Transparent">
-            <Border
+            <controls:UiBorder
                 x:Name="SubmenuItemBorder"
                 Margin="4,1,4,1"
                 Padding="{TemplateBinding Padding}"
@@ -118,7 +119,8 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="4"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                IsPaddingCompressible="True">
                 <Grid Margin="8,7,8,7">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
@@ -167,7 +169,7 @@
                         Text="{TemplateBinding InputGestureText}"
                         UseLayoutRounding="True" />
                 </Grid>
-            </Border>
+            </controls:UiBorder>
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="Header" Value="{x:Null}">

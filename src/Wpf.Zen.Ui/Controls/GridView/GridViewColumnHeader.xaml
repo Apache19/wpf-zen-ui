@@ -52,7 +52,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type GridViewColumnHeader}">
                     <Grid>
-                        <Border
+                        <controls:UiBorder
                             x:Name="HeaderBorder"
                             Padding="{TemplateBinding Padding}"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -60,7 +60,8 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding Border.CornerRadius}">
+                            CornerRadius="{TemplateBinding Border.CornerRadius}"
+                            IsPaddingCompressible="True">
                             <ContentPresenter
                                 Content="{TemplateBinding Content}"
                                 ContentStringFormat="{TemplateBinding ContentStringFormat}"
@@ -68,7 +69,7 @@
                                 ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
                                 RecognizesAccessKey="True"
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </Border>
+                        </controls:UiBorder>
                         <Canvas>
                             <Thumb x:Name="PART_HeaderGripper" Style="{StaticResource UiGridViewColumnHeaderGripperStyle}" />
                         </Canvas>

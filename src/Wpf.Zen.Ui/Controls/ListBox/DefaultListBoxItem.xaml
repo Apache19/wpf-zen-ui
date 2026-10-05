@@ -18,20 +18,21 @@
     </Style>
 
     <ControlTemplate x:Key="DefaultListBoxItemTemplate" TargetType="{x:Type ListBoxItem}">
-        <Border
+        <controls:UiBorder
             x:Name="ContentBorder"
             Padding="{TemplateBinding Padding}"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding Border.CornerRadius}"
-            SnapsToDevicePixels="true">
+            SnapsToDevicePixels="true"
+            IsPaddingCompressible="True">
             <ContentPresenter
                 x:Name="ContentPresenter"
                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-        </Border>
+        </controls:UiBorder>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />

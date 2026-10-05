@@ -60,7 +60,7 @@
     <!--  TopLevelHeader  -->
     <ControlTemplate x:Key="{x:Static MenuItem.TopLevelHeaderTemplateKey}" TargetType="{x:Type MenuItem}">
         <Grid Background="Transparent">
-            <Border
+            <controls:UiBorder
                 x:Name="TopLevelHeaderBorder"
                 Margin="2"
                 Padding="{TemplateBinding Padding}"
@@ -68,7 +68,8 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="6"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                IsPaddingCompressible="True">
                 <Grid Margin="10,9">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -100,7 +101,7 @@
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         UseLayoutRounding="True" />
                 </Grid>
-            </Border>
+            </controls:UiBorder>
             <Popup
                 x:Name="Popup"
                 controls:PopupShadow.IsEnabled="True"
@@ -175,7 +176,7 @@
     <!--  TopLevelItem  -->
     <ControlTemplate x:Key="{x:Static MenuItem.TopLevelItemTemplateKey}" TargetType="{x:Type MenuItem}">
         <Grid Background="Transparent">
-            <Border
+            <controls:UiBorder
                 x:Name="TopLevelItemBorder"
                 Margin="2"
                 Padding="{TemplateBinding Padding}"
@@ -183,7 +184,8 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="6"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                IsPaddingCompressible="True">
                 <Grid Margin="10,9">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -215,7 +217,7 @@
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         UseLayoutRounding="True" />
                 </Grid>
-            </Border>
+            </controls:UiBorder>
         </Grid>
         <ControlTemplate.Triggers>
             <!--  布局触发器  -->
@@ -258,7 +260,7 @@
     <!--  SubmenuItem  -->
     <ControlTemplate x:Key="{x:Static MenuItem.SubmenuItemTemplateKey}" TargetType="{x:Type MenuItem}">
         <Grid Background="Transparent">
-            <Border
+            <controls:UiBorder
                 x:Name="SubmenuItemBorder"
                 Margin="4,1,4,1"
                 Padding="{TemplateBinding Padding}"
@@ -266,7 +268,8 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="4"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                IsPaddingCompressible="True">
                 <Grid Margin="8,7,8,7">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
@@ -313,7 +316,7 @@
                         Text="{TemplateBinding InputGestureText}"
                         UseLayoutRounding="True" />
                 </Grid>
-            </Border>
+            </controls:UiBorder>
         </Grid>
         <ControlTemplate.Triggers>
             <!--  布局触发器  -->
@@ -355,7 +358,7 @@
     <!--  SubItem with Subitems  -->
     <ControlTemplate x:Key="{x:Static MenuItem.SubmenuHeaderTemplateKey}" TargetType="{x:Type MenuItem}">
         <Grid Background="Transparent">
-            <Border
+            <controls:UiBorder
                 x:Name="SubmenuHeaderBorder"
                 Margin="4,1,4,1"
                 Padding="{TemplateBinding Padding}"
@@ -363,7 +366,8 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="4"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                IsPaddingCompressible="True">
                 <Grid Margin="8,7,8,7">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
@@ -405,7 +409,7 @@
                         VerticalAlignment="Center"
                         Source="{m:FluentIconSource ChevronRight20}" />
                 </Grid>
-            </Border>
+            </controls:UiBorder>
             <Popup
                 x:Name="Popup"
                 controls:PopupShadow.IsEnabled="True"

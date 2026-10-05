@@ -18,12 +18,13 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:InfoBadge}">
-                    <Border
+                    <controls:UiBorder
                         Padding="{TemplateBinding Padding}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{TemplateBinding CornerRadius}">
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        IsPaddingCompressible="True">
                         <Grid
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
@@ -47,7 +48,7 @@
                                 RecognizesAccessKey="False"
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </Grid>
-                    </Border>
+                    </controls:UiBorder>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IconPlacement" Value="Right">
                             <Setter TargetName="IconPresenter" Property="Grid.Column" Value="2" />

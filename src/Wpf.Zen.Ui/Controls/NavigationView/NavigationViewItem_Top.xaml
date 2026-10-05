@@ -26,13 +26,14 @@
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Grid>
-                            <Border
+                            <controls:UiBorder
                                 x:Name="HeaderSurface"
                                 Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
+                                CornerRadius="4"
+                                IsPaddingCompressible="True">
                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                                     <ContentPresenter
                                         x:Name="IconPresenter"
@@ -51,7 +52,7 @@
                                         VerticalAlignment="Center"
                                         Content="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
                                 </StackPanel>
-                            </Border>
+                            </controls:UiBorder>
                             <Rectangle
                                 x:Name="ActiveIndicator"
                                 Width="16"

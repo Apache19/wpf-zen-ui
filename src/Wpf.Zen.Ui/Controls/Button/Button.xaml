@@ -56,6 +56,7 @@
             BorderPlacement="{TemplateBinding controls:UiBorder.BorderPlacement}"
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding CornerRadius}"
+            IsPaddingCompressible="True"
             SnapsToDevicePixels="True">
             <DockPanel HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                 <controls:IconPresenter

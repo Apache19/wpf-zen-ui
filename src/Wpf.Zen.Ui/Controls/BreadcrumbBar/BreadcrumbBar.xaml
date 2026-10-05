@@ -39,16 +39,17 @@
                             OverridesDefaultStyle="True">
                             <Button.Template>
                                 <ControlTemplate TargetType="{x:Type Button}">
-                                    <Border
+                                    <controls:UiBorder
                                         Padding="{TemplateBinding Padding}"
                                         Background="{TemplateBinding Background}"
-                                        SnapsToDevicePixels="True">
+                                        SnapsToDevicePixels="True"
+                                        IsPaddingCompressible="True">
                                         <ContentPresenter
                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                             RecognizesAccessKey="True"
                                             SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                    </Border>
+                                    </controls:UiBorder>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
