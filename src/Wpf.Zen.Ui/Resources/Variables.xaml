@@ -26,10 +26,8 @@
     <Thickness x:Key="{x:Static t:ValueKeys.TextControlBorderThemeThickness}">1</Thickness>
     <Thickness x:Key="{x:Static t:ValueKeys.TextControlBorderThemeThicknessFocused}">2</Thickness>
 
-    <!--  todo: 为什么要上下不对称？  -->
-    <!--  上下各减 1,保证默认状态不超过最小高度  -->
     <Thickness x:Key="{x:Static t:ValueKeys.TextControlThemePadding}">10,2</Thickness>
-    <Thickness x:Key="{x:Static t:ValueKeys.ButtonThemePadding}">11,7,11,6</Thickness>
+    <Thickness x:Key="{x:Static t:ValueKeys.ButtonThemePadding}">11,6</Thickness>
 
     <system:Double x:Key="{x:Static t:ValueKeys.ContentControlFontSize}">14</system:Double>
     <system:Double x:Key="{x:Static t:ValueKeys.ListViewItemMinHeight}">32</system:Double>
