@@ -17,29 +17,13 @@
     <system:Double x:Key="{x:Static t:ValueKeys.DefaultControlMinHeight}">32</system:Double>
     <system:Double x:Key="{x:Static t:ValueKeys.DefaultIconFontSize}">16</system:Double>
 
-    <system:Double x:Key="{x:Static t:ValueKeys.ControlContentThemeFontSize}">14</system:Double>
+    <system:Double x:Key="{x:Static t:ValueKeys.DefaultThemeFontSize}">14</system:Double>
 
     <CornerRadius x:Key="{x:Static t:ValueKeys.ControlCornerRadius}">4,4,4,4</CornerRadius>
     <CornerRadius x:Key="{x:Static t:ValueKeys.OverlayCornerRadius}">4,4,4,4</CornerRadius>
     <CornerRadius x:Key="{x:Static t:ValueKeys.PopupCornerRadius}">8,8,8,8</CornerRadius>
 
-    <Thickness x:Key="{x:Static t:ValueKeys.TextControlBorderThemeThickness}">1</Thickness>
-    <Thickness x:Key="{x:Static t:ValueKeys.TextControlBorderThemeThicknessFocused}">2</Thickness>
-
-    <Thickness x:Key="{x:Static t:ValueKeys.TextControlThemePadding}">10,2</Thickness>
+    <Thickness x:Key="{x:Static t:ValueKeys.TextControlThemePadding}">10,6</Thickness>
     <Thickness x:Key="{x:Static t:ValueKeys.ButtonThemePadding}">11,6</Thickness>
-
-    <system:Double x:Key="{x:Static t:ValueKeys.ContentControlFontSize}">14</system:Double>
-    <system:Double x:Key="{x:Static t:ValueKeys.ListViewItemMinHeight}">32</system:Double>
-    <system:Double x:Key="{x:Static t:ValueKeys.TreeViewItemMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static t:ValueKeys.TreeViewItemMultiSelectCheckBoxMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static t:ValueKeys.TreeViewItemPresenterMargin}">0</system:Double>
-    <system:Double x:Key="{x:Static t:ValueKeys.TreeViewItemPresenterPadding}">0</system:Double>
-
-    <Thickness x:Key="{x:Static t:ValueKeys.TimePickerHostPadding}">0,1,0,2</Thickness>
-    <Thickness x:Key="{x:Static t:ValueKeys.DatePickerHostPadding}">0,1,0,2</Thickness>
-    <Thickness x:Key="{x:Static t:ValueKeys.DatePickerHostMonthPadding}">9,0,0,1</Thickness>
-    <system:Double x:Key="{x:Static t:ValueKeys.ComboBoxMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static t:ValueKeys.NavigationViewItemOnLeftMinHeight}">32</system:Double>
 
 </ResourceDictionary>

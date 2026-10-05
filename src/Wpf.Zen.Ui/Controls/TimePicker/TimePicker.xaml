@@ -11,7 +11,7 @@
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
         <Setter Property="BorderThickness" Value="{StaticResource TimePickerBorderThemeThickness}" />
-        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue DefaultThemeFontSize}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />

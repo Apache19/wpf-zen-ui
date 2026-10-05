@@ -13,7 +13,7 @@
 
     <Style x:Key="UiToolTipStyle" TargetType="{x:Type ToolTip}">
         <Setter Property="MaxWidth" Value="260" />
-        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue DefaultThemeFontSize}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeFlyout}" />
