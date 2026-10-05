@@ -16,6 +16,7 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 

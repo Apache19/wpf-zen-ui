@@ -15,6 +15,7 @@
     d:DesignHeight="760"
     d:DesignWidth="1100"
     ui:NavigationView.IsNavigationFrameScrollEnabled="False"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 

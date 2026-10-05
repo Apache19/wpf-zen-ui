@@ -13,6 +13,7 @@
     d:DataContext="{d:DesignInstance vm:NavigationMapViewModel, IsDesignTimeCreatable=False}"
     d:DesignHeight="600"
     d:DesignWidth="1000"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 

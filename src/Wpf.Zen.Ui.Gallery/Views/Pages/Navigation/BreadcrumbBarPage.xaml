@@ -13,6 +13,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:BreadcrumbBarViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="850"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     WindowWidth="850"

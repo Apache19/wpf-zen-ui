@@ -13,6 +13,7 @@
     d:DesignHeight="400"
     d:DesignWidth="600"
     ui:NavigationView.BreadcrumbContent="Page 1"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">

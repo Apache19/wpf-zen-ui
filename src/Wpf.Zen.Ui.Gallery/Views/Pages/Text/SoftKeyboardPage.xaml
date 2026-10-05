@@ -15,6 +15,7 @@
     d:DataContext="{d:DesignInstance vm:SoftKeyboardViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="900"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 

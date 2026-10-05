@@ -15,6 +15,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:NavigationViewViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="1000"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 

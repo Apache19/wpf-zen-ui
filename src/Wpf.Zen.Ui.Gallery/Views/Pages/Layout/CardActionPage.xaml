@@ -13,6 +13,7 @@
     d:DesignWidth="800"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
     <StackPanel Margin="0,0,0,24">

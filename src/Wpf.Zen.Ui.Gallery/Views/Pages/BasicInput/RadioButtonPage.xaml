@@ -11,6 +11,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:RadioButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">

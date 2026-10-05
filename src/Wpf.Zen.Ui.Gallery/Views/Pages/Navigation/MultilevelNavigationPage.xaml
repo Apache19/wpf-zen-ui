@@ -12,6 +12,7 @@
     d:DataContext="{d:DesignInstance vm:MultilevelNavigationSample, IsDesignTimeCreatable=False}"
     d:DesignHeight="600"
     d:DesignWidth="800"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">

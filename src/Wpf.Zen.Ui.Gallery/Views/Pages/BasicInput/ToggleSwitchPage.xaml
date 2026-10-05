@@ -13,6 +13,7 @@
     d:DataContext="{d:DesignInstance vm:ToggleSwitchViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
