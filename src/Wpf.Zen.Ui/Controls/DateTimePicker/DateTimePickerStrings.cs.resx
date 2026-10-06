@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="PreviousValue">
+    <value>Předchozí hodnota</value>
+  </data>
+  <data xml:space="preserve" name="NextValue">
+    <value>Další hodnota</value>
+  </data>
+  <data xml:space="preserve" name="InvalidNumber">
+    <value>Zadejte platné číslo v rozsahu tohoto pole.</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>Vymazat</value>
+  </data>
+  <data xml:space="preserve" name="ClearDateTime">
+    <value>Vymazat datum a čas</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTime">
+    <value>Vybrat datum a čas</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTimeHint">
+    <value>Vybrat datum a čas (F4)</value>
+  </data>
+  <data xml:space="preserve" name="Hour">
+    <value>Hodina</value>
+  </data>
+  <data xml:space="preserve" name="Minute">
+    <value>Minuta</value>
+  </data>
+  <data xml:space="preserve" name="Second">
+    <value>Sekunda</value>
+  </data>
+  <data xml:space="preserve" name="Accept">
+    <value>OK</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Zrušit</value>
+  </data>
+  <data xml:space="preserve" name="Year">
+    <value>Rok</value>
+  </data>
+  <data xml:space="preserve" name="Month">
+    <value>Měsíc</value>
+  </data>
+  <data xml:space="preserve" name="Week">
+    <value>Týden</value>
+  </data>
+  <data xml:space="preserve" name="Today">
+    <value>Dnes</value>
+  </data>
+  <data xml:space="preserve" name="Now">
+    <value>Nyní</value>
+  </data>
+  <data xml:space="preserve" name="InvalidDateTime">
+    <value>Vstup nelze interpretovat pomocí DateTimeFormat.</value>
+  </data>
+  <data xml:space="preserve" name="DateOutOfRange">
+    <value>Datum je mimo povolený rozsah.</value>
+  </data>
+</root>

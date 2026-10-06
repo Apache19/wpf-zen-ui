@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="PreviousValue">
+    <value>Предыдущее значение</value>
+  </data>
+  <data xml:space="preserve" name="NextValue">
+    <value>Следующее значение</value>
+  </data>
+  <data xml:space="preserve" name="InvalidNumber">
+    <value>Введите допустимое число в диапазоне этого поля.</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>Очистить</value>
+  </data>
+  <data xml:space="preserve" name="ClearDateTime">
+    <value>Очистить дату и время</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTime">
+    <value>Выбрать дату и время</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTimeHint">
+    <value>Выбрать дату и время (F4)</value>
+  </data>
+  <data xml:space="preserve" name="Hour">
+    <value>Час</value>
+  </data>
+  <data xml:space="preserve" name="Minute">
+    <value>Минута</value>
+  </data>
+  <data xml:space="preserve" name="Second">
+    <value>Секунда</value>
+  </data>
+  <data xml:space="preserve" name="Accept">
+    <value>ОК</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Отмена</value>
+  </data>
+  <data xml:space="preserve" name="Year">
+    <value>Год</value>
+  </data>
+  <data xml:space="preserve" name="Month">
+    <value>Месяц</value>
+  </data>
+  <data xml:space="preserve" name="Week">
+    <value>Неделя</value>
+  </data>
+  <data xml:space="preserve" name="Today">
+    <value>Сегодня</value>
+  </data>
+  <data xml:space="preserve" name="Now">
+    <value>Сейчас</value>
+  </data>
+  <data xml:space="preserve" name="InvalidDateTime">
+    <value>Не удалось распознать введённое значение с помощью DateTimeFormat.</value>
+  </data>
+  <data xml:space="preserve" name="DateOutOfRange">
+    <value>Дата находится вне допустимого диапазона.</value>
+  </data>
+</root>

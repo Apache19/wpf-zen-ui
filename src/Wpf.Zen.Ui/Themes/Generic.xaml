@@ -33,6 +33,7 @@
         -->
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/DataGrid/DataGrid.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/DatePicker/DatePicker.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/DateTimePicker/DateTimePicker.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/FluentWindow/FluentWindow.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Flyout/Flyout.xaml" />
         <!--

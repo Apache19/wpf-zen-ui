@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="PreviousValue">
+    <value>Valeur précédente</value>
+  </data>
+  <data xml:space="preserve" name="NextValue">
+    <value>Valeur suivante</value>
+  </data>
+  <data xml:space="preserve" name="InvalidNumber">
+    <value>Saisissez un nombre valide dans la plage de ce champ.</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>Effacer</value>
+  </data>
+  <data xml:space="preserve" name="ClearDateTime">
+    <value>Effacer la date et l’heure</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTime">
+    <value>Choisir la date et l’heure</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTimeHint">
+    <value>Choisir la date et l’heure (F4)</value>
+  </data>
+  <data xml:space="preserve" name="Hour">
+    <value>Heure</value>
+  </data>
+  <data xml:space="preserve" name="Minute">
+    <value>Minute</value>
+  </data>
+  <data xml:space="preserve" name="Second">
+    <value>Seconde</value>
+  </data>
+  <data xml:space="preserve" name="Accept">
+    <value>OK</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Annuler</value>
+  </data>
+  <data xml:space="preserve" name="Year">
+    <value>Année</value>
+  </data>
+  <data xml:space="preserve" name="Month">
+    <value>Mois</value>
+  </data>
+  <data xml:space="preserve" name="Week">
+    <value>Semaine</value>
+  </data>
+  <data xml:space="preserve" name="Today">
+    <value>Aujourd’hui</value>
+  </data>
+  <data xml:space="preserve" name="Now">
+    <value>Maintenant</value>
+  </data>
+  <data xml:space="preserve" name="InvalidDateTime">
+    <value>La saisie ne peut pas être interprétée avec DateTimeFormat.</value>
+  </data>
+  <data xml:space="preserve" name="DateOutOfRange">
+    <value>La date est hors de la plage sélectionnable.</value>
+  </data>
+</root>

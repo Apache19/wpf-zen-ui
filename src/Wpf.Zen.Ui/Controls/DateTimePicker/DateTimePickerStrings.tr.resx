@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="PreviousValue">
+    <value>Önceki değer</value>
+  </data>
+  <data xml:space="preserve" name="NextValue">
+    <value>Sonraki değer</value>
+  </data>
+  <data xml:space="preserve" name="InvalidNumber">
+    <value>Bu alanın aralığında geçerli bir sayı girin.</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>Temizle</value>
+  </data>
+  <data xml:space="preserve" name="ClearDateTime">
+    <value>Tarih ve saati temizle</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTime">
+    <value>Tarih ve saat seç</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTimeHint">
+    <value>Tarih ve saat seç (F4)</value>
+  </data>
+  <data xml:space="preserve" name="Hour">
+    <value>Saat</value>
+  </data>
+  <data xml:space="preserve" name="Minute">
+    <value>Dakika</value>
+  </data>
+  <data xml:space="preserve" name="Second">
+    <value>Saniye</value>
+  </data>
+  <data xml:space="preserve" name="Accept">
+    <value>Tamam</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>İptal</value>
+  </data>
+  <data xml:space="preserve" name="Year">
+    <value>Yıl</value>
+  </data>
+  <data xml:space="preserve" name="Month">
+    <value>Ay</value>
+  </data>
+  <data xml:space="preserve" name="Week">
+    <value>Hafta</value>
+  </data>
+  <data xml:space="preserve" name="Today">
+    <value>Bugün</value>
+  </data>
+  <data xml:space="preserve" name="Now">
+    <value>Şimdi</value>
+  </data>
+  <data xml:space="preserve" name="InvalidDateTime">
+    <value>Girdi DateTimeFormat kullanılarak yorumlanamıyor.</value>
+  </data>
+  <data xml:space="preserve" name="DateOutOfRange">
+    <value>Tarih seçilebilir aralığın dışında.</value>
+  </data>
+</root>

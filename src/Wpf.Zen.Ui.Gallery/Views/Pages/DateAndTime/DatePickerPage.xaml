@@ -16,12 +16,35 @@
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">
 
-    <Grid Margin="0,0,0,24">
+    <StackPanel Margin="0,0,0,24">
         <controls:ControlExample Margin="0" HeaderText="A basic DatePicker control.">
             <controls:ControlExample.XamlCode>
                 &lt;DatePicker/&gt;
             </controls:ControlExample.XamlCode>
             <DatePicker MinWidth="250" HorizontalAlignment="Left" />
         </controls:ControlExample>
-    </Grid>
+        <controls:ControlExample Margin="0,24,0,0" HeaderText="Date and time with explicit OK / Cancel.">
+            <controls:ControlExample.XamlCode>
+                &lt;ui:DateTimePicker SelectedDateTime="{Binding SelectedDateTime, Mode=TwoWay}"
+                                   DateTimeFormat="yyyy-MM-dd HH:mm:ss"
+                                   ui:PlaceholderService.Content="请选择日期和时间" Language="zh-CN" /&gt;
+            </controls:ControlExample.XamlCode>
+            <StackPanel HorizontalAlignment="Left">
+                <ui:DateTimePicker x:Name="DateTimeSample" ui:PlaceholderService.Content="请选择日期和时间" Width="280" Language="zh-CN" FirstDayOfWeek="Monday" />
+                <TextBlock Margin="0,8,0,0" Text="Committed value:" />
+                <TextBlock Text="{Binding SelectedDateTime, ElementName=DateTimeSample, StringFormat={}{0:O}, TargetNullValue=(null)}" />
+                <TextBlock Margin="0,8,0,0" Text="Popup edits are applied only by OK or a shortcut." />
+            </StackPanel>
+        </controls:ControlExample>
+        <controls:ControlExample Margin="0,24,0,0" HeaderText="Custom format and date constraints.">
+            <controls:ControlExample.XamlCode>
+                &lt;ui:DateTimePicker DateTimeFormat="yyyy/MM/dd HH:mm"
+                                   DisplayDateStart="2026-01-01" DisplayDateEnd="2026-12-31" /&gt;
+            </controls:ControlExample.XamlCode>
+            <ui:DateTimePicker Width="280" HorizontalAlignment="Left" DateTimeFormat="yyyy/MM/dd HH:mm"
+                              DisplayDateStart="2026-01-01" DisplayDateEnd="2026-12-31">
+                <CalendarDateRange Start="2026-10-10" End="2026-10-12" />
+            </ui:DateTimePicker>
+        </controls:ControlExample>
+    </StackPanel>
 </Page>

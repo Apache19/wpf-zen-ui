@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="PreviousValue">
+    <value>上一个值</value>
+  </data>
+  <data xml:space="preserve" name="NextValue">
+    <value>下一个值</value>
+  </data>
+  <data xml:space="preserve" name="InvalidNumber">
+    <value>请输入此字段范围内的有效数字。</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>清除</value>
+  </data>
+  <data xml:space="preserve" name="ClearDateTime">
+    <value>清除日期和时间</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTime">
+    <value>选择日期和时间</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTimeHint">
+    <value>选择日期和时间 (F4)</value>
+  </data>
+  <data xml:space="preserve" name="Hour">
+    <value>时</value>
+  </data>
+  <data xml:space="preserve" name="Minute">
+    <value>分</value>
+  </data>
+  <data xml:space="preserve" name="Second">
+    <value>秒</value>
+  </data>
+  <data xml:space="preserve" name="Accept">
+    <value>确定</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>取消</value>
+  </data>
+  <data xml:space="preserve" name="Year">
+    <value>本年</value>
+  </data>
+  <data xml:space="preserve" name="Month">
+    <value>本月</value>
+  </data>
+  <data xml:space="preserve" name="Week">
+    <value>本周</value>
+  </data>
+  <data xml:space="preserve" name="Today">
+    <value>今天</value>
+  </data>
+  <data xml:space="preserve" name="Now">
+    <value>现在</value>
+  </data>
+  <data xml:space="preserve" name="InvalidDateTime">
+    <value>无法根据 DateTimeFormat 确定输入的日期时间。</value>
+  </data>
+  <data xml:space="preserve" name="DateOutOfRange">
+    <value>日期不在可选范围内。</value>
+  </data>
+</root>

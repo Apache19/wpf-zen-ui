@@ -12,16 +12,21 @@ using NativeTextBox = System.Windows.Controls.TextBox;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
-// TODO:
-// PlaceholderService could potentially be extended to support more control types.
-// For example, it may check whether a ContentControl's Content is empty
-// and display placeholder content accordingly.
-// This enhancement can be evaluated and implemented if there is a concrete need.
-
+/// <summary>
+/// 为编辑控件提供统一的占位内容入口；内容可以是文本或可视元素，默认 null。
+/// </summary>
+/// <remarks>
+/// 原生 TextBox 与 ComboBox 由服务监听输入并更新 PART_Placeholder。
+/// 其它控件可在模板中绑定 Content，并自行根据空值状态控制占位符显示。
+/// 占位内容不参与输入、选择值或数据提交。
+/// </remarks>
 public static class PlaceholderService
 {
     private const string PlaceholderPartName = "PART_Placeholder";
 
+    /// <summary>
+    /// 标识占位内容附加属性，默认 null；由支持此契约的模板呈现。
+    /// </summary>
     public static readonly DependencyProperty ContentProperty =
         DependencyProperty.RegisterAttached(
             "Content",
@@ -30,25 +35,38 @@ public static class PlaceholderService
             new PropertyMetadata(null, OnContentChanged)
         );
 
-    /// <summary>Helper for setting <see cref="ContentProperty"/> on <paramref name="element"/>.</summary>
-    /// <param name="element"><see cref="DependencyObject"/> to set <see cref="ContentProperty"/> on.</param>
-    /// <param name="value">Content property value.</param>
+    /// <summary>
+    /// 设置占位内容。设为 null 可移除提示，不影响控件的实际输入值。
+    /// </summary>
+    /// <param name="element">使用占位模板的控件。</param>
+    /// <param name="value">文本或其它占位内容。</param>
     public static void SetContent(DependencyObject element, object? value)
     {
         element.SetValue(ContentProperty, value);
     }
 
-    /// <summary>Helper for getting <see cref="ContentProperty"/> from <paramref name="element"/>.</summary>
-    /// <param name="element"><see cref="DependencyObject"/> to read <see cref="ContentProperty"/> from.</param>
-    /// <returns>Content property value.</returns>
+    /// <summary>
+    /// 获取控件的占位内容。
+    /// </summary>
+    /// <param name="element">要读取的控件。</param>
+    /// <returns>占位内容，未设置时为 null。</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static object? GetContent(DependencyObject element)
     {
         return element.GetValue(ContentProperty);
     }
 
+    /// <summary>
+    /// 为需要命令式适配的原生编辑器安排初始化，其它控件由模板管理显示。
+    /// </summary>
     private static void OnContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
+        // 只为原生编辑控件安装行为；其它控件通过模板绑定消费此附加属性。
+        if (d is not NativeTextBox && d is not NativeComboBox)
+        {
+            return;
+        }
+
         if (d is Control control)
         {
             if (control.IsLoaded)
@@ -65,6 +83,9 @@ public static class PlaceholderService
         }
     }
 
+    /// <summary>
+    /// 在模板可用后安装原生编辑器事件。
+    /// </summary>
     private static void Control_Loaded(object sender, RoutedEventArgs e)
     {
         if (sender is not Control control)
@@ -76,6 +97,9 @@ public static class PlaceholderService
         InitializeControl(control);
     }
 
+    /// <summary>
+    /// 刷新占位内容并确保每种输入事件仅订阅一次。
+    /// </summary>
     private static void InitializeControl(Control control)
     {
         UpdateVisibility(control);
@@ -98,6 +122,9 @@ public static class PlaceholderService
         }
     }
 
+    /// <summary>
+    /// 输入变化时重新判断原生编辑器是否为空。
+    /// </summary>
     private static void OnTextChanged(object sender, TextChangedEventArgs e)
     {
         if (sender is Control control)
@@ -106,6 +133,9 @@ public static class PlaceholderService
         }
     }
 
+    /// <summary>
+    /// 选择项变化时刷新组合框占位状态。
+    /// </summary>
     private static void OnComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is Control control)
@@ -114,6 +144,9 @@ public static class PlaceholderService
         }
     }
 
+    /// <summary>
+    /// 根据原生编辑器状态更新占位部件，保留部件自身的内容绑定。
+    /// </summary>
     private static void UpdateVisibility(Control control)
     {
         var part = control.Template?.FindName(PlaceholderPartName, control);

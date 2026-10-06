@@ -5,13 +5,6 @@
 - 软键盘控件扩展库： `src\Wpf.Zen.Ui.VirtualInput.Extensions`
 - 图库应用： `src\Wpf.Zen.Ui.Gallery`
 
-## 当前任务
-
-**专注完善软键盘控件**，目标是打造一个专业稳定、简单易用、扩展性强的 WPF 应用内软键盘控件。
-
-当前正在探索稳定的输入模式切换方案，现有实现尚不稳定，需要靠调试日志辅助，请在关键节点合理加入调试日志。
-例如在事件触发时、值被应用时。除非是重要细节，否则不要有过多中间过程日志，避免日志泛滥。
-
 ## 源码参考指南
 
 当遇到实现细节不明确、API 行为异常或需要理解底层逻辑时，**请优先查阅 WPF 官方源代码**。
@@ -146,3 +139,7 @@ Windows classic samples:`E:\Repos\Windows-classic-samples`
 [SoftKeyboard.InputMode.Monitor] TSF CONVERSION compartment notification; compartment=GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION, conversionValue=1025 (0x00000401), readSucceeded=True.
 [SoftKeyboard.InputMode.Monitor] Applying observed change; kind=ImeConversion, conversionValue=1025 (0x00000401), observationVersion=2.
 ```
+
+## 构建
+
+构建环节遇到输出文件被进程占用，请结束进程继续构建。

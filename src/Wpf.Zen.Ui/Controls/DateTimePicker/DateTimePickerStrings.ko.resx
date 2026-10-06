@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="PreviousValue">
+    <value>이전 값</value>
+  </data>
+  <data xml:space="preserve" name="NextValue">
+    <value>다음 값</value>
+  </data>
+  <data xml:space="preserve" name="InvalidNumber">
+    <value>이 필드의 범위 내에서 유효한 숫자를 입력하세요.</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>지우기</value>
+  </data>
+  <data xml:space="preserve" name="ClearDateTime">
+    <value>날짜 및 시간 지우기</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTime">
+    <value>날짜 및 시간 선택</value>
+  </data>
+  <data xml:space="preserve" name="ChooseDateTimeHint">
+    <value>날짜 및 시간 선택 (F4)</value>
+  </data>
+  <data xml:space="preserve" name="Hour">
+    <value>시</value>
+  </data>
+  <data xml:space="preserve" name="Minute">
+    <value>분</value>
+  </data>
+  <data xml:space="preserve" name="Second">
+    <value>초</value>
+  </data>
+  <data xml:space="preserve" name="Accept">
+    <value>확인</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>취소</value>
+  </data>
+  <data xml:space="preserve" name="Year">
+    <value>올해</value>
+  </data>
+  <data xml:space="preserve" name="Month">
+    <value>이번 달</value>
+  </data>
+  <data xml:space="preserve" name="Week">
+    <value>이번 주</value>
+  </data>
+  <data xml:space="preserve" name="Today">
+    <value>오늘</value>
+  </data>
+  <data xml:space="preserve" name="Now">
+    <value>지금</value>
+  </data>
+  <data xml:space="preserve" name="InvalidDateTime">
+    <value>DateTimeFormat을 사용하여 입력을 해석할 수 없습니다.</value>
+  </data>
+  <data xml:space="preserve" name="DateOutOfRange">
+    <value>날짜가 선택 가능한 범위를 벗어났습니다.</value>
+  </data>
+</root>
