@@ -597,7 +597,16 @@ public partial class DateTimePicker : Control
             _calendar.IsTodayHighlighted = IsTodayHighlighted;
             _calendar.Language = Language;
             _calendar.FlowDirection = FlowDirection;
-            _calendar.SetCurrentValue(StyleProperty, CalendarStyle);
+
+            if (CalendarStyle is null)
+            {
+                _calendar.ClearValue(StyleProperty);
+            }
+            else
+            {
+                _calendar.SetValue(StyleProperty, CalendarStyle);
+            }
+
             var value = IsDropDownOpen ? PendingDateTime : SelectedDateTime;
             if (value.HasValue && IsDateAllowed(value.Value))
             {
