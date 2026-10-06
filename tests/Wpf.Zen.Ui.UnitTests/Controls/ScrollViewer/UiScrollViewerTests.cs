@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Wpf.Zen.Ui.AutomationPeers;
 using Wpf.Zen.Ui.Controls;
+using RepeatButton = System.Windows.Controls.Primitives.RepeatButton;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.ScrollViewer;
 

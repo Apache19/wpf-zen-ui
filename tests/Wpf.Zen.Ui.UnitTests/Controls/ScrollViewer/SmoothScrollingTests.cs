@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
+using RepeatButton = System.Windows.Controls.Primitives.RepeatButton;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.ScrollViewer;
 
