@@ -7,45 +7,14 @@
     <controls:DateTimePickerLocalization x:Key="DateTimePickerLocalization" />
 
     <!--  Native buttons retain keyboard, touch and automation behavior in customized templates.  -->
-    <Style x:Key="DateTimePickerStepButton" TargetType="ButtonBase">
-        <Setter Property="MinWidth" Value="40" />
-        <Setter Property="MinHeight" Value="30" />
-        <Setter Property="Focusable" Value="False" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ButtonBase">
-                    <Border
-                        x:Name="Chrome"
-                        Background="{TemplateBinding Background}"
-                        CornerRadius="4">
-                        <ContentPresenter
-                            Margin="{TemplateBinding Padding}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Chrome" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Chrome" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.45" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+    <Style x:Key="DateTimePickerStepButton" BasedOn="{m:StaticStyle UiButton}" TargetType="{x:Type controls:Button}">
+        <Setter Property="Appearance" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="DateTimePickerActionButton" BasedOn="{StaticResource DateTimePickerStepButton}" TargetType="Button">
-        <Setter Property="Focusable" Value="True" />
+    <Style x:Key="DateTimePickerActionButton" BasedOn="{StaticResource DateTimePickerStepButton}" TargetType="{x:Type controls:Button}">
         <Setter Property="MinWidth" Value="52" />
-        <Setter Property="Padding" Value="8,0" />
-        <Setter Property="MinHeight" Value="34" />
         <Setter Property="Margin" Value="2,0" />
     </Style>
 
@@ -56,66 +25,83 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:DateTimePickerTimeColumn}">
-                    <StackPanel>
-                        <TextBox
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <controls:TextBox
                             x:Name="PART_Input"
-                            MinHeight="34"
                             Margin="0,0,0,6"
-                            VerticalContentAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            AutoSelect="True"
                             AutomationProperties.Name="{Binding Path=(AutomationProperties.Name), RelativeSource={RelativeSource TemplatedParent}}"
-                            Background="{m:DynamicBrush ControlFillPrimary}"
-                            BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
-                            FontSize="18"
-                            Foreground="{m:DynamicBrush TextFillPrimary}"
+                            IsClearButtonEnabled="False"
                             MaxLength="2"
+                            Style="{m:StaticStyle DefaultUiTextBox}"
                             TextAlignment="Center" />
                         <controls:RepeatButton
+                            Grid.Row="1"
                             AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=PreviousValue}"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="-1"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                            Content="▴"
+                            FontSize="16"
+                            Icon="{m:FluentIconSource CaretUp16, Filled=True}"
                             Style="{StaticResource DateTimePickerStepButton}" />
-                        <Button
+                        <controls:Button
+                            Grid.Row="2"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="-2"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             Content="{Binding VisibleValues[0], RelativeSource={RelativeSource TemplatedParent}}"
                             Style="{StaticResource DateTimePickerStepButton}" />
-                        <Button
+                        <controls:Button
+                            Grid.Row="3"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="-1"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             Content="{Binding VisibleValues[1], RelativeSource={RelativeSource TemplatedParent}}"
                             Style="{StaticResource DateTimePickerStepButton}" />
-                        <Button
-                            Background="{m:DynamicBrush ControlFillSecondary}"
+                        <controls:Button
+                            Grid.Row="4"
+                            Appearance="Accent"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="0"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             Content="{Binding VisibleValues[2], RelativeSource={RelativeSource TemplatedParent}}"
                             FontWeight="SemiBold"
                             Style="{StaticResource DateTimePickerStepButton}" />
-                        <Button
+                        <controls:Button
+                            Grid.Row="5"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="1"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             Content="{Binding VisibleValues[3], RelativeSource={RelativeSource TemplatedParent}}"
                             Style="{StaticResource DateTimePickerStepButton}" />
-                        <Button
+                        <controls:Button
+                            Grid.Row="6"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="2"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             Content="{Binding VisibleValues[4], RelativeSource={RelativeSource TemplatedParent}}"
                             Style="{StaticResource DateTimePickerStepButton}" />
                         <controls:RepeatButton
+                            Grid.Row="7"
                             AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=NextValue}"
                             Command="{x:Static controls:DateTimePickerTimeColumn.StepCommand}"
                             CommandParameter="1"
                             CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                            Content="▾"
+                            FontSize="16"
+                            Icon="{m:FluentIconSource CaretDown16, Filled=True}"
                             Style="{StaticResource DateTimePickerStepButton}" />
-                    </StackPanel>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="HasValidInput" Value="False">
                             <Setter TargetName="PART_Input" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.HotTrackBrushKey}}" />
@@ -128,37 +114,17 @@
     </Style>
 
     <Style TargetType="{x:Type controls:DateTimePicker}">
-        <Setter Property="MinWidth" Value="240" />
-        <Setter Property="MinHeight" Value="34" />
-        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinWidth" Value="{m:DynamicValue DefaultControlMinWidth}" />
+        <Setter Property="MinHeight" Value="{m:DynamicValue DefaultControlMinHeight}" />
         <Setter Property="Focusable" Value="True" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
-        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
         <Setter Property="BorderThickness" Value="1" />
-        <!--<Setter Property="CalendarStyle">
-            <Setter.Value>
-                <Style TargetType="Calendar">
-                    <Setter Property="CalendarDayButtonStyle">
-                        <Setter.Value>
-                            <Style TargetType="CalendarDayButton">
-                                <Setter Property="MinWidth" Value="32" />
-                                <Setter Property="MinHeight" Value="32" />
-                            </Style>
-                        </Setter.Value>
-                    </Setter>
-                    <Setter Property="CalendarButtonStyle">
-                        <Setter.Value>
-                            <Style TargetType="CalendarButton">
-                                <Setter Property="MinWidth" Value="32" />
-                                <Setter Property="MinHeight" Value="32" />
-                            </Style>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </Setter.Value>
-        </Setter>-->
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:DateTimePicker}">
@@ -168,60 +134,75 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="4">
+                            CornerRadius="{TemplateBinding CornerRadius}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox
+                                <Grid.Resources>
+                                    <Style TargetType="{x:Type controls:Button}">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="MinWidth" Value="24" />
+                                        <Setter Property="MinHeight" Value="24" />
+                                        <Setter Property="VerticalAlignment" Value="{Binding VerticalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}" />
+                                        <Setter Property="Appearance" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Focusable" Value="False" />
+                                        <Setter Property="IsTabStop" Value="False" />
+                                        <Setter Property="HorizontalAlignment" Value="Center" />
+                                    </Style>
+                                </Grid.Resources>
+                                <controls:TextBox
                                     x:Name="PART_TextBox"
                                     MinWidth="0"
+                                    MinHeight="0"
                                     Padding="{TemplateBinding Padding}"
-                                    VerticalContentAlignment="Center"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                     AutomationProperties.Name="{Binding Path=(AutomationProperties.Name), RelativeSource={RelativeSource TemplatedParent}}"
                                     Background="Transparent"
                                     BorderThickness="0"
-                                    Foreground="{TemplateBinding Foreground}" />
+                                    CornerRadius="0"
+                                    DisabledBackground="Transparent"
+                                    FocusedBackground="Transparent"
+                                    IsClearButtonEnabled="False"
+                                    IsFocusIndicatorVisible="False"
+                                    MouseOverBackground="Transparent"
+                                    Style="{m:StaticStyle DefaultUiTextBox}" />
                                 <controls:PlaceholderControl
                                     x:Name="PART_Placeholder"
                                     Grid.Column="0"
                                     Margin="2,0"
                                     Padding="{TemplateBinding Padding}"
-                                    VerticalContentAlignment="Center"
-                                    ClipToBounds="True"
+                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                     Content="{TemplateBinding controls:PlaceholderService.Content}"
                                     Visibility="Collapsed" />
                                 <controls:Button
                                     x:Name="PART_ClearButton"
                                     Grid.Column="1"
-                                    MinWidth="24"
-                                    MinHeight="24"
-                                    Margin="0,0,4,0"
-                                    Padding="0"
-                                    VerticalAlignment="Center"
-                                    Appearance="Transparent"
+                                    Margin="4,0,0,0"
                                     AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=ClearDateTime}"
-                                    BorderThickness="0"
-                                    Focusable="False"
                                     Icon="{m:FluentIconSource Dismiss24}"
                                     IsEnabled="{TemplateBinding IsClearButtonEnabled}"
-                                    IsTabStop="False"
                                     ToolTip="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Clear}" />
-                                <Button
+                                <controls:Button
                                     x:Name="PART_Button"
                                     Grid.Column="2"
-                                    MinWidth="34"
+                                    Margin="4,0"
                                     AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=ChooseDateTime}"
-                                    Focusable="False"
-                                    IsTabStop="False"
-                                    Style="{StaticResource DateTimePickerActionButton}"
-                                    ToolTip="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=ChooseDateTimeHint}">
-                                    <controls:FontIcon FontSize="16" Source="{m:FluentIconSource CalendarRtl24}" />
-                                </Button>
+                                    Icon="{m:FluentIconSource CalendarRtl24}"
+                                    ToolTip="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=ChooseDateTimeHint}" />
                             </Grid>
                         </Border>
+                        <Border
+                            x:Name="FocusIndicator"
+                            BorderBrush="{m:DynamicBrush AccentStroke}"
+                            BorderThickness="0,0,0,2"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            IsHitTestVisible="False"
+                            Visibility="Collapsed" />
                         <Popup
                             x:Name="PART_Popup"
                             controls:PopupShadow.IsEnabled="True"
@@ -238,81 +219,94 @@
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 KeyboardNavigation.TabNavigation="Cycle"
+                                TextElement.FontSize="{TemplateBinding FontSize}"
                                 TextElement.Foreground="{TemplateBinding Foreground}">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="*" />
+                                        <!--  以完整日历高度参与 Popup 定位，避免可用空间压缩日期行。  -->
+                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
+
                                     <ContentControl
                                         x:Name="PART_CalendarHost"
                                         Margin="0,0,16,0"
                                         VerticalAlignment="Top"
                                         Focusable="False" />
-                                    <Grid
+
+                                    <!--  时间选择器  -->
+                                    <Border
                                         Grid.Row="0"
                                         Grid.Column="1"
-                                        FlowDirection="LeftToRight">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" MinWidth="56" />
-                                            <ColumnDefinition Width="16" />
-                                            <ColumnDefinition Width="Auto" MinWidth="56" />
-                                            <ColumnDefinition Width="16" />
-                                            <ColumnDefinition Width="Auto" MinWidth="56" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock
-                                            Margin="0,0,0,8"
-                                            HorizontalAlignment="Center"
-                                            Text="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Hour}" />
-                                        <TextBlock
-                                            Grid.Row="0"
-                                            Grid.Column="2"
-                                            Margin="0,0,0,8"
-                                            HorizontalAlignment="Center"
-                                            Text="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Minute}" />
-                                        <TextBlock
-                                            Grid.Row="0"
-                                            Grid.Column="4"
-                                            Margin="0,0,0,8"
-                                            HorizontalAlignment="Center"
-                                            Text="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Second}" />
-                                        <controls:DateTimePickerTimeColumn
-                                            x:Name="PART_Hour"
-                                            Grid.Row="1"
-                                            Grid.Column="0"
-                                            AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Hour}"
-                                            Maximum="23" />
-                                        <TextBlock
-                                            Grid.Row="1"
-                                            Grid.Column="1"
-                                            Margin="0,6,0,0"
-                                            HorizontalAlignment="Center"
-                                            Text=":" />
-                                        <controls:DateTimePickerTimeColumn
-                                            x:Name="PART_Minute"
-                                            Grid.Row="1"
-                                            Grid.Column="2"
-                                            AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Minute}" />
-                                        <TextBlock
-                                            Grid.Row="1"
-                                            Grid.Column="3"
-                                            Margin="0,6,0,0"
-                                            HorizontalAlignment="Center"
-                                            Text=":" />
-                                        <controls:DateTimePickerTimeColumn
-                                            x:Name="PART_Second"
-                                            Grid.Row="1"
-                                            Grid.Column="4"
-                                            AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Second}" />
-                                    </Grid>
+                                        Height="{Binding ActualHeight, ElementName=PART_CalendarHost}"
+                                        Padding="12,16,12,12"
+                                        Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+                                        BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
+                                        BorderThickness="1"
+                                        CornerRadius="{m:DynamicValue ControlCornerRadius}">
+                                        <Grid FlowDirection="LeftToRight">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="16" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="16" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Margin="0,0,0,8"
+                                                HorizontalAlignment="Center"
+                                                Text="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Hour}" />
+                                            <TextBlock
+                                                Grid.Row="0"
+                                                Grid.Column="2"
+                                                Margin="0,0,0,8"
+                                                HorizontalAlignment="Center"
+                                                Text="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Minute}" />
+                                            <TextBlock
+                                                Grid.Row="0"
+                                                Grid.Column="4"
+                                                Margin="0,0,0,8"
+                                                HorizontalAlignment="Center"
+                                                Text="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Second}" />
+                                            <controls:DateTimePickerTimeColumn
+                                                x:Name="PART_Hour"
+                                                Grid.Row="1"
+                                                Grid.Column="0"
+                                                AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Hour}"
+                                                Maximum="23" />
+                                            <TextBlock
+                                                Grid.Row="1"
+                                                Grid.Column="1"
+                                                Margin="0,6,0,0"
+                                                HorizontalAlignment="Center"
+                                                Text=":" />
+                                            <controls:DateTimePickerTimeColumn
+                                                x:Name="PART_Minute"
+                                                Grid.Row="1"
+                                                Grid.Column="2"
+                                                AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Minute}" />
+                                            <TextBlock
+                                                Grid.Row="1"
+                                                Grid.Column="3"
+                                                Margin="0,6,0,0"
+                                                HorizontalAlignment="Center"
+                                                Text=":" />
+                                            <controls:DateTimePickerTimeColumn
+                                                x:Name="PART_Second"
+                                                Grid.Row="1"
+                                                Grid.Column="4"
+                                                AutomationProperties.Name="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Second}" />
+                                        </Grid>
+                                    </Border>
+
                                     <DockPanel
                                         Grid.Row="1"
                                         Grid.Column="0"
@@ -320,43 +314,45 @@
                                         Margin="0,12,0,0"
                                         LastChildFill="False">
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.CommitCommand}"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                                 Content="{m:FluentIconSource Checkmark24}"
+                                                FontSize="18"
                                                 Style="{StaticResource DateTimePickerActionButton}" />
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.CancelCommand}"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                                 Content="{m:FluentIconSource Dismiss24}"
+                                                FontSize="18"
                                                 Style="{StaticResource DateTimePickerActionButton}" />
                                         </StackPanel>
                                         <StackPanel Margin="0,0,12,0" Orientation="Horizontal">
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.SelectShortcutCommand}"
                                                 CommandParameter="Year"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                                 Content="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Year}"
                                                 Style="{StaticResource DateTimePickerActionButton}" />
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.SelectShortcutCommand}"
                                                 CommandParameter="Month"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                                 Content="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Month}"
                                                 Style="{StaticResource DateTimePickerActionButton}" />
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.SelectShortcutCommand}"
                                                 CommandParameter="Week"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                                 Content="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Week}"
                                                 Style="{StaticResource DateTimePickerActionButton}" />
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.SelectShortcutCommand}"
                                                 CommandParameter="Today"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                                 Content="{Binding Language, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DateTimePickerLocalization}, ConverterParameter=Today}"
                                                 Style="{StaticResource DateTimePickerActionButton}" />
-                                            <Button
+                                            <controls:Button
                                                 Command="{x:Static controls:DateTimePicker.SelectShortcutCommand}"
                                                 CommandParameter="Now"
                                                 CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
@@ -383,11 +379,22 @@
                             <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
                             <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
                         </Trigger>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
+
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                         </Trigger>
+
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillInputActive}" />
+                        </Trigger>
+
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.5" />
+                            <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.5" />
+                            <Setter Property="IsClearButtonEnabled" Value="False" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

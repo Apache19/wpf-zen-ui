@@ -32,15 +32,40 @@ namespace Wpf.Zen.Ui.Controls;
 public partial class DateTimePicker : Control
 {
     private readonly Calendar _calendar = new();
+
     private bool _synchronizing;
     private bool _updatingText;
     private bool _updatingCalendar;
 
     /// <summary>
+    /// Identifies the <see cref="CornerRadius"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CornerRadiusProperty
+        = Border.CornerRadiusProperty.AddOwner(
+            typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(default(CornerRadius))
+        );
+
+    /// <summary>
+    /// Gets or sets the radius applied to the control chrome and its focus indicator.
+    /// The property affects template rendering but does not change layout measurement.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public CornerRadius CornerRadius
+    {
+        get => (CornerRadius)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    /// <summary>
     /// 标识清除按钮开关属性，默认启用。
     /// </summary>
-    public static readonly DependencyProperty IsClearButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsClearButtonEnabled), typeof(bool), typeof(DateTimePicker), new PropertyMetadata(true));
+    public static readonly DependencyProperty IsClearButtonEnabledProperty
+        = DependencyProperty.Register(
+            nameof(IsClearButtonEnabled), typeof(bool), typeof(DateTimePicker),
+            new PropertyMetadata(true)
+        );
 
     /// <summary>
     /// 获取或设置是否提供清除按钮。默认模板在编辑器有焦点且文本非空时显示按钮。
@@ -55,10 +80,16 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识完整日期时间属性，默认 null，默认双向绑定。
     /// </summary>
-    public static readonly DependencyProperty SelectedDateTimeProperty = DependencyProperty.Register(
-        nameof(SelectedDateTime), typeof(DateTime?), typeof(DateTimePicker),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnSelectedDateTimeChanged, CoerceSelectedDateTime));
+    public static readonly DependencyProperty SelectedDateTimeProperty
+        = DependencyProperty.Register(
+            nameof(SelectedDateTime), typeof(DateTime?), typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(
+                null,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnSelectedDateTimeChanged,
+                CoerceSelectedDateTime
+            )
+        );
 
     /// <summary>
     /// 获取或设置正式日期时间。禁止日期和范围外的值会抛出 ArgumentOutOfRangeException。
@@ -72,10 +103,16 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识正式值的日期投影属性，默认 null，默认双向绑定。
     /// </summary>
-    public static readonly DependencyProperty SelectedDateProperty = DependencyProperty.Register(
-        nameof(SelectedDate), typeof(DateTime?), typeof(DateTimePicker),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnSelectedDateChanged, CoerceSelectedDate));
+    public static readonly DependencyProperty SelectedDateProperty
+        = DependencyProperty.Register(
+            nameof(SelectedDate), typeof(DateTime?), typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(
+                null,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnSelectedDateChanged,
+                CoerceSelectedDate
+            )
+        );
 
     /// <summary>
     /// 获取或设置日期投影。设置日期保留原时间；原值为空时采用零点；设置 null 清空正式值。
@@ -86,14 +123,17 @@ public partial class DateTimePicker : Control
         set => SetValue(SelectedDateProperty, value);
     }
 
-    private static readonly DependencyPropertyKey PendingDateTimePropertyKey =
-        DependencyProperty.RegisterReadOnly(nameof(PendingDateTime), typeof(DateTime?),
-            typeof(DateTimePicker), new PropertyMetadata(null));
+    private static readonly DependencyPropertyKey PendingDateTimePropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(PendingDateTime), typeof(DateTime?), typeof(DateTimePicker),
+            new PropertyMetadata(null)
+        );
 
     /// <summary>
     /// 标识只读待提交值属性。
     /// </summary>
-    public static readonly DependencyProperty PendingDateTimeProperty = PendingDateTimePropertyKey.DependencyProperty;
+    public static readonly DependencyProperty PendingDateTimeProperty
+        = PendingDateTimePropertyKey.DependencyProperty;
 
     /// <summary>
     /// 获取弹出层中正在编辑的值；关闭时为 null。此属性不会回写业务数据。
@@ -103,9 +143,12 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识显示和精确解析使用的日期时间格式，默认 yyyy-MM-dd HH:mm:ss。
     /// </summary>
-    public static readonly DependencyProperty DateTimeFormatProperty = DependencyProperty.Register(
-        nameof(DateTimeFormat), typeof(string), typeof(DateTimePicker),
-        new PropertyMetadata("yyyy-MM-dd HH:mm:ss", OnFormatChanged), IsValidFormat);
+    public static readonly DependencyProperty DateTimeFormatProperty
+        = DependencyProperty.Register(
+            nameof(DateTimeFormat), typeof(string), typeof(DateTimePicker),
+            new PropertyMetadata("yyyy-MM-dd HH:mm:ss", OnFormatChanged),
+            IsValidFormat
+        );
 
     /// <summary>
     /// 获取或设置 DateTime 格式字符串。显示和解析使用 Language 指定的区域设置。
@@ -119,10 +162,15 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识完整文本属性，默认空字符串，默认双向绑定。
     /// </summary>
-    public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
-        nameof(Text), typeof(string), typeof(DateTimePicker),
-        new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnTextChanged));
+    public static readonly DependencyProperty TextProperty
+        = DependencyProperty.Register(
+            nameof(Text), typeof(string), typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(
+                string.Empty,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnTextChanged
+            )
+        );
 
     /// <summary>
     /// 获取或设置完整日期时间文本。外部设置立即解析；编辑框在 Enter 或失焦时解析。
@@ -137,10 +185,16 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识弹出层打开状态，默认 false，默认双向绑定。
     /// </summary>
-    public static readonly DependencyProperty IsDropDownOpenProperty = DependencyProperty.Register(
-        nameof(IsDropDownOpen), typeof(bool), typeof(DateTimePicker),
-        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnIsDropDownOpenChanged, CoerceIsDropDownOpen));
+    public static readonly DependencyProperty IsDropDownOpenProperty
+        = DependencyProperty.Register(
+            nameof(IsDropDownOpen), typeof(bool), typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(
+                false,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnIsDropDownOpenChanged,
+                CoerceIsDropDownOpen
+            )
+        );
 
     /// <summary>
     /// 获取或设置弹出层状态。打开建立事务，直接关闭视为取消。
@@ -154,10 +208,15 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识日历浏览日期，实例默认当天。
     /// </summary>
-    public static readonly DependencyProperty DisplayDateProperty = DependencyProperty.Register(
-        nameof(DisplayDate), typeof(DateTime), typeof(DateTimePicker),
-        new FrameworkPropertyMetadata(DateTime.MinValue, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnCalendarPropertyChanged));
+    public static readonly DependencyProperty DisplayDateProperty
+        = DependencyProperty.Register(
+            nameof(DisplayDate), typeof(DateTime), typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(
+                DateTime.MinValue,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnCalendarPropertyChanged
+            )
+        );
 
     /// <summary>
     /// 获取或设置日历浏览日期。浏览月份不会改变待提交值。
@@ -171,9 +230,11 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识可选日期下限，默认 null，忽略时间部分。
     /// </summary>
-    public static readonly DependencyProperty DisplayDateStartProperty = DependencyProperty.Register(
-        nameof(DisplayDateStart), typeof(DateTime?), typeof(DateTimePicker),
-        new PropertyMetadata(null, OnCalendarPropertyChanged, CoerceStart));
+    public static readonly DependencyProperty DisplayDateStartProperty
+        = DependencyProperty.Register(
+            nameof(DisplayDateStart), typeof(DateTime?), typeof(DateTimePicker),
+            new PropertyMetadata(null, OnCalendarPropertyChanged, CoerceStart)
+        );
 
     /// <summary>
     /// 获取或设置日期下限。范围必须包含当前正式值，且不得晚于上限。
@@ -187,9 +248,11 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识可选日期上限，默认 null，忽略时间部分。
     /// </summary>
-    public static readonly DependencyProperty DisplayDateEndProperty = DependencyProperty.Register(
-        nameof(DisplayDateEnd), typeof(DateTime?), typeof(DateTimePicker),
-        new PropertyMetadata(null, OnCalendarPropertyChanged, CoerceEnd));
+    public static readonly DependencyProperty DisplayDateEndProperty
+        = DependencyProperty.Register(
+            nameof(DisplayDateEnd), typeof(DateTime?), typeof(DateTimePicker),
+            new PropertyMetadata(null, OnCalendarPropertyChanged, CoerceEnd)
+        );
 
     /// <summary>
     /// 获取或设置日期上限。范围必须包含当前正式值，且不得早于下限。
@@ -203,10 +266,12 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识周起始日，默认值来自 Language 对应的区域设置。
     /// </summary>
-    public static readonly DependencyProperty FirstDayOfWeekProperty = DependencyProperty.Register(
-        nameof(FirstDayOfWeek), typeof(DayOfWeek), typeof(DateTimePicker),
-        new PropertyMetadata(DayOfWeek.Sunday, OnCalendarPropertyChanged),
-        IsValidDayOfWeek);
+    public static readonly DependencyProperty FirstDayOfWeekProperty
+        = DependencyProperty.Register(
+            nameof(FirstDayOfWeek), typeof(DayOfWeek), typeof(DateTimePicker),
+            new PropertyMetadata(DayOfWeek.Sunday, OnCalendarPropertyChanged),
+            IsValidDayOfWeek
+        );
 
     /// <summary>
     /// 获取或设置周起始日，日历和 Week 快捷命令使用相同值。
@@ -220,9 +285,11 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识是否突出显示今天，默认 true。
     /// </summary>
-    public static readonly DependencyProperty IsTodayHighlightedProperty = DependencyProperty.Register(
-        nameof(IsTodayHighlighted), typeof(bool), typeof(DateTimePicker),
-        new PropertyMetadata(true, OnCalendarPropertyChanged));
+    public static readonly DependencyProperty IsTodayHighlightedProperty
+        = DependencyProperty.Register(
+            nameof(IsTodayHighlighted), typeof(bool), typeof(DateTimePicker),
+            new PropertyMetadata(true, OnCalendarPropertyChanged)
+        );
 
     /// <summary>
     /// 获取或设置是否突出显示今天。
@@ -236,9 +303,11 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识日历样式，默认 null，使用原生日历主题。
     /// </summary>
-    public static readonly DependencyProperty CalendarStyleProperty = DependencyProperty.Register(
-        nameof(CalendarStyle), typeof(Style), typeof(DateTimePicker),
-        new PropertyMetadata(null, OnCalendarPropertyChanged));
+    public static readonly DependencyProperty CalendarStyleProperty
+        = DependencyProperty.Register(
+            nameof(CalendarStyle), typeof(Style), typeof(DateTimePicker),
+            new PropertyMetadata(null, OnCalendarPropertyChanged)
+        );
 
     /// <summary>
     /// 获取或设置内部原生 Calendar 的样式。
@@ -259,9 +328,13 @@ public partial class DateTimePicker : Control
     /// <summary>
     /// 标识正式日期时间变化的冒泡事件。
     /// </summary>
-    public static readonly RoutedEvent SelectedDateTimeChangedEvent = EventManager.RegisterRoutedEvent(
-        nameof(SelectedDateTimeChanged), RoutingStrategy.Bubble,
-        typeof(RoutedPropertyChangedEventHandler<DateTime?>), typeof(DateTimePicker));
+    public static readonly RoutedEvent SelectedDateTimeChangedEvent
+        = EventManager.RegisterRoutedEvent(
+            nameof(SelectedDateTimeChanged),
+            RoutingStrategy.Bubble,
+            typeof(RoutedPropertyChangedEventHandler<DateTime?>),
+            typeof(DateTimePicker)
+        );
 
     /// <summary>
     /// 正式值发生变化时触发；弹出层中的临时修改不会触发此事件。
@@ -289,10 +362,15 @@ public partial class DateTimePicker : Control
 
     static DateTimePicker()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(DateTimePicker),
-            new FrameworkPropertyMetadata(typeof(DateTimePicker)));
-        LanguageProperty.OverrideMetadata(typeof(DateTimePicker),
-            new FrameworkPropertyMetadata(OnLanguageChanged));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(typeof(DateTimePicker))
+        );
+
+        LanguageProperty.OverrideMetadata(
+            typeof(DateTimePicker),
+            new FrameworkPropertyMetadata(OnLanguageChanged)
+        );
     }
 
     /// <summary>
@@ -302,8 +380,10 @@ public partial class DateTimePicker : Control
     {
         SetCurrentValue(DisplayDateProperty, DateTime.Today);
         UpdateDefaultFirstDayOfWeek();
+
         _calendar.SelectedDatesChanged += OnCalendarSelectionChanged;
-        _calendar.DisplayDateChanged += OnCalendarDisplayDateChanged;
+        _calendar.DisplayDateChanged   += OnCalendarDisplayDateChanged;
+
         InitializeInteraction();
         SynchronizeCalendar();
     }
@@ -329,6 +409,7 @@ public partial class DateTimePicker : Control
         {
             return false;
         }
+
         try
         {
             _ = DateTime.Now.ToString(format, CultureInfo.InvariantCulture);
@@ -362,9 +443,10 @@ public partial class DateTimePicker : Control
         if (value is DateTime date && !picker.IsDateAllowed(date))
         {
             var culture = picker.GetCulture();
-            string message = DateTimePickerLocalization.GetString("DateOutOfRange", culture);
+            var message = DateTimePickerLocalization.GetString("DateOutOfRange", culture);
             throw new ArgumentOutOfRangeException(nameof(SelectedDateTime), value, message);
         }
+
         return value;
     }
 
@@ -381,10 +463,12 @@ public partial class DateTimePicker : Control
         {
             return null;
         }
+
         if (date.Date > picker.DisplayDateEnd?.Date || date.Date > picker.SelectedDate)
         {
             throw new ArgumentOutOfRangeException(nameof(DisplayDateStart));
         }
+
         return date.Date;
     }
 
@@ -395,10 +479,12 @@ public partial class DateTimePicker : Control
         {
             return null;
         }
+
         if (date.Date < picker.DisplayDateStart?.Date || date.Date < picker.SelectedDate)
         {
             throw new ArgumentOutOfRangeException(nameof(DisplayDateEnd));
         }
+
         return date.Date;
     }
 
@@ -406,8 +492,13 @@ public partial class DateTimePicker : Control
     {
         var picker = (DateTimePicker)d;
         picker.SynchronizeCommittedValue();
+
         var args = new RoutedPropertyChangedEventArgs<DateTime?>(
-            (DateTime?)e.OldValue, (DateTime?)e.NewValue, SelectedDateTimeChangedEvent);
+            (DateTime?)e.OldValue,
+            (DateTime?)e.NewValue,
+            SelectedDateTimeChangedEvent
+        );
+
         picker.OnSelectedDateTimeChanged(args);
     }
 
@@ -427,12 +518,14 @@ public partial class DateTimePicker : Control
         {
             return;
         }
+
         DateTime? result = null;
         if (e.NewValue is DateTime date)
         {
             var original = picker.SelectedDateTime ?? date.Date;
             result = ReplaceDate(original, date);
         }
+
         picker.SetCurrentValue(SelectedDateTimeProperty, result);
     }
 
@@ -450,7 +543,9 @@ public partial class DateTimePicker : Control
         {
             _synchronizing = false;
         }
+
         UpdateFormattedText();
+
         if (IsDropDownOpen)
         {
             SetPendingValue(SelectedDateTime ?? DateTime.Now);
@@ -459,6 +554,7 @@ public partial class DateTimePicker : Control
         {
             SynchronizeCalendar();
         }
+
         Debug.WriteLine($"[DateTimePicker.Value] COMMITTED value applied; value={SelectedDateTime:O}.");
     }
 
@@ -484,6 +580,7 @@ public partial class DateTimePicker : Control
             picker.UpdateEditorText();
             picker.CommitText();
         }
+
         var peer = UIElementAutomationPeer.FromElement(picker);
         peer?.RaisePropertyChangedEvent(ValuePatternIdentifiers.ValueProperty, e.OldValue, e.NewValue);
     }
@@ -494,40 +591,45 @@ public partial class DateTimePicker : Control
     /// <returns>文本合法并已应用时为 true。</returns>
     public bool CommitText()
     {
-        var text = Text ?? string.Empty;
+        var       text   = Text ?? string.Empty;
         DateTime? result = null;
         if (!string.IsNullOrWhiteSpace(text))
         {
             var culture = GetCulture();
-            bool parsed = DateTimePickerTextParser.TryParse(text, DateTimeFormat, culture, out var value);
+            var parsed  = DateTimePickerTextParser.TryParse(text, DateTimeFormat, culture, out var value);
             if (!parsed)
             {
-                string message = DateTimePickerLocalization.GetString("InvalidDateTime", culture);
+                var message   = DateTimePickerLocalization.GetString("InvalidDateTime", culture);
                 var exception = new FormatException(message);
                 return ReportValidationError(exception, text);
             }
+
             // 文本相同不重建值，避免短格式损失隐藏的秒、亚秒或 Kind。
             if (SelectedDateTime.HasValue)
             {
-                string formatted = SelectedDateTime.Value.ToString(DateTimeFormat, culture);
+                var formatted = SelectedDateTime.Value.ToString(DateTimeFormat, culture);
                 if (text == formatted)
                 {
                     return true;
                 }
+
                 if (value.Kind == DateTimeKind.Unspecified)
                 {
                     value = DateTime.SpecifyKind(value, SelectedDateTime.Value.Kind);
                 }
             }
+
             result = value;
         }
+
         if (result.HasValue && !IsDateAllowed(result.Value))
         {
-            var culture = GetCulture();
-            string message = DateTimePickerLocalization.GetString("DateOutOfRange", culture);
+            var culture   = GetCulture();
+            var message   = DateTimePickerLocalization.GetString("DateOutOfRange", culture);
             var exception = new ArgumentOutOfRangeException(nameof(Text), message);
             return ReportValidationError(exception, text);
         }
+
         SetCurrentValue(SelectedDateTimeProperty, result);
         UpdateFormattedText();
         return true;
@@ -541,13 +643,15 @@ public partial class DateTimePicker : Control
         {
             throw args.Exception;
         }
+
         return false;
     }
 
     private void UpdateFormattedText()
     {
         var culture = GetCulture();
-        string text = SelectedDateTime?.ToString(DateTimeFormat, culture) ?? string.Empty;
+        var text    = SelectedDateTime?.ToString(DateTimeFormat, culture) ?? string.Empty;
+
         _updatingText = true;
         try
         {
@@ -585,18 +689,19 @@ public partial class DateTimePicker : Control
         {
             return;
         }
+
         _updatingCalendar = true;
         try
         {
-            _calendar.SelectedDate = null;
-            _calendar.DisplayDateStart = null;
-            _calendar.DisplayDateEnd = null;
-            _calendar.DisplayDateStart = DisplayDateStart;
-            _calendar.DisplayDateEnd = DisplayDateEnd;
-            _calendar.FirstDayOfWeek = FirstDayOfWeek;
+            _calendar.SelectedDate       = null;
+            _calendar.DisplayDateStart   = null;
+            _calendar.DisplayDateEnd     = null;
+            _calendar.DisplayDateStart   = DisplayDateStart;
+            _calendar.DisplayDateEnd     = DisplayDateEnd;
+            _calendar.FirstDayOfWeek     = FirstDayOfWeek;
             _calendar.IsTodayHighlighted = IsTodayHighlighted;
-            _calendar.Language = Language;
-            _calendar.FlowDirection = FlowDirection;
+            _calendar.Language           = Language;
+            _calendar.FlowDirection      = FlowDirection;
 
             if (CalendarStyle is null)
             {
@@ -612,6 +717,7 @@ public partial class DateTimePicker : Control
             {
                 _calendar.SelectedDate = value.Value.Date;
             }
+
             _calendar.DisplayDate = DisplayDate;
             SetCurrentValue(DisplayDateProperty, _calendar.DisplayDate);
         }
@@ -642,27 +748,32 @@ public partial class DateTimePicker : Control
 
     private static DateTime ReplaceDate(DateTime original, DateTime date)
     {
-        long ticks = date.Date.Ticks + original.TimeOfDay.Ticks;
+        var ticks = date.Date.Ticks + original.TimeOfDay.Ticks;
         return new DateTime(ticks, original.Kind);
     }
 
     private void SetPendingValue(DateTime value)
     {
         SetValue(PendingDateTimePropertyKey, value);
+
         SynchronizeCalendar();
         SynchronizeTimeColumns();
+
         System.Windows.Input.CommandManager.InvalidateRequerySuggested();
     }
 
     private static void OnIsDropDownOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var picker = (DateTimePicker)d;
+
         if ((bool)e.NewValue)
         {
             var initial = picker.SelectedDateTime ?? DateTime.Now;
+
             picker.SetCurrentValue(DisplayDateProperty, initial.Date);
             picker.SetPendingValue(initial);
             picker._calendar.DisplayMode = CalendarMode.Month;
+
             Debug.WriteLine($"[DateTimePicker.Transaction] OPEN editing; pending={initial:O}.");
         }
         else
@@ -670,12 +781,18 @@ public partial class DateTimePicker : Control
             picker.SetValue(PendingDateTimePropertyKey, null);
             picker.SynchronizeCalendar();
         }
+
         picker.UpdatePopupState();
-        var peer = UIElementAutomationPeer.FromElement(picker);
+
+        var peer     = UIElementAutomationPeer.FromElement(picker);
         var oldState = (bool)e.OldValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed;
         var newState = (bool)e.NewValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed;
-        peer?.RaisePropertyChangedEvent(ExpandCollapsePatternIdentifiers.ExpandCollapseStateProperty,
-            oldState, newState);
+
+        peer?.RaisePropertyChangedEvent(
+            ExpandCollapsePatternIdentifiers.ExpandCollapseStateProperty,
+            oldState,
+            newState
+        );
     }
 
     private static object CoerceIsDropDownOpen(DependencyObject d, object value)
@@ -690,6 +807,7 @@ public partial class DateTimePicker : Control
     protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
+
         if (e.Property == FlowDirectionProperty && _calendar is not null)
         {
             _calendar.FlowDirection = FlowDirection;
