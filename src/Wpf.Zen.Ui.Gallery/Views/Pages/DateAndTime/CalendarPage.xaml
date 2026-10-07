@@ -4,27 +4,102 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.DateAndTime"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.DateAndTime"
     Title="CalendarPage"
-    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
-    d:DataContext="{d:DesignInstance vm:CalendarViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:CalendarViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     FontSize="{ui:DynamicValue DefaultThemeFontSize}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
-    <Grid Margin="0,0,0,24">
-        <controls:ControlExample Margin="0" HeaderText="A basic Calendar control.">
-            <controls:ControlExample.XamlCode>
-                &lt;Calendar/&gt;
-            </controls:ControlExample.XamlCode>
-            <Calendar HorizontalAlignment="Left" />
-        </controls:ControlExample>
-    </Grid>
+    <controls:ControlExample Margin="0,0,0,24" HeaderText="An interactive Calendar control.">
+        <controls:ControlExample.XamlCode>
+            &lt;Calendar SelectedDate="{x:Static system:DateTime.Today}"
+            SelectionMode="SingleDate"
+            DisplayMode="Month"
+            IsTodayHighlighted="True"
+            IsEnabled="True" /&gt;
+        </controls:ControlExample.XamlCode>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="24" />
+                <ColumnDefinition Width="220" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <Calendar
+                    x:Name="CalendarSample"
+                    DisplayDate="{Binding DisplayDate, Mode=TwoWay}"
+                    HorizontalAlignment="Left"
+                    SelectedDate="{x:Static system:DateTime.Today}"
+                    controls:CalendarBlackoutRange.Range="{Binding BlackoutRange}" />
+                <TextBlock
+                    Margin="0,16,0,0"
+                    Text="Today starts selected. Hover or press a date to compare its feedback."
+                    TextWrapping="Wrap" />
+                <TextBlock Margin="0,8,0,0" Text="{Binding SelectedDates.Count, ElementName=CalendarSample, StringFormat='Selected dates: {0}'}" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <ui:TextBlock
+                    Margin="0,0,0,16"
+                    FontTypography="BodyStrong"
+                    Text="Properties" />
+                <TextBlock Margin="0,0,0,8" Text="SelectionMode" />
+                <ComboBox HorizontalAlignment="Stretch" SelectedItem="{Binding SelectionMode, ElementName=CalendarSample, Mode=TwoWay}">
+                    <x:Static Member="CalendarSelectionMode.SingleDate" />
+                    <x:Static Member="CalendarSelectionMode.SingleRange" />
+                    <x:Static Member="CalendarSelectionMode.MultipleRange" />
+                    <x:Static Member="CalendarSelectionMode.None" />
+                </ComboBox>
+                <TextBlock
+                    Margin="0,8,0,0"
+                    FontSize="12"
+                    Text="Drag to select a range. In MultipleRange mode, hold Ctrl to add a range. Changing the selection mode clears the selection."
+                    TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,16,0,8" Text="DisplayMode" />
+                <ComboBox HorizontalAlignment="Stretch" SelectedItem="{Binding DisplayMode, ElementName=CalendarSample, Mode=TwoWay}">
+                    <x:Static Member="CalendarMode.Month" />
+                    <x:Static Member="CalendarMode.Year" />
+                    <x:Static Member="CalendarMode.Decade" />
+                </ComboBox>
+
+                <TextBlock Margin="0,16,0,8" Text="FirstDayOfWeek" />
+                <ComboBox HorizontalAlignment="Stretch" SelectedItem="{Binding FirstDayOfWeek, ElementName=CalendarSample, Mode=TwoWay}">
+                    <x:Static Member="system:DayOfWeek.Sunday" />
+                    <x:Static Member="system:DayOfWeek.Monday" />
+                    <x:Static Member="system:DayOfWeek.Tuesday" />
+                    <x:Static Member="system:DayOfWeek.Wednesday" />
+                    <x:Static Member="system:DayOfWeek.Thursday" />
+                    <x:Static Member="system:DayOfWeek.Friday" />
+                    <x:Static Member="system:DayOfWeek.Saturday" />
+                </ComboBox>
+
+                <CheckBox
+                    Margin="0,16,0,0"
+                    Content="IsTodayHighlighted"
+                    IsChecked="{Binding IsTodayHighlighted, ElementName=CalendarSample, Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,8,0,0"
+                    Content="IsEnabled"
+                    IsChecked="{Binding IsEnabled, ElementName=CalendarSample, Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,16,0,0"
+                    Content="BlackoutDates"
+                    IsChecked="{Binding IsBlackoutEnabled, Mode=TwoWay}" />
+                <TextBlock
+                    Margin="0,8,0,0"
+                    FontSize="12"
+                    Text="{Binding BlackoutDatesDescription}"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+    </controls:ControlExample>
 </Page>

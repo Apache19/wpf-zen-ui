@@ -12,12 +12,13 @@
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
-    <!--  高亮 SubtleFillSecondary  -->
-    <!--  选择 AccentFillSecondary  -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/InteractionBrushes.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="DefaultCalendarDayButtonStyle" TargetType="{x:Type CalendarDayButton}">
+    <!--  Geometry expresses today/selection; the shared palette expresses input feedback.  -->
+    <Style x:Key="DefaultCalendarDayButtonStyle" BasedOn="{StaticResource InteractionButtonStyle}" TargetType="{x:Type CalendarDayButton}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <!--  设置圆角半径以便让焦点视觉样式变成圆形  -->
         <Setter Property="Border.CornerRadius" Value="20" />
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
@@ -27,30 +28,27 @@
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentSelection}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="controls:Interaction.Palette" Value="{StaticResource SubtleInteractionBrushes}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CalendarDayButton">
-                    <Grid SnapsToDevicePixels="True">
-
+                    <Grid  SnapsToDevicePixels="True">
                         <Ellipse
-                            x:Name="TodayBackground"
-                            Fill="{TemplateBinding Background}"
-                            Stroke="{TemplateBinding BorderBrush}"
+                            x:Name="OuterCircle"
+                            Fill="{m:InteractionBrush}"
+                            Stroke="{m:InteractionBrush Palette={StaticResource AccentInteractionBrushes}}"
                             StrokeThickness="0" />
-
                         <Ellipse
-                            x:Name="TodayOverlay"
-                            Margin="2"
-                            Fill="{TemplateBinding Background}"
-                            StrokeThickness="0" />
-
+                            x:Name="InnerCircle"
+                            Margin="3"
+                            Fill="{m:InteractionBrush}"
+                            Visibility="Collapsed" />
                         <ContentPresenter
-                            x:Name="NormalText"
+                            x:Name="DayText"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-
                         <Path
                             x:Name="Blackout"
                             Margin="6"
@@ -60,139 +58,119 @@
                             Stretch="Fill"
                             Stroke="{m:DynamicBrush TextFillPrimary}"
                             StrokeThickness="2" />
-
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
-                        </Trigger>
-                        <Trigger Property="IsHighlighted" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
-                        </Trigger>
-
-                        <!--  选中时边框高亮  -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TodayBackground" Property="StrokeThickness" Value="1" />
+                            <Setter TargetName="OuterCircle" Property="StrokeThickness" Value="1" />
                         </Trigger>
-
-                        <!--  非当前显示月份，降低前景色  -->
-                        <Trigger Property="IsInactive" Value="True">
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-                        </Trigger>
-
-                        <!--  今日前景优先于非当前月前景，并遵循所属日历的今日高亮设置。  -->
+                        <!--  A real geometry combination: keep a clear gap between ring and inner disk.  -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding IsToday, RelativeSource={RelativeSource Self}}" Value="True" />
                                 <Condition Binding="{Binding IsTodayHighlighted, RelativeSource={RelativeSource AncestorType=Calendar}}" Value="True" />
-                            </MultiDataTrigger.Conditions>
-                            <Setter TargetName="TodayBackground" Property="Opacity" Value="1" />
-                            <Setter TargetName="NormalText" Property="TextBlock.Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
-                        </MultiDataTrigger>
-
-                        <Trigger Property="IsBlackedOut" Value="True">
-                            <Setter TargetName="Blackout" Property="Opacity" Value="0.35" />
-                            <Setter TargetName="NormalText" Property="Opacity" Value="0.35" />
-                        </Trigger>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsToday, RelativeSource={RelativeSource Self}}" Value="True" />
                                 <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True" />
                             </MultiDataTrigger.Conditions>
-                            <Setter TargetName="SelectedBackground" Property="Stroke" Value="{Binding RelativeSource={RelativeSource AncestorType=Calendar}, Path=Background}" />
-                            <Setter TargetName="SelectedBackground" Property="Margin" Value="1" />
-                            <Setter TargetName="SelectedBackground" Property="StrokeThickness" Value="1.25" />
+                            <Setter TargetName="OuterCircle" Property="Fill" Value="Transparent" />
+                            <Setter TargetName="InnerCircle" Property="Visibility" Value="Visible" />
                         </MultiDataTrigger>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsToday, RelativeSource={RelativeSource Self}}" Value="True" />
-                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
-                            </MultiDataTrigger.Conditions>
-                            <Setter TargetName="TodayBackground" Property="Fill" Value="{m:DynamicBrush AccentFillPrimary}" />
-                        </MultiDataTrigger>
-
-                        <!--  覆盖层显示时，底层圆形应透明  -->
-                        <Trigger SourceName="TodayOverlay" Property="IsVisible" Value="True">
-                            <Setter TargetName="TodayBackground" Property="Fill" Value="Transparent" />
+                        <Trigger Property="IsBlackedOut" Value="True">
+                            <Setter TargetName="Blackout" Property="Opacity" Value="0.35" />
+                            <Setter TargetName="DayText" Property="Opacity" Value="0.35" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="TodayBackground" Property="Opacity" Value="0.35" />
-                            <Setter TargetName="TodayOverlay" Property="Opacity" Value="0.35" />
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-                            <Setter TargetName="Blackout" Property="Opacity" Value="0.35" />
+                            <Setter TargetName="OuterCircle" Property="Opacity" Value="0.35" />
+                            <Setter TargetName="InnerCircle" Property="Opacity" Value="0.35" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsInactive" Value="True">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </Trigger>
+            <!--
+                Calendar uses IsHighlighted for the provisional range while dragging.
+                It shares hover feedback but must not override press or disabled feedback.
+            -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsHighlighted" Value="True" />
+                    <Condition Property="IsPressed" Value="False" />
+                    <Condition Property="controls:CalendarInteraction.IsPointerPressed" Value="False" />
+                    <Condition Property="IsEnabled" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="controls:Interaction.State" Value="PointerOver" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="controls:CalendarInteraction.IsPointerPressed" Value="True" />
+                    <Condition Property="IsEnabled" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="controls:Interaction.State" Value="Pressed" />
+            </MultiTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsToday, RelativeSource={RelativeSource Self}}" Value="True" />
+                    <Condition Binding="{Binding IsTodayHighlighted, RelativeSource={RelativeSource AncestorType=Calendar}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="controls:Interaction.Palette" Value="{StaticResource AccentInteractionBrushes}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
+            </MultiDataTrigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
-
-    <!--  HINT: Month/year/decade button style  -->
-    <Style x:Key="DefaultCalendarButtonStyle" TargetType="CalendarButton">
-        <Setter Property="MinWidth" Value="40" />
-        <Setter Property="MinHeight" Value="40" />
-        <Setter Property="MaxWidth" Value="55" />
-        <Setter Property="MaxHeight" Value="55" />
+    <!--
+        月份、年份按钮用强调色填充高亮包含 DisplayDate 的项，交互反馈与日期按钮共用调色板。
+        HasSelectedDays 由 WPF 根据 DisplayDate 设置，表示当前浏览位置。
+    -->
+    <Style x:Key="DefaultCalendarButtonStyle" BasedOn="{StaticResource InteractionButtonStyle}" TargetType="{x:Type CalendarButton}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="55" />
+        <Setter Property="Height" Value="55" />
         <Setter Property="Margin" Value="1" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{m:DynamicValue DefaultThemeFontSize}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="controls:Interaction.Palette" Value="{StaticResource SubtleInteractionBrushes}" />
+        <Setter Property="Border.CornerRadius" Value="27.5" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CalendarButton">
-                    <Grid>
-                        <Rectangle
-                            x:Name="SelectedBackground"
-                            Fill="{m:DynamicBrush AccentSelection}"
-                            Opacity="0"
-                            RadiusX="99"
-                            RadiusY="99" />
-                        <Rectangle
-                            x:Name="Background"
-                            Fill="{m:DynamicBrush SubtleFillSecondary}"
-                            Opacity="0"
-                            RadiusX="99"
-                            RadiusY="99" />
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                        <Ellipse x:Name="ButtonBackground" Fill="{m:InteractionBrush}" />
                         <ContentPresenter
-                            x:Name="NormalText"
                             Margin="1,0,1,1"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            TextBlock.Foreground="{m:DynamicBrush TextFillPrimary}" />
-                        <Rectangle
-                            x:Name="CalendarButtonFocusVisual"
-                            IsHitTestVisible="false"
-                            RadiusX="99"
-                            RadiusY="99"
-                            Stroke="Transparent"
-                            Visibility="Collapsed" />
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Background" Property="Opacity" Value="1" />
-                        </Trigger>
-                        <!--  ButtonBase 的按下和禁用状态优先于悬停；这两种状态使用默认背景。  -->
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Background" Property="Opacity" Value="0" />
-                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Background" Property="Opacity" Value="0" />
-                        </Trigger>
-                        <Trigger Property="HasSelectedDays" Value="True">
-                            <Setter TargetName="SelectedBackground" Property="Opacity" Value="1" />
-                            <Setter TargetName="NormalText" Property="TextBlock.Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="CalendarButtonFocusVisual" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="ButtonBackground" Property="Opacity" Value="0.35" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <!--  相邻年代的年份仍可导航，使用弱化文字区分其所属范围。  -->
+            <Trigger Property="IsInactive" Value="True">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </Trigger>
+            <Trigger Property="HasSelectedDays" Value="True">
+                <Setter Property="controls:Interaction.Palette" Value="{StaticResource AccentInteractionBrushes}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="DefaultCalendarItemStyle" TargetType="{x:Type CalendarItem}">
@@ -410,6 +388,7 @@
     <!--  https://developer.microsoft.com/en-us/fluentui#/controls/web/datepicker  -->
 
     <Style TargetType="{x:Type Calendar}">
+        <Setter Property="controls:CalendarInteraction.IsEnabled" Value="True" />
         <!--  todo: 各部件都有默认样式键，应改为默认样式，不应主动为其设置属性，否则会破坏样式查找机制  -->
         <Setter Property="CalendarButtonStyle" Value="{StaticResource DefaultCalendarButtonStyle}" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource DefaultCalendarDayButtonStyle}" />

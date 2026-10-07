@@ -1,0 +1,37 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <!--  Shared recipes use theme tokens so light, dark and high-contrast resources stay live.  -->
+    <controls:InteractionBrushSet
+        x:Key="SubtleInteractionBrushes"
+        Disabled="Transparent"
+        Normal="Transparent"
+        PointerOver="{m:DynamicBrush SubtleFillSecondary}"
+        Pressed="{m:DynamicBrush SubtleFillTertiary}" />
+
+    <controls:InteractionBrushSet
+        x:Key="AccentInteractionBrushes"
+        Normal="{m:DynamicBrush AccentFillPrimary}"
+        PointerOver="{m:DynamicBrush AccentFillSecondary}"
+        Pressed="{m:DynamicBrush AccentFillTertiary}" />
+
+    <!--  Every owner starts at Normal, including buttons nested inside other buttons' templates.  -->
+    <Style x:Key="InteractionButtonStyle" TargetType="{x:Type ButtonBase}">
+        <Setter Property="controls:Interaction.State" Value="Normal" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="controls:Interaction.State" Value="PointerOver" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="controls:Interaction.State" Value="Pressed" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="controls:Interaction.State" Value="Disabled" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>
