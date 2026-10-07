@@ -26,6 +26,51 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class InteractionBrushTests
 {
     /// <summary>
+    /// 弹出层的无限测量空间中，各语言的星期标题仍使用等宽列。
+    /// </summary>
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("zh-CN")]
+    [InlineData("de-DE")]
+    [InlineData("fr-FR")]
+    public void CalendarMonthView_HasUniformColumnsWhenMeasuredToContent(string language)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var calendar = CreateCalendar("Light", language);
+            calendar.DisplayDateStart = new DateTime(2026, 1, 1);
+            calendar.DisplayDateEnd = new DateTime(2026, 12, 31);
+            calendar.DisplayDate = new DateTime(2026, 10, 7);
+            var blackoutStart = new DateTime(2026, 10, 10);
+            var blackoutEnd = new DateTime(2026, 10, 12);
+            calendar.BlackoutDates.Add(new CalendarDateRange(blackoutStart, blackoutEnd));
+            calendar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            calendar.Arrange(new Rect(calendar.DesiredSize));
+            calendar.UpdateLayout();
+            var item = Descendants<CalendarItem>(calendar).Single();
+            var month = (Grid)item.Template.FindName("PART_MonthView", item);
+            var width = month.ColumnDefinitions[0].ActualWidth;
+            foreach (var column in month.ColumnDefinitions)
+            {
+                Assert.Equal(width, column.ActualWidth, 5);
+            }
+
+            // 模拟屏幕边缘对弹出层高度的约束，日期按钮应保留完整的布局空间。
+            calendar.Measure(new Size(400, 280));
+            calendar.Arrange(new Rect(0, 0, 400, 280));
+            calendar.UpdateLayout();
+            var days = Descendants<CalendarDayButton>(month);
+            foreach (var day in days)
+            {
+                var rowIndex = Grid.GetRow(day);
+                var rowHeight = month.RowDefinitions[rowIndex].ActualHeight;
+                var requiredHeight = day.ActualHeight + day.Margin.Top + day.Margin.Bottom;
+                Assert.True(rowHeight >= requiredHeight);
+            }
+        });
+    }
+
+    /// <summary>
     /// Mouse feedback survives CalendarItem capture, follows dragging and clears on cancellation.
     /// </summary>
     [Theory]
@@ -142,10 +187,10 @@ public class InteractionBrushTests
     {
         WpfApplicationTestHost.Run(() =>
         {
-            var resources = Load("Resources/InteractionBrushes.xaml");
+            var resources = Load("Controls/Calendar/InteractionBrushes.xaml");
             var button = new PressableButton
             {
-                Style = (Style)resources["InteractionButtonStyle"],
+                Style = (Style)resources["CalendarInteractionButtonStyle"],
                 Template = (ControlTemplate)XamlReader.Parse("""
                     <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                         xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup;assembly=Wpf.Zen.Ui"
@@ -347,9 +392,13 @@ public class InteractionBrushTests
     }
 
     // Use real Calendar state population rather than setting framework read-only day properties.
-    private static Calendar CreateCalendar(string theme)
+    private static Calendar CreateCalendar(string theme, string language = "en-US")
     {
-        var calendar = new Calendar { DisplayDate = DateTime.Today };
+        var calendar = new Calendar
+        {
+            DisplayDate = DateTime.Today,
+            Language = XmlLanguage.GetLanguage(language),
+        };
         calendar.Resources.MergedDictionaries.Add(Load($"Resources/Theme/{theme}.xaml"));
         calendar.Resources.MergedDictionaries.Add(Load("Resources/Variables.xaml"));
         calendar.Resources.MergedDictionaries.Add(Load("Controls/Calendar/Calendar.xaml"));

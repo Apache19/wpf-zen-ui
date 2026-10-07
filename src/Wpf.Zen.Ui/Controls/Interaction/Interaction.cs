@@ -9,10 +9,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// Supplies a palette and a shared input state to bindings inside a control template.
 /// </summary>
 /// <remarks>
-/// Set these properties on the templated control. The InteractionButtonStyle resource resolves
-/// ButtonBase input states with disabled taking precedence over pressed and pointer-over.
+/// Set these properties on the templated control and update State from its input state.
 /// Template bindings can consume the same state for multiple fills and strokes.
-/// Merge Resources/InteractionBrushes.xaml to use the built-in palettes and button base style.
 /// </remarks>
 public static class Interaction
 {

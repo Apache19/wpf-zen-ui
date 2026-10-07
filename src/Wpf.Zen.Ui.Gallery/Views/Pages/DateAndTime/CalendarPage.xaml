@@ -33,9 +33,10 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
+                <!--  WPF 应用模板时会从 DisplayDate 初始化内部导航日期，绑定解析前也需提供有效日期。  -->
                 <Calendar
                     x:Name="CalendarSample"
-                    DisplayDate="{Binding DisplayDate, Mode=TwoWay}"
+                    DisplayDate="{Binding DisplayDate, Mode=TwoWay, FallbackValue={x:Static system:DateTime.Today}}"
                     HorizontalAlignment="Left"
                     SelectedDate="{x:Static system:DateTime.Today}"
                     controls:CalendarBlackoutRange.Range="{Binding BlackoutRange}" />

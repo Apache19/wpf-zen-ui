@@ -4,22 +4,22 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
-    <!--  Shared recipes use theme tokens so light, dark and high-contrast resources stay live.  -->
+    <!--  日历按钮使用此交互色集合  -->
+
     <controls:InteractionBrushSet
-        x:Key="SubtleInteractionBrushes"
+        x:Key="CalendarSubtleInteractionBrushes"
         Disabled="Transparent"
         Normal="Transparent"
         PointerOver="{m:DynamicBrush SubtleFillSecondary}"
         Pressed="{m:DynamicBrush SubtleFillTertiary}" />
 
     <controls:InteractionBrushSet
-        x:Key="AccentInteractionBrushes"
+        x:Key="CalendarAccentInteractionBrushes"
         Normal="{m:DynamicBrush AccentFillPrimary}"
         PointerOver="{m:DynamicBrush AccentFillSecondary}"
         Pressed="{m:DynamicBrush AccentFillTertiary}" />
 
-    <!--  Every owner starts at Normal, including buttons nested inside other buttons' templates.  -->
-    <Style x:Key="InteractionButtonStyle" TargetType="{x:Type ButtonBase}">
+    <Style x:Key="CalendarInteractionButtonStyle" TargetType="{x:Type ButtonBase}">
         <Setter Property="controls:Interaction.State" Value="Normal" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
