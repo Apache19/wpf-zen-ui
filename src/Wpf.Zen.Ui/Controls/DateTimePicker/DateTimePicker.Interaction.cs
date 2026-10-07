@@ -134,7 +134,8 @@ public partial class DateTimePicker
         {
             if (column is not null)
             {
-                column.ValueChanged -= OnColumnValueChanged;
+                column.ValueChanged         -= OnColumnValueChanged;
+                column.InputValidityChanged -= OnColumnInputValidityChanged;
             }
         }
 
@@ -209,7 +210,8 @@ public partial class DateTimePicker
             if (column is not null)
             {
                 column.SetCurrentValue(DateTimePickerTimeColumn.MaximumProperty, index == 0 ? 23 : 59);
-                column.ValueChanged += OnColumnValueChanged;
+                column.ValueChanged         += OnColumnValueChanged;
+                column.InputValidityChanged += OnColumnInputValidityChanged;
             }
         }
 
@@ -230,6 +232,7 @@ public partial class DateTimePicker
         SynchronizeCalendar();
         SynchronizeTimeColumns();
         UpdatePopupState();
+        UpdateInputError();
     }
 
     /// <summary>
@@ -389,6 +392,19 @@ public partial class DateTimePicker
         {
             _updatingColumns = false;
         }
+
+        UpdateInputError();
+    }
+
+    /// <summary>
+    /// 时间列的非法草稿不会改变字段值，需单独同步输入状态。
+    /// </summary>
+    private void OnColumnInputValidityChanged(object? sender, EventArgs e)
+    {
+        if (!_updatingColumns)
+        {
+            UpdateInputError();
+        }
     }
 
     private void OnColumnValueChanged(object sender, RoutedPropertyChangedEventArgs<int> e)
@@ -426,6 +442,7 @@ public partial class DateTimePicker
 
         // 本次列已完成本地同步；避免刷新其它列而丢失尚未完成的输入。
         SetValue(PendingDateTimePropertyKey, updated);
+        UpdateInputError();
 
         CommandManager.InvalidateRequerySuggested();
     }

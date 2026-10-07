@@ -3,10 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Markup;
 using Calendar = System.Windows.Controls.Calendar;
 
@@ -31,7 +33,30 @@ namespace Wpf.Zen.Ui.Controls;
 [TemplatePart(Name = "PART_Second", Type = typeof(DateTimePickerTimeColumn))]
 public partial class DateTimePicker : Control
 {
-    private readonly Calendar _calendar = new();
+    private static readonly DependencyPropertyKey HasInputErrorPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(HasInputError), typeof(bool), typeof(DateTimePicker),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// 标识当前编辑内容错误状态的只读依赖属性。
+    /// </summary>
+    public static readonly DependencyProperty HasInputErrorProperty
+        = HasInputErrorPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// 获取当前编辑内容是否无法按控件规则接受，默认 false。空值不视为必填错误。
+    /// </summary>
+    /// <remarks>
+    /// 文本编辑时检查解析及日期限制；弹出层打开时检查待提交日期和时间字段。
+    /// 输入过程中仅更新状态，提交失败才触发 DateValidationError；恢复或取消后重新计算。
+    /// 此状态不包含绑定或业务校验错误；false 不保证编辑内容已提交到绑定源。
+    /// </remarks>
+    public bool HasInputError => (bool)GetValue(HasInputErrorProperty);
+
+    private readonly Calendar                _calendar              = new();
+    private readonly List<CalendarDateRange> _observedBlackoutDates = new();
 
     private bool _synchronizing;
     private bool _updatingText;
@@ -382,8 +407,9 @@ public partial class DateTimePicker : Control
         SetCurrentValue(DisplayDateProperty, DateTime.Today);
         UpdateDefaultFirstDayOfWeek();
 
-        _calendar.SelectedDatesChanged += OnCalendarSelectionChanged;
-        _calendar.DisplayDateChanged   += OnCalendarDisplayDateChanged;
+        _calendar.SelectedDatesChanged  += OnCalendarSelectionChanged;
+        _calendar.DisplayDateChanged    += OnCalendarDisplayDateChanged;
+        BlackoutDates.CollectionChanged += OnBlackoutDatesChanged;
 
         InitializeInteraction();
         SynchronizeCalendar();
@@ -582,6 +608,7 @@ public partial class DateTimePicker : Control
             picker.CommitText();
         }
 
+        picker.UpdateInputError();
         var peer = UIElementAutomationPeer.FromElement(picker);
         peer?.RaisePropertyChangedEvent(ValuePatternIdentifiers.ValueProperty, e.OldValue, e.NewValue);
     }
@@ -592,54 +619,117 @@ public partial class DateTimePicker : Control
     /// <returns>文本合法并已应用时为 true。</returns>
     public bool CommitText()
     {
-        var       text   = Text ?? string.Empty;
-        DateTime? result = null;
-        if (!string.IsNullOrWhiteSpace(text))
+        if (!TryReadText(out var result, out var error))
         {
+            UpdateInputError();
+
             var culture = GetCulture();
-            var parsed  = DateTimePickerTextParser.TryParse(text, DateTimeFormat, culture, out var value);
-            if (!parsed)
-            {
-                var message   = DateTimePickerLocalization.GetString("InvalidDateTime", culture);
-                var exception = new FormatException(message);
-                return ReportValidationError(exception, text);
-            }
+            var message = DateTimePickerLocalization.GetString(error!, culture);
 
-            // 文本相同不重建值，避免短格式损失隐藏的秒、亚秒或 Kind。
-            if (SelectedDateTime.HasValue)
-            {
-                var formatted = SelectedDateTime.Value.ToString(DateTimeFormat, culture);
-                if (text == formatted)
-                {
-                    return true;
-                }
+            Exception exception = error == "InvalidDateTime"
+                ? new FormatException(message)
+                : new ArgumentOutOfRangeException(nameof(Text), message);
 
-                if (value.Kind == DateTimeKind.Unspecified)
-                {
-                    value = DateTime.SpecifyKind(value, SelectedDateTime.Value.Kind);
-                }
-            }
-
-            result = value;
-        }
-
-        if (result.HasValue && !IsDateAllowed(result.Value))
-        {
-            var culture   = GetCulture();
-            var message   = DateTimePickerLocalization.GetString("DateOutOfRange", culture);
-            var exception = new ArgumentOutOfRangeException(nameof(Text), message);
-            return ReportValidationError(exception, text);
+            return ReportValidationError(exception, Text);
         }
 
         SetCurrentValue(SelectedDateTimeProperty, result);
         UpdateFormattedText();
+
         return true;
+    }
+
+    /// <summary>
+    /// 以提交使用的规则读取草稿；检查过程不修改正式值，也不发布校验事件。
+    /// </summary>
+    private bool TryReadText(out DateTime? result, out string? error)
+    {
+        result = null;
+        error  = null;
+
+        var text = Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return true;
+        }
+
+        var culture = GetCulture();
+        var parsed  = DateTimePickerTextParser.TryParse(text, DateTimeFormat, culture, out var value);
+        if (!parsed)
+        {
+            error = "InvalidDateTime";
+            return false;
+        }
+
+        if (SelectedDateTime.HasValue)
+        {
+            var formatted = SelectedDateTime.Value.ToString(DateTimeFormat, culture);
+            if (text == formatted)
+            {
+                value = SelectedDateTime.Value;
+            }
+            else if (value.Kind == DateTimeKind.Unspecified)
+            {
+                value = DateTime.SpecifyKind(value, SelectedDateTime.Value.Kind);
+            }
+        }
+
+        if (!IsDateAllowed(value))
+        {
+            error = "DateOutOfRange";
+            return false;
+        }
+
+        result = value;
+        return true;
+    }
+
+    /// <summary>
+    /// 汇总当前活动编辑区域的状态，供绑定和样式即时观察。
+    /// </summary>
+    private void UpdateInputError()
+    {
+        var valid = IsDropDownOpen ? CanCommit() : TryReadText(out _, out _);
+        SetValue(HasInputErrorPropertyKey, !valid);
+    }
+
+    /// <summary>
+    /// 禁止日期集合变化后重建弱订阅，以覆盖现有日期范围的原地修改。
+    /// </summary>
+    private void OnBlackoutDatesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var range in _observedBlackoutDates)
+        {
+            PropertyChangedEventManager.RemoveHandler(range, OnBlackoutRangeChanged, string.Empty);
+        }
+
+        _observedBlackoutDates.Clear();
+
+        foreach (var range in BlackoutDates)
+        {
+            _observedBlackoutDates.Add(range);
+            PropertyChangedEventManager.AddHandler(range, OnBlackoutRangeChanged, string.Empty);
+        }
+
+        UpdateInputError();
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    /// <summary>
+    /// 已配置禁止日期的起止日期变化时重新检查草稿。
+    /// </summary>
+    private void OnBlackoutRangeChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        UpdateInputError();
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private bool ReportValidationError(Exception exception, string text)
     {
         var args = new DatePickerDateValidationErrorEventArgs(exception, text);
+
         DateValidationError?.Invoke(this, args);
+
         if (args.ThrowException)
         {
             throw args.Exception;
@@ -654,6 +744,7 @@ public partial class DateTimePicker : Control
         var text    = SelectedDateTime?.ToString(DateTimeFormat, culture) ?? string.Empty;
 
         _updatingText = true;
+
         try
         {
             SetCurrentValue(TextProperty, text);
@@ -663,13 +754,18 @@ public partial class DateTimePicker : Control
         {
             _updatingText = false;
         }
+
+        UpdateInputError();
     }
 
     private static void OnCalendarPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var picker = (DateTimePicker)d;
+
         picker.SynchronizeCalendar();
-        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+        picker.UpdateInputError();
+
+        CommandManager.InvalidateRequerySuggested();
     }
 
     /// <summary>
@@ -735,7 +831,9 @@ public partial class DateTimePicker : Control
         {
             var value = ReplaceDate(pending, date);
             SetValue(PendingDateTimePropertyKey, value);
-            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+
+            UpdateInputError();
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
@@ -760,7 +858,8 @@ public partial class DateTimePicker : Control
         SynchronizeCalendar();
         SynchronizeTimeColumns();
 
-        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+        UpdateInputError();
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private static void OnIsDropDownOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -784,6 +883,7 @@ public partial class DateTimePicker : Control
         }
 
         picker.UpdatePopupState();
+        picker.UpdateInputError();
 
         var peer     = UIElementAutomationPeer.FromElement(picker);
         var oldState = (bool)e.OldValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed;
@@ -809,7 +909,7 @@ public partial class DateTimePicker : Control
     {
         base.OnPropertyChanged(e);
 
-        if (e.Property == FlowDirectionProperty && _calendar is not null)
+        if (e.Property == FlowDirectionProperty)
         {
             _calendar.FlowDirection = FlowDirection;
         }

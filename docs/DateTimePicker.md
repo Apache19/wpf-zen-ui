@@ -17,6 +17,7 @@
 | --- | --- |
 | `SelectedDateTime` | 已提交的完整日期时间，默认 `null`，默认双向绑定 |
 | `SelectedDate` | 正式值的日期投影，默认双向绑定 |
+| `HasInputError` | 只读输入错误状态，默认 `false`；随当前编辑区域更新 |
 | `PendingDateTime` | 只读待提交值，弹出层关闭时为 `null` |
 | `IsDropDownOpen` | 默认双向绑定；打开建立事务，直接关闭取消事务 |
 | `Text` | 完整日期时间文本，默认双向绑定 |
@@ -181,3 +182,27 @@ DateTimePicker 在日历上监听包含已处理事件的冒泡 MouseUp，在左
 即使进一步放入 CalendarItem 模板以扩大捕获子树，也无法解决外部点击被吞掉的问题，
 且会把时间编辑和事务命令耦合到原生日历的内部模板契约。
 因此继续采用 Popup 中组合 Calendar 与时间编辑器的结构，将捕获协调放在宿主控件中。
+
+## 即时输入状态
+
+`HasInputError` 是只读依赖属性，可作为绑定源或样式触发器条件。文本草稿无法解析、日期超出配置范围或属于禁止日期时为 `true`；弹出层打开期间改为检查待提交日期与各时间字段。输入检查不提交正式值，也不触发 `DateValidationError`，该事件仍在提交失败时触发。
+
+空文本代表可空值，状态为 `false`。可按现有规则补全的片段也为 `false`。必填、业务规则和绑定转换错误仍由应用校验。取消、Esc、失焦恢复、外部值更新及日期约束变化后会重新计算状态。
+
+```xml
+<ui:DateTimePicker x:Name="DateEditor" SelectedDateTime="{Binding AppointmentTime}" />
+<TextBlock Text="日期时间输入尚未有效">
+    <TextBlock.Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasInputError, ElementName=DateEditor}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </TextBlock.Style>
+</TextBlock>
+```
+
+`false` 只表示当前编辑内容可接受，不保证草稿已提交到 `SelectedDateTime` 或绑定源。应用保存前仍应按当前编辑区域调用 `CommitText()` 或 `Commit()`。失焦恢复旧值后状态也会恢复，属性不记录历史输入失败。

@@ -38,7 +38,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// </remarks>
 [TemplatePart(Name = "PART_CompactPopup", Type = typeof(Popup))]
-[TemplatePart(Name = "PART_SpinButtons",  Type = typeof(FrameworkElement))]
+[TemplatePart(Name = "PART_SpinButtons", Type = typeof(FrameworkElement))]
 public class NumberBox : TextBox
 {
     private const double LargeStepHoldDurationSeconds = 3.0;
@@ -55,6 +55,27 @@ public class NumberBox : TextBox
     private bool _isWritingFormattedText;
     private bool _isApplyingTextValue;
 
+    private static readonly DependencyPropertyKey HasInputErrorPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(HasInputError), typeof(bool), typeof(NumberBox),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// 标识当前编辑内容错误状态的只读依赖属性。
+    /// </summary>
+    public static readonly DependencyProperty HasInputErrorProperty
+        = HasInputErrorPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// 获取当前编辑内容是否无法按控件规则接受，默认 false。空值不视为必填错误。
+    /// </summary>
+    /// <remarks>
+    /// 未完成的数值或表达式为错误；恢复、格式化及范围纠正后按当前显示内容更新。
+    /// 此状态不包含绑定或业务校验错误；false 不保证编辑内容已提交到绑定源。
+    /// </remarks>
+    public bool HasInputError => (bool)GetValue(HasInputErrorProperty);
+
     #region Dependency properties
 
     #region ButtonKindProperty
@@ -67,7 +88,7 @@ public class NumberBox : TextBox
             typeof(NumberBox),
             new PropertyMetadata(NumberBoxButtonKind.None),
             static value => value is NumberBoxButtonKind kind
-                         && Enum.IsDefined(typeof(NumberBoxButtonKind), kind)
+                && Enum.IsDefined(typeof(NumberBoxButtonKind), kind)
         );
 
     /// <summary>
@@ -404,10 +425,15 @@ public class NumberBox : TextBox
             false,
             static (d, e) =>
             {
-                if (d is NumberBox nb && e.NewValue is false)
+                var numberBox = (NumberBox)d;
+                if (e.NewValue is false)
                 {
-                    nb.CommitInput();
+                    numberBox.CommitInput();
                 }
+
+                var formatted = numberBox.FormatValue();
+                var valid     = numberBox.Text == formatted || numberBox.TryParseText(numberBox.Text, out _);
+                numberBox.SetValue(HasInputErrorPropertyKey, !valid);
             }
         )
     );
@@ -432,7 +458,7 @@ public class NumberBox : TextBox
         typeof(NumberBox),
         new PropertyMetadata(NumberBoxSpinButtonPlacementMode.Inline),
         static value => value is NumberBoxSpinButtonPlacementMode mode
-                     && Enum.IsDefined(typeof(NumberBoxSpinButtonPlacementMode), mode)
+            && Enum.IsDefined(typeof(NumberBoxSpinButtonPlacementMode), mode)
     );
 
     /// <summary>
@@ -519,7 +545,7 @@ public class NumberBox : TextBox
             new FrameworkPropertyMetadata(
                 TextWrapping.NoWrap,
                 null,
-                (d, baseValue) => TextWrapping.NoWrap  // Enforce a single-line editor.
+                (d, baseValue) => TextWrapping.NoWrap // Enforce a single-line editor.
             )
         );
 
@@ -691,9 +717,13 @@ public class NumberBox : TextBox
         // PropertyChanged trigger. Push LostFocus bindings explicitly here; PropertyChanged is
         // already current and Explicit remains under the caller's control.
         var binding = GetBindingExpression(ValueProperty);
-        if (binding is not null && GetEffectiveUpdateSourceTrigger(binding.ParentBinding) == UpdateSourceTrigger.LostFocus)
+        if (binding is not null)
         {
-            binding.UpdateSource();
+            var trigger = GetEffectiveUpdateSourceTrigger(binding.ParentBinding);
+            if (trigger == UpdateSourceTrigger.LostFocus)
+            {
+                binding.UpdateSource();
+            }
         }
     }
 
@@ -711,9 +741,8 @@ public class NumberBox : TextBox
     /// <inheritdoc />
     protected override void OnTextChanged(TextChangedEventArgs e)
     {
-        base.OnTextChanged(e);
-
         SynchronizeValueFromText();
+        base.OnTextChanged(e);
     }
 
     /// <inheritdoc />
@@ -722,7 +751,7 @@ public class NumberBox : TextBox
         // Preview mouse events do not continue from a standalone Popup to its PlacementTarget,
         // so these are the only handlers owned by the current popup template part.
         _compactPopup?.RemoveHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OnSpinButtonMouseDown));
-        _compactPopup?.RemoveHandler(Mouse.PreviewMouseUpEvent,   new MouseButtonEventHandler(OnSpinButtonMouseUp));
+        _compactPopup?.RemoveHandler(Mouse.PreviewMouseUpEvent, new MouseButtonEventHandler(OnSpinButtonMouseUp));
 
         base.OnApplyTemplate();
 
@@ -731,13 +760,13 @@ public class NumberBox : TextBox
 
         if (_compactPopup is not null)
         {
-            #pragma warning disable WPF0041 // Set mutable dependency properties using SetCurrentValue
+#pragma warning disable WPF0041 // Set mutable dependency properties using SetCurrentValue
             _compactPopup.Placement                    = PlacementMode.Custom;
             _compactPopup.CustomPopupPlacementCallback = CompactPopupPlacementCallback;
-            #pragma warning restore WPF0041 // Set mutable dependency properties using SetCurrentValue
+#pragma warning restore WPF0041 // Set mutable dependency properties using SetCurrentValue
 
             _compactPopup.AddHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OnSpinButtonMouseDown));
-            _compactPopup.AddHandler(Mouse.PreviewMouseUpEvent,   new MouseButtonEventHandler(OnSpinButtonMouseUp));
+            _compactPopup.AddHandler(Mouse.PreviewMouseUpEvent, new MouseButtonEventHandler(OnSpinButtonMouseUp));
         }
 
         // Text and Value synchronization is independent of the visual tree. Reapplying a template
@@ -900,9 +929,9 @@ public class NumberBox : TextBox
         {
             // Transform every corner independently: FlowDirection and user supplied render
             // transforms can reverse or skew an axis, for which a two-corner shortcut is invalid.
-            var topLeft     = element.PointToScreen(new Point(0.0,                 0.0));
+            var topLeft     = element.PointToScreen(new Point(0.0, 0.0));
             var topRight    = element.PointToScreen(new Point(element.ActualWidth, 0.0));
-            var bottomLeft  = element.PointToScreen(new Point(0.0,                 element.ActualHeight));
+            var bottomLeft  = element.PointToScreen(new Point(0.0, element.ActualHeight));
             var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
 
             var left   = Math.Min(Math.Min(topLeft.X, topRight.X), Math.Min(bottomLeft.X, bottomRight.X));
@@ -979,7 +1008,7 @@ public class NumberBox : TextBox
     private void OnSpinButtonLostMouseCapture(object sender, MouseEventArgs e)
     {
         var button = e.OriginalSource as ButtonBase
-                  ?? (e.OriginalSource as DependencyObject).FindAncestor<ButtonBase>();
+            ?? (e.OriginalSource as DependencyObject).FindAncestor<ButtonBase>();
         if (ReferenceEquals(button, _heldSpinButton))
         {
             EndSpinButtonHold();
@@ -989,7 +1018,13 @@ public class NumberBox : TextBox
     private void BeginSpinButtonHold(DependencyObject? source)
     {
         var button = source as ButtonBase ?? source.FindAncestor<ButtonBase>();
-        if (button is null || GetButtonKind(button) is not (NumberBoxButtonKind.Increment or NumberBoxButtonKind.Decrement))
+        if (button is null)
+        {
+            return;
+        }
+
+        var kind = GetButtonKind(button);
+        if (kind is not (NumberBoxButtonKind.Increment or NumberBoxButtonKind.Decrement))
         {
             return;
         }
@@ -1016,19 +1051,16 @@ public class NumberBox : TextBox
             return LargeStep;
         }
 
-        if (
-            spinButton is not null
+        if (spinButton is not null
             && ReferenceEquals(spinButton, _heldSpinButton)
-            && _spinButtonPressTimestamp != 0
-            &&
-               (Stopwatch.GetTimestamp() - _spinButtonPressTimestamp)
-               /
-               (double)Stopwatch.Frequency
-               >=
-               LargeStepHoldDurationSeconds
-        )
+            && _spinButtonPressTimestamp != 0)
         {
-            return LargeStep;
+            var a = Stopwatch.GetTimestamp() - _spinButtonPressTimestamp;
+            var b = (double)Stopwatch.Frequency;
+            if (a / b >= LargeStepHoldDurationSeconds)
+            {
+                return LargeStep;
+            }
         }
 
         return SmallStep;
@@ -1099,7 +1131,7 @@ public class NumberBox : TextBox
             return;
         }
 
-        var pastedText = e.DataObject.GetData(DataFormats.UnicodeText) as string ?? string.Empty;
+        var pastedText    = e.DataObject.GetData(DataFormats.UnicodeText) as string ?? string.Empty;
         var resultingText = GetTextAfterInsertion(pastedText);
 
         if (!ContainsOnlyInputCharacters(pastedText) || !TryParseText(resultingText, out _))
@@ -1158,12 +1190,19 @@ public class NumberBox : TextBox
     /// </summary>
     private void SynchronizeValueFromText()
     {
-        if (_isWritingFormattedText || !TryParseText(Text, out var value))
+        if (_isWritingFormattedText)
         {
+            SetValue(HasInputErrorPropertyKey, false);
             return;
         }
 
-        ApplyTextValue(value);
+        var valid = TryParseText(Text, out var value);
+        SetValue(HasInputErrorPropertyKey, !valid);
+
+        if (valid)
+        {
+            ApplyTextValue(value);
+        }
     }
 
     /// <summary>
@@ -1297,8 +1336,8 @@ public class NumberBox : TextBox
                 CultureInfo.CurrentCulture,
                 out value
             )
-         && !double.IsNaN(value)
-         && !double.IsInfinity(value))
+            && !double.IsNaN(value)
+            && !double.IsInfinity(value))
         {
             return true;
         }
@@ -1315,12 +1354,12 @@ public class NumberBox : TextBox
         foreach (var character in text)
         {
             if (character is >= '0' and <= '9'
-             || format.NumberDecimalSeparator.Contains(character)
-             || format.NumberGroupSeparator.Contains(character)
-             || format.PositiveSign.Contains(character)
-             || format.NegativeSign.Contains(character)
-             || character is '+' or '-' or 'e' or 'E'
-             || (AcceptsExpression && character is '*' or '/' or '(' or ')'))
+                || format.NumberDecimalSeparator.Contains(character)
+                || format.NumberGroupSeparator.Contains(character)
+                || format.PositiveSign.Contains(character)
+                || format.NegativeSign.Contains(character)
+                || character is '+' or '-' or 'e' or 'E'
+                || (AcceptsExpression && character is '*' or '/' or '(' or ')'))
             {
                 continue;
             }
@@ -1339,7 +1378,7 @@ public class NumberBox : TextBox
     {
         // Math.Clamp is unavailable on .NET Framework. Keep the bounds explicit here rather
         // than adding a compatibility helper for this single, paste-specific calculation.
-        var start  = Math.Min(Math.Max(SelectionStart,  0), Text.Length);
+        var start  = Math.Min(Math.Max(SelectionStart, 0), Text.Length);
         var length = Math.Min(Math.Max(SelectionLength, 0), Text.Length - start);
 
         return Text.Remove(start, length).Insert(start, insertedText);
@@ -1370,8 +1409,8 @@ public class NumberBox : TextBox
 
         return trigger == UpdateSourceTrigger.Default
             && ValueProperty.GetMetadata(typeof(NumberBox)) is FrameworkPropertyMetadata metadata
-            ? metadata.DefaultUpdateSourceTrigger
-            : trigger;
+                ? metadata.DefaultUpdateSourceTrigger
+                : trigger;
     }
 
     private void MoveCaretToTextEnd()

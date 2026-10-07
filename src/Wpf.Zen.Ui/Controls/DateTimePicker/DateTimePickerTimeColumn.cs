@@ -23,17 +23,24 @@ namespace Wpf.Zen.Ui.Controls;
 public class DateTimePickerTimeColumn : Control
 {
     private NativeTextBox? _input;
+
     private bool _updatingInput;
     private bool _editingInput;
-    private int _wheelDelta;
+    private int  _wheelDelta;
 
     /// <summary>
     /// 标识字段值，默认 0，范围由 Maximum 决定。
     /// </summary>
-    public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-        nameof(Value), typeof(int), typeof(DateTimePickerTimeColumn),
-        new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnValueChanged, CoerceValue));
+    public static readonly DependencyProperty ValueProperty
+        = DependencyProperty.Register(
+            nameof(Value), typeof(int), typeof(DateTimePickerTimeColumn),
+            new FrameworkPropertyMetadata(
+                0,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnValueChanged,
+                CoerceValue
+            )
+        );
 
     /// <summary>
     /// 获取或设置字段值，超出范围时约束到最近的端点。
@@ -47,9 +54,12 @@ public class DateTimePickerTimeColumn : Control
     /// <summary>
     /// 标识循环上限，默认 59；小时列使用 23。
     /// </summary>
-    public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
-        nameof(Maximum), typeof(int), typeof(DateTimePickerTimeColumn),
-        new PropertyMetadata(59, OnMaximumChanged), IsValidMaximum);
+    public static readonly DependencyProperty MaximumProperty
+        = DependencyProperty.Register(
+            nameof(Maximum), typeof(int), typeof(DateTimePickerTimeColumn),
+            new PropertyMetadata(59, OnMaximumChanged),
+            IsValidMaximum
+        );
 
     /// <summary>
     /// 获取或设置包含在范围内的上限，允许 1 至 99。
@@ -60,39 +70,68 @@ public class DateTimePickerTimeColumn : Control
         set => SetValue(MaximumProperty, value);
     }
 
-    private static readonly DependencyPropertyKey VisibleValuesPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(VisibleValues), typeof(IReadOnlyList<string>), typeof(DateTimePickerTimeColumn),
-        new PropertyMetadata(null));
+    private static readonly DependencyPropertyKey VisibleValuesPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(VisibleValues), typeof(IReadOnlyList<string>), typeof(DateTimePickerTimeColumn),
+            new PropertyMetadata(null)
+        );
 
     /// <summary>
     /// 标识五个可见值的只读集合属性。
     /// </summary>
-    public static readonly DependencyProperty VisibleValuesProperty = VisibleValuesPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty VisibleValuesProperty
+        = VisibleValuesPropertyKey.DependencyProperty;
 
     /// <summary>
     /// 获取按 -2、-1、0、1、2 偏移排列的两位数字，中间项始终为当前值。
     /// </summary>
-    public IReadOnlyList<string> VisibleValues => (IReadOnlyList<string>)GetValue(VisibleValuesProperty);
+    public IReadOnlyList<string> VisibleValues
+    {
+        get => (IReadOnlyList<string>)GetValue(VisibleValuesProperty);
+    }
 
-    private static readonly DependencyPropertyKey HasValidInputPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(HasValidInput), typeof(bool), typeof(DateTimePickerTimeColumn), new PropertyMetadata(true));
+    private static readonly DependencyPropertyKey HasValidInputPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(HasValidInput), typeof(bool), typeof(DateTimePickerTimeColumn),
+            new PropertyMetadata(true, OnInputValidityChanged)
+        );
+
+    /// <summary>
+    /// 通知所属日期时间控件重新汇总输入状态，包括正式字段值未改变的非法输入。
+    /// </summary>
+    internal event EventHandler? InputValidityChanged;
+
+    /// <summary>
+    /// 在字段输入有效性改变时通知所属控件。
+    /// </summary>
+    private static void OnInputValidityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var column = (DateTimePickerTimeColumn)d;
+        column.InputValidityChanged?.Invoke(column, EventArgs.Empty);
+    }
 
     /// <summary>
     /// 标识输入合法状态的只读属性。
     /// </summary>
-    public static readonly DependencyProperty HasValidInputProperty = HasValidInputPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty HasValidInputProperty
+        = HasValidInputPropertyKey.DependencyProperty;
 
     /// <summary>
     /// 获取当前文本是否为合法字段值。空文本和越界文本为 false。
     /// </summary>
-    public bool HasValidInput => (bool)GetValue(HasValidInputProperty);
+    public bool HasValidInput
+    {
+        get => (bool)GetValue(HasValidInputProperty);
+    }
 
     /// <summary>
     /// 标识字段值变化的冒泡事件。
     /// </summary>
-    public static readonly RoutedEvent ValueChangedEvent = EventManager.RegisterRoutedEvent(
-        nameof(ValueChanged), RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<int>),
-        typeof(DateTimePickerTimeColumn));
+    public static readonly RoutedEvent ValueChangedEvent
+        = EventManager.RegisterRoutedEvent(
+            nameof(ValueChanged), RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<int>),
+            typeof(DateTimePickerTimeColumn)
+        );
 
     /// <summary>
     /// 字段合法值变化后触发；非法文本不触发。
@@ -106,13 +145,16 @@ public class DateTimePickerTimeColumn : Control
     /// <summary>
     /// 按整数偏移循环选择字段，参数可以是整数或整数字符串。
     /// </summary>
-    public static RoutedUICommand StepCommand { get; } =
-        new("Step", nameof(StepCommand), typeof(DateTimePickerTimeColumn));
+    public static RoutedUICommand StepCommand { get; } = new(
+        "Step", nameof(StepCommand), typeof(DateTimePickerTimeColumn)
+    );
 
     static DateTimePickerTimeColumn()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(DateTimePickerTimeColumn),
-            new FrameworkPropertyMetadata(typeof(DateTimePickerTimeColumn)));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(DateTimePickerTimeColumn),
+            new FrameworkPropertyMetadata(typeof(DateTimePickerTimeColumn))
+        );
     }
 
     /// <summary>
@@ -126,14 +168,14 @@ public class DateTimePickerTimeColumn : Control
 
     private static bool IsValidMaximum(object value)
     {
-        int maximum = (int)value;
+        var maximum = (int)value;
         return maximum >= 1 && maximum <= 99;
     }
 
     private static object CoerceValue(DependencyObject d, object value)
     {
-        var column = (DateTimePickerTimeColumn)d;
-        int upperBoundedValue = Math.Min(column.Maximum, (int)value);
+        var column            = (DateTimePickerTimeColumn)d;
+        var upperBoundedValue = Math.Min(column.Maximum, (int)value);
         return Math.Max(0, upperBoundedValue);
     }
 
@@ -149,15 +191,21 @@ public class DateTimePickerTimeColumn : Control
     {
         var column = (DateTimePickerTimeColumn)d;
         column.UpdateVisibleValues();
+
         if (!column._editingInput)
         {
             column.RefreshText();
         }
+
         var args = new RoutedPropertyChangedEventArgs<int>((int)e.OldValue, (int)e.NewValue, ValueChangedEvent);
         column.RaiseEvent(args);
+
         var peer = UIElementAutomationPeer.FromElement(column);
-        peer?.RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty,
-            (double)(int)e.OldValue, (double)(int)e.NewValue);
+        peer?.RaisePropertyChangedEvent(
+            RangeValuePatternIdentifiers.ValueProperty,
+            (double)(int)e.OldValue,
+            (double)(int)e.NewValue
+        );
     }
 
     /// <summary>
@@ -167,12 +215,14 @@ public class DateTimePickerTimeColumn : Control
     {
         if (_input is not null)
         {
-            _input.TextChanged -= OnInputTextChanged;
-            _input.PreviewTextInput -= OnPreviewTextInput;
+            _input.TextChanged       -= OnInputTextChanged;
+            _input.PreviewTextInput  -= OnPreviewTextInput;
             _input.LostKeyboardFocus -= OnInputLostKeyboardFocus;
-            _input.GotKeyboardFocus -= OnInputGotKeyboardFocus;
+            _input.GotKeyboardFocus  -= OnInputGotKeyboardFocus;
+
             DataObject.RemovePastingHandler(_input, OnPasting);
         }
+
         _input = null;
     }
 
@@ -183,6 +233,7 @@ public class DateTimePickerTimeColumn : Control
     {
         DetachInput();
         RefreshText();
+
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
@@ -192,17 +243,22 @@ public class DateTimePickerTimeColumn : Control
     public override void OnApplyTemplate()
     {
         DetachInput();
+
         base.OnApplyTemplate();
+
         _input = GetTemplateChild("PART_Input") as NativeTextBox;
         if (_input is not null)
         {
             InputMethod.SetIsInputMethodEnabled(_input, false);
-            _input.TextChanged += OnInputTextChanged;
-            _input.PreviewTextInput += OnPreviewTextInput;
+
+            _input.TextChanged       += OnInputTextChanged;
+            _input.PreviewTextInput  += OnPreviewTextInput;
             _input.LostKeyboardFocus += OnInputLostKeyboardFocus;
-            _input.GotKeyboardFocus += OnInputGotKeyboardFocus;
+            _input.GotKeyboardFocus  += OnInputGotKeyboardFocus;
+
             DataObject.AddPastingHandler(_input, OnPasting);
         }
+
         RefreshText();
     }
 
@@ -212,18 +268,19 @@ public class DateTimePickerTimeColumn : Control
     private void UpdateVisibleValues()
     {
         var values = new string[5];
-        for (int index = 0; index < values.Length; index++)
+        for (var index = 0; index < values.Length; index++)
         {
-            int value = Wrap(Value + index - 2);
+            var value = Wrap(Value + index - 2);
             values[index] = value.ToString("D2", CultureInfo.InvariantCulture);
         }
+
         var readOnlyValues = Array.AsReadOnly(values);
         SetValue(VisibleValuesPropertyKey, readOnlyValues);
     }
 
     private int Wrap(int value)
     {
-        int count = Maximum + 1;
+        var count = Maximum + 1;
         return (value % count + count) % count;
     }
 
@@ -236,14 +293,17 @@ public class DateTimePickerTimeColumn : Control
         {
             return;
         }
+
         _updatingInput = true;
+
         try
         {
             if (_input is not null)
             {
-                string text = Value.ToString("D2", CultureInfo.InvariantCulture);
+                var text = Value.ToString("D2", CultureInfo.InvariantCulture);
                 _input.SetCurrentValue(NativeTextBox.TextProperty, text);
             }
+
             SetValue(HasValidInputPropertyKey, true);
             CommandManager.InvalidateRequerySuggested();
         }
@@ -259,13 +319,17 @@ public class DateTimePickerTimeColumn : Control
         {
             return;
         }
-        string text = _input.Text;
-        bool parsed = int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int value);
-        bool valid = parsed && IsDigits(text) && text.Length <= 2 && value <= Maximum;
+
+        var text   = _input.Text;
+        var parsed = int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value);
+        var valid  = parsed && IsDigits(text) && text.Length <= 2 && value <= Maximum;
+
         SetValue(HasValidInputPropertyKey, valid);
+
         if (valid)
         {
             _editingInput = true;
+
             try
             {
                 SetCurrentValue(ValueProperty, value);
@@ -275,6 +339,7 @@ public class DateTimePickerTimeColumn : Control
                 _editingInput = false;
             }
         }
+
         CommandManager.InvalidateRequerySuggested();
     }
 
@@ -284,13 +349,15 @@ public class DateTimePickerTimeColumn : Control
         {
             return false;
         }
-        foreach (char digit in text)
+
+        foreach (var digit in text)
         {
             if (digit < '0' || digit > '9')
             {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -320,17 +387,18 @@ public class DateTimePickerTimeColumn : Control
 
     private void OnStepExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        string? parameter = Convert.ToString(e.Parameter, CultureInfo.InvariantCulture);
-        if (int.TryParse(parameter, NumberStyles.Integer, CultureInfo.InvariantCulture, out int offset))
+        var parameter = Convert.ToString(e.Parameter, CultureInfo.InvariantCulture);
+        if (int.TryParse(parameter, NumberStyles.Integer, CultureInfo.InvariantCulture, out var offset))
         {
             Step(offset);
         }
+
         e.Handled = true;
     }
 
     private void Step(int offset)
     {
-        int wrapped = Wrap(Value + offset % (Maximum + 1));
+        var wrapped = Wrap(Value + offset % (Maximum + 1));
         SetCurrentValue(ValueProperty, wrapped);
         RefreshText();
     }
@@ -341,13 +409,16 @@ public class DateTimePickerTimeColumn : Control
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         base.OnMouseWheel(e);
+
         _wheelDelta += e.Delta;
-        int steps = _wheelDelta / Mouse.MouseWheelDeltaForOneLine;
+        var steps = _wheelDelta / Mouse.MouseWheelDeltaForOneLine;
         _wheelDelta %= Mouse.MouseWheelDeltaForOneLine;
+
         if (steps != 0)
         {
             Step(-steps);
         }
+
         e.Handled = true;
     }
 
@@ -357,6 +428,7 @@ public class DateTimePickerTimeColumn : Control
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
+
         if (e.Key == Key.Up || e.Key == Key.Down)
         {
             Step(e.Key == Key.Up ? -1 : 1);
@@ -389,16 +461,22 @@ public class DateTimePickerTimeColumn : Control
         }
 
         private DateTimePickerTimeColumn Column => (DateTimePickerTimeColumn)Owner;
+
         /// <inheritdoc />
         public bool IsReadOnly => !IsEnabled();
+
         /// <inheritdoc />
         public double LargeChange => 5;
+
         /// <inheritdoc />
         public double SmallChange => 1;
+
         /// <inheritdoc />
         public double Maximum => Column.Maximum;
+
         /// <inheritdoc />
         public double Minimum => 0;
+
         /// <inheritdoc />
         public double Value => Column.Value;
 
@@ -425,12 +503,14 @@ public class DateTimePickerTimeColumn : Control
         {
             if (!IsEnabled())
             {
-                throw new System.Windows.Automation.ElementNotEnabledException();
+                throw new ElementNotEnabledException();
             }
+
             if (double.IsNaN(value) || value < Minimum || value > Maximum || value != Math.Truncate(value))
             {
                 throw new ArgumentOutOfRangeException(nameof(value));
             }
+
             Column.SetCurrentValue(ValueProperty, (int)value);
             Column.RefreshText();
         }

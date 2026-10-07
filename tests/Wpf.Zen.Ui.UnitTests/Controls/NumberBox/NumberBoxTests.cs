@@ -23,6 +23,50 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.NumberBoxControl;
 
 public class NumberBoxTests
 {
+    /// <summary>
+    /// 输入状态可绑定且只读，非法草稿保留旧值，恢复与清空会清除错误。
+    /// </summary>
+    [Fact]
+    public void InputError_TracksDraftAndRecoveryWithoutReplacingValue()
+    {
+        RunOnStaThread(() =>
+        {
+            var box = new NumberBox { Value = 12 };
+            var observer = new System.Windows.Controls.CheckBox();
+            observer.SetBinding(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty,
+                new Binding(nameof(NumberBox.HasInputError)) { Source = box, Mode = BindingMode.OneWay });
+            Assert.True(NumberBox.HasInputErrorProperty.ReadOnly);
+            Assert.False(box.HasInputError);
+            box.Text = "-";
+            Assert.True(box.HasInputError);
+            Assert.True(observer.IsChecked);
+            Assert.Equal(12, box.Value);
+            CommitText(box);
+            Assert.False(box.HasInputError);
+            Assert.Equal("12", box.Text);
+            box.Text = "";
+            Assert.False(box.HasInputError);
+            Assert.Null(box.Value);
+            box.Text = "1+2";
+            Assert.True(box.HasInputError);
+            box.AcceptsExpression = true;
+            Assert.False(box.HasInputError);
+            Assert.Null(box.Value);
+            CommitText(box);
+            Assert.Equal(3, box.Value);
+            box.Maximum = 5;
+            box.Text = "10";
+            Assert.False(box.HasInputError);
+            Assert.Equal("5", box.Text);
+            box.FormatString = "0 'kg'";
+            Assert.False(box.HasInputError);
+            box.AcceptsExpression = false;
+            Assert.False(box.HasInputError);
+            box.AcceptsExpression = true;
+            Assert.False(box.HasInputError);
+        });
+    }
+
     [Fact]
     public void TextOnlyInitialization_DoesNotDependOnTemplate()
     {

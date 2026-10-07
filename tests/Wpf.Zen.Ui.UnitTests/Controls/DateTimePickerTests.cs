@@ -28,6 +28,74 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class DateTimePickerTests
 {
     /// <summary>
+    /// 即时检查草稿不提交数据或触发失败事件，配置变化及恢复会刷新状态。
+    /// </summary>
+    [Fact]
+    public void InputError_TracksDraftConstraintsAndRecovery()
+    {
+        WpfTestThread.Run(() => WithWindow((picker, window) =>
+        {
+            var original = new DateTime(2026, 10, 6, 12, 0, 0);
+            picker.SelectedDateTime = original;
+            var input = Part<TextBox>(picker, "PART_TextBox");
+            int errors = 0;
+            picker.DateValidationError += (_, _) => errors++;
+            Assert.True(DateTimePicker.HasInputErrorProperty.ReadOnly);
+            input.Text = "invalid";
+            Assert.True(picker.HasInputError);
+            Assert.Equal(0, errors);
+            Assert.Equal(original, picker.SelectedDateTime);
+            input.Text = "2026-10-08 12:00:00";
+            Assert.False(picker.HasInputError);
+            Assert.Equal(original, picker.SelectedDateTime);
+            picker.DisplayDateEnd = new DateTime(2026, 10, 7);
+            Assert.True(picker.HasInputError);
+            picker.DisplayDateEnd = null;
+            Assert.False(picker.HasInputError);
+            var range = new CalendarDateRange(new DateTime(2026, 10, 9));
+            picker.BlackoutDates.Add(range);
+            Assert.False(picker.HasInputError);
+            range.Start = new DateTime(2026, 10, 8);
+            Assert.True(picker.HasInputError);
+            picker.BlackoutDates.Clear();
+            Assert.False(picker.HasInputError);
+            input.Text = "invalid";
+            PressKey(input, window, Key.Escape);
+            Assert.False(picker.HasInputError);
+            Assert.Equal(original, picker.SelectedDateTime);
+            input.Text = "";
+            Assert.False(picker.HasInputError);
+            Assert.Equal(0, errors);
+        }));
+    }
+
+    /// <summary>
+    /// 弹出层非法字段即时反映到外层，取消后恢复正式值的有效状态。
+    /// </summary>
+    [Fact]
+    public void InputError_TracksPopupColumnsAndCancel()
+    {
+        WpfTestThread.Run(() => WithWindow((picker, window) =>
+        {
+            picker.SelectedDateTime = new DateTime(2026, 10, 6, 12, 0, 0);
+            picker.IsDropDownOpen = true;
+            var hour = Part<DateTimePickerTimeColumn>(picker, "PART_Hour");
+            hour.ApplyTemplate();
+            var input = Part<TextBox>(hour, "PART_Input");
+            input.Text = "99";
+            Assert.True(picker.HasInputError);
+            Assert.False(picker.Commit());
+            input.Text = "13";
+            Assert.False(picker.HasInputError);
+            Assert.Equal(12, picker.SelectedDateTime!.Value.Hour);
+            input.Text = "";
+            Assert.True(picker.HasInputError);
+            picker.Cancel();
+            Assert.False(picker.HasInputError);
+        }));
+    }
+
+    /// <summary>
     /// 日期投影更新时保留时间精度和 Kind，清空行为保持一致。
     /// </summary>
     [Fact]
