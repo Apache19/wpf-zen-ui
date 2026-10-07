@@ -174,7 +174,8 @@ public partial class DateTimePicker : Control
 
     /// <summary>
     /// 获取或设置完整日期时间文本。外部设置立即解析；编辑框在 Enter 或失焦时解析。
-    /// 无效文本保留供修正并触发 DateValidationError，正式值保持不变。
+    /// 无效文本触发 DateValidationError，正式值保持不变；编辑框失焦提交失败时恢复正式值文本。
+    /// Enter 或显式提交失败时保留文本供修正，弹出层打开期间保留草稿。
     /// </summary>
     public string Text
     {

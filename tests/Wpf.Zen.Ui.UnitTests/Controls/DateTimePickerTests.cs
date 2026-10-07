@@ -1263,6 +1263,57 @@ public class DateTimePickerTests
         }));
     }
 
+    /// <summary>
+    /// 失焦丢弃非法草稿并恢复正式值；Enter 失败后继续失焦也应恢复，且不会重复校验。
+    /// </summary>
+    [Theory]
+    [InlineData("invalid", false, false)]
+    [InlineData("invalid", true, false)]
+    [InlineData("invalid", true, true)]
+    [InlineData("2026-09-30 12:00:00", true, false)]
+    [InlineData("2026-10-08 12:00:00", true, false)]
+    public void InvalidEditorText_LostFocusRestoresCommittedValue(
+        string text, bool hasValue, bool submitFirst)
+    {
+        WpfTestThread.Run(() => WithWindow((picker, window) =>
+        {
+            DateTime? original = hasValue ? new DateTime(2026, 10, 6, 15, 36, 9) : null;
+            picker.SelectedDateTime = original;
+            picker.DisplayDateStart = new DateTime(2026, 10, 1);
+            picker.DisplayDateEnd = new DateTime(2026, 10, 31);
+            picker.BlackoutDates.Add(new CalendarDateRange(new DateTime(2026, 10, 8)));
+            var expectedText = picker.Text;
+            var input = Part<TextBox>(picker, "PART_TextBox");
+            int errors = 0;
+            int valueChanges = 0;
+            picker.DateValidationError += (_, _) => errors++;
+            picker.SelectedDateTimeChanged += (_, _) => valueChanges++;
+            input.Text = text;
+            if (submitFirst)
+            {
+                PressKey(input, window, Key.Enter);
+                Assert.Equal(text, input.Text);
+                Assert.Equal(1, errors);
+            }
+
+            var focusArgs = new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice, 0, input, window)
+            {
+                RoutedEvent = Keyboard.LostKeyboardFocusEvent,
+            };
+            input.RaiseEvent(focusArgs);
+
+            Assert.Equal(original, picker.SelectedDateTime);
+            Assert.Equal(original?.Date, picker.SelectedDate);
+            Assert.Equal(expectedText, picker.Text);
+            Assert.Equal(expectedText, input.Text);
+            Assert.Equal(0, valueChanges);
+            Assert.Equal(submitFirst ? 2 : 1, errors);
+
+            input.RaiseEvent(focusArgs);
+            Assert.Equal(submitFirst ? 2 : 1, errors);
+        }));
+    }
+
     private static void PressKey(UIElement target, Window window, Key key)
     {
         var source = PresentationSource.FromVisual(window);

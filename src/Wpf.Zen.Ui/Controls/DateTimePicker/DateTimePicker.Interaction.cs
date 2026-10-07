@@ -14,12 +14,14 @@ namespace Wpf.Zen.Ui.Controls;
 
 public partial class DateTimePicker
 {
-    private NativeTextBox? _textBox;
-    private ButtonBase? _button;
-    private ButtonBase? _clearButton;
-    private Popup? _popup;
-    private ContentControl? _calendarHost;
     private readonly DateTimePickerTimeColumn?[] _columns = new DateTimePickerTimeColumn?[3];
+
+    private NativeTextBox?  _textBox;
+    private ButtonBase?     _button;
+    private ButtonBase?     _clearButton;
+    private Popup?          _popup;
+    private ContentControl? _calendarHost;
+
     private bool _updatingColumns;
     private bool _updatingEditor;
     private bool _textDirty;
@@ -27,32 +29,39 @@ public partial class DateTimePicker
     /// <summary>
     /// 提交待提交值并关闭弹出层；无效或未完成的时间输入会禁用此命令。
     /// </summary>
-    public static RoutedUICommand CommitCommand { get; } =
-        new("OK", nameof(CommitCommand), typeof(DateTimePicker));
+    public static RoutedUICommand CommitCommand { get; } = new(
+        "OK", nameof(CommitCommand), typeof(DateTimePicker)
+    );
 
     /// <summary>
     /// 取消待提交修改并关闭弹出层。
     /// </summary>
-    public static RoutedUICommand CancelCommand { get; } =
-        new("Cancel", nameof(CancelCommand), typeof(DateTimePicker));
+    public static RoutedUICommand CancelCommand { get; } = new(
+        "Cancel", nameof(CancelCommand), typeof(DateTimePicker)
+    );
 
     /// <summary>
     /// 提交本地时间快捷值。参数为 Year、Month、Week、Today 或 Now，区分大小写。
     /// </summary>
-    public static RoutedUICommand SelectShortcutCommand { get; } =
-        new("Select date and time", nameof(SelectShortcutCommand), typeof(DateTimePicker));
+    public static RoutedUICommand SelectShortcutCommand { get; } = new(
+        "Select date and time", nameof(SelectShortcutCommand), typeof(DateTimePicker)
+    );
 
     /// <summary>
     /// 安装实例命令及生命周期处理；Popup 内容通过 CommandTarget 显式定位所属控件。
     /// </summary>
     private void InitializeInteraction()
     {
-        _calendar.AddHandler(Mouse.MouseUpEvent,
-            new MouseButtonEventHandler(OnCalendarMouseUp), handledEventsToo: true);
+        _calendar.AddHandler(
+            Mouse.MouseUpEvent, new MouseButtonEventHandler(OnCalendarMouseUp),
+            handledEventsToo: true
+        );
+
         CommandBindings.Add(new CommandBinding(CommitCommand, OnCommitExecuted, OnCommitCanExecute));
         CommandBindings.Add(new CommandBinding(CancelCommand, OnCancelExecuted, OnCancelCanExecute));
         CommandBindings.Add(new CommandBinding(SelectShortcutCommand, OnShortcutExecuted, OnShortcutCanExecute));
-        Unloaded += OnUnloaded;
+
+        Unloaded         += OnUnloaded;
         IsEnabledChanged += OnIsEnabledChanged;
     }
 
@@ -71,6 +80,7 @@ public partial class DateTimePicker
         {
             return;
         }
+
         if (_calendar.IsAncestorOf(item))
         {
             // Popup 的 LostMouseCapture 处理会自行恢复子树捕获，保留正常关闭策略。
@@ -87,32 +97,39 @@ public partial class DateTimePicker
         if (_popup is not null)
         {
             Cancel();
+
             _popup.Opened -= OnPopupOpened;
             _popup.Closed -= OnPopupClosed;
+
             if (_popup.Child is UIElement oldChild)
             {
                 oldChild.PreviewKeyDown -= OnPopupPreviewKeyDown;
             }
         }
+
         if (_calendarHost is not null)
         {
             _calendarHost.Content = null;
         }
+
         if (_button is not null)
         {
-            _button.Click -= OnDropDownButtonClick;
+            _button.Click                      -= OnDropDownButtonClick;
             _button.PreviewMouseLeftButtonDown -= OnEditorButtonMouseDown;
         }
+
         if (_clearButton is not null)
         {
-            _clearButton.Click -= OnClearButtonClick;
+            _clearButton.Click                      -= OnClearButtonClick;
             _clearButton.PreviewMouseLeftButtonDown -= OnEditorButtonMouseDown;
         }
+
         if (_textBox is not null)
         {
-            _textBox.TextChanged -= OnEditorTextChanged;
+            _textBox.TextChanged       -= OnEditorTextChanged;
             _textBox.LostKeyboardFocus -= OnEditorLostKeyboardFocus;
         }
+
         foreach (var column in _columns)
         {
             if (column is not null)
@@ -120,11 +137,13 @@ public partial class DateTimePicker
                 column.ValueChanged -= OnColumnValueChanged;
             }
         }
-        _popup = null;
+
+        _popup        = null;
         _calendarHost = null;
-        _button = null;
-        _clearButton = null;
-        _textBox = null;
+        _button       = null;
+        _clearButton  = null;
+        _textBox      = null;
+
         Array.Clear(_columns, 0, _columns.Length);
     }
 
@@ -137,7 +156,9 @@ public partial class DateTimePicker
         {
             Cancel();
         }
+
         DetachTemplateParts();
+
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
@@ -147,35 +168,42 @@ public partial class DateTimePicker
     public override void OnApplyTemplate()
     {
         DetachTemplateParts();
+
         base.OnApplyTemplate();
-        _textBox = GetTemplateChild("PART_TextBox") as NativeTextBox;
-        _button = GetTemplateChild("PART_Button") as ButtonBase;
-        _clearButton = GetTemplateChild("PART_ClearButton") as ButtonBase;
-        _popup = GetTemplateChild("PART_Popup") as Popup;
+
+        _textBox      = GetTemplateChild("PART_TextBox") as NativeTextBox;
+        _button       = GetTemplateChild("PART_Button") as ButtonBase;
+        _clearButton  = GetTemplateChild("PART_ClearButton") as ButtonBase;
+        _popup        = GetTemplateChild("PART_Popup") as Popup;
         _calendarHost = GetTemplateChild("PART_CalendarHost") as ContentControl;
-        _columns[0] = GetTemplateChild("PART_Hour") as DateTimePickerTimeColumn;
-        _columns[1] = GetTemplateChild("PART_Minute") as DateTimePickerTimeColumn;
-        _columns[2] = GetTemplateChild("PART_Second") as DateTimePickerTimeColumn;
+        _columns[0]   = GetTemplateChild("PART_Hour") as DateTimePickerTimeColumn;
+        _columns[1]   = GetTemplateChild("PART_Minute") as DateTimePickerTimeColumn;
+        _columns[2]   = GetTemplateChild("PART_Second") as DateTimePickerTimeColumn;
+
         if (_textBox is not null)
         {
-            _textBox.TextChanged += OnEditorTextChanged;
+            _textBox.TextChanged       += OnEditorTextChanged;
             _textBox.LostKeyboardFocus += OnEditorLostKeyboardFocus;
         }
+
         if (_button is not null)
         {
-            _button.Click += OnDropDownButtonClick;
+            _button.Click                      += OnDropDownButtonClick;
             _button.PreviewMouseLeftButtonDown += OnEditorButtonMouseDown;
         }
+
         if (_clearButton is not null)
         {
-            _clearButton.Click += OnClearButtonClick;
+            _clearButton.Click                      += OnClearButtonClick;
             _clearButton.PreviewMouseLeftButtonDown += OnEditorButtonMouseDown;
         }
+
         if (_calendarHost is not null)
         {
             _calendarHost.Content = _calendar;
         }
-        for (int index = 0; index < _columns.Length; index++)
+
+        for (var index = 0; index < _columns.Length; index++)
         {
             var column = _columns[index];
             if (column is not null)
@@ -184,16 +212,20 @@ public partial class DateTimePicker
                 column.ValueChanged += OnColumnValueChanged;
             }
         }
+
         if (_popup is not null)
         {
             _popup.Opened += OnPopupOpened;
             _popup.Closed += OnPopupClosed;
+
             PopupDismissal.SetExcludedElement(_popup, _button);
+
             if (_popup.Child is UIElement child)
             {
                 child.PreviewKeyDown += OnPopupPreviewKeyDown;
             }
         }
+
         UpdateEditorText();
         SynchronizeCalendar();
         SynchronizeTimeColumns();
@@ -210,10 +242,13 @@ public partial class DateTimePicker
         {
             return false;
         }
+
         var value = PendingDateTime!.Value;
         SetCurrentValue(SelectedDateTimeProperty, value);
+
         UpdateFormattedText();
         CloseAndRestoreFocus();
+
         return true;
     }
 
@@ -224,7 +259,10 @@ public partial class DateTimePicker
     {
         if (IsDropDownOpen)
         {
-            Debug.WriteLine($"[DateTimePicker.Transaction] CANCEL editing; pending={PendingDateTime:O}.");
+            Debug.WriteLine(
+                $"[DateTimePicker.Transaction] CANCEL editing; pending={PendingDateTime:O}."
+            );
+
             SetCurrentValue(IsDropDownOpenProperty, false);
         }
     }
@@ -235,6 +273,7 @@ public partial class DateTimePicker
         {
             return false;
         }
+
         foreach (var column in _columns)
         {
             if (column is not null && !column.HasValidInput)
@@ -242,13 +281,14 @@ public partial class DateTimePicker
                 return false;
             }
         }
+
         return true;
     }
 
     private void OnCommitCanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
         e.CanExecute = IsEnabled && CanCommit();
-        e.Handled = true;
+        e.Handled    = true;
     }
 
     private void OnCommitExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -260,7 +300,7 @@ public partial class DateTimePicker
     private void OnCancelCanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
         e.CanExecute = IsDropDownOpen;
-        e.Handled = true;
+        e.Handled    = true;
     }
 
     private void OnCancelExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -273,7 +313,7 @@ public partial class DateTimePicker
     {
         var value = GetShortcutValue(e.Parameter as string);
         e.CanExecute = IsEnabled && IsDropDownOpen && value.HasValue && IsDateAllowed(value.Value);
-        e.Handled = true;
+        e.Handled    = true;
     }
 
     private void OnShortcutExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -286,25 +326,34 @@ public partial class DateTimePicker
             UpdateFormattedText();
             CloseAndRestoreFocus();
         }
+
         e.Handled = true;
     }
 
     private DateTime? GetShortcutValue(string? shortcut)
     {
         var now = DateTime.Now;
+
         switch (shortcut)
         {
             case "Year":
                 return new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Local);
+
             case "Month":
                 return new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Local);
+
             case "Week":
-                int days = ((int)now.DayOfWeek - (int)FirstDayOfWeek + 7) % 7;
+            {
+                var days = ((int)now.DayOfWeek - (int)FirstDayOfWeek + 7) % 7;
                 return now.Date.AddDays(-days);
+            }
+
             case "Today":
                 return now.Date;
+
             case "Now":
                 return now;
+
             default:
                 return null;
         }
@@ -316,11 +365,17 @@ public partial class DateTimePicker
         {
             return;
         }
+
         _updatingColumns = true;
+
         try
         {
-            int[] values = { value.Hour, value.Minute, value.Second };
-            for (int index = 0; index < values.Length; index++)
+            int[] values =
+            {
+                value.Hour, value.Minute, value.Second
+            };
+
+            for (var index = 0; index < values.Length; index++)
             {
                 var column = _columns[index];
                 if (column is not null)
@@ -342,26 +397,36 @@ public partial class DateTimePicker
         {
             return;
         }
-        int index = Array.IndexOf(_columns, sender);
+
+        var column = sender as DateTimePickerTimeColumn;
+        var index  = Array.IndexOf(_columns, column);
+
         long ticksPerUnit;
+
         switch (index)
         {
             case 0:
                 ticksPerUnit = TimeSpan.TicksPerHour;
                 break;
+
             case 1:
                 ticksPerUnit = TimeSpan.TicksPerMinute;
                 break;
+
             case 2:
                 ticksPerUnit = TimeSpan.TicksPerSecond;
                 break;
+
             default:
                 return;
         }
-        long ticks = value.Ticks + (e.NewValue - e.OldValue) * ticksPerUnit;
+
+        var ticks   = value.Ticks + (e.NewValue - e.OldValue) * ticksPerUnit;
         var updated = new DateTime(ticks, value.Kind);
+
         // 本次列已完成本地同步；避免刷新其它列而丢失尚未完成的输入。
         SetValue(PendingDateTimePropertyKey, updated);
+
         CommandManager.InvalidateRequerySuggested();
     }
 
@@ -371,10 +436,21 @@ public partial class DateTimePicker
         {
             return;
         }
+
         _updatingEditor = true;
+
         try
         {
-            _textBox.SetCurrentValue(NativeTextBox.TextProperty, Text ?? string.Empty);
+            var text = Text;
+            if (string.IsNullOrEmpty(text))
+            {
+                _textBox.SetCurrentValue(NativeTextBox.TextProperty, string.Empty);
+            }
+            else
+            {
+                _textBox.SetCurrentValue(NativeTextBox.TextProperty, text);
+            }
+
             _textDirty = false;
         }
         finally
@@ -389,7 +465,9 @@ public partial class DateTimePicker
         {
             return;
         }
+
         _updatingText = true;
+
         try
         {
             SetCurrentValue(TextProperty, _textBox.Text);
@@ -401,11 +479,19 @@ public partial class DateTimePicker
         }
     }
 
+    /// <summary>
+    /// 编辑框失焦时提交草稿；校验失败则恢复正式值的显示，正式值为空时清空文本。
+    /// 弹出层打开期间保留草稿，由弹出层的确认操作决定最终文本。
+    /// </summary>
     private void OnEditorLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         if (!IsDropDownOpen && _textDirty)
         {
             _textDirty = !CommitText();
+            if (_textDirty)
+            {
+                UpdateFormattedText();
+            }
         }
     }
 
@@ -415,8 +501,10 @@ public partial class DateTimePicker
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
-        bool toggle = key == Key.F4 || (key == Key.Down && Keyboard.Modifiers == ModifierKeys.Alt);
+
+        var key    = e.Key == Key.System ? e.SystemKey : e.Key;
+        var toggle = key == Key.F4 || (key == Key.Down && Keyboard.Modifiers == ModifierKeys.Alt);
+
         if (toggle)
         {
             if (IsDropDownOpen)
@@ -427,12 +515,13 @@ public partial class DateTimePicker
             {
                 OpenFromEditor();
             }
+
             e.Handled = true;
         }
         else if (!IsDropDownOpen && key == Key.Enter)
         {
             _textDirty = !CommitText();
-            e.Handled = true;
+            e.Handled  = true;
         }
         else if (!IsDropDownOpen && key == Key.Escape)
         {
@@ -456,6 +545,7 @@ public partial class DateTimePicker
             {
                 return;
             }
+
             Commit();
             e.Handled = true;
         }
@@ -479,9 +569,11 @@ public partial class DateTimePicker
         {
             return;
         }
+
         Cancel();
         SetCurrentValue(SelectedDateTimeProperty, null);
         UpdateFormattedText();
+
         _textBox?.Focus();
         e.Handled = true;
     }
@@ -509,14 +601,16 @@ public partial class DateTimePicker
         // 打开操作不报告文本错误，因此也不受 ThrowException 错误策略影响。
         if (_textDirty)
         {
-            var culture = GetCulture();
-            bool parsed = DateTimePickerTextParser.TryParse(Text, DateTimeFormat, culture, out var value);
-            bool canApply = string.IsNullOrWhiteSpace(Text) || (parsed && IsDateAllowed(value));
+            var culture  = GetCulture();
+            var text     = Text;
+            var parsed   = DateTimePickerTextParser.TryParse(text, DateTimeFormat, culture, out var value);
+            var canApply = string.IsNullOrWhiteSpace(text) || (parsed && IsDateAllowed(value));
             if (canApply)
             {
                 CommitText();
             }
         }
+
         SetCurrentValue(IsDropDownOpenProperty, true);
     }
 
@@ -526,6 +620,7 @@ public partial class DateTimePicker
     protected override void OnGotFocus(RoutedEventArgs e)
     {
         base.OnGotFocus(e);
+
         if (ReferenceEquals(e.OriginalSource, this))
         {
             ApplyTemplate();
@@ -539,6 +634,7 @@ public partial class DateTimePicker
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
+
         if (!e.Handled && !IsDropDownOpen)
         {
             Focus();
@@ -559,6 +655,7 @@ public partial class DateTimePicker
         {
             SetCurrentValue(IsDropDownOpenProperty, true);
         }
+
         _calendar.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
         CalendarOpened?.Invoke(this, EventArgs.Empty);
     }
@@ -570,6 +667,7 @@ public partial class DateTimePicker
         {
             SetCurrentValue(IsDropDownOpenProperty, false);
         }
+
         CalendarClosed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -590,6 +688,7 @@ public partial class DateTimePicker
         {
             Cancel();
         }
+
         CoerceValue(IsDropDownOpenProperty);
     }
 
