@@ -10,7 +10,7 @@ using System.Windows.Automation.Provider;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// 向辅助技术暴露完整日期时间文本和弹出层展开状态。
+/// Exposes complete date/time text and popup expansion state to assistive technology.
 /// </summary>
 internal sealed class DateTimePickerAutomationPeer : FrameworkElementAutomationPeer,
     IValueProvider, IExpandCollapseProvider
@@ -20,13 +20,18 @@ internal sealed class DateTimePickerAutomationPeer : FrameworkElementAutomationP
     }
 
     private DateTimePicker Picker => (DateTimePicker)Owner;
+
     /// <inheritdoc />
     public bool IsReadOnly => !IsEnabled();
+
     /// <inheritdoc />
     public string Value => Picker.Text;
+
     /// <inheritdoc />
-    public ExpandCollapseState ExpandCollapseState => Picker.IsDropDownOpen
-        ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed;
+    public ExpandCollapseState ExpandCollapseState
+    {
+        get => Picker.IsDropDownOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed;
+    }
 
     /// <inheritdoc />
     public override object? GetPattern(PatternInterface patternInterface)

@@ -28,6 +28,72 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class DateTimePickerTests
 {
     /// <summary>
+    /// 默认文案与格式分别跟随线程区域，显式语言和继承语言覆盖后可恢复自动模式。
+    /// </summary>
+    [Fact]
+    public void Localization_DefaultUsesCurrentCultures_AndLanguageOverridesCanBeCleared()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var originalCulture = CultureInfo.CurrentCulture;
+            var originalUICulture = CultureInfo.CurrentUICulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("zh-CN");
+                WithWindow((picker, window) =>
+                {
+                    var date = new DateTime(2026, 10, 9, 13, 45, 0);
+                    picker.DateTimeFormat = "D";
+                    picker.SelectedDateTime = date;
+                    var button = Part<ButtonBase>(picker, "PART_Button");
+                    var host = Part<ContentControl>(picker, "PART_CalendarHost");
+                    var calendar = Assert.IsType<Calendar>(host.Content);
+                    AssertCulture("fr-FR", "选择日期和时间");
+                    picker.IsDropDownOpen = true;
+                    window.UpdateLayout();
+                    var column = Part<DateTimePickerTimeColumn>(picker, "PART_Hour");
+                    var hourName = System.Windows.Automation.AutomationProperties.GetName(column);
+                    Assert.Equal("时", hourName);
+                    picker.Cancel();
+
+                    string? message = null;
+                    picker.DateValidationError += (_, args) => message = args.Exception.Message;
+                    picker.Text = "invalid";
+                    Assert.False(picker.CommitText());
+                    Assert.StartsWith("无法根据", message);
+
+                    picker.Language = XmlLanguage.GetLanguage("en-US");
+                    AssertCulture("en-US", "Choose date and time");
+                    picker.ClearValue(FrameworkElement.LanguageProperty);
+                    AssertCulture("fr-FR", "选择日期和时间");
+                    window.Language = XmlLanguage.GetLanguage("en-US");
+                    AssertCulture("en-US", "Choose date and time");
+                    window.ClearValue(FrameworkElement.LanguageProperty);
+                    AssertCulture("fr-FR", "选择日期和时间");
+
+                    void AssertCulture(string cultureName, string expectedName)
+                    {
+                        window.UpdateLayout();
+                        var culture = CultureInfo.GetCultureInfo(cultureName);
+                        var expectedText = date.ToString("D", culture);
+                        var actualName = System.Windows.Automation.AutomationProperties.GetName(button);
+                        Assert.Equal(expectedText, picker.Text);
+                        Assert.Equal(expectedName, actualName);
+                        Assert.Equal(culture.DateTimeFormat.FirstDayOfWeek, picker.FirstDayOfWeek);
+                        Assert.Equal(cultureName, calendar.Language.GetSpecificCulture().Name);
+                    }
+                });
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalUICulture;
+            }
+        });
+    }
+
+    /// <summary>
     /// 即时检查草稿不提交数据或触发失败事件，配置变化及恢复会刷新状态。
     /// </summary>
     [Fact]

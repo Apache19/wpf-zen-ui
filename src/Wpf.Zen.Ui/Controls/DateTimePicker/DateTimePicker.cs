@@ -15,12 +15,20 @@ using Calendar = System.Windows.Controls.Calendar;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// 使用原生日历和独立时间字段编辑完整日期时间，只有确认才提交弹出层中的修改。
+/// Edits a complete date and time using a native calendar and separate time fields. Popup changes
+/// are applied only on confirmation.
 /// </summary>
 /// <remarks>
-/// SelectedDateTime 是正式值，SelectedDate 是日期投影。弹出层打开期间外部修改正式值
-/// 会重新开始编辑事务。控件不转换时区；修改字段时保留 Kind 和未编辑的亚秒精度。
-/// 使用 Control 与 Calendar 组合，以统一管理完整日期时间的文本及事务语义。
+/// SelectedDateTime is the committed value; SelectedDate is its date projection. External changes
+/// to the committed value while the popup is open
+/// restart the editing transaction. Field edits preserve DateTime.Kind and unedited subsecond
+/// precision without converting time zones.
+/// Language defaults to an empty tag: labels use CurrentUICulture and date formatting uses
+/// CurrentCulture.
+/// A nonempty Language, whether set explicitly or inherited, selects the culture for both labels
+/// and dates.
+/// Combines Control and Calendar to manage complete date/time text and editing transactions
+/// consistently.
 /// </remarks>
 [ContentProperty(nameof(BlackoutDates))]
 [TemplatePart(Name = "PART_TextBox", Type = typeof(System.Windows.Controls.TextBox))]
@@ -40,18 +48,22 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 标识当前编辑内容错误状态的只读依赖属性。
+    /// Identifies the read-only dependency property that reports errors in the current input.
     /// </summary>
     public static readonly DependencyProperty HasInputErrorProperty
         = HasInputErrorPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// 获取当前编辑内容是否无法按控件规则接受，默认 false。空值不视为必填错误。
+    /// Gets whether the current input violates the control's rules. The default is false; an empty
+    /// value is allowed.
     /// </summary>
     /// <remarks>
-    /// 文本编辑时检查解析及日期限制；弹出层打开时检查待提交日期和时间字段。
-    /// 输入过程中仅更新状态，提交失败才触发 DateValidationError；恢复或取消后重新计算。
-    /// 此状态不包含绑定或业务校验错误；false 不保证编辑内容已提交到绑定源。
+    /// Text editing checks parsing and date restrictions; popup editing checks the pending date and
+    /// time fields.
+    /// Editing updates this state; failed commits raise DateValidationError. Restoring or canceling
+    /// input recalculates it.
+    /// This state excludes binding and business validation errors. A false value does not imply a
+    /// committed binding source value.
     /// </remarks>
     public bool HasInputError => (bool)GetValue(HasInputErrorProperty);
 
@@ -84,7 +96,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识清除按钮开关属性，默认启用。
+    /// Identifies the dependency property that enables the clear button. The default is true.
     /// </summary>
     public static readonly DependencyProperty IsClearButtonEnabledProperty
         = DependencyProperty.Register(
@@ -93,8 +105,10 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置是否提供清除按钮。默认模板在编辑器有焦点且文本非空时显示按钮。
-    /// 清除会同步重置正式日期时间、日期投影和文本，并取消弹出层编辑。
+    /// Gets or sets whether the clear button is available. The default template shows it when the
+    /// editor has focus and text is nonempty.
+    /// Clearing resets the committed date/time, date projection, and text, and cancels popup
+    /// editing.
     /// </summary>
     public bool IsClearButtonEnabled
     {
@@ -103,7 +117,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识完整日期时间属性，默认 null，默认双向绑定。
+    /// Identifies the complete date/time dependency property. The default is null; bindings are
+    /// two-way by default.
     /// </summary>
     public static readonly DependencyProperty SelectedDateTimeProperty
         = DependencyProperty.Register(
@@ -117,7 +132,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置正式日期时间。禁止日期和范围外的值会抛出 ArgumentOutOfRangeException。
+    /// Gets or sets the committed date/time. Blackout dates and values outside the allowed range
+    /// throw ArgumentOutOfRangeException.
     /// </summary>
     public DateTime? SelectedDateTime
     {
@@ -126,7 +142,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识正式值的日期投影属性，默认 null，默认双向绑定。
+    /// Identifies the committed value's date projection. The default is null; bindings are two-way
+    /// by default.
     /// </summary>
     public static readonly DependencyProperty SelectedDateProperty
         = DependencyProperty.Register(
@@ -140,7 +157,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置日期投影。设置日期保留原时间；原值为空时采用零点；设置 null 清空正式值。
+    /// Gets or sets the date projection. Setting a date preserves the time, or uses midnight when
+    /// empty; setting null clears the committed value.
     /// </summary>
     public DateTime? SelectedDate
     {
@@ -155,18 +173,20 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 标识只读待提交值属性。
+    /// Identifies the read-only dependency property for the pending value.
     /// </summary>
     public static readonly DependencyProperty PendingDateTimeProperty
         = PendingDateTimePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// 获取弹出层中正在编辑的值；关闭时为 null。此属性不会回写业务数据。
+    /// Gets the value being edited in the popup, or null while closed. This property does not write
+    /// back to application data.
     /// </summary>
     public DateTime? PendingDateTime => (DateTime?)GetValue(PendingDateTimeProperty);
 
     /// <summary>
-    /// 标识显示和精确解析使用的日期时间格式，默认 yyyy-MM-dd HH:mm:ss。
+    /// Identifies the format used for display and exact parsing. The default is yyyy-MM-dd
+    /// HH:mm:ss.
     /// </summary>
     public static readonly DependencyProperty DateTimeFormatProperty
         = DependencyProperty.Register(
@@ -176,7 +196,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置 DateTime 格式字符串。显示和解析使用 Language 指定的区域设置。
+    /// Gets or sets the DateTime format string. Formatting uses the current culture unless a
+    /// nonempty Language selects another culture.
     /// </summary>
     public string DateTimeFormat
     {
@@ -185,7 +206,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识完整文本属性，默认空字符串，默认双向绑定。
+    /// Identifies the complete text dependency property. The default is an empty string; bindings
+    /// are two-way by default.
     /// </summary>
     public static readonly DependencyProperty TextProperty
         = DependencyProperty.Register(
@@ -198,9 +220,12 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置完整日期时间文本。外部设置立即解析；编辑框在 Enter 或失焦时解析。
-    /// 无效文本触发 DateValidationError，正式值保持不变；编辑框失焦提交失败时恢复正式值文本。
-    /// Enter 或显式提交失败时保留文本供修正，弹出层打开期间保留草稿。
+    /// Gets or sets the complete date/time text. External assignments are parsed immediately;
+    /// editor input is parsed on Enter or focus loss.
+    /// Invalid text raises DateValidationError and preserves the committed value. A failed
+    /// focus-loss commit restores the committed text.
+    /// Failed Enter or explicit commits retain text for correction. Draft text is retained while
+    /// the popup is open.
     /// </summary>
     public string Text
     {
@@ -209,7 +234,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识弹出层打开状态，默认 false，默认双向绑定。
+    /// Identifies the popup state dependency property. The default is false; bindings are two-way
+    /// by default.
     /// </summary>
     public static readonly DependencyProperty IsDropDownOpenProperty
         = DependencyProperty.Register(
@@ -223,7 +249,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置弹出层状态。打开建立事务，直接关闭视为取消。
+    /// Gets or sets whether the popup is open. Opening starts a transaction; directly closing
+    /// cancels it.
     /// </summary>
     public bool IsDropDownOpen
     {
@@ -232,7 +259,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识日历浏览日期，实例默认当天。
+    /// Identifies the calendar's displayed date. Each instance initially displays today.
     /// </summary>
     public static readonly DependencyProperty DisplayDateProperty
         = DependencyProperty.Register(
@@ -245,7 +272,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置日历浏览日期。浏览月份不会改变待提交值。
+    /// Gets or sets the calendar's displayed date. Browsing months does not change the pending
+    /// value.
     /// </summary>
     public DateTime DisplayDate
     {
@@ -254,7 +282,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识可选日期下限，默认 null，忽略时间部分。
+    /// Identifies the earliest selectable date. The default is null; the time component is ignored.
     /// </summary>
     public static readonly DependencyProperty DisplayDateStartProperty
         = DependencyProperty.Register(
@@ -263,7 +291,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置日期下限。范围必须包含当前正式值，且不得晚于上限。
+    /// Gets or sets the earliest allowed date. The range must include the committed value and must
+    /// not exceed the upper bound.
     /// </summary>
     public DateTime? DisplayDateStart
     {
@@ -272,7 +301,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识可选日期上限，默认 null，忽略时间部分。
+    /// Identifies the latest selectable date. The default is null; the time component is ignored.
     /// </summary>
     public static readonly DependencyProperty DisplayDateEndProperty
         = DependencyProperty.Register(
@@ -281,7 +310,8 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置日期上限。范围必须包含当前正式值，且不得早于下限。
+    /// Gets or sets the latest allowed date. The range must include the committed value and must
+    /// not precede the lower bound.
     /// </summary>
     public DateTime? DisplayDateEnd
     {
@@ -290,7 +320,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识周起始日，默认值来自 Language 对应的区域设置。
+    /// Identifies the first day of the week. Its initial value comes from the current culture, or
+    /// from a nonempty Language.
     /// </summary>
     public static readonly DependencyProperty FirstDayOfWeekProperty
         = DependencyProperty.Register(
@@ -300,7 +331,7 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置周起始日，日历和 Week 快捷命令使用相同值。
+    /// Gets or sets the first day of the week, shared by the calendar and the Week shortcut.
     /// </summary>
     public DayOfWeek FirstDayOfWeek
     {
@@ -309,7 +340,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识是否突出显示今天，默认 true。
+    /// Identifies whether today is highlighted. The default is true.
     /// </summary>
     public static readonly DependencyProperty IsTodayHighlightedProperty
         = DependencyProperty.Register(
@@ -318,7 +349,7 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置是否突出显示今天。
+    /// Gets or sets whether the calendar highlights today.
     /// </summary>
     public bool IsTodayHighlighted
     {
@@ -327,7 +358,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 标识日历样式，默认 null，使用原生日历主题。
+    /// Identifies the calendar style dependency property. The default is null, using the native
+    /// calendar theme.
     /// </summary>
     public static readonly DependencyProperty CalendarStyleProperty
         = DependencyProperty.Register(
@@ -336,7 +368,7 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 获取或设置内部原生 Calendar 的样式。
+    /// Gets or sets the style of the internal native Calendar.
     /// </summary>
     public Style? CalendarStyle
     {
@@ -345,14 +377,16 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 获取原生日历的禁止日期集合；该集合及其成员必须在控件的 UI 线程修改。
-    /// 日历当前选中的日期不能加入禁止集合，遵循 Calendar 的约束。
+    /// Gets the native calendar's blackout dates. Modify the collection and its ranges on the
+    /// control's UI thread.
+    /// Calendar restrictions prevent adding the currently selected calendar date to this
+    /// collection.
     /// </summary>
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public CalendarBlackoutDatesCollection BlackoutDates => _calendar.BlackoutDates;
 
     /// <summary>
-    /// 标识正式日期时间变化的冒泡事件。
+    /// Identifies the bubbling event raised when the committed date/time changes.
     /// </summary>
     public static readonly RoutedEvent SelectedDateTimeChangedEvent
         = EventManager.RegisterRoutedEvent(
@@ -363,7 +397,7 @@ public partial class DateTimePicker : Control
         );
 
     /// <summary>
-    /// 正式值发生变化时触发；弹出层中的临时修改不会触发此事件。
+    /// Occurs when the committed value changes. Temporary popup edits do not raise this event.
     /// </summary>
     public event RoutedPropertyChangedEventHandler<DateTime?> SelectedDateTimeChanged
     {
@@ -372,20 +406,25 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 文本解析或用户提交失败时触发。可设置 ThrowException 以重新抛出异常。
+    /// Occurs when text parsing or a user commit fails. Set ThrowException on the event arguments
+    /// to rethrow the exception.
     /// </summary>
     public event EventHandler<DatePickerDateValidationErrorEventArgs>? DateValidationError;
 
     /// <summary>
-    /// 实际弹出窗口打开后触发。
+    /// Occurs after the actual popup window opens.
     /// </summary>
     public event EventHandler? CalendarOpened;
 
     /// <summary>
-    /// 实际弹出窗口关闭后触发。
+    /// Occurs after the actual popup window closes.
     /// </summary>
     public event EventHandler? CalendarClosed;
 
+    /// <summary>
+    /// Registers the default style and automatic language mode while retaining Language inheritance
+    /// and change notifications.
+    /// </summary>
     static DateTimePicker()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -395,12 +434,12 @@ public partial class DateTimePicker : Control
 
         LanguageProperty.OverrideMetadata(
             typeof(DateTimePicker),
-            new FrameworkPropertyMetadata(OnLanguageChanged)
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(string.Empty), OnLanguageChanged)
         );
     }
 
     /// <summary>
-    /// 创建拥有独立日历、禁止日期集合及编辑事务的控件。
+    /// Creates a control with its own calendar, blackout dates, and editing transaction.
     /// </summary>
     public DateTimePicker()
     {
@@ -416,20 +455,26 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 获取 Language 对应的区域设置；无法解析特定区域时采用当前区域设置。
+    /// Gets the formatting culture, falling back to the current culture for an empty or unresolved
+    /// language tag.
     /// </summary>
     private CultureInfo GetCulture()
     {
-        try
-        {
-            return Language.GetSpecificCulture();
-        }
-        catch (InvalidOperationException)
-        {
-            return CultureInfo.CurrentCulture;
-        }
+        return DateTimePickerLocalization.GetCulture(Language, CultureInfo.CurrentCulture);
     }
 
+    /// <summary>
+    /// Gets the label culture. Automatic language mode uses the current UI culture independently of
+    /// date formatting.
+    /// </summary>
+    private CultureInfo GetResourceCulture()
+    {
+        return DateTimePickerLocalization.GetCulture(Language, CultureInfo.CurrentUICulture);
+    }
+
+    /// <summary>
+    /// Accepts nonempty format strings that DateTime can use for invariant formatting.
+    /// </summary>
     private static bool IsValidFormat(object value)
     {
         if (value is not string format || string.IsNullOrWhiteSpace(format))
@@ -454,6 +499,9 @@ public partial class DateTimePicker : Control
         return day >= DayOfWeek.Sunday && day <= DayOfWeek.Saturday;
     }
 
+    /// <summary>
+    /// Initializes the week boundary from the formatting culture while the value source is default.
+    /// </summary>
     private void UpdateDefaultFirstDayOfWeek()
     {
         var source = DependencyPropertyHelper.GetValueSource(this, FirstDayOfWeekProperty);
@@ -469,7 +517,7 @@ public partial class DateTimePicker : Control
         var picker = (DateTimePicker)d;
         if (value is DateTime date && !picker.IsDateAllowed(date))
         {
-            var culture = picker.GetCulture();
+            var culture = picker.GetResourceCulture();
             var message = DateTimePickerLocalization.GetString("DateOutOfRange", culture);
             throw new ArgumentOutOfRangeException(nameof(SelectedDateTime), value, message);
         }
@@ -530,9 +578,9 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 在正式值及日期投影同步后通知监听者。
+    /// Notifies listeners after synchronizing the committed value and its date projection.
     /// </summary>
-    /// <param name="e">包含原值和新值的事件参数。</param>
+    /// <param name="e">The event arguments containing the old and new values.</param>
     protected virtual void OnSelectedDateTimeChanged(RoutedPropertyChangedEventArgs<DateTime?> e)
     {
         RaiseEvent(e);
@@ -557,7 +605,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 内部回写使用 SetCurrentValue，保留调用者的绑定和样式来源。
+    /// Uses SetCurrentValue for internal updates to preserve caller bindings and style value
+    /// sources.
     /// </summary>
     private void SynchronizeCommittedValue()
     {
@@ -614,16 +663,17 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 尝试提交文本，按格式及字段范围补全明确的日期时间片段；空文本清空值，非法文本只报告错误。
+    /// Attempts to commit text, completing unambiguous date/time fragments using the format and
+    /// field ranges. Empty text clears the value; invalid text reports an error.
     /// </summary>
-    /// <returns>文本合法并已应用时为 true。</returns>
+    /// <returns>True when the text is valid and has been applied.</returns>
     public bool CommitText()
     {
         if (!TryReadText(out var result, out var error))
         {
             UpdateInputError();
 
-            var culture = GetCulture();
+            var culture = GetResourceCulture();
             var message = DateTimePickerLocalization.GetString(error!, culture);
 
             Exception exception = error == "InvalidDateTime"
@@ -640,7 +690,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 以提交使用的规则读取草稿；检查过程不修改正式值，也不发布校验事件。
+    /// Reads draft text using the commit rules without changing the committed value or raising
+    /// validation events.
     /// </summary>
     private bool TryReadText(out DateTime? result, out string? error)
     {
@@ -685,7 +736,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 汇总当前活动编辑区域的状态，供绑定和样式即时观察。
+    /// Updates the active editor's error state for immediate observation through bindings and
+    /// styles.
     /// </summary>
     private void UpdateInputError()
     {
@@ -694,7 +746,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 禁止日期集合变化后重建弱订阅，以覆盖现有日期范围的原地修改。
+    /// Rebuilds weak subscriptions after collection changes to observe in-place edits to existing
+    /// blackout ranges.
     /// </summary>
     private void OnBlackoutDatesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -716,7 +769,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 已配置禁止日期的起止日期变化时重新检查草稿。
+    /// Rechecks draft input when the start or end of a configured blackout range changes.
     /// </summary>
     private void OnBlackoutRangeChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -724,6 +777,9 @@ public partial class DateTimePicker : Control
         CommandManager.InvalidateRequerySuggested();
     }
 
+    /// <summary>
+    /// Reports rejected input and honors the exception policy selected by validation handlers.
+    /// </summary>
     private bool ReportValidationError(Exception exception, string text)
     {
         var args = new DatePickerDateValidationErrorEventArgs(exception, text);
@@ -738,6 +794,9 @@ public partial class DateTimePicker : Control
         return false;
     }
 
+    /// <summary>
+    /// Formats the committed value and updates the editor without reparsing the generated text.
+    /// </summary>
     private void UpdateFormattedText()
     {
         var culture = GetCulture();
@@ -769,7 +828,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 所有提交路径共享此日期约束判断，防止快捷命令和文本绕过日历限制。
+    /// Applies the same date restrictions to every commit path, including shortcuts and text input.
     /// </summary>
     private bool IsDateAllowed(DateTime value)
     {
@@ -778,7 +837,8 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 日历选择只反映当前事务；清除旧选择后设置范围，避免 Calendar 自动扩大范围。
+    /// Synchronizes calendar selection with the active transaction. Clears the selection before
+    /// applying bounds so Calendar does not expand them automatically.
     /// </summary>
     private void SynchronizeCalendar()
     {
@@ -790,6 +850,8 @@ public partial class DateTimePicker : Control
         _updatingCalendar = true;
         try
         {
+            var culture = GetCulture();
+            var calendarLanguage = XmlLanguage.GetLanguage(culture.IetfLanguageTag);
             _calendar.SelectedDate       = null;
             _calendar.DisplayDateStart   = null;
             _calendar.DisplayDateEnd     = null;
@@ -797,7 +859,7 @@ public partial class DateTimePicker : Control
             _calendar.DisplayDateEnd     = DisplayDateEnd;
             _calendar.FirstDayOfWeek     = FirstDayOfWeek;
             _calendar.IsTodayHighlighted = IsTodayHighlighted;
-            _calendar.Language           = Language;
+            _calendar.Language           = calendarLanguage;
             _calendar.FlowDirection      = FlowDirection;
 
             if (CalendarStyle is null)
@@ -845,12 +907,18 @@ public partial class DateTimePicker : Control
         }
     }
 
+    /// <summary>
+    /// Replaces the date while preserving the complete time-of-day ticks and DateTime.Kind.
+    /// </summary>
     private static DateTime ReplaceDate(DateTime original, DateTime date)
     {
         var ticks = date.Date.Ticks + original.TimeOfDay.Ticks;
         return new DateTime(ticks, original.Kind);
     }
 
+    /// <summary>
+    /// Starts or resets the pending draft and synchronizes calendar, time fields, and commit state.
+    /// </summary>
     private void SetPendingValue(DateTime value)
     {
         SetValue(PendingDateTimePropertyKey, value);
@@ -903,7 +971,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// 将动态布局方向传递给拥有独立弹出窗口的日历。
+    /// Propagates layout direction changes to the calendar hosted in a separate popup window.
     /// </summary>
     protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
     {

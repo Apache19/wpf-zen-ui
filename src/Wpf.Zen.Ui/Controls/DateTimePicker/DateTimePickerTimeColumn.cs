@@ -13,11 +13,14 @@ using NativeTextBox = System.Windows.Controls.TextBox;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// DateTimePicker 模板中的循环时间字段，支持数字输入、方向键、滚轮和点击相邻值。
+/// Provides a cyclic time field for DateTimePicker templates, supporting numeric input, arrow keys,
+/// the mouse wheel, and adjacent-value buttons.
 /// </summary>
 /// <remarks>
-/// 仅循环当前字段，不向其它字段进位。有效的一位数字立即更新值，失焦统一显示两位。
-/// 此部件服务于 DateTimePicker 模板定制，并非独立的时间选择器。
+/// Only this field wraps; other fields do not receive a carry. Valid single-digit input updates the
+/// value immediately and is padded to two digits on focus loss.
+/// This component supports DateTimePicker template customization rather than standalone time
+/// selection.
 /// </remarks>
 [TemplatePart(Name = "PART_Input", Type = typeof(NativeTextBox))]
 public class DateTimePickerTimeColumn : Control
@@ -29,7 +32,8 @@ public class DateTimePickerTimeColumn : Control
     private int  _wheelDelta;
 
     /// <summary>
-    /// 标识字段值，默认 0，范围由 Maximum 决定。
+    /// Identifies the field value dependency property. The default is zero; Maximum defines its
+    /// range.
     /// </summary>
     public static readonly DependencyProperty ValueProperty
         = DependencyProperty.Register(
@@ -43,7 +47,7 @@ public class DateTimePickerTimeColumn : Control
         );
 
     /// <summary>
-    /// 获取或设置字段值，超出范围时约束到最近的端点。
+    /// Gets or sets the field value. Values outside the range are clamped to the nearest endpoint.
     /// </summary>
     public int Value
     {
@@ -52,7 +56,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 标识循环上限，默认 59；小时列使用 23。
+    /// Identifies the inclusive wrap limit. The default is 59; hour columns use 23.
     /// </summary>
     public static readonly DependencyProperty MaximumProperty
         = DependencyProperty.Register(
@@ -62,7 +66,7 @@ public class DateTimePickerTimeColumn : Control
         );
 
     /// <summary>
-    /// 获取或设置包含在范围内的上限，允许 1 至 99。
+    /// Gets or sets the inclusive upper bound, from 1 through 99.
     /// </summary>
     public int Maximum
     {
@@ -77,13 +81,14 @@ public class DateTimePickerTimeColumn : Control
         );
 
     /// <summary>
-    /// 标识五个可见值的只读集合属性。
+    /// Identifies the read-only collection of five visible values.
     /// </summary>
     public static readonly DependencyProperty VisibleValuesProperty
         = VisibleValuesPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// 获取按 -2、-1、0、1、2 偏移排列的两位数字，中间项始终为当前值。
+    /// Gets two-digit values at offsets -2, -1, 0, 1, and 2. The middle item is always the current
+    /// value.
     /// </summary>
     public IReadOnlyList<string> VisibleValues
     {
@@ -97,12 +102,13 @@ public class DateTimePickerTimeColumn : Control
         );
 
     /// <summary>
-    /// 通知所属日期时间控件重新汇总输入状态，包括正式字段值未改变的非法输入。
+    /// Notifies the owning picker to update input validity, including invalid drafts that leave the
+    /// field value unchanged.
     /// </summary>
     internal event EventHandler? InputValidityChanged;
 
     /// <summary>
-    /// 在字段输入有效性改变时通知所属控件。
+    /// Notifies the owner when field input validity changes.
     /// </summary>
     private static void OnInputValidityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -111,13 +117,13 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 标识输入合法状态的只读属性。
+    /// Identifies the read-only input validity dependency property.
     /// </summary>
     public static readonly DependencyProperty HasValidInputProperty
         = HasValidInputPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// 获取当前文本是否为合法字段值。空文本和越界文本为 false。
+    /// Gets whether the current text is a valid field value. Empty or out-of-range text is invalid.
     /// </summary>
     public bool HasValidInput
     {
@@ -125,7 +131,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 标识字段值变化的冒泡事件。
+    /// Identifies the bubbling field value change event.
     /// </summary>
     public static readonly RoutedEvent ValueChangedEvent
         = EventManager.RegisterRoutedEvent(
@@ -134,7 +140,7 @@ public class DateTimePickerTimeColumn : Control
         );
 
     /// <summary>
-    /// 字段合法值变化后触发；非法文本不触发。
+    /// Occurs when the valid field value changes. Invalid text does not raise this event.
     /// </summary>
     public event RoutedPropertyChangedEventHandler<int> ValueChanged
     {
@@ -143,7 +149,8 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 按整数偏移循环选择字段，参数可以是整数或整数字符串。
+    /// Selects a field value by a wrapping integer offset. The parameter may be an integer or an
+    /// integer string.
     /// </summary>
     public static RoutedUICommand StepCommand { get; } = new(
         "Step", nameof(StepCommand), typeof(DateTimePickerTimeColumn)
@@ -158,7 +165,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 初始化五行循环视口及步进命令。
+    /// Initializes the five-row cyclic viewport and step command.
     /// </summary>
     public DateTimePickerTimeColumn()
     {
@@ -209,7 +216,8 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 移除旧模板的事件与粘贴处理，使旧输入框不再能修改字段值。
+    /// Detaches old template events and paste handling so the old editor can no longer change the
+    /// field value.
     /// </summary>
     private void DetachInput()
     {
@@ -227,7 +235,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 模板清空时立即解绑输入框并恢复合法输入状态。
+    /// Detaches the editor immediately when the template changes and restores valid input state.
     /// </summary>
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
@@ -238,7 +246,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 获取新模板输入框并连接输入、焦点与粘贴事件。
+    /// Retrieves the new template editor and attaches input, focus, and paste handlers.
     /// </summary>
     public override void OnApplyTemplate()
     {
@@ -263,7 +271,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 生成有限五行视口，通过模运算映射循环值，保持选中项居中。
+    /// Builds a five-row viewport using modular arithmetic to keep the selected value centered.
     /// </summary>
     private void UpdateVisibleValues()
     {
@@ -278,6 +286,9 @@ public class DateTimePickerTimeColumn : Control
         SetValue(VisibleValuesPropertyKey, readOnlyValues);
     }
 
+    /// <summary>
+    /// Maps positive or negative offsets into the inclusive range from zero through Maximum.
+    /// </summary>
     private int Wrap(int value)
     {
         var count = Maximum + 1;
@@ -285,7 +296,8 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 从最后有效值恢复输入；供新事务和外部值同步使用。
+    /// Restores input from the last valid value for new transactions and external value
+    /// synchronization.
     /// </summary>
     internal void RefreshText()
     {
@@ -313,6 +325,9 @@ public class DateTimePickerTimeColumn : Control
         }
     }
 
+    /// <summary>
+    /// Applies valid numeric drafts immediately while retaining invalid text for correction.
+    /// </summary>
     private void OnInputTextChanged(object sender, TextChangedEventArgs e)
     {
         if (_updatingInput || _input is null)
@@ -404,7 +419,8 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 滚轮按标准 120 单位步进；高分辨率滚轮的余量保留到下一次事件。
+    /// Steps once per standard 120-unit wheel delta, retaining high-resolution wheel remainders for
+    /// the next event.
     /// </summary>
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
@@ -423,7 +439,7 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 上下方向键分别选择上一项和下一项，Home / End 选择字段端点。
+    /// Selects the previous or next value with Up or Down; Home and End select the field endpoints.
     /// </summary>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
@@ -447,13 +463,16 @@ public class DateTimePickerTimeColumn : Control
     }
 
     /// <summary>
-    /// 提供辅助技术可读写的数值范围。
+    /// Exposes a numeric range that assistive technology can read and write.
     /// </summary>
     protected override AutomationPeer OnCreateAutomationPeer()
     {
         return new TimeColumnAutomationPeer(this);
     }
 
+    /// <summary>
+    /// Exposes the field as an integer spinner with the column's current range and enabled state.
+    /// </summary>
     private sealed class TimeColumnAutomationPeer : FrameworkElementAutomationPeer, IRangeValueProvider
     {
         internal TimeColumnAutomationPeer(DateTimePickerTimeColumn owner) : base(owner)

@@ -27,28 +27,31 @@ public partial class DateTimePicker
     private bool _textDirty;
 
     /// <summary>
-    /// 提交待提交值并关闭弹出层；无效或未完成的时间输入会禁用此命令。
+    /// Commits the pending value and closes the popup. Invalid or incomplete time input disables
+    /// this command.
     /// </summary>
     public static RoutedUICommand CommitCommand { get; } = new(
         "OK", nameof(CommitCommand), typeof(DateTimePicker)
     );
 
     /// <summary>
-    /// 取消待提交修改并关闭弹出层。
+    /// Cancels pending changes and closes the popup.
     /// </summary>
     public static RoutedUICommand CancelCommand { get; } = new(
         "Cancel", nameof(CancelCommand), typeof(DateTimePicker)
     );
 
     /// <summary>
-    /// 提交本地时间快捷值。参数为 Year、Month、Week、Today 或 Now，区分大小写。
+    /// Commits a local-time shortcut. The case-sensitive parameter is Year, Month, Week, Today, or
+    /// Now.
     /// </summary>
     public static RoutedUICommand SelectShortcutCommand { get; } = new(
         "Select date and time", nameof(SelectShortcutCommand), typeof(DateTimePicker)
     );
 
     /// <summary>
-    /// 安装实例命令及生命周期处理；Popup 内容通过 CommandTarget 显式定位所属控件。
+    /// Installs instance commands and lifecycle handlers. Popup content explicitly targets its
+    /// owner through CommandTarget.
     /// </summary>
     private void InitializeInteraction()
     {
@@ -66,13 +69,16 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 日历完成左键选择后释放残留捕获，让 Popup 接管外围交互和外部点击关闭。
+    /// Releases residual capture after a left-button calendar selection so Popup can handle
+    /// surrounding interaction and outside clicks.
     /// </summary>
     /// <remarks>
-    /// CalendarItem 在按下时捕获自身子树，而日期按钮将抬起事件标记为已处理，
-    /// 可能跳过 CalendarItem.OnMouseUp 的释放逻辑。因此在冒泡阶段监听已处理事件，
-    /// 等日历完成选择后仅释放本日历的 CalendarItem 捕获，不干扰其它部件的捕获。
-    /// 此事件随实例日历注册一次，不依赖模板结构或模板重建。
+    /// CalendarItem captures its subtree on mouse-down; date buttons mark mouse-up as handled.
+    /// This can bypass capture release in CalendarItem.OnMouseUp. Observe handled bubbling events
+    /// after selection and release only this calendar's CalendarItem capture, preserving other
+    /// captures.
+    /// This handler is registered once on the instance calendar and is independent of template
+    /// replacement.
     /// </remarks>
     private void OnCalendarMouseUp(object sender, MouseButtonEventArgs e)
     {
@@ -83,14 +89,16 @@ public partial class DateTimePicker
 
         if (_calendar.IsAncestorOf(item))
         {
-            // Popup 的 LostMouseCapture 处理会自行恢复子树捕获，保留正常关闭策略。
+            // Popup's LostMouseCapture handler restores subtree capture and maintains normal
+            // dismissal behavior.
             item.ReleaseMouseCapture();
         }
     }
 
     /// <summary>
-    /// 替换模板时解除旧部件事件，取消旧事务，并将同一日历移入新模板。
-    /// 缺少任意可选部件时仍可通过公开属性和命令使用控件。
+    /// Detaches old template events, cancels the old transaction, and moves the same calendar into
+    /// the new template.
+    /// Public properties and commands remain usable when optional template parts are absent.
     /// </summary>
     private void DetachTemplateParts()
     {
@@ -149,7 +157,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 模板被移除时立即释放旧部件，即使新模板为空或尚未应用也会取消旧事务。
+    /// Releases old parts as soon as the template changes and cancels the transaction, even if the
+    /// new template is null or not yet applied.
     /// </summary>
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
@@ -164,7 +173,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 将日历和时间列接入新模板，缺少部件时保留属性与命令能力。
+    /// Connects the calendar and time columns to the new template. Properties and commands remain
+    /// available when parts are absent.
     /// </summary>
     public override void OnApplyTemplate()
     {
@@ -236,9 +246,10 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 确认弹出层事务。输入尚未完成或日期不允许时返回 false 并保留编辑状态。
+    /// Confirms the popup transaction. Incomplete input or a disallowed date returns false and
+    /// retains the editing state.
     /// </summary>
-    /// <returns>成功提交并关闭时为 true。</returns>
+    /// <returns>True when the pending value is committed and the popup closes.</returns>
     public bool Commit()
     {
         if (!CanCommit())
@@ -256,7 +267,7 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 放弃本次弹出层编辑。正式值及其绑定保持原值。
+    /// Discards the current popup edits, preserving the committed value and its binding.
     /// </summary>
     public void Cancel()
     {
@@ -322,7 +333,8 @@ public partial class DateTimePicker
     private void OnShortcutExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         var value = GetShortcutValue(e.Parameter as string);
-        // 再次求值及验证，涵盖命令查询与执行之间的跨日和范围变化。
+        // Reevaluate and validate to account for date rollover or range changes between command
+        // query and execution.
         if (IsDropDownOpen && value.HasValue && IsDateAllowed(value.Value))
         {
             SetCurrentValue(SelectedDateTimeProperty, value.Value);
@@ -397,7 +409,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 时间列的非法草稿不会改变字段值，需单独同步输入状态。
+    /// Invalid time-column drafts do not change field values, so input validity is synchronized
+    /// separately.
     /// </summary>
     private void OnColumnInputValidityChanged(object? sender, EventArgs e)
     {
@@ -440,7 +453,8 @@ public partial class DateTimePicker
         var ticks   = value.Ticks + (e.NewValue - e.OldValue) * ticksPerUnit;
         var updated = new DateTime(ticks, value.Kind);
 
-        // 本次列已完成本地同步；避免刷新其它列而丢失尚未完成的输入。
+        // This column has already synchronized locally. Preserve unfinished input in the other
+        // columns.
         SetValue(PendingDateTimePropertyKey, updated);
         UpdateInputError();
 
@@ -497,8 +511,10 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 编辑框失焦时提交草稿；校验失败则恢复正式值的显示，正式值为空时清空文本。
-    /// 弹出层打开期间保留草稿，由弹出层的确认操作决定最终文本。
+    /// Commits draft text on focus loss. Validation failure restores committed text, or empty text
+    /// when the committed value is null.
+    /// While the popup is open, retain the draft until popup confirmation determines the final
+    /// text.
     /// </summary>
     private void OnEditorLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
@@ -513,7 +529,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 主编辑框支持 Enter 提交、Esc 恢复，以及 F4 / Alt+Down 打开选择器。
+    /// Supports Enter to commit, Escape to restore, and F4 or Alt+Down to open the picker from the
+    /// main editor.
     /// </summary>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
@@ -556,7 +573,8 @@ public partial class DateTimePicker
         }
         else if (e.Key == Key.Enter)
         {
-            // 日历年/月模式中的 Enter 用于下钻；按钮保留自己的 Enter 命令语义。
+            // Enter drills down in calendar year/month modes; buttons retain their own Enter
+            // command behavior.
             if ((_calendar.IsKeyboardFocusWithin && _calendar.DisplayMode != CalendarMode.Month)
                 || Keyboard.FocusedElement is ButtonBase)
             {
@@ -569,8 +587,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 按钮按下时即进入编辑框，避免 ButtonBase 处理冒泡事件后控件无法获得焦点。
-    /// 不标记事件已处理，以保留按钮的捕获、点击和触摸提升行为。
+    /// Focuses the editor on button press before ButtonBase handles the bubbling event.
+    /// Leaves the event unhandled to preserve button capture, click, and touch promotion behavior.
     /// </summary>
     private void OnEditorButtonMouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -578,7 +596,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 清除正式值及无效草稿，并结束待提交事务；保留调用者设置的属性绑定。
+    /// Clears the committed value and invalid drafts, ends the pending transaction, and preserves
+    /// caller bindings.
     /// </summary>
     private void OnClearButtonClick(object sender, RoutedEventArgs e)
     {
@@ -614,8 +633,10 @@ public partial class DateTimePicker
             return;
         }
 
-        // 合法草稿仍先应用；无效草稿保留，用户可以通过弹出层重新选择。
-        // 打开操作不报告文本错误，因此也不受 ThrowException 错误策略影响。
+        // Apply valid drafts first; retain invalid drafts so the user can choose a replacement in
+        // the popup.
+        // Opening does not report text errors and therefore does not invoke the ThrowException
+        // policy.
         if (_textDirty)
         {
             var culture  = GetCulture();
@@ -632,7 +653,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 控件自身获得焦点时把编辑焦点交给内部文本框，保留子控件的正常焦点行为。
+    /// Transfers focus from the control itself to its text editor while preserving child focus
+    /// behavior.
     /// </summary>
     protected override void OnGotFocus(RoutedEventArgs e)
     {
@@ -646,7 +668,8 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 点击模板本体的空白区域进入文本编辑；已被文本框或按钮处理的点击保持原行为。
+    /// Focuses the text editor when the template background is clicked. Clicks handled by text
+    /// boxes or buttons retain their behavior.
     /// </summary>
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
@@ -679,7 +702,8 @@ public partial class DateTimePicker
 
     private void OnPopupClosed(object? sender, EventArgs e)
     {
-        // Closed 可能在本次调度的尾部到达，不能取消已经重新打开的新事务。
+        // Closed may arrive at the end of this dispatch; preserve any new transaction that has
+        // already reopened.
         if (_popup?.IsOpen != true)
         {
             SetCurrentValue(IsDropDownOpenProperty, false);
@@ -710,7 +734,7 @@ public partial class DateTimePicker
     }
 
     /// <summary>
-    /// 提供完整文本值和展开/折叠的 UI Automation 模式。
+    /// Provides UI Automation patterns for the complete text value and expand/collapse state.
     /// </summary>
     protected override AutomationPeer OnCreateAutomationPeer()
     {

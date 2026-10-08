@@ -10,16 +10,19 @@ using System.Windows.Markup;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// 将控件 Language 与资源键转换为本地化文本；绑定可随语言变更重新求值。
+/// Converts the control's Language and a resource key to localized text. Bindings reevaluate when
+/// Language changes.
 /// </summary>
 internal sealed class DateTimePickerLocalization : IValueConverter
 {
     private static readonly ResourceManager Resources = new(
         "Wpf.Zen.Ui.Controls.DateTimePicker.DateTimePickerStrings",
-        typeof(DateTimePickerLocalization).Assembly);
+        typeof(DateTimePickerLocalization).Assembly
+    );
 
     /// <summary>
-    /// 按指定区域查找资源，缺失翻译时使用英文中性资源。
+    /// Looks up a resource in the requested culture, falling back to neutral English resources when
+    /// a translation is missing.
     /// </summary>
     internal static string GetString(string key, CultureInfo culture)
     {
@@ -27,28 +30,40 @@ internal sealed class DateTimePickerLocalization : IValueConverter
     }
 
     /// <summary>
-    /// 使用绑定的 Language 选择翻译；无有效语言时使用当前界面区域。
+    /// Selects translations using the bound Language, or the current UI culture when no valid
+    /// language is available.
     /// </summary>
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        var resourceCulture = CultureInfo.CurrentUICulture;
-        if (value is XmlLanguage language)
-        {
-            try
-            {
-                resourceCulture = language.GetSpecificCulture();
-            }
-            catch (InvalidOperationException)
-            {
-                // 未注册的语言标签采用当前界面区域。
-            }
-        }
-        string key = (string)parameter;
+        var language        = value as XmlLanguage;
+        var resourceCulture = GetCulture(language, CultureInfo.CurrentUICulture);
+        var key             = (string)parameter;
         return GetString(key, resourceCulture);
     }
 
     /// <summary>
-    /// 本地化标签只读，不向 Language 回写。
+    /// A nonempty language tag overrides the caller's culture. Empty or unresolved tags use the
+    /// fallback culture.
+    /// </summary>
+    internal static CultureInfo GetCulture(XmlLanguage? language, CultureInfo fallback)
+    {
+        if (language is null || language.IetfLanguageTag.Length == 0)
+        {
+            return fallback;
+        }
+
+        try
+        {
+            return language.GetSpecificCulture();
+        }
+        catch (InvalidOperationException)
+        {
+            return fallback;
+        }
+    }
+
+    /// <summary>
+    /// Localized labels are read-only; conversion does not write back to Language.
     /// </summary>
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {

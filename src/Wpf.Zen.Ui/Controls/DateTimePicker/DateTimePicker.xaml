@@ -21,6 +21,7 @@
     <Style TargetType="{x:Type controls:DateTimePickerTimeColumn}">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Width" Value="56" />
+        <!--  Display time field digits left to right, consistent with the hour, minute, second reading order.  -->
         <Setter Property="FlowDirection" Value="LeftToRight" />
         <Setter Property="Template">
             <Setter.Value>
@@ -223,7 +224,6 @@
                                 TextElement.Foreground="{TemplateBinding Foreground}">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <!--  以完整日历高度参与 Popup 定位，避免可用空间压缩日期行。  -->
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
@@ -238,7 +238,7 @@
                                         VerticalAlignment="Top"
                                         Focusable="False" />
 
-                                    <!--  时间选择器  -->
+                                    <!--  Time field selectors.  -->
                                     <Border
                                         Grid.Row="0"
                                         Grid.Column="1"
@@ -248,6 +248,7 @@
                                         BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
                                         BorderThickness="1"
                                         CornerRadius="{m:DynamicValue ControlCornerRadius}">
+                                        <!--  Keep hours, minutes and seconds in left-to-right order when the surrounding layout uses RTL.  -->
                                         <Grid FlowDirection="LeftToRight">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
