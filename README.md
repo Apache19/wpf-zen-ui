@@ -28,6 +28,7 @@ the value when XAML loads and does not track later changes.
 - [Font icons and icon presentation](docs/FontIcon.md)
 - [Navigation, semantic routes, and breadcrumbs](docs/Navigation.md)
 - [ContentDialog and modal content](docs/ContentDialog.md)
+- [ComboBox selection and text search](docs/ComboBox.md)
 - [Snackbar notifications](docs/Snackbar.md)
 
 ## Original Repository

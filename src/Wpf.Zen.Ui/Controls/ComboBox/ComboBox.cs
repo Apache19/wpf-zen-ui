@@ -10,9 +10,8 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.ComboBox"/> with interaction-state brushes and a
-/// control-owned <see cref="CornerRadius"/>, allowing the closed control surface to be restyled
-/// without replacing its template.
+/// Extends <see cref="System.Windows.Controls.ComboBox"/> with editable text-search modes,
+/// interaction-state brushes, and a control-owned <see cref="CornerRadius"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -28,11 +27,220 @@ namespace Wpf.Zen.Ui.Controls;
 /// so a read-only editable combo box intentionally remains in the editable focus-state path.
 /// </para>
 /// </remarks>
+[TemplatePart(Name = "PART_SearchResults", Type = typeof(System.Windows.Controls.ListBox))]
 public class ComboBox : System.Windows.Controls.ComboBox
 {
+    private System.Windows.Controls.TextBox? _searchEditor;
+    private ComboBoxSearchController?        _searchController;
+
+    /// <summary>
+    /// Identifies the <see cref="TextSearchMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty TextSearchModeProperty = DependencyProperty.Register(
+        nameof(TextSearchMode),
+        typeof(ComboBoxTextSearchMode),
+        typeof(ComboBox),
+        new PropertyMetadata(ComboBoxTextSearchMode.Prefix, OnTextSearchModeChanged),
+        IsValidTextSearchMode
+    );
+
+    /// <summary>
+    /// Gets or sets the matching rule. The default is native prefix completion while typing.
+    /// Custom modes require IsEditable and IsTextSearchEnabled to be true and IsReadOnly false.
+    /// </summary>
+    /// <remarks>
+    /// SearchInteraction determines live feedback and selection timing. Enter or
+    /// TryCommitTextSearch confirms a candidate and displays its full text.
+    /// Exact, prefix, substring, token, and subsequence matches have descending priority; ties use
+    /// item order. Committing empty input or no match clears selection and retains the input.
+    /// Candidate text follows
+    /// TextSearch.Text, TextSearch.TextPath, and DisplayMemberPath, using WPF's fallback rules.
+    /// Programmatic Text changes retain WPF's exact-match behavior. Programmatic selection and
+    /// native item navigation still display the selected item's full text.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Behavior")]
+    public ComboBoxTextSearchMode TextSearchMode
+    {
+        get => (ComboBoxTextSearchMode)GetValue(TextSearchModeProperty);
+        set => SetValue(TextSearchModeProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="SearchInteraction"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SearchInteractionProperty = DependencyProperty.Register(
+        nameof(SearchInteraction), typeof(ComboBoxSearchInteraction), typeof(ComboBox),
+        new PropertyMetadata(ComboBoxSearchInteraction.ExplicitCommit, OnTextSearchModeChanged),
+        IsValidSearchInteraction
+    );
+
+    /// <summary>
+    /// Gets or sets how custom search presents and commits matches. Defaults to ExplicitCommit.
+    /// This setting applies to Contains, Tokens, and Fuzzy; Prefix retains native behavior.
+    /// </summary>
+    /// <remarks>
+    /// Filter displays flat search labels in the template's PART_SearchResults ListBox, leaving
+    /// ItemsSource, its view, and committed selection intact. Custom templates must provide that
+    /// part and hide their normal items presenter while IsTextSearchFiltering is true.
+    /// Escape or dismissal keeps the query and does not commit a provisional candidate.
+    /// </remarks>
+    public ComboBoxSearchInteraction SearchInteraction
+    {
+        get => (ComboBoxSearchInteraction)GetValue(SearchInteractionProperty);
+        set => SetValue(SearchInteractionProperty, value);
+    }
+
+    private static readonly DependencyPropertyKey IsTextSearchFilteringPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsTextSearchFiltering), typeof(bool), typeof(ComboBox), new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="IsTextSearchFiltering"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsTextSearchFilteringProperty =
+        IsTextSearchFilteringPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets whether the popup currently presents provisional search results. Defaults to false.
+    /// Templates use this state to switch between normal items and PART_SearchResults.
+    /// </summary>
+    public bool IsTextSearchFiltering => (bool)GetValue(IsTextSearchFilteringProperty);
+
+    /// <summary>
+    /// Updates the template's provisional candidate presentation state.
+    /// </summary>
+    internal void SetSearchFiltering(bool value)
+    {
+        SetValue(IsTextSearchFilteringPropertyKey, value);
+    }
+
+    /// <summary>
+    /// Validates the supported interaction choices.
+    /// </summary>
+    private static bool IsValidSearchInteraction(object value)
+    {
+        return value is ComboBoxSearchInteraction.ExplicitCommit
+            or ComboBoxSearchInteraction.AutoSelect or ComboBoxSearchInteraction.Filter;
+    }
+
+    /// <summary>
+    /// Ends a pending presentation when editing or search becomes unavailable.
+    /// </summary>
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == TextProperty || e.Property == SelectedItemProperty)
+        {
+            _searchController?.OnOwnerValueChanged();
+        }
+
+        if (e.Property == IsEditableProperty || e.Property == IsReadOnlyProperty
+            || e.Property == IsEnabledProperty || e.Property == IsTextSearchEnabledProperty
+            || e.Property == IsTextSearchCaseSensitiveProperty || e.Property == LanguageProperty
+            || e.Property == DisplayMemberPathProperty || e.Property == TextSearch.TextPathProperty)
+        {
+            _searchController?.ResetPresentation();
+        }
+    }
+
+    /// <summary>
+    /// Handles search confirmation and provisional navigation before native ComboBox navigation.
+    /// </summary>
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        _searchController?.HandlePreviewKeyDown(e);
+        if (!e.Handled)
+        {
+            base.OnPreviewKeyDown(e);
+        }
+    }
+
+    /// <summary>
+    /// Invalidates candidate indices when the source collection changes.
+    /// </summary>
+    protected override void OnItemsChanged(System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        base.OnItemsChanged(e);
+        _searchController?.ResetPresentation();
+    }
+
+    /// <summary>
+    /// Confirms the highlighted live candidate, or matches the current text when no candidate
+    /// presentation is active, and fills its full label. Suitable for application-defined triggers.
+    /// </summary>
+    /// <returns>
+    /// True when a candidate was selected; false for no match, an active IME composition,
+    /// unavailable editor, disabled/read-only control, disabled search, or native prefix mode.
+    /// </returns>
+    /// <remarks>
+    /// A successful commit closes the drop-down. No match clears selection but retains input.
+    /// Calls during composition or unavailable search leave text and selection unchanged.
+    /// This method runs on the control's dispatcher thread and applies its template if needed.
+    /// </remarks>
+    public bool TryCommitTextSearch()
+    {
+        VerifyAccess();
+        ApplyTemplate();
+        return _searchController?.TryCommit() ?? false;
+    }
+
+    /// <summary>
+    /// Reconnects editable search to the text box supplied by the current control template.
+    /// </summary>
+    public override void OnApplyTemplate()
+    {
+        _searchController?.Detach(false);
+        base.OnApplyTemplate();
+        _searchEditor = GetTemplateChild("PART_EditableTextBox") as System.Windows.Controls.TextBox;
+        UpdateSearchController();
+    }
+
+    /// <summary>
+    /// Rejects undefined search modes before they become effective dependency-property values.
+    /// </summary>
+    private static bool IsValidTextSearchMode(object value)
+    {
+        return value is ComboBoxTextSearchMode.Prefix
+            or ComboBoxTextSearchMode.Contains
+            or ComboBoxTextSearchMode.Tokens
+            or ComboBoxTextSearchMode.Fuzzy;
+    }
+
+    /// <summary>
+    /// Switches the editor between native completion and custom selection as settings change.
+    /// </summary>
+    private static void OnTextSearchModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var comboBox = (ComboBox)d;
+        comboBox._searchController?.ResetPresentation();
+        comboBox.UpdateSearchController();
+    }
+
+    /// <summary>
+    /// Installs custom search only when requested, restoring WPF's handler for prefix mode.
+    /// </summary>
+    private void UpdateSearchController()
+    {
+        if (TextSearchMode == ComboBoxTextSearchMode.Prefix)
+        {
+            _searchController?.Detach(true);
+            return;
+        }
+
+        if (_searchEditor is not null)
+        {
+            _searchController ??= new ComboBoxSearchController(this);
+            _searchController.Attach(_searchEditor);
+        }
+    }
+
     #region DP: Icon
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="Icon"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
         typeof(object),
@@ -55,7 +263,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
 
     #region DP: IconMargin
 
-    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IconMargin"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
         nameof(IconMargin),
         typeof(Thickness),
@@ -79,7 +289,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
 
     #region Interaction appearance
 
-    /// <summary>Identifies the <see cref="MouseOverForeground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="MouseOverForeground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty MouseOverForegroundProperty =
         DependencyProperty.Register(
             nameof(MouseOverForeground),
@@ -100,7 +312,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(MouseOverForegroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="MouseOverBackground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="MouseOverBackground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty MouseOverBackgroundProperty =
         DependencyProperty.Register(
             nameof(MouseOverBackground),
@@ -121,7 +335,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(MouseOverBackgroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="MouseOverBorderBrush"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="MouseOverBorderBrush"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty MouseOverBorderBrushProperty =
         DependencyProperty.Register(
             nameof(MouseOverBorderBrush),
@@ -142,7 +358,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(MouseOverBorderBrushProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="FocusedForeground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="FocusedForeground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty FocusedForegroundProperty =
         DependencyProperty.Register(
             nameof(FocusedForeground),
@@ -163,7 +381,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(FocusedForegroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="FocusedBackground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="FocusedBackground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty FocusedBackgroundProperty =
         DependencyProperty.Register(
             nameof(FocusedBackground),
@@ -184,7 +404,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(FocusedBackgroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="FocusedBorderBrush"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="FocusedBorderBrush"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty FocusedBorderBrushProperty =
         DependencyProperty.Register(
             nameof(FocusedBorderBrush),
@@ -205,7 +427,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(FocusedBorderBrushProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DropDownOpenForeground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="DropDownOpenForeground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty DropDownOpenForegroundProperty =
         DependencyProperty.Register(
             nameof(DropDownOpenForeground),
@@ -226,7 +450,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(DropDownOpenForegroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DropDownOpenBackground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="DropDownOpenBackground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty DropDownOpenBackgroundProperty =
         DependencyProperty.Register(
             nameof(DropDownOpenBackground),
@@ -247,7 +473,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(DropDownOpenBackgroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DropDownOpenBorderBrush"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="DropDownOpenBorderBrush"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty DropDownOpenBorderBrushProperty =
         DependencyProperty.Register(
             nameof(DropDownOpenBorderBrush),
@@ -268,7 +496,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(DropDownOpenBorderBrushProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DisabledForeground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="DisabledForeground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty DisabledForegroundProperty =
         DependencyProperty.Register(
             nameof(DisabledForeground),
@@ -289,7 +519,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(DisabledForegroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DisabledBackground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="DisabledBackground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty DisabledBackgroundProperty =
         DependencyProperty.Register(
             nameof(DisabledBackground),
@@ -310,7 +542,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         set => SetValue(DisabledBackgroundProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="DisabledBorderBrush"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="DisabledBorderBrush"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty DisabledBorderBrushProperty =
         DependencyProperty.Register(
             nameof(DisabledBorderBrush),
@@ -339,7 +573,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
             new PropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="VisualForeground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualForeground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty VisualForegroundProperty =
         VisualForegroundPropertyKey.DependencyProperty;
 
@@ -359,7 +595,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
             new PropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="VisualBackground"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualBackground"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty VisualBackgroundProperty =
         VisualBackgroundPropertyKey.DependencyProperty;
 
@@ -379,7 +617,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
             new PropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="VisualBorderBrush"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualBorderBrush"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty VisualBorderBrushProperty =
         VisualBorderBrushPropertyKey.DependencyProperty;
 
@@ -451,29 +691,42 @@ public class ComboBox : System.Windows.Controls.ComboBox
         );
     }
 
-    /// <summary>Initializes a new instance of the <see cref="ComboBox"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ComboBox"/> class.
+    /// </summary>
     public ComboBox()
     {
         UpdateVisualBrushes();
         IsEnabledChanged += OnComboBoxIsEnabledChanged;
     }
 
+    /// <summary>
+    /// Recomputes visual outputs when a normal-state brush changes through any value source.
+    /// </summary>
     private static void OnStandardBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((ComboBox)d).UpdateVisualBrushes();
+        var comboBox = (ComboBox)d;
+        comboBox.UpdateVisualBrushes();
     }
 
+    /// <summary>
+    /// Applies a changed optional state brush to the current interaction state.
+    /// </summary>
     private static void OnStateBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((ComboBox)d).UpdateVisualBrushes();
+        var comboBox = (ComboBox)d;
+        comboBox.UpdateVisualBrushes();
     }
 
+    /// <summary>
+    /// Refreshes visual outputs after editability, read-only state, or popup state changes.
+    /// </summary>
     private static void OnInteractionStateChanged(
         DependencyObject d,
-        DependencyPropertyChangedEventArgs e
-    )
+        DependencyPropertyChangedEventArgs e)
     {
-        ((ComboBox)d).UpdateVisualBrushes();
+        var comboBox = (ComboBox)d;
+        comboBox.UpdateVisualBrushes();
     }
 
     /// <inheritdoc />
@@ -499,6 +752,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
         UpdateVisualBrushes();
     }
 
+    /// <summary>
+    /// Applies or releases disabled-state brushes when effective enabled state changes.
+    /// </summary>
     private void OnComboBoxIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         UpdateVisualBrushes();

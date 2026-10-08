@@ -6,6 +6,7 @@
 - [导航服务、语义路由与面包屑](Navigation.md)
 - [ContentDialog 与模态内容](ContentDialog.md)
 - [DateTimePicker 日期时间选择器](DateTimePicker.md)
+- [ComboBox 下拉选择与文本搜索](ComboBox.md)
 - [Snackbar 与瞬时通知](Snackbar.md)
 - [平滑滚动与虚拟化](ScrollViewer.md)
 - [Popup 跟随宿主](Popup.md)

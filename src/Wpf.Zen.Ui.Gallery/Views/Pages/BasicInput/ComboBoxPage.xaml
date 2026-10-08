@@ -96,5 +96,47 @@
                 </ui:ComboBox.GroupStyle>
             </ui:ComboBox>
         </controls:ControlExample>
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Choose an interaction, then type box, box item, cbi, or tb. Enter or Match confirms."
+            XamlCode="&lt;ui:ComboBox IsEditable=&quot;True&quot; IsTextSearchEnabled=&quot;True&quot; TextSearchMode=&quot;Fuzzy&quot; /&gt;">
+            <StackPanel HorizontalAlignment="Left">
+                <ui:ComboBox
+                    x:Name="SearchInteractionPicker"
+                    Margin="0,0,0,8"
+                    SelectedValuePath="Tag"
+                    SelectedIndex="0">
+                    <ComboBoxItem Content="Confirm with Enter / Match"
+                        Tag="{x:Static ui:ComboBoxSearchInteraction.ExplicitCommit}" />
+                    <ComboBoxItem Content="Select while typing; show all items"
+                        Tag="{x:Static ui:ComboBoxSearchInteraction.AutoSelect}" />
+                    <ComboBoxItem Content="Filter candidates; confirm to select"
+                        Tag="{x:Static ui:ComboBoxSearchInteraction.Filter}" />
+                </ui:ComboBox>
+                <ui:ComboBox
+                    x:Name="SearchComboBox"
+                    SearchInteraction="{Binding SelectedValue, ElementName=SearchInteractionPicker}"
+                    MinWidth="280"
+                    ui:PlaceholderService.Content="Search anywhere in an item"
+                    IsEditable="True"
+                    IsTextSearchEnabled="True"
+                    TextSearchMode="Fuzzy">
+                    <ComboBoxItem Content="ComboBoxItem" />
+                    <ComboBoxItem Content="TextBlock" />
+                    <ComboBoxItem Content="TextBox" />
+                    <ComboBoxItem Content="VirtualizingStackPanel" />
+                    <ComboBoxItem Content="露天矿山设备编号" />
+                </ui:ComboBox>
+                <ui:Button
+                    Margin="0,8,0,0"
+                    HorizontalAlignment="Left"
+                    Click="OnMatchSearchClick"
+                    Content="Match" />
+                <TextBlock Margin="0,8,0,0">
+                    <Run Text="Selected: " />
+                    <Run Text="{Binding SelectedItem.Content, ElementName=SearchComboBox, Mode=OneWay, TargetNullValue=(none), FallbackValue=(none)}" />
+                </TextBlock>
+            </StackPanel>
+        </controls:ControlExample>
     </StackPanel>
 </Page>

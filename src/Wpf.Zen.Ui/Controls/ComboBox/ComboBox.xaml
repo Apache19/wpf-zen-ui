@@ -21,6 +21,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/ComboBoxBaseStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/ComboBoxItem.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ListBox/DefaultListBoxItem.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <converters:ThicknessTransformConverter x:Key="IconTopPaddingConverter" CopySides="Top" Offset="0 1 0 0" />
@@ -180,20 +181,44 @@
                     BorderThickness="1"
                     CornerRadius="{m:DynamicValue PopupCornerRadius}"
                     SnapsToDevicePixels="True">
-                    <controls:UiScrollViewer
-                        Margin="0"
-                        HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                        SnapsToDevicePixels="True"
-                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
-                        <ItemsPresenter
-                            x:Name="ItemsPresenter"
-                            KeyboardNavigation.DirectionalNavigation="Contained"
-                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </controls:UiScrollViewer>
+                    <Grid>
+                        <controls:UiScrollViewer
+                            x:Name="SearchItemsScrollViewer"
+                            Margin="0"
+                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                            SnapsToDevicePixels="True"
+                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                            <ItemsPresenter
+                                x:Name="ItemsPresenter"
+                                KeyboardNavigation.DirectionalNavigation="Contained"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </controls:UiScrollViewer>
+                        <!--  todo: 待优化  -->
+                        <ListBox
+                            x:Name="PART_SearchResults"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            DisplayMemberPath="Text"
+                            Focusable="False"
+                            Foreground="{TemplateBinding Foreground}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed">
+                            <ListBox.ItemContainerStyle>
+                                <Style BasedOn="{StaticResource DefaultListBoxItemStyle}" TargetType="ListBoxItem">
+                                    <Setter Property="Focusable" Value="False" />
+                                    <Setter Property="Padding" Value="8,6" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </Grid>
                 </Border>
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="IsTextSearchFiltering" Value="True">
+                <Setter TargetName="SearchItemsScrollViewer" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="PART_SearchResults" Property="Visibility" Value="Visible" />
+            </Trigger>
             <Trigger Property="VerticalContentAlignment" Value="Stretch">
                 <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconTopPaddingConverter}}" />
             </Trigger>
