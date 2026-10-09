@@ -35,13 +35,14 @@ public class ComboBox : System.Windows.Controls.ComboBox
     /// <summary>
     /// Identifies the <see cref="TextSearchMode"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty TextSearchModeProperty = DependencyProperty.Register(
-        nameof(TextSearchMode),
-        typeof(ComboBoxTextSearchMode),
-        typeof(ComboBox),
-        new PropertyMetadata(ComboBoxTextSearchMode.Prefix, OnTextSearchModeChanged),
-        IsValidTextSearchMode
-    );
+    public static readonly DependencyProperty TextSearchModeProperty
+        = DependencyProperty.Register(
+            nameof(TextSearchMode),
+            typeof(ComboBoxTextSearchMode),
+            typeof(ComboBox),
+            new PropertyMetadata(ComboBoxTextSearchMode.Prefix, OnTextSearchModeChanged),
+            IsValidTextSearchMode
+        );
 
     /// <summary>
     /// Gets or sets the matching rule. The default is native prefix completion while typing.
@@ -68,11 +69,15 @@ public class ComboBox : System.Windows.Controls.ComboBox
     /// <summary>
     /// Identifies the <see cref="SearchInteraction"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty SearchInteractionProperty = DependencyProperty.Register(
-        nameof(SearchInteraction), typeof(ComboBoxSearchInteraction), typeof(ComboBox),
-        new PropertyMetadata(ComboBoxSearchInteraction.ExplicitCommit, OnTextSearchModeChanged),
-        IsValidSearchInteraction
-    );
+    public static readonly DependencyProperty SearchInteractionProperty
+        = DependencyProperty.Register(
+            nameof(SearchInteraction), typeof(ComboBoxSearchInteraction), typeof(ComboBox),
+            new PropertyMetadata(
+                ComboBoxSearchInteraction.ExplicitCommit,
+                OnTextSearchModeChanged
+            ),
+            IsValidSearchInteraction
+        );
 
     /// <summary>
     /// Gets or sets how custom search presents and commits matches. Defaults to ExplicitCommit.
@@ -94,20 +99,24 @@ public class ComboBox : System.Windows.Controls.ComboBox
 
     private static readonly DependencyPropertyKey IsTextSearchFilteringPropertyKey =
         DependencyProperty.RegisterReadOnly(
-            nameof(IsTextSearchFiltering), typeof(bool), typeof(ComboBox), new PropertyMetadata(false)
+            nameof(IsTextSearchFiltering), typeof(bool), typeof(ComboBox),
+            new PropertyMetadata(false)
         );
 
     /// <summary>
     /// Identifies the read-only <see cref="IsTextSearchFiltering"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IsTextSearchFilteringProperty =
-        IsTextSearchFilteringPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty IsTextSearchFilteringProperty
+        = IsTextSearchFilteringPropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets whether the popup currently presents provisional search results. Defaults to false.
     /// Matching items use the ComboBox's native container generator and item presentation.
     /// </summary>
-    public bool IsTextSearchFiltering => (bool)GetValue(IsTextSearchFilteringProperty);
+    public bool IsTextSearchFiltering
+    {
+        get => (bool)GetValue(IsTextSearchFilteringProperty);
+    }
 
     /// <summary>
     /// Updates the template's provisional candidate presentation state.
@@ -140,6 +149,7 @@ public class ComboBox : System.Windows.Controls.ComboBox
     protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
+
         if (e.Property == TextProperty || e.Property == SelectedItemProperty)
         {
             _searchController?.OnOwnerValueChanged();
@@ -235,7 +245,9 @@ public class ComboBox : System.Windows.Controls.ComboBox
     public override void OnApplyTemplate()
     {
         _searchController?.Detach(false);
+
         base.OnApplyTemplate();
+
         _searchEditor = GetTemplateChild("PART_EditableTextBox") as System.Windows.Controls.TextBox;
         UpdateSearchController();
     }

@@ -21,12 +21,16 @@ public class GridLinesGrid : Grid
     /// <summary>
     /// Identifies the <see cref="HorizontalGridLinePen"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty HorizontalGridLinePenProperty = DependencyProperty.Register(
-        nameof(HorizontalGridLinePen),
-        typeof(Pen),
-        typeof(GridLinesGrid),
-        new FrameworkPropertyMetadata(CreateDefaultPen(), FrameworkPropertyMetadataOptions.AffectsRender)
-    );
+    public static readonly DependencyProperty HorizontalGridLinePenProperty
+        = DependencyProperty.Register(
+            nameof(HorizontalGridLinePen),
+            typeof(Pen),
+            typeof(GridLinesGrid),
+            new FrameworkPropertyMetadata(
+                CreateDefaultPen(),
+                FrameworkPropertyMetadataOptions.AffectsRender
+            )
+        );
 
     /// <summary>
     /// Gets or sets the pen for internal row boundaries. The default is a gray, one-DIP solid pen.
@@ -42,12 +46,16 @@ public class GridLinesGrid : Grid
     /// <summary>
     /// Identifies the <see cref="VerticalGridLinePen"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty VerticalGridLinePenProperty = DependencyProperty.Register(
-        nameof(VerticalGridLinePen),
-        typeof(Pen),
-        typeof(GridLinesGrid),
-        new FrameworkPropertyMetadata(CreateDefaultPen(), FrameworkPropertyMetadataOptions.AffectsRender)
-    );
+    public static readonly DependencyProperty VerticalGridLinePenProperty
+        = DependencyProperty.Register(
+            nameof(VerticalGridLinePen),
+            typeof(Pen),
+            typeof(GridLinesGrid),
+            new FrameworkPropertyMetadata(
+                CreateDefaultPen(),
+                FrameworkPropertyMetadataOptions.AffectsRender
+            )
+        );
 
     /// <summary>
     /// Gets or sets the pen for internal column boundaries. The default is a gray, one-DIP solid
@@ -106,7 +114,7 @@ public class GridLinesGrid : Grid
         // Grid.ArrangeOverride recreates its hard-coded drawing on every arrange; overwrite it
         // after base arrangement and on render invalidation. A trivial Grid may have no renderer.
         // This relies on WPF's renderer ordering/type, covered by the visual regression tests.
-        var lastIndex = base.VisualChildrenCount - 1;
+        var lastIndex  = base.VisualChildrenCount - 1;
         var lastVisual = base.GetVisualChild(lastIndex);
         if (lastVisual is not DrawingVisual renderer)
         {
@@ -114,14 +122,17 @@ public class GridLinesGrid : Grid
         }
 
         using var context = renderer.RenderOpen();
+
         var verticalPen = VerticalGridLinePen;
         if (verticalPen is { Brush: not null, Thickness: > 0 })
         {
             for (var index = 1; index < ColumnDefinitions.Count; index++)
             {
                 var offset = ColumnDefinitions[index].Offset;
+
                 var start = new Point(offset, 0);
-                var end = new Point(offset, size.Height);
+                var end   = new Point(offset, size.Height);
+
                 context.DrawLine(verticalPen, start, end);
             }
         }
@@ -132,8 +143,10 @@ public class GridLinesGrid : Grid
             for (var index = 1; index < RowDefinitions.Count; index++)
             {
                 var offset = RowDefinitions[index].Offset;
+
                 var start = new Point(0, offset);
-                var end = new Point(size.Width, offset);
+                var end   = new Point(size.Width, offset);
+
                 context.DrawLine(horizontalPen, start, end);
             }
         }

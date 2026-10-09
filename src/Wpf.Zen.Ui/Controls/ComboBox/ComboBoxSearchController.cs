@@ -52,7 +52,7 @@ internal sealed class ComboBoxSearchController
         "HighlightedElement", PrivateInstance
     )!;
 
-    private List<SearchCandidate> _candidates = new();
+    private List<SearchCandidate> _candidates        = new();
     private int[]                 _candidateIndices  = Array.Empty<int>();
     private int                   _candidatePosition = -1;
 
@@ -486,7 +486,7 @@ internal sealed class ComboBoxSearchController
             return false;
         }
 
-        var item = _owner.Items[index];
+        var item      = _owner.Items[index];
         var container = _owner.ItemContainerGenerator.ContainerFromIndex(index);
         if (!IsEnabledItem(item) || !IsEnabledItem(container)
             || container is UIElement { Visibility: not Visibility.Visible })
@@ -495,7 +495,11 @@ internal sealed class ComboBoxSearchController
         }
 
         _candidatePosition = position;
-        var info = ItemInfoFromIndex.Invoke(_owner, new object[] { index });
+        var info = ItemInfoFromIndex.Invoke(_owner, new object[]
+        {
+            index
+        });
+
         HighlightedInfo.SetValue(_owner, info);
         return true;
     }
