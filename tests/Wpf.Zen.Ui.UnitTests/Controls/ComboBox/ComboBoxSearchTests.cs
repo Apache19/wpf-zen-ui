@@ -4,6 +4,8 @@
 // All Rights Reserved.
 
 using System.Globalization;
+using System.Linq;
+using TextBlock = System.Windows.Controls.TextBlock;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -516,9 +518,7 @@ public class ComboBoxSearchTests
             else
             {
                 Assert.Equal(1, comboBox.SelectedIndex);
-                var part = comboBox.Template.FindName("PART_SearchResults", comboBox);
-                var results = Assert.IsType<System.Windows.Controls.ListBox>(part);
-                Assert.Empty(results.Items);
+                Assert.Empty(comboBox.SearchIndices);
             }
 
             editor.Text = "te";
@@ -540,7 +540,6 @@ public class ComboBoxSearchTests
             comboBox.SearchInteraction = ComboBoxSearchInteraction.Filter;
             comboBox.SelectedIndex = 1;
             var editor = GetEditor(comboBox);
-            var results = (System.Windows.Controls.ListBox)comboBox.Template.FindName("PART_SearchResults", comboBox);
             var parameters = new HwndSourceParameters("Filtered ComboBox test")
             {
                 Width = 1, Height = 1, WindowStyle = 0,
@@ -549,13 +548,16 @@ public class ComboBoxSearchTests
             source.RootVisual = comboBox;
             editor.Text = "box";
             Assert.True(comboBox.IsTextSearchFiltering);
-            Assert.Equal(2, results.Items.Count);
+            Assert.Equal(new[] { 0, 2 }, comboBox.SearchIndices);
             Assert.Equal(3, comboBox.Items.Count);
             Assert.Equal(1, comboBox.SelectedIndex);
             var sharedView = CollectionViewSource.GetDefaultView(comboBox.ItemsSource);
             Assert.Null(sharedView.Filter);
+            comboBox.Measure(new Size(300, 100));
+            comboBox.Arrange(new Rect(0, 0, 300, 100));
+            comboBox.UpdateLayout();
             Assert.True(RaiseKey(editor, source, Key.Down).Handled);
-            Assert.Equal(1, results.SelectedIndex);
+            Assert.True(((NativeComboBoxItem)comboBox.ItemContainerGenerator.ContainerFromIndex(2)).IsHighlighted);
             Assert.Equal(1, comboBox.SelectedIndex);
             Assert.Equal("box", editor.Text);
             Assert.True(RaiseKey(editor, source, Key.Enter).Handled);
@@ -568,7 +570,7 @@ public class ComboBoxSearchTests
             Assert.Equal("cbi", editor.Text);
             Assert.False(comboBox.IsTextSearchFiltering);
             editor.Text = "missing";
-            Assert.Empty(results.Items);
+            Assert.Empty(comboBox.SearchIndices);
             Assert.Equal(2, comboBox.SelectedIndex);
             Assert.False(comboBox.TryCommitTextSearch());
             Assert.Equal(-1, comboBox.SelectedIndex);
@@ -652,7 +654,6 @@ public class ComboBoxSearchTests
             root.UpdateLayout();
             comboBox.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() => { }));
             var editor = (NativeTextBox)comboBox.Template.FindName("PART_EditableTextBox", comboBox);
-            var results = (System.Windows.Controls.ListBox)comboBox.Template.FindName("PART_SearchResults", comboBox);
             var selectionEvents = 0;
             comboBox.SelectionChanged += (_, _) => selectionEvents++;
             editor.Text = "box";
@@ -661,17 +662,17 @@ public class ComboBoxSearchTests
             FrameworkElement container;
             if (interaction == ComboBoxSearchInteraction.Filter)
             {
-                Assert.True(results.IsVisible);
+                Assert.NotNull(comboBox.SearchPanel);
                 Assert.Equal(1, comboBox.SelectedIndex);
                 Assert.Equal(0, selectionEvents);
                 var normalItems = (FrameworkElement)comboBox.Template.FindName("SearchItemsScrollViewer", comboBox);
-                Assert.Equal(Visibility.Collapsed, normalItems.Visibility);
-                results.UpdateLayout();
-                container = (FrameworkElement)results.ItemContainerGenerator.ContainerFromIndex(1);
+                Assert.Equal(Visibility.Visible, normalItems.Visibility);
+                Assert.Null(comboBox.ItemContainerGenerator.ContainerFromIndex(1));
+                container = (FrameworkElement)comboBox.ItemContainerGenerator.ContainerFromIndex(2);
             }
             else
             {
-                Assert.False(results.IsVisible);
+                Assert.Null(comboBox.SearchPanel);
                 Assert.Equal(0, comboBox.SelectedIndex);
                 Assert.Equal(1, selectionEvents);
                 container = (FrameworkElement)comboBox.ItemContainerGenerator.ContainerFromIndex(0);
@@ -700,6 +701,220 @@ public class ComboBoxSearchTests
             Assert.Equal("missing", editor.Text);
             comboBox.IsDropDownOpen = false;
         });
+    }
+
+    /// <summary>
+    /// Large results realize only viewport rows while retaining native item presentation.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void Filter_VirtualizesNativeContainersAndPreservesPresentation(bool grouped, bool defaultTheme)
+    {
+        WpfTestThread.Run(() =>
+        {
+            const int count = 10000;
+            var items = Enumerable.Range(0, count).Select(index => new SearchItem
+            {
+                Name = index == count - 1 ? "Item needle" : "Item " + index,
+                Id = index,
+            }).ToArray();
+            var view = new ListCollectionView(items);
+            if (grouped)
+            {
+                view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(SearchItem.Group)));
+            }
+
+            var style = new Style(typeof(NativeComboBoxItem));
+            style.Setters.Add(new Setter(FrameworkElement.HeightProperty, 24.0));
+            style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(13, 2, 7, 2)));
+            var tallLastRow = new DataTrigger
+            {
+                Binding = new Binding(nameof(SearchItem.Name)),
+                Value = "Item needle",
+            };
+            tallLastRow.Setters.Add(new Setter(FrameworkElement.HeightProperty, 60.0));
+            style.Triggers.Add(tallLastRow);
+            var label = new FrameworkElementFactory(typeof(TextBlock));
+            label.SetBinding(TextBlock.TextProperty, new Binding(nameof(SearchItem.Name)));
+            var template = new DataTemplate { VisualTree = label };
+            var originalPanel = new ItemsPanelTemplate(
+                new FrameworkElementFactory(typeof(VirtualizingStackPanel))
+            );
+            var comboBox = new CountingComboBox
+            {
+                IsEditable = true,
+                TextSearchMode = ComboBoxTextSearchMode.Contains,
+                SearchInteraction = ComboBoxSearchInteraction.Filter,
+                ItemsSource = view,
+                ItemsPanel = originalPanel,
+                ItemContainerStyle = style,
+                ItemTemplate = template,
+                SelectedIndex = 0,
+                Template = CreateTemplate(),
+            };
+            TextSearch.SetTextPath(comboBox, nameof(SearchItem.Name));
+            System.Windows.Controls.ScrollViewer.SetCanContentScroll(comboBox, true);
+            VirtualizingPanel.SetIsVirtualizingWhenGrouping(comboBox, true);
+            if (defaultTheme)
+            {
+                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
+                var themeUri = new Uri(
+                    "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml", UriKind.Absolute
+                );
+                comboBox.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = themeUri });
+                comboBox.ClearValue(Control.TemplateProperty);
+                comboBox.MaxDropDownHeight = 100;
+            }
+
+            using var source = LoadComboBox(comboBox);
+            var editor = GetEditor(comboBox);
+            comboBox.GeneratedCount = 0;
+            editor.Text = "Item";
+            DrainDispatcher(comboBox);
+            comboBox.UpdateLayout();
+            Assert.Equal(count, comboBox.SearchIndices.Count);
+            Assert.InRange(comboBox.GeneratedCount, 1, 30);
+            var panel = Assert.IsType<ComboBoxSearchPanel>(comboBox.SearchPanel);
+            Assert.InRange(panel.Children.Count, 1, 10);
+            var firstContainer = comboBox.ItemContainerGenerator.ContainerFromIndex(0);
+            var first = Assert.IsType<NativeComboBoxItem>(firstContainer);
+            Assert.Same(comboBox, ItemsControl.ItemsControlFromItemContainer(first));
+            Assert.Same(items[0], first.Content);
+            Assert.Same(items[0], first.DataContext);
+            Assert.Same(style, first.Style);
+            Assert.Same(template, first.ContentTemplate);
+            Assert.Equal(new Thickness(13, 2, 7, 2), first.Padding);
+
+            panel.SetVerticalOffset(5000);
+            comboBox.UpdateLayout();
+            Assert.InRange(panel.Children.Count, 1, 10);
+            Assert.Null(comboBox.ItemContainerGenerator.ContainerFromIndex(0));
+            var middleContainer = comboBox.ItemContainerGenerator.ContainerFromIndex(5000);
+            var middle = Assert.IsType<NativeComboBoxItem>(middleContainer);
+            Assert.Same(items[5000], middle.Content);
+            Assert.Equal(0, comboBox.SelectedIndex);
+            Assert.Equal("Item", editor.Text);
+            Assert.True(comboBox.IsTextSearchFiltering);
+
+            var scrollbarMaximum = panel.ExtentHeight - panel.ViewportHeight;
+            panel.SetVerticalOffset(scrollbarMaximum);
+            panel.UpdateLayout();
+            var bottomContainer = comboBox.ItemContainerGenerator.ContainerFromIndex(count - 1);
+            var bottomItem = Assert.IsType<NativeComboBoxItem>(bottomContainer);
+            var bottomTransform = bottomItem.TransformToAncestor(panel);
+            var bottomBounds = bottomTransform.TransformBounds(new Rect(bottomItem.RenderSize));
+            Assert.True(bottomBounds.Bottom <= panel.ActualHeight + 0.01);
+
+            panel.SetVerticalOffset(double.PositiveInfinity);
+            panel.UpdateLayout();
+            Assert.InRange(panel.Children.Count, 2, 10);
+            Assert.NotNull(comboBox.ItemContainerGenerator.ContainerFromIndex(count - 1));
+            Assert.Equal("Item", editor.Text);
+
+            comboBox.GeneratedCount = 0;
+            editor.Text = "needle";
+            DrainDispatcher(comboBox);
+            comboBox.UpdateLayout();
+            Assert.Equal(new[] { count - 1 }, comboBox.SearchIndices);
+            Assert.InRange(comboBox.GeneratedCount, 1, 3);
+            var lastContainer = comboBox.ItemContainerGenerator.ContainerFromIndex(count - 1);
+            var last = Assert.IsType<NativeComboBoxItem>(lastContainer);
+            Assert.Same(items[count - 1], last.Content);
+            Assert.True(comboBox.TryCommitTextSearch());
+            Assert.Equal(count - 1, comboBox.SelectedIndex);
+            Assert.Same(originalPanel, comboBox.ItemsPanel);
+            Assert.Null(comboBox.GroupStyleSelector);
+            Assert.Null(view.Filter);
+            Assert.Equal(count, comboBox.Items.Count);
+            Assert.Equal(grouped ? 1 : 0, view.GroupDescriptions.Count);
+        });
+    }
+
+    /// <summary>
+    /// Explicit native containers preserve their identity and local styling during filtering.
+    /// </summary>
+    [Fact]
+    public void Filter_ReusesExplicitComboBoxItem()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var item = new NativeComboBoxItem { Content = "TextBox", Padding = new Thickness(17) };
+            var comboBox = CreateComboBox("TextBlock", item);
+            comboBox.SearchInteraction = ComboBoxSearchInteraction.Filter;
+            using var source = LoadComboBox(comboBox);
+            var editor = GetEditor(comboBox);
+            editor.Text = "box";
+            DrainDispatcher(comboBox);
+            Assert.Same(item, comboBox.ItemContainerGenerator.ContainerFromIndex(1));
+            Assert.Same(comboBox, ItemsControl.ItemsControlFromItemContainer(item));
+            Assert.Equal(new Thickness(17), item.Padding);
+            Assert.True(comboBox.TryCommitTextSearch());
+            Assert.Same(item, comboBox.SelectedItem);
+        });
+    }
+
+    /// <summary>
+    /// Keyboard navigation rechecks container availability when item state changes during search.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Filter_NavigationSkipsUnavailableItem(bool collapse)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var first = new NativeComboBoxItem { Content = "Box A" };
+            var second = new NativeComboBoxItem { Content = "Box B" };
+            var third = new NativeComboBoxItem { Content = "Box C" };
+            var comboBox = CreateComboBox(first, second, third);
+            comboBox.SearchInteraction = ComboBoxSearchInteraction.Filter;
+            using var source = LoadComboBox(comboBox);
+            var editor = GetEditor(comboBox);
+            editor.Text = "Box";
+            DrainDispatcher(comboBox);
+            Assert.True(first.IsHighlighted);
+            if (collapse)
+            {
+                second.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                second.IsEnabled = false;
+            }
+
+            Assert.True(RaiseKey(editor, source, Key.Down).Handled);
+            Assert.True(third.IsHighlighted);
+            Assert.True(RaiseKey(editor, source, Key.Up).Handled);
+            Assert.True(first.IsHighlighted);
+            third.IsEnabled = false;
+            Assert.True(RaiseKey(editor, source, Key.Down).Handled);
+            Assert.True(first.IsHighlighted);
+            Assert.Equal(-1, comboBox.SelectedIndex);
+            Assert.Equal("Box", editor.Text);
+        });
+    }
+
+    /// <summary>
+    /// Counts actual native container creation, independently of source matching work.
+    /// </summary>
+    private sealed class CountingComboBox : UiComboBox
+    {
+        /// <summary>
+        /// Gets or sets the creation counter used to bound virtualization work.
+        /// </summary>
+        internal int GeneratedCount { get; set; }
+
+        /// <summary>
+        /// Records generated containers while retaining the native ComboBoxItem implementation.
+        /// </summary>
+        protected override DependencyObject GetContainerForItemOverride()
+        {
+            GeneratedCount++;
+            return base.GetContainerForItemOverride();
+        }
     }
 
     /// <summary>
@@ -789,8 +1004,15 @@ public class ComboBoxSearchTests
         var editor = new FrameworkElementFactory(typeof(NativeTextBox), "PART_EditableTextBox");
         var root = new FrameworkElementFactory(typeof(Grid));
         root.AppendChild(editor);
-        var results = new FrameworkElementFactory(typeof(System.Windows.Controls.ListBox), "PART_SearchResults");
-        root.AppendChild(results);
+        var scroll = new FrameworkElementFactory(typeof(System.Windows.Controls.ScrollViewer));
+        scroll.SetValue(FrameworkElement.MaxHeightProperty, 100.0);
+        var scrolling = new Binding("(ScrollViewer.CanContentScroll)")
+        {
+            RelativeSource = RelativeSource.TemplatedParent,
+        };
+        scroll.SetBinding(System.Windows.Controls.ScrollViewer.CanContentScrollProperty, scrolling);
+        scroll.AppendChild(new FrameworkElementFactory(typeof(ItemsPresenter)));
+        root.AppendChild(scroll);
         return new ControlTemplate(typeof(UiComboBox)) { VisualTree = root };
     }
 
@@ -800,7 +1022,7 @@ public class ComboBoxSearchTests
     private static NativeTextBox GetEditor(UiComboBox comboBox)
     {
         object editor = comboBox.Template.FindName("PART_EditableTextBox", comboBox);
-        return Assert.IsType<NativeTextBox>(editor);
+        return Assert.IsAssignableFrom<NativeTextBox>(editor);
     }
 
     /// <summary>
@@ -836,6 +1058,11 @@ public class ComboBoxSearchTests
         /// Gets or sets the value exposed through SelectedValuePath.
         /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// Gets the group key used to exercise native grouped container generation.
+        /// </summary>
+        public int Group => Id / 1000;
     }
 
     /// <summary>

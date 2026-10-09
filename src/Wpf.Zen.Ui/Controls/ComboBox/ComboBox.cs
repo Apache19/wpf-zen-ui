@@ -27,7 +27,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// so a read-only editable combo box intentionally remains in the editable focus-state path.
 /// </para>
 /// </remarks>
-[TemplatePart(Name = "PART_SearchResults", Type = typeof(System.Windows.Controls.ListBox))]
 public class ComboBox : System.Windows.Controls.ComboBox
 {
     private System.Windows.Controls.TextBox? _searchEditor;
@@ -80,9 +79,11 @@ public class ComboBox : System.Windows.Controls.ComboBox
     /// This setting applies to Contains, Tokens, and Fuzzy; Prefix retains native behavior.
     /// </summary>
     /// <remarks>
-    /// Filter displays flat search labels in the template's PART_SearchResults ListBox, leaving
-    /// ItemsSource, its view, and committed selection intact. Custom templates must provide that
-    /// part and hide their normal items presenter while IsTextSearchFiltering is true.
+    /// Filter displays matching native containers in the normal items presenter, retaining item
+    /// styles, templates, data contexts, source indices, and committed selection. ItemsSource and
+    /// its shared view remain intact. A virtualizing items panel realizes only visible matches.
+    /// Custom templates must use an ItemsPresenter and bind their scroll viewer's CanContentScroll
+    /// to ScrollViewer.CanContentScroll on this control.
     /// Escape or dismissal keeps the query and does not commit a provisional candidate.
     /// </remarks>
     public ComboBoxSearchInteraction SearchInteraction
@@ -104,7 +105,7 @@ public class ComboBox : System.Windows.Controls.ComboBox
 
     /// <summary>
     /// Gets whether the popup currently presents provisional search results. Defaults to false.
-    /// Templates use this state to switch between normal items and PART_SearchResults.
+    /// Matching items use the ComboBox's native container generator and item presentation.
     /// </summary>
     public bool IsTextSearchFiltering => (bool)GetValue(IsTextSearchFilteringProperty);
 
@@ -113,7 +114,15 @@ public class ComboBox : System.Windows.Controls.ComboBox
     /// </summary>
     internal void SetSearchFiltering(bool value)
     {
+        if (!value)
+        {
+            SearchPanel = null;
+        }
+
         SetValue(IsTextSearchFilteringPropertyKey, value);
+        CoerceValue(GroupStyleSelectorProperty);
+        CoerceValue(ItemsPanelProperty);
+        CoerceValue(ScrollViewer.CanContentScrollProperty);
     }
 
     /// <summary>
@@ -164,6 +173,40 @@ public class ComboBox : System.Windows.Controls.ComboBox
     {
         base.OnItemsChanged(e);
         _searchController?.ResetPresentation();
+    }
+
+    /// <summary>
+    /// Applies native item styles and templates while preserving an active editable query.
+    /// </summary>
+    protected override void PrepareContainerForItemOverride(DependencyObject? element, object? item)
+    {
+        var controller = _searchController;
+        var previous   = controller?.BeginContainerUpdate() ?? false;
+        try
+        {
+            base.PrepareContainerForItemOverride(element, item);
+        }
+        finally
+        {
+            controller?.EndContainerUpdate(previous);
+        }
+    }
+
+    /// <summary>
+    /// Prevents container virtualization from restoring the selected label over the query.
+    /// </summary>
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
+    {
+        var controller = _searchController;
+        var previous   = controller?.BeginContainerUpdate() ?? false;
+        try
+        {
+            base.ClearContainerForItemOverride(element, item);
+        }
+        finally
+        {
+            controller?.EndContainerUpdate(previous);
+        }
     }
 
     /// <summary>
@@ -234,6 +277,48 @@ public class ComboBox : System.Windows.Controls.ComboBox
             _searchController ??= new ComboBoxSearchController(this);
             _searchController.Attach(_searchEditor);
         }
+    }
+
+    /// <summary>
+    /// Gets the active filtered items host after it connects to the native generator.
+    /// </summary>
+    internal ComboBoxSearchPanel? SearchPanel { get; set; }
+
+    /// <summary>
+    /// Gets the ordered source indices displayed by the active search.
+    /// </summary>
+    internal IReadOnlyList<int> SearchIndices
+    {
+        get => _searchController?.CandidateIndices ?? Array.Empty<int>();
+    }
+
+    /// <summary>
+    /// Uses native container generation through the filtered virtualizing panel during search.
+    /// The application's items-panel value and binding resume when filtering ends.
+    /// </summary>
+    private static object CoerceSearchItemsPanel(DependencyObject d, object baseValue)
+    {
+        var owner = (ComboBox)d;
+        return owner.IsTextSearchFiltering ? ComboBoxSearchPanel.PanelTemplate : baseValue;
+    }
+
+    /// <summary>
+    /// Connects the popup scroll viewer to the filtering panel's virtualized scrolling.
+    /// </summary>
+    private static object CoerceSearchScrolling(DependencyObject d, object baseValue)
+    {
+        var owner = (ComboBox)d;
+        return owner.IsTextSearchFiltering ? true : baseValue;
+    }
+
+    /// <summary>
+    /// Uses a flat, virtualized result presentation when the source view contains groups.
+    /// Group definitions and the application's group styles resume after filtering ends.
+    /// </summary>
+    private static object CoerceSearchGroupStyle(DependencyObject d, object baseValue)
+    {
+        var owner = (ComboBox)d;
+        return owner.IsTextSearchFiltering ? ComboBoxSearchPanel.GroupStyleSelector : baseValue;
     }
 
     #region DP: Icon
@@ -633,8 +718,26 @@ public class ComboBox : System.Windows.Controls.ComboBox
 
     #endregion
 
+    /// <summary>
+    /// Registers native presentation defaults and filtering-specific scrolling coercion.
+    /// </summary>
     static ComboBox()
     {
+        GroupStyleSelectorProperty.OverrideMetadata(
+            typeof(ComboBox), new FrameworkPropertyMetadata(null, null, CoerceSearchGroupStyle)
+        );
+
+        ItemsPanelProperty.OverrideMetadata(
+            typeof(ComboBox), new FrameworkPropertyMetadata(
+                ItemsPanelProperty.GetMetadata(typeof(System.Windows.Controls.ComboBox)).DefaultValue,
+                null, CoerceSearchItemsPanel
+            )
+        );
+
+        ScrollViewer.CanContentScrollProperty.OverrideMetadata(
+            typeof(ComboBox), new FrameworkPropertyMetadata(false, null, CoerceSearchScrolling)
+        );
+
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(ComboBox),
             new FrameworkPropertyMetadata(typeof(ComboBox))

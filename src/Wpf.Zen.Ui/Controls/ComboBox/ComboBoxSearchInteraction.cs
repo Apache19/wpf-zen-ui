@@ -24,7 +24,7 @@ public enum ComboBoxSearchInteraction
     AutoSelect,
 
     /// <summary>
-    /// Opens a list of matching text labels for nonempty input. Clearing input retains the
+    /// Opens the native item containers matching nonempty input. Clearing input retains the
     /// drop-down's open state. Navigation is provisional until Enter, a candidate
     /// click, or TryCommitTextSearch commits it. The original selection survives editing.
     /// </summary>
