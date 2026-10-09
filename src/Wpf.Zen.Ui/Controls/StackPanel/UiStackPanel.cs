@@ -54,7 +54,7 @@ public class UiStackPanel : Panel
                 0D,
                 FrameworkPropertyMetadataOptions.AffectsMeasure
             ),
-            StackSpacing.IsValid
+            PanelSpacing.IsValid
         );
 
     /// <summary>
@@ -168,6 +168,6 @@ public class UiStackPanel : Panel
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
-        StackSpacing.Draw(drawingContext, SpacingBrush, _gaps, RenderSize);
+        PanelSpacing.Draw(drawingContext, SpacingBrush, _gaps, RenderSize);
     }
 }

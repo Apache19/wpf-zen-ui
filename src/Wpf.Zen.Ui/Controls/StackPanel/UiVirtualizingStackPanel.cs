@@ -205,6 +205,6 @@ public partial class UiVirtualizingStackPanel : VirtualizingPanel, IScrollInfo
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
-        StackSpacing.Draw(drawingContext, SpacingBrush, _gaps, RenderSize);
+        PanelSpacing.Draw(drawingContext, SpacingBrush, _gaps, RenderSize);
     }
 }
