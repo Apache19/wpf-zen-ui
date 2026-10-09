@@ -1,0 +1,46 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.Layout.GridLinesGridPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    Title="GridLinesGridPage"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    FontSize="{ui:DynamicValue DefaultThemeFontSize}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}">
+    <StackPanel Margin="0,0,0,24">
+        <CheckBox x:Name="ShowLines" Margin="0,0,0,16" Content="Show grid lines" IsChecked="True" />
+        <TextBlock Text="Vertical line thickness" />
+        <Slider x:Name="LineThickness" Minimum="0" Maximum="8" Value="2" Margin="0,8,0,16" />
+        <controls:ControlExample HeaderText="Independent horizontal and vertical pens; lines cross spanning cells."
+            XamlCode="&lt;ui:GridLinesGrid ShowGridLines=&quot;True&quot;&gt;&#10;    &lt;ui:GridLinesGrid.VerticalGridLinePen&gt;&#10;        &lt;Pen Brush=&quot;DodgerBlue&quot; Thickness=&quot;2&quot; /&gt;&#10;    &lt;/ui:GridLinesGrid.VerticalGridLinePen&gt;&#10;    &lt;ui:GridLinesGrid.HorizontalGridLinePen&gt;&#10;        &lt;Pen Brush=&quot;DarkOrange&quot; Thickness=&quot;3&quot; DashStyle=&quot;Dash&quot; /&gt;&#10;    &lt;/ui:GridLinesGrid.HorizontalGridLinePen&gt;&#10;    &lt;!-- Add row/column definitions and children here. --&gt;&#10;&lt;/ui:GridLinesGrid&gt;">
+            <ui:GridLinesGrid Height="220" ShowGridLines="{Binding IsChecked, ElementName=ShowLines}">
+                <ui:GridLinesGrid.VerticalGridLinePen>
+                    <Pen Brush="DodgerBlue" Thickness="{Binding Value, ElementName=LineThickness}" />
+                </ui:GridLinesGrid.VerticalGridLinePen>
+                <ui:GridLinesGrid.HorizontalGridLinePen>
+                    <Pen Brush="DarkOrange" Thickness="3" DashStyle="Dash" />
+                </ui:GridLinesGrid.HorizontalGridLinePen>
+                <ui:GridLinesGrid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="2*" />
+                </ui:GridLinesGrid.ColumnDefinitions>
+                <ui:GridLinesGrid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </ui:GridLinesGrid.RowDefinitions>
+                <TextBlock Margin="16" Text="Auto" />
+                <TextBlock Grid.Column="1" Margin="16" Text="*" />
+                <TextBlock Grid.Column="2" Margin="16" Text="2*" />
+                <TextBlock Grid.Row="1" Margin="16" Text="Row 1" />
+                <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                    Background="{ui:DynamicBrush ControlFillSecondary}">
+                    <TextBlock Margin="16" Text="Spanning cell with an opaque background" />
+                </Border>
+                <TextBlock Grid.Row="2" Margin="16" Text="Row 2" />
+            </ui:GridLinesGrid>
+        </controls:ControlExample>
+    </StackPanel>
+</Page>
