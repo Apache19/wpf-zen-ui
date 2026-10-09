@@ -439,6 +439,96 @@ public class ComboBoxSearchTests
     }
 
     /// <summary>
+    /// Search-driven popup opening preserves the insertion point across consecutive text edits.
+    /// </summary>
+    [Theory]
+    [InlineData(ComboBoxSearchInteraction.AutoSelect)]
+    [InlineData(ComboBoxSearchInteraction.Filter)]
+    public void LiveSearch_OpeningPreservesConsecutiveInput(ComboBoxSearchInteraction interaction)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var comboBox = CreateComboBox("TextBlock", "TextBox");
+            comboBox.SearchInteraction = interaction;
+            using var source = LoadComboBox(comboBox);
+            var editor = GetEditor(comboBox);
+
+            InsertText(editor, "t");
+            DrainDispatcher(comboBox);
+            Assert.True(comboBox.IsDropDownOpen);
+            Assert.Equal(1, editor.SelectionStart);
+            Assert.Equal(0, editor.SelectionLength);
+
+            InsertText(editor, "e");
+            DrainDispatcher(comboBox);
+            Assert.Equal("te", editor.Text);
+            Assert.Equal("te", comboBox.Text);
+            Assert.Equal(2, editor.SelectionStart);
+            Assert.Equal(0, editor.SelectionLength);
+
+            // Reopening after dismissal must preserve a middle-of-text insertion point too.
+            comboBox.IsDropDownOpen = false;
+            editor.Select(1, 0);
+            InsertText(editor, "x");
+            DrainDispatcher(comboBox);
+            Assert.True(comboBox.IsDropDownOpen);
+            Assert.Equal("txe", editor.Text);
+            Assert.Equal(2, editor.SelectionStart);
+            Assert.Equal(0, editor.SelectionLength);
+            comboBox.IsDropDownOpen = false;
+        });
+    }
+
+    /// <summary>
+    /// Clearing a live query refreshes matches without opening or closing the drop-down.
+    /// </summary>
+    [Theory]
+    [InlineData(ComboBoxSearchInteraction.AutoSelect, false, "")]
+    [InlineData(ComboBoxSearchInteraction.AutoSelect, true, "")]
+    [InlineData(ComboBoxSearchInteraction.Filter, false, "")]
+    [InlineData(ComboBoxSearchInteraction.Filter, true, "")]
+    [InlineData(ComboBoxSearchInteraction.AutoSelect, false, " \t ")]
+    [InlineData(ComboBoxSearchInteraction.Filter, false, " \t ")]
+    public void LiveSearch_ClearingRetainsDropDownState(
+        ComboBoxSearchInteraction interaction, bool keepOpen, string emptyQuery)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var comboBox = CreateComboBox("TextBlock", "TextBox");
+            comboBox.SearchInteraction = interaction;
+            comboBox.SelectedIndex = 1;
+            using var source = LoadComboBox(comboBox);
+            var editor = GetEditor(comboBox);
+            editor.Text = "t";
+            DrainDispatcher(comboBox);
+            Assert.True(comboBox.IsDropDownOpen);
+            comboBox.IsDropDownOpen = keepOpen;
+
+            editor.Text = emptyQuery;
+            DrainDispatcher(comboBox);
+            Assert.Equal(keepOpen, comboBox.IsDropDownOpen);
+            Assert.Equal(emptyQuery, editor.Text);
+            Assert.Equal(emptyQuery, comboBox.Text);
+            if (interaction == ComboBoxSearchInteraction.AutoSelect)
+            {
+                Assert.Equal(-1, comboBox.SelectedIndex);
+            }
+            else
+            {
+                Assert.Equal(1, comboBox.SelectedIndex);
+                var part = comboBox.Template.FindName("PART_SearchResults", comboBox);
+                var results = Assert.IsType<System.Windows.Controls.ListBox>(part);
+                Assert.Empty(results.Items);
+            }
+
+            editor.Text = "te";
+            DrainDispatcher(comboBox);
+            Assert.True(comboBox.IsDropDownOpen);
+            comboBox.IsDropDownOpen = false;
+        });
+    }
+
+    /// <summary>
     /// Filtering owns a provisional list and does not alter a shared view or committed selection.
     /// </summary>
     [Fact]
@@ -610,6 +700,56 @@ public class ComboBoxSearchTests
             Assert.Equal("missing", editor.Text);
             comboBox.IsDropDownOpen = false;
         });
+    }
+
+    /// <summary>
+    /// Attaches the control to an HWND and completes loading so WPF permits drop-down opening.
+    /// </summary>
+    private static HwndSource LoadComboBox(UiComboBox comboBox)
+    {
+        var parameters = new HwndSourceParameters("ComboBox live input test")
+        {
+            Width = 300,
+            Height = 100,
+            WindowStyle = 0,
+        };
+        var source = new HwndSource(parameters);
+        source.RootVisual = comboBox;
+        comboBox.Measure(new Size(300, 100));
+        comboBox.Arrange(new Rect(0, 0, 300, 100));
+        comboBox.UpdateLayout();
+        DrainDispatcher(comboBox);
+        return source;
+    }
+
+    /// <summary>
+    /// Completes pending loading and popup navigation before checking editor state.
+    /// </summary>
+    private static void DrainDispatcher(UiComboBox comboBox)
+    {
+        comboBox.Dispatcher.Invoke(
+            System.Windows.Threading.DispatcherPriority.Background, new Action(() => { })
+        );
+    }
+
+    /// <summary>
+    /// Replaces the selection and advances the caret in one text transaction, as typing does.
+    /// TextChanged observes the final caret position when the transaction ends.
+    /// </summary>
+    private static void InsertText(NativeTextBox editor, string text)
+    {
+        var insertionStart = editor.SelectionStart;
+        editor.BeginChange();
+        try
+        {
+            editor.SelectedText = text;
+            var caretIndex = insertionStart + text.Length;
+            editor.Select(caretIndex, 0);
+        }
+        finally
+        {
+            editor.EndChange();
+        }
     }
 
     /// <summary>

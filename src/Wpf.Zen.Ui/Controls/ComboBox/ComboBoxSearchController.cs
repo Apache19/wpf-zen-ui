@@ -4,13 +4,12 @@
 // All Rights Reserved.
 
 using System.Reflection;
-using System.Collections.Generic;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
-using NativeListBox = System.Windows.Controls.ListBox;
 using NativeComboBox = System.Windows.Controls.ComboBox;
+using NativeListBox = System.Windows.Controls.ListBox;
 using NativeTextBox = System.Windows.Controls.TextBox;
 
 namespace Wpf.Zen.Ui.Controls;
@@ -334,7 +333,7 @@ internal sealed class ComboBoxSearchController
                 HighlightedInfo.SetValue(_owner, null);
             }
 
-            _owner.SetCurrentValue(NativeComboBox.IsDropDownOpenProperty, true);
+            OpenDropDownForQuery(query);
 
             _highlightOperation?.Abort();
             _highlightOperation = _owner.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
@@ -385,6 +384,28 @@ internal sealed class ComboBoxSearchController
     }
 
     /// <summary>
+    /// Opens live results for nonempty input while preserving the editor's current selection.
+    /// Empty input leaves the drop-down's existing open or closed state unchanged.
+    /// </summary>
+    private void OpenDropDownForQuery(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query) || _owner.IsDropDownOpen || _editor is null)
+        {
+            return;
+        }
+
+        var editor = _editor;
+
+        var selectionStart  = editor.SelectionStart;
+        var selectionLength = editor.SelectionLength;
+
+        // WPF's OnIsDropDownOpenChanged synchronously calls SelectAll on the editable text box.
+        // Search-driven opening must retain the insertion point for the next input operation.
+        _owner.SetCurrentValue(NativeComboBox.IsDropDownOpenProperty, true);
+        editor.Select(selectionStart, selectionLength);
+    }
+
+    /// <summary>
     /// Completes same-item clicks in live selection mode even when selection does not change.
     /// </summary>
     private void OnItemMouseUp(object sender, MouseButtonEventArgs e)
@@ -395,6 +416,7 @@ internal sealed class ComboBoxSearchController
         }
 
         var source    = e.OriginalSource as DependencyObject;
+        // todo: source 可能为 null，ItemsControl.ContainerFromElement 不允许第二个参数为 null。
         var container = ItemsControl.ContainerFromElement(_owner, source);
         if (container is System.Windows.Controls.ComboBoxItem item && item.IsEnabled)
         {
