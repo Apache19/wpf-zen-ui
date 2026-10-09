@@ -28,6 +28,24 @@
     <converters:ThicknessTransformConverter x:Key="IconBottomPaddingConverter" CopySides="Bottom" Offset="0 0 0 -1" />
     <converters:ThicknessTransformConverter x:Key="ContentPaddingConverter" Offset="2,0" />
 
+
+    <Style x:Key="SearchResultsStyle" TargetType="{x:Type ListBox}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Padding" Value="4,3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBox}">
+                    <controls:UiScrollViewer
+                        Padding="{TemplateBinding Padding}"
+                        Focusable="false"
+                        ScrollSpillMode="Disabled">
+                        <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </controls:UiScrollViewer>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <ControlTemplate x:Key="UiComboBoxTemplate" TargetType="{x:Type controls:ComboBox}">
         <Grid>
             <Border
@@ -163,7 +181,6 @@
             <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupSlideAnimator.  -->
             <Popup
                 x:Name="Popup"
-                controls:PopupPlacementGap.Vertical="1"
                 controls:PopupPlacementTracker.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
                 controls:PopupSlideAnimator.IsEnabled="True"
@@ -196,12 +213,10 @@
                         <!--  todo: 待优化  -->
                         <ListBox
                             x:Name="PART_SearchResults"
-                            Background="Transparent"
-                            BorderThickness="0"
                             DisplayMemberPath="Text"
                             Focusable="False"
-                            Foreground="{TemplateBinding Foreground}"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            Style="{StaticResource SearchResultsStyle}"
                             Visibility="Collapsed">
                             <ListBox.ItemContainerStyle>
                                 <Style BasedOn="{StaticResource DefaultListBoxItemStyle}" TargetType="ListBoxItem">
