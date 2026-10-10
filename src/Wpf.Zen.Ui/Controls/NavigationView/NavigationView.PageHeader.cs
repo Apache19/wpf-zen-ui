@@ -84,15 +84,24 @@ public partial class NavigationView
     /// The value changes when WPF commits a navigation or the active page changes its attached
     /// property. An element without its own data context follows the active page's data context,
     /// including later changes, so view-model bindings and commands work in a host layout.
+    /// This association remains in place while the element is removed from the host layout.
     /// </remarks>
-    public FrameworkElement? CurrentPageHeaderContent =>
-        (FrameworkElement?)GetValue(CurrentPageHeaderContentProperty);
+    public FrameworkElement? CurrentPageHeaderContent
+    {
+        get => (FrameworkElement?)GetValue(CurrentPageHeaderContentProperty);
+    }
 
     /// <summary>
-    /// Tracks the data-context binding installed on the active contribution so it can be removed
-    /// without disturbing a value assigned by the page while the element was visible.
+    /// Tracks the bridge on each contribution so reuse can update its page source while
+    /// preserving an explicit context subsequently assigned by the application.
     /// </summary>
-    private BindingExpressionBase? _pageHeaderDataContextBinding;
+    private static readonly DependencyProperty PageHeaderDataContextBindingProperty
+        = DependencyProperty.RegisterAttached(
+            "PageHeaderDataContextBinding",
+            typeof(BindingExpressionBase),
+            typeof(NavigationView),
+            new PropertyMetadata(null)
+        );
 
     /// <summary>
     /// Tracks header ownership for committed Frame pages, including ReplaceContent destinations.
@@ -167,24 +176,17 @@ public partial class NavigationView
     /// </summary>
     private void UpdatePageHeaderContent(FrameworkElement? page)
     {
-        var previous = CurrentPageHeaderContent;
-        // The contributed element is hosted outside the page's visual tree. Remove our
-        // binding before releasing the old contribution so its explicit source no longer
-        // retains the previous page. Leave a binding installed later by the page intact.
-        if (previous is not null && _pageHeaderDataContextBinding is not null)
-        {
-            ReleasePageHeaderDataContext(previous, _pageHeaderDataContextBinding);
-        }
-
-        _pageHeaderDataContextBinding = null;
-        SetValue(CurrentPageHeaderContentPropertyKey, null);
-
         var content = page is null ? null : GetPageHeaderContent(page);
         if (page is not null && content is not null)
         {
-            _pageHeaderDataContextBinding = BindPageHeaderDataContext(page, content);
-            SetValue(CurrentPageHeaderContentPropertyKey, content);
+            EnsurePageHeaderDataContext(page, content);
         }
+
+        // A presenter can defer removing the old visual. Keep its local bridge throughout
+        // that interval, and prepare the new bridge before publishing the replacement.
+        // WPF holds DependencyObject binding sources weakly, so the bridge can follow the
+        // element's lifetime without keeping the owning page alive.
+        SetValue(CurrentPageHeaderContentPropertyKey, content);
 
         Debug.WriteLine(
             $"[NavigationView.Header] PAGE contribution published; pageType={page?.GetType().Name ?? "null"}, hasContent={content is not null}."
@@ -194,29 +196,38 @@ public partial class NavigationView
     /// <summary>
     /// Makes an inherited context follow the page while respecting explicit element contexts.
     /// </summary>
-    private static BindingExpressionBase? BindPageHeaderDataContext(FrameworkElement page, FrameworkElement element)
+    private static void EnsurePageHeaderDataContext(FrameworkElement page, FrameworkElement element)
     {
-        var source = DependencyPropertyHelper.GetValueSource(element, DataContextProperty);
-        if (source.BaseValueSource is not (BaseValueSource.Default or BaseValueSource.Inherited))
+        var managedBinding =
+            (BindingExpressionBase?)element.GetValue(PageHeaderDataContextBindingProperty);
+
+        var currentBinding = BindingOperations.GetBindingExpressionBase(element, DataContextProperty);
+
+        if (managedBinding is not null && ReferenceEquals(currentBinding, managedBinding))
         {
-            return null;
+            if (managedBinding.ParentBindingBase is Binding binding
+                && ReferenceEquals(binding.Source, page))
+            {
+                return;
+            }
+        }
+        else
+        {
+            element.ClearValue(PageHeaderDataContextBindingProperty);
+            var source = DependencyPropertyHelper.GetValueSource(element, DataContextProperty);
+            if (source.BaseValueSource is not (BaseValueSource.Default or BaseValueSource.Inherited))
+            {
+                return;
+            }
         }
 
-        return BindingOperations.SetBinding(
+        var bridge = BindingOperations.SetBinding(
             element,
             DataContextProperty,
-            new Binding(nameof(FrameworkElement.DataContext)) { Source = page }
+            new Binding(nameof(FrameworkElement.DataContext)) { Source = page, Mode = BindingMode.OneWay }
         );
+
+        element.SetValue(PageHeaderDataContextBindingProperty, bridge);
     }
 
-    /// <summary>
-    /// Removes a bridge only if the page has not replaced that binding while it was presented.
-    /// </summary>
-    private static void ReleasePageHeaderDataContext(FrameworkElement element, BindingExpressionBase binding)
-    {
-        if (ReferenceEquals(BindingOperations.GetBindingExpressionBase(element, DataContextProperty), binding))
-        {
-            BindingOperations.ClearBinding(element, DataContextProperty);
-        }
-    }
 }

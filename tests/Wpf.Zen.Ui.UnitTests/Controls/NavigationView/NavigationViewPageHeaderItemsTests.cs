@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
@@ -23,6 +24,222 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 /// </summary>
 public class NavigationViewPageHeaderItemsTests
 {
+    /// <summary>
+    /// Verifies event counts and values for both contributions throughout context ownership changes.
+    /// </summary>
+    /// <param name="useItems">Whether to publish the element through the header collection.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DataContextChangedOnlyReportsEffectiveContextChanges(bool useItems)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var model = new HeaderModel("Initial");
+            var page = new Page { DataContext = model };
+            var header = new System.Windows.Controls.StackPanel();
+            var button = new System.Windows.Controls.Button();
+            header.Children.Add(button);
+            var rootChanges = new List<DependencyPropertyChangedEventArgs>();
+            var childChanges = new List<DependencyPropertyChangedEventArgs>();
+            header.DataContextChanged += (_, args) => rootChanges.Add(args);
+            button.DataContextChanged += (_, args) => childChanges.Add(args);
+            if (useItems)
+            {
+                NavigationControl.GetPageHeaderItems(page).Add(header);
+            }
+            else
+            {
+                NavigationControl.SetPageHeaderContent(page, header);
+            }
+
+            var navigation = CreateNavigationView(out _, out _);
+            var window = CreateWindow(navigation);
+            try
+            {
+                window.Show();
+                Assert.True(navigation.ReplaceContent(page));
+                DrainDispatcher();
+                AssertChange(null, model);
+
+                navigation.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
+                DrainDispatcher();
+                AssertNoChange();
+
+                Assert.True(navigation.ReplaceContent(new Page()));
+                DrainDispatcher();
+                AssertNoChange();
+                Assert.True(navigation.ReplaceContent(page));
+                DrainDispatcher();
+                AssertNoChange();
+
+                // Retained elements continue observing their page after leaving the host.
+                Assert.True(navigation.ReplaceContent(new Page()));
+                DrainDispatcher();
+                AssertNoChange();
+                var updated = new HeaderModel("Updated while detached");
+                page.DataContext = updated;
+                DrainDispatcher();
+                AssertChange(model, updated);
+
+                // A different page with the same model changes the source, not the effective value.
+                var nextPage = new Page { DataContext = updated };
+                if (useItems)
+                {
+                    NavigationControl.GetPageHeaderItems(page).Remove(header);
+                    NavigationControl.GetPageHeaderItems(nextPage).Add(header);
+                }
+                else
+                {
+                    NavigationControl.SetPageHeaderContent(page, null);
+                    NavigationControl.SetPageHeaderContent(nextPage, header);
+                }
+
+                Assert.True(navigation.ReplaceContent(nextPage));
+                DrainDispatcher();
+                AssertNoChange();
+
+                var nextModel = new HeaderModel("Next");
+                nextPage.DataContext = nextModel;
+                DrainDispatcher();
+                AssertChange(updated, nextModel);
+
+                var finalModel = new HeaderModel("Different page model");
+                var finalPage = new Page { DataContext = finalModel };
+                if (useItems)
+                {
+                    NavigationControl.GetPageHeaderItems(nextPage).Remove(header);
+                    NavigationControl.GetPageHeaderItems(finalPage).Add(header);
+                }
+                else
+                {
+                    NavigationControl.SetPageHeaderContent(nextPage, null);
+                    NavigationControl.SetPageHeaderContent(finalPage, header);
+                }
+
+                DrainDispatcher();
+                AssertNoChange();
+                Assert.True(navigation.ReplaceContent(finalPage));
+                DrainDispatcher();
+                AssertChange(nextModel, finalModel);
+                finalPage.DataContext = null;
+                DrainDispatcher();
+                AssertChange(finalModel, null);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+
+            // Check the header root and its inheriting child independently; event order is unspecified.
+            void AssertChange(object? oldValue, object? newValue)
+            {
+                var rootChange = Assert.Single(rootChanges);
+                var childChange = Assert.Single(childChanges);
+                Assert.Same(oldValue, rootChange.OldValue);
+                Assert.Same(newValue, rootChange.NewValue);
+                Assert.Same(oldValue, childChange.OldValue);
+                Assert.Same(newValue, childChange.NewValue);
+                rootChanges.Clear();
+                childChanges.Clear();
+            }
+
+            void AssertNoChange()
+            {
+                Assert.Empty(rootChanges);
+                Assert.Empty(childChanges);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Records transient contexts while collection changes remove command-bearing header items.
+    /// </summary>
+    /// <param name="change">The removal path exercised while the item belongs to the shell.</param>
+    [Theory]
+    [InlineData("Remove")]
+    [InlineData("Replace")]
+    [InlineData("Clear")]
+    [InlineData("Collection")]
+    [InlineData("Null")]
+    [InlineData("Navigate")]
+    public void RemovedItemsNeverInheritShellContext(string change)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var model = new HeaderModel("Page");
+            var page = new Page { DataContext = model };
+            var items = NavigationControl.GetPageHeaderItems(page);
+            var button = new System.Windows.Controls.Button();
+            button.SetBinding(System.Windows.Controls.Button.CommandProperty,
+                new Binding(nameof(HeaderModel.Command)));
+            items.Add(button);
+            var contexts = new List<object?>();
+            button.DataContextChanged += (_, args) => contexts.Add(args.NewValue);
+            var navigation = CreateNavigationView(out var grid, out _);
+            var window = CreateWindow(navigation);
+            try
+            {
+                window.Show();
+                Assert.True(navigation.ReplaceContent(page));
+                DrainDispatcher();
+                Assert.Same(model.Command, button.Command);
+                switch (change)
+                {
+                    case "Remove":
+                        items.Remove(button);
+                        break;
+                    case "Replace":
+                        items[0] = CreateBoundText();
+                        break;
+                    case "Clear":
+                        items.Clear();
+                        break;
+                    case "Collection":
+                        NavigationControl.SetPageHeaderItems(page,
+                            new PageHeaderItemCollection { CreateBoundText() });
+                        break;
+                    case "Null":
+                        NavigationControl.SetPageHeaderItems(page, null);
+                        break;
+                    case "Navigate":
+                        Assert.True(navigation.ReplaceContent(new Page()));
+                        break;
+                }
+
+                DrainDispatcher();
+                Assert.Null(VisualTreeHelper.GetParent(button));
+                Assert.DoesNotContain(grid.DataContext, contexts);
+                Assert.All(contexts, context => Assert.Same(model, context));
+                Assert.Same(model.Command, button.Command);
+
+                var updated = new HeaderModel("Detached");
+                page.DataContext = updated;
+                DrainDispatcher();
+                Assert.Same(updated.Command, button.Command);
+
+                // Reusing an item for another page must replace only the managed bridge.
+                var nextPage = new Page { DataContext = new HeaderModel("Next") };
+                var nextItems = NavigationControl.GetPageHeaderItems(nextPage);
+                nextItems.Add(button);
+                Assert.True(navigation.ReplaceContent(nextPage));
+                DrainDispatcher();
+                Assert.Same(nextPage.DataContext, button.DataContext);
+                Assert.Same(grid, VisualTreeHelper.GetParent(button));
+                nextPage.DataContext = null;
+                DrainDispatcher();
+                Assert.Null(button.DataContext);
+                Assert.Null(button.Command);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
     /// <summary>
     /// Verifies direct XAML collection syntax, shared Grid layout, and independent single content.
     /// </summary>
@@ -104,7 +321,7 @@ public class NavigationViewPageHeaderItemsTests
                 Assert.Null(singleSlot.Content);
                 Assert.Null(VisualTreeHelper.GetParent(button));
                 Assert.Equal(2, grid.Children.Count);
-                Assert.Same(DependencyProperty.UnsetValue, subtitle.ReadLocalValue(FrameworkElement.DataContextProperty));
+                Assert.Same(replacementModel, subtitle.DataContext);
 
                 var inactiveSingle = new TextBlock { Text = "Inactive replacement" };
                 NavigationControl.SetPageHeaderContent(page, inactiveSingle);
@@ -135,7 +352,7 @@ public class NavigationViewPageHeaderItemsTests
     /// Verifies live mutations, binding ownership, and collection replacement without single churn.
     /// </summary>
     [Fact]
-    public void ActiveCollectionMutationsPreserveExplicitContextsAndReleaseRemovedBridges()
+    public void ActiveCollectionMutationsPreserveExplicitContextsAndRetainRemovedBridges()
     {
         WpfTestThread.Run(() =>
         {
@@ -191,12 +408,15 @@ public class NavigationViewPageHeaderItemsTests
                 items.Remove(added);
                 DrainDispatcher();
                 Assert.Null(VisualTreeHelper.GetParent(added));
-                Assert.Same(DependencyProperty.UnsetValue, added.ReadLocalValue(FrameworkElement.DataContextProperty));
+                var retainedAddedBinding =
+                    BindingOperations.GetBindingExpression(added, FrameworkElement.DataContextProperty);
+                Assert.Same(addedBinding, retainedAddedBinding);
+                Assert.Same(model, added.DataContext);
                 items.Clear();
                 DrainDispatcher();
                 Assert.Equal(2, grid.Children.Count);
                 Assert.Same(explicitModel, explicitItem.DataContext);
-                Assert.Same(DependencyProperty.UnsetValue, replacementItem.ReadLocalValue(FrameworkElement.DataContextProperty));
+                Assert.Same(model, replacementItem.DataContext);
 
                 var nextItem = CreateBoundText();
                 var nextCollection = new PageHeaderItemCollection { nextItem };
@@ -220,14 +440,18 @@ public class NavigationViewPageHeaderItemsTests
                 Assert.Null(navigation.CurrentPageHeaderItems);
                 Assert.Equal(2, grid.Children.Count);
                 Assert.Same(single, navigation.CurrentPageHeaderContent);
-                Assert.Same(DependencyProperty.UnsetValue, nextItem.ReadLocalValue(FrameworkElement.DataContextProperty));
+                Assert.Same(page.DataContext, nextItem.DataContext);
 
                 var replacementSingle = new TextBlock();
                 NavigationControl.SetPageHeaderContent(page, replacementSingle);
                 DrainDispatcher();
                 Assert.Same(replacementSingle, navigation.CurrentPageHeaderContent);
                 Assert.Null(navigation.CurrentPageHeaderItems);
-                Assert.Same(DependencyProperty.UnsetValue, single.ReadLocalValue(FrameworkElement.DataContextProperty));
+                // The single contribution keeps its page context throughout host removal.
+                var retainedSingleBinding =
+                    BindingOperations.GetBindingExpression(single, FrameworkElement.DataContextProperty);
+                Assert.Same(singleBinding, retainedSingleBinding);
+                Assert.Same(page.DataContext, single.DataContext);
             }
             finally
             {

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
@@ -38,6 +39,7 @@ public class NavigationViewPageHeaderTests
 
             var window = new Window
             {
+                DataContext = new object(),
                 Content = navigationView,
                 Width = 800,
                 Height = 600,
@@ -54,6 +56,8 @@ public class NavigationViewPageHeaderTests
                 DrainDispatcher();
 
                 var page = Assert.IsType<HeaderPage>(navigationView.CurrentLocation?.Page);
+                var observedContexts = new List<object?>();
+                page.HeaderButton.DataContextChanged += (_, args) => observedContexts.Add(args.NewValue);
                 Assert.Same(
                     Wpf.Zen.Ui.Controls.NavigationView.GetPageHeaderContent(page),
                     shellSlot.Content
@@ -78,6 +82,7 @@ public class NavigationViewPageHeaderTests
                 Assert.Same(replacement.Command, page.HeaderButton.Command);
 
                 var replacementHeader = new TextBlock { Text = "Replacement" };
+                replacementHeader.DataContextChanged += (_, args) => observedContexts.Add(args.NewValue);
                 Wpf.Zen.Ui.Controls.NavigationView.SetPageHeaderContent(page, replacementHeader);
                 DrainDispatcher();
                 Assert.Same(replacementHeader, shellSlot.Content);
@@ -88,6 +93,98 @@ public class NavigationViewPageHeaderTests
                 DrainDispatcher();
                 Assert.Null(shellSlot.Content);
                 Assert.False(replacementHeader.IsLoaded);
+                Assert.DoesNotContain(window.DataContext, observedContexts);
+                Assert.All(observedContexts, context => Assert.Same(replacement, context));
+                Assert.Same(replacement, page.HeaderButton.DataContext);
+                Assert.Same(replacement, replacementHeader.DataContext);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Verifies retained bridges follow page changes, support reuse, and preserve explicit values.
+    /// </summary>
+    [Fact]
+    public void ReusedHeaderRebindsToItsPageAndPreservesApplicationContexts()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
+            };
+            CreateShellHeader(navigationView);
+            var window = new Window
+            {
+                DataContext = new object(),
+                Content = navigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            try
+            {
+                window.Show();
+                var first = new HeaderPage();
+                var second = new PlainPage { DataContext = new HeaderModel("Second") };
+                var header = Wpf.Zen.Ui.Controls.NavigationView.GetPageHeaderContent(first)!;
+                Assert.True(navigationView.ReplaceContent(first));
+                DrainDispatcher();
+                var originalBridge = BindingOperations.GetBindingExpression(header, FrameworkElement.DataContextProperty);
+
+                Assert.True(navigationView.ReplaceContent(second));
+                DrainDispatcher();
+                first.DataContext = new HeaderModel("Detached");
+                DrainDispatcher();
+                Assert.Same(first.DataContext, header.DataContext);
+
+                Assert.True(navigationView.ReplaceContent(first));
+                DrainDispatcher();
+                var reusedBridge = BindingOperations.GetBindingExpression(header, FrameworkElement.DataContextProperty);
+                Assert.Same(originalBridge, reusedBridge);
+
+                Wpf.Zen.Ui.Controls.NavigationView.SetPageHeaderContent(first, null);
+                DrainDispatcher();
+                Wpf.Zen.Ui.Controls.NavigationView.SetPageHeaderContent(second, header);
+                Assert.True(navigationView.ReplaceContent(second));
+                DrainDispatcher();
+                Assert.Same(second.DataContext, header.DataContext);
+
+                second.DataContext = null;
+                DrainDispatcher();
+                Assert.Null(header.DataContext);
+                Assert.Null(first.HeaderButton.Command);
+
+                var explicitModel = new HeaderModel("Explicit");
+                header.DataContext = explicitModel;
+                Assert.True(navigationView.ReplaceContent(first));
+                DrainDispatcher();
+                Assert.True(navigationView.ReplaceContent(second));
+                DrainDispatcher();
+                Assert.Same(explicitModel, header.DataContext);
+
+                var explicitSource = new Border { DataContext = explicitModel };
+                var explicitBinding = new Binding(nameof(FrameworkElement.DataContext))
+                {
+                    Source = explicitSource,
+                };
+                var expression = header.SetBinding(FrameworkElement.DataContextProperty, explicitBinding);
+                Assert.True(navigationView.ReplaceContent(first));
+                DrainDispatcher();
+                Assert.True(navigationView.ReplaceContent(second));
+                DrainDispatcher();
+                var retained = BindingOperations.GetBindingExpression(header, FrameworkElement.DataContextProperty);
+                Assert.Same(expression, retained);
             }
             finally
             {

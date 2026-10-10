@@ -5,7 +5,6 @@
 
 using System.Collections.Specialized;
 using System.Diagnostics;
-using System.Windows.Data;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -101,17 +100,22 @@ public partial class NavigationView
     /// Bind a panel's <see cref="PanelItems.SourceProperty"/> to this property. The original page
     /// collection is published, so additions, removals, replacements, and moves remain observable.
     /// Elements without an explicitly assigned DataContext follow the page's DataContext, including
-    /// later changes. An empty declared collection is published as an empty collection.
+    /// later changes, even while removed from the host. Reused elements follow their new page.
+    /// An empty declared collection is published as an empty collection.
     /// </remarks>
-    public PageHeaderItemCollection? CurrentPageHeaderItems =>
-        (PageHeaderItemCollection?)GetValue(CurrentPageHeaderItemsProperty);
+    public PageHeaderItemCollection? CurrentPageHeaderItems
+    {
+        get => (PageHeaderItemCollection?)GetValue(CurrentPageHeaderItemsProperty);
+    }
 
     /// <summary>
-    /// Tracks only data-context bindings owned by the navigation view for the active collection.
+    /// Stores the page supplying the active collection's data context.
     /// </summary>
-    private readonly Dictionary<FrameworkElement, BindingExpressionBase> _pageHeaderItemBindings = [];
-
     private FrameworkElement? _pageHeaderItemsPage;
+
+    /// <summary>
+    /// Stores the collection whose changes are observed while its page is active.
+    /// </summary>
     private PageHeaderItemCollection? _activePageHeaderItems;
 
     /// <summary>
@@ -132,7 +136,7 @@ public partial class NavigationView
     }
 
     /// <summary>
-    /// Releases the previous collection's bridge and publishes the committed page's collection.
+    /// Transfers the collection subscription and publishes the committed page's collection.
     /// </summary>
     private void UpdatePageHeaderItems(FrameworkElement? page)
     {
@@ -152,13 +156,6 @@ public partial class NavigationView
                 OnPageHeaderItemsCollectionChanged
             );
         }
-
-        foreach (var binding in _pageHeaderItemBindings)
-        {
-            ReleasePageHeaderDataContext(binding.Key, binding.Value);
-        }
-
-        _pageHeaderItemBindings.Clear();
 
         _pageHeaderItemsPage   = page;
         _activePageHeaderItems = items;
@@ -192,7 +189,7 @@ public partial class NavigationView
     }
 
     /// <summary>
-    /// Bridges new elements and releases removed ones without overwriting page-assigned contexts.
+    /// Associates active elements with their page while preserving explicitly assigned contexts.
     /// </summary>
     private void SynchronizePageHeaderItemContexts()
     {
@@ -201,25 +198,11 @@ public partial class NavigationView
             return;
         }
 
-        foreach (var element in _pageHeaderItemBindings.Keys.ToArray())
-        {
-            if (!_activePageHeaderItems.Contains(element))
-            {
-                ReleasePageHeaderDataContext(element, _pageHeaderItemBindings[element]);
-                _pageHeaderItemBindings.Remove(element);
-            }
-        }
-
+        // Collection notifications reach us before the host removes old children. Their
+        // bridges remain attached to the elements throughout removal and subsequent reuse.
         foreach (var element in _activePageHeaderItems)
         {
-            if (!_pageHeaderItemBindings.ContainsKey(element))
-            {
-                var binding = BindPageHeaderDataContext(_pageHeaderItemsPage, element);
-                if (binding is not null)
-                {
-                    _pageHeaderItemBindings.Add(element, binding);
-                }
-            }
+            EnsurePageHeaderDataContext(_pageHeaderItemsPage, element);
         }
     }
 }
