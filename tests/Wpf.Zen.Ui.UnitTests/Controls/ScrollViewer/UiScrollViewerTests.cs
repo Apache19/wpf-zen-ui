@@ -19,6 +19,107 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.ScrollViewer;
 
 public class UiScrollViewerTests
 {
+    [Theory]
+    [InlineData(typeof(System.Windows.Controls.ListBox), "ListBox/DefaultListBox", "DefaultListBoxStyle", false)]
+    [InlineData(typeof(System.Windows.Controls.TreeView), "TreeView/TreeView", "DefaultTreeViewStyle", false)]
+    [InlineData(typeof(NavigationViewList), "NavigationView/NavigationViewList", null, false)]
+    [InlineData(typeof(NavigationViewList), "NavigationView/NavigationViewList", null, true)]
+    [InlineData(typeof(System.Windows.Controls.TextBox), "TextBox/NativeTextBox", null, false)]
+    [InlineData(typeof(System.Windows.Controls.PasswordBox), "PasswordBox/NativePasswordBox", "DefaultPasswordBoxStyle", false)]
+    [InlineData(typeof(System.Windows.Controls.RichTextBox), "RichTextBox/RichTextBoxBaseStyle", "RichTextBoxBaseStyle", false)]
+    [InlineData(typeof(System.Windows.Controls.ContextMenu), "ContextMenu/ContextMenu", "UiContextMenuStyle", false)]
+    [InlineData(typeof(System.Windows.Controls.DataGrid), "DataGrid/DataGrid", "DefaultDataGridStyle", false)]
+    public void ControlTemplates_KeepAttachedScrollingBindingsActive(
+        Type ownerType,
+        string resourcePath,
+        string? styleKey,
+        bool useDynamicViewer
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
+            var resourceUri = new Uri(
+                $"pack://application:,,,/Wpf.Zen.Ui;component/Controls/{resourcePath}.xaml",
+                UriKind.Absolute
+            );
+            var resources = new ResourceDictionary { Source = resourceUri };
+            var owner = Assert.IsAssignableFrom<Control>(Activator.CreateInstance(ownerType));
+            object resourceKey = styleKey == null ? ownerType : styleKey;
+            owner.Style = Assert.IsType<Style>(resources[resourceKey]);
+            if (owner is NavigationViewList navigationList)
+            {
+                navigationList.IsDynamicScrollViewerEnabled = useDynamicViewer;
+            }
+
+            UiScrollViewer.SetScrollSpillMode(owner, ScrollSpillMode.Native);
+            ScrollViewerAssist.SetHideButtons(owner, true);
+            UiScrollViewer.SetIsSmoothScrollingEnabled(owner, false);
+            UiScrollViewer.SetSmoothScrollDuration(owner, TimeSpan.FromMilliseconds(180));
+            UiScrollViewer.SetIsHorizontalMouseWheelEnabled(owner, true);
+            ScrollViewerAssist.SetOverlayMode(owner, ScrollViewerOverlayMode.Traditional);
+
+            Assert.True(owner.ApplyTemplate());
+            var viewer = Assert.IsAssignableFrom<UiScrollViewer>(FindVisualDescendant<UiScrollViewer>(owner));
+            viewer.ApplyTemplate();
+            Assert.Equal(ScrollViewerOverlayMode.Traditional, ScrollViewerAssist.GetOverlayMode(viewer));
+
+            DependencyProperty[] forwardedProperties =
+            [
+                ScrollViewerAssist.HideButtonsProperty,
+                UiScrollViewer.IsSmoothScrollingEnabledProperty,
+                UiScrollViewer.SmoothScrollDurationProperty,
+                UiScrollViewer.IsHorizontalMouseWheelEnabledProperty,
+            ];
+            foreach (var property in forwardedProperties)
+            {
+                var expression = System.Windows.Data.BindingOperations.GetBindingExpression(viewer, property);
+                Assert.NotNull(expression);
+                Assert.Equal(System.Windows.Data.BindingStatus.Active, expression.Status);
+                Assert.Same(property, expression.ParentBinding.Path.PathParameters[0]);
+                Assert.Equal(owner.GetValue(property), viewer.GetValue(property));
+            }
+
+            // Editors and popup menus explicitly contain wheel input. Other hosts forward it.
+            bool hasExplicitSpillMode = owner is System.Windows.Controls.TextBox
+                or System.Windows.Controls.PasswordBox
+                or System.Windows.Controls.RichTextBox
+                or System.Windows.Controls.ContextMenu;
+            var expectedMode = hasExplicitSpillMode ? ScrollSpillMode.Disabled : ScrollSpillMode.Native;
+            Assert.Equal(expectedMode, viewer.ScrollSpillMode);
+            var spillExpression = System.Windows.Data.BindingOperations.GetBindingExpression(
+                viewer,
+                UiScrollViewer.ScrollSpillModeProperty
+            );
+            if (spillExpression != null)
+            {
+                Assert.Equal(System.Windows.Data.BindingStatus.Active, spillExpression.Status);
+            }
+            UiScrollViewer.SetScrollSpillMode(owner, ScrollSpillMode.Enabled);
+            expectedMode = hasExplicitSpillMode ? ScrollSpillMode.Disabled : ScrollSpillMode.Enabled;
+            Assert.Equal(expectedMode, viewer.ScrollSpillMode);
+
+            ScrollViewerAssist.SetHideButtons(owner, false);
+            UiScrollViewer.SetIsSmoothScrollingEnabled(owner, true);
+            UiScrollViewer.SetSmoothScrollDuration(owner, TimeSpan.FromMilliseconds(300));
+            UiScrollViewer.SetIsHorizontalMouseWheelEnabled(owner, false);
+            foreach (var property in forwardedProperties)
+            {
+                Assert.Equal(owner.GetValue(property), viewer.GetValue(property));
+            }
+
+            // Editor templates retain Traditional mode; the other templates follow their owner.
+            bool hasExplicitOverlayMode = owner is System.Windows.Controls.TextBox
+                or System.Windows.Controls.PasswordBox
+                or System.Windows.Controls.RichTextBox;
+            ScrollViewerAssist.SetOverlayMode(owner, ScrollViewerOverlayMode.Overlay);
+            var expectedOverlay = hasExplicitOverlayMode
+                ? ScrollViewerOverlayMode.Traditional
+                : ScrollViewerOverlayMode.Overlay;
+            Assert.Equal(expectedOverlay, ScrollViewerAssist.GetOverlayMode(viewer));
+        });
+    }
+
     [Fact]
     public void ScrollSpillModeEnabled_DoesNotHandleMouseWheelAtScrollBoundary()
     {

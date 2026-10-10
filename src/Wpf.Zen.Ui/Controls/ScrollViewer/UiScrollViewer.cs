@@ -95,7 +95,8 @@ public partial class UiScrollViewer : ScrollViewer
     /// </summary>
     /// <remarks>
     /// The property is attached so a control can configure the scrolling host hidden inside its
-    /// template. Templates must forward the value explicitly; it deliberately does not inherit
+    /// template. A template-owned viewer forwards the owner's value unless it has its own value.
+    /// It deliberately does not inherit
     /// through the element tree because nested scrolling surfaces can require different policies.
     /// </remarks>
     public static readonly DependencyProperty ScrollSpillModeProperty
@@ -198,6 +199,7 @@ public partial class UiScrollViewer : ScrollViewer
         // after all static field initializers so its contents never depend on partial-file ordering.
         TemplatedParentAssistProperties =
         [
+            ScrollSpillModeProperty,
             ScrollViewerAssist.HideButtonsProperty,
             ScrollViewerAssist.OverlayModeProperty,
             IsSmoothScrollingEnabledProperty,
@@ -288,6 +290,8 @@ public partial class UiScrollViewer : ScrollViewer
             // library-specific settings. A value supplied directly by the viewer or its style
             // intentionally wins. Property inheritance is not used because it would continue into
             // the owner's content and unintentionally configure independently nested viewers.
+            // Pass the dependency property itself so attached-property paths do not depend on
+            // resolving a XAML namespace prefix when a shared style is applied at runtime.
             BindingOperations.SetBinding(
                 this,
                 property,

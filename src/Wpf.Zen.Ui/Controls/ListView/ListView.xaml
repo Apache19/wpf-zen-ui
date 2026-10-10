@@ -29,7 +29,6 @@
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                 Focusable="False"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                ScrollSpillMode="{TemplateBinding controls:UiScrollViewer.ScrollSpillMode}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </controls:UiScrollViewer>
@@ -164,7 +163,6 @@
         <Setter Property="CanContentScroll" Value="{Binding (ScrollViewer.CanContentScroll), RelativeSource={RelativeSource TemplatedParent}}" />
         <Setter Property="HorizontalScrollBarVisibility" Value="{Binding (ScrollViewer.HorizontalScrollBarVisibility), RelativeSource={RelativeSource TemplatedParent}}" />
         <Setter Property="VerticalScrollBarVisibility" Value="{Binding (ScrollViewer.VerticalScrollBarVisibility), RelativeSource={RelativeSource TemplatedParent}}" />
-        <Setter Property="ScrollSpillMode" Value="{Binding (controls:UiScrollViewer.ScrollSpillMode), RelativeSource={RelativeSource TemplatedParent}}" />
         <Setter Property="Template" Value="{StaticResource GridViewScrollViewerTemplate}" />
     </Style>
 

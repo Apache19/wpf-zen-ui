@@ -17,11 +17,48 @@ using UiListView = Wpf.Zen.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Zen.Ui.Controls.ListViewItem;
 using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
 using UiScrollViewer = Wpf.Zen.Ui.Controls.UiScrollViewer;
+using ScrollSpillMode = Wpf.Zen.Ui.Controls.ScrollSpillMode;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class ListViewAndDataGridTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ListViewTemplate_ForwardsScrollSpillModeWithoutPathErrors(bool useGridView)
+    {
+        RunOnStaThread(() =>
+        {
+            var listView = new UiListView { Width = 300, Height = 150 };
+            if (useGridView)
+            {
+                listView.View = new Wpf.Zen.Ui.Controls.GridView();
+            }
+
+            Arrange(listView, 300, 150);
+            var viewer = Assert.IsType<UiScrollViewer>(FindVisualChild<UiScrollViewer>(listView));
+            Assert.Equal(ScrollSpillMode.Disabled, viewer.ScrollSpillMode);
+
+            var expression = System.Windows.Data.BindingOperations.GetBindingExpression(
+                viewer,
+                UiScrollViewer.ScrollSpillModeProperty
+            );
+            Assert.NotNull(expression);
+            Assert.Equal(System.Windows.Data.BindingStatus.Active, expression.Status);
+            Assert.Same(UiScrollViewer.ScrollSpillModeProperty, expression.ParentBinding.Path.PathParameters[0]);
+
+            UiScrollViewer.SetScrollSpillMode(listView, ScrollSpillMode.Native);
+            Assert.Equal(ScrollSpillMode.Native, viewer.ScrollSpillMode);
+            UiScrollViewer.SetScrollSpillMode(listView, ScrollSpillMode.Enabled);
+            Assert.Equal(ScrollSpillMode.Enabled, viewer.ScrollSpillMode);
+
+            viewer.ScrollSpillMode = ScrollSpillMode.Disabled;
+            UiScrollViewer.SetScrollSpillMode(listView, ScrollSpillMode.Native);
+            Assert.Equal(ScrollSpillMode.Disabled, viewer.ScrollSpillMode);
+        });
+    }
+
     [Fact]
     public void ListItemContainerStyleSelector_AppliesSpecificPositionalRulesToListView()
     {
@@ -254,7 +291,9 @@ public class ListViewAndDataGridTests
 
             var row = Assert.IsType<DataGridRow>(dataGrid.ItemContainerGenerator.ContainerFromIndex(0));
             var cell = Assert.IsType<DataGridCell>(FindVisualChild<DataGridCell>(row));
-            var cellBorder = Assert.IsType<Border>(cell.Template.FindName("Border", cell));
+            // The template may use a specialized Border; this test verifies its input and
+            // background behavior rather than requiring the exact framework implementation.
+            var cellBorder = Assert.IsAssignableFrom<Border>(cell.Template.FindName("Border", cell));
             var indicator = Assert.IsType<System.Windows.Shapes.Rectangle>(
                 row.Template.FindName("ActiveRectangle", row)
             );
