@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:tray="http://schemas.thezendev.com/wpf/2027/tray"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}"
     Width="1200"
@@ -26,9 +25,13 @@
     <ui:FluentWindow.InputBindings>
         <KeyBinding
             Key="F"
-            Command="{Binding ElementName=AutoSuggestBox, Path=FocusCommand}"
+            Command="{x:Static ApplicationCommands.Find}"
             Modifiers="Control" />
     </ui:FluentWindow.InputBindings>
+
+    <ui:FluentWindow.CommandBindings>
+        <CommandBinding Command="{x:Static ApplicationCommands.Find}" Executed="FindCommand_OnExecuted" />
+    </ui:FluentWindow.CommandBindings>
 
     <ui:ContentDialogHost x:Name="RootContentDialog">
         <Grid>

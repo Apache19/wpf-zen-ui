@@ -48,6 +48,18 @@ public partial class MainWindow : IWindow
 
     private bool _isPaneOpenedOrClosedFromCode;
 
+    /// <summary>
+    /// Focuses the navigation search input when the window's Find command is executed.
+    /// </summary>
+    /// <remarks>
+    /// AutoSuggestBox forwards focus to the text input supplied by its control template.
+    /// </remarks>
+    private void FindCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        _ = AutoSuggestBox.Focus();
+        e.Handled = true;
+    }
+
     private void SetupTrayMenuEvents()
     {
         foreach (var menuItem in ViewModel.TrayMenuItems)
