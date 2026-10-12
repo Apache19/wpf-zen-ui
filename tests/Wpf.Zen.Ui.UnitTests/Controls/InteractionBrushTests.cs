@@ -14,8 +14,8 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.Theming;
-using Calendar = System.Windows.Controls.Calendar;
 using Button = System.Windows.Controls.Button;
+using Calendar = System.Windows.Controls.Calendar;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 

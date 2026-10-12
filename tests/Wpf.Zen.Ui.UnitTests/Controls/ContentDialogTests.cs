@@ -20,6 +20,7 @@ using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 using Dialog = Wpf.Zen.Ui.Controls.ContentDialog;
 using NativeButton = System.Windows.Controls.Button;
+#pragma warning disable xUnit1051
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
@@ -30,13 +31,7 @@ public partial class ContentDialogTests
     {
         var dialog = scope.CreateDialog();
         dialog.CornerRadius = new CornerRadius(4D, 8D, 12D, 16D);
-        dialog.Footer = new ContentDialogActionBar
-        {
-            Items =
-            {
-                new NativeButton { Content = "Close" },
-            },
-        };
+        dialog.Footer = new ContentDialogActionBar { Items = { new NativeButton { Content = "Close" }, }, };
 
         Task<object?> task = scope.Host.ShowAsync(dialog);
         Drain();
@@ -68,10 +63,10 @@ public partial class ContentDialogTests
     public void CornerRadius_IsAValidatedLocalXamlProperty() => Run(_ =>
     {
         var dialog = Assert.IsType<Dialog>(XamlReader.Parse("""
-            <ui:ContentDialog
-                xmlns:ui="http://schemas.thezendev.com/wpf/2027"
-                CornerRadius="4,8,12,16" />
-            """));
+                                                            <ui:ContentDialog
+                                                                xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+                                                                CornerRadius="4,8,12,16" />
+                                                            """));
 
         Assert.Equal(new CornerRadius(4D, 8D, 12D, 16D), dialog.CornerRadius);
         Assert.Equal(
@@ -210,10 +205,7 @@ public partial class ContentDialogTests
     {
         var dialog = scope.CreateDialog();
         var footer = new NativeButton();
-        var model = new
-        {
-            Label = "Save"
-        };
+        var model = new { Label = "Save" };
         dialog.DataContext = model;
         footer.SetBinding(ContentControl.ContentProperty, new Binding("Label"));
         dialog.Footer = footer;
@@ -232,9 +224,7 @@ public partial class ContentDialogTests
     {
         var dialog = new LogicalChildrenDialogProbe
         {
-            Header = new object(),
-            Content = new object(),
-            Footer = new object(),
+            Header = new object(), Content = new object(), Footer = new object(),
         };
         var host = new LogicalChildrenHostProbe { Content = new object() };
 
@@ -264,7 +254,8 @@ public partial class ContentDialogTests
         var presenter = FindDialogTemplateElement<ContentPresenter>(dialog, element => element.ContentSource == slot);
         string Text() => Assert.IsType<System.Windows.Controls.TextBlock>(VisualTreeHelper.GetChild(presenter, 0)).Text;
         Assert.Equal("Items: 012", Text());
-        var template = (DataTemplate)XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><TextBlock Text='Selected'/></DataTemplate>");
+        var template = (DataTemplate)XamlReader.Parse(
+            "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><TextBlock Text='Selected'/></DataTemplate>");
         var selector = new TitleSelector(template);
         if (slot == "Header")
             dialog.HeaderTemplateSelector = selector;
@@ -449,7 +440,8 @@ public partial class ContentDialogTests
     public void Host_DisablesOnlyItsContentAndPreservesBindings() => Run(scope =>
     {
         var model = new EnableModel();
-        scope.Background.SetBinding(UIElement.IsEnabledProperty, new Binding(nameof(EnableModel.Enabled)) { Source = model });
+        scope.Background.SetBinding(UIElement.IsEnabledProperty,
+            new Binding(nameof(EnableModel.Enabled)) { Source = model });
         var dialog = scope.CreateDialog();
         var task = scope.Host.ShowAsync(dialog);
         Drain();
@@ -493,7 +485,10 @@ public partial class ContentDialogTests
     {
         var background = new NativeButton { Content = "_Go", IsDefault = true };
         scope.Host.Content = background;
-        var foreground = new NativeButton { Content = "_Go", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Selected" };
+        var foreground = new NativeButton
+        {
+            Content = "_Go", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Selected"
+        };
         var dialog = scope.CreateDialog();
         dialog.Footer = foreground;
         var backgroundClicks = 0;
@@ -519,7 +514,14 @@ public partial class ContentDialogTests
         Drain();
         KeyEventHandler consume = (_, e) => e.Handled = true;
         body.KeyDown += consume;
-        void Escape() => body.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(body), 0, Key.Escape) { RoutedEvent = Keyboard.KeyDownEvent });
+
+        void Escape() =>
+            body.RaiseEvent(
+                new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(body), 0, Key.Escape)
+                {
+                    RoutedEvent = Keyboard.KeyDownEvent
+                });
+
         Escape();
         Assert.False(task.IsCompleted);
         body.KeyDown -= consume;
@@ -543,7 +545,8 @@ public partial class ContentDialogTests
         Invoke(footer);
         Assert.Equal(1, calls);
         Assert.False(task.IsCompleted);
-        scope.Background.CommandBindings.Add(new CommandBinding(command, (_, _) => calls++, (_, e) => e.CanExecute = true));
+        scope.Background.CommandBindings.Add(new CommandBinding(command, (_, _) => calls++,
+            (_, e) => e.CanExecute = true));
         footer.CommandTarget = scope.Background;
         Assert.False(command.CanExecute(null, scope.Background));
         dialog.Close();
@@ -890,9 +893,7 @@ public partial class ContentDialogTests
         var popupEditor = new System.Windows.Controls.TextBox();
         var popup = new System.Windows.Controls.Primitives.Popup
         {
-            PlacementTarget = independent,
-            Child = popupEditor,
-            StaysOpen = true,
+            PlacementTarget = independent, Child = popupEditor, StaysOpen = true,
         };
         scope.Host.Content = background;
         ((Panel)scope.Window.Content).Children.Add(independent);
@@ -942,7 +943,10 @@ public partial class ContentDialogTests
         scope.Host.Content = background;
         var anchor = new NativeButton { Content = "Popup" };
         var editor = new System.Windows.Controls.TextBox { Width = 120 };
-        var popup = new System.Windows.Controls.Primitives.Popup { PlacementTarget = anchor, Child = editor, StaysOpen = true };
+        var popup = new System.Windows.Controls.Primitives.Popup
+        {
+            PlacementTarget = anchor, Child = editor, StaysOpen = true
+        };
         var body = new StackPanel();
         body.Children.Add(anchor);
         body.Children.Add(popup);
@@ -964,18 +968,23 @@ public partial class ContentDialogTests
     public void Enter_UsesNativeDefaultAndMultilineEditorConsumesIt() => Run(async scope =>
     {
         var editor = new System.Windows.Controls.TextBox { AcceptsReturn = true };
-        var button = new NativeButton { Content = "Save", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Saved" };
+        var button = new NativeButton
+        {
+            Content = "Save", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Saved"
+        };
         var dialog = scope.CreateDialog();
         dialog.Content = editor;
         dialog.Footer = button;
         var task = scope.Host.ShowAsync(dialog);
         Drain();
+
         void Enter() => InputManager.Current.ProcessInput(new KeyEventArgs(
             Keyboard.PrimaryDevice,
             PresentationSource.FromVisual(editor), Environment.TickCount, Key.Enter)
         {
             RoutedEvent = Keyboard.KeyDownEvent
         });
+
         Enter();
         Assert.False(task.IsCompleted);
         editor.AcceptsReturn = false;
@@ -1000,10 +1009,7 @@ public partial class ContentDialogTests
             Keyboard.PrimaryDevice,
             PresentationSource.FromVisual(editor),
             Environment.TickCount,
-            Key.A)
-        {
-            RoutedEvent = Keyboard.KeyDownEvent,
-        };
+            Key.A) { RoutedEvent = Keyboard.KeyDownEvent, };
         // HwndSource needs this result to be false before it permits WM_CHAR translation.
         Assert.False(InputManager.Current.ProcessInput(key));
         Assert.False(key.Handled);
@@ -1074,6 +1080,7 @@ public partial class ContentDialogTests
             });
             Assert.True(dialog.IsKeyboardFocusWithin);
         }
+
         dialog.Close();
         Pump(task);
     });
@@ -1084,7 +1091,8 @@ public partial class ContentDialogTests
         Task<object?>? task = null;
         WpfTestThread.Run(() =>
         {
-            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
             var scope = new Scope();
             var dialog = scope.CreateDialog();
             task = scope.Host.ShowAsync(dialog);
@@ -1101,7 +1109,8 @@ public partial class ContentDialogTests
     public void ClosedException_StillReleasesHostAndDialog() => Run(scope =>
     {
         var dialog = scope.CreateDialog();
-        EventHandler<ContentDialogClosedEventArgs> fail = (_, _) => throw new InvalidOperationException("Closed failed");
+        EventHandler<ContentDialogClosedEventArgs>
+            fail = (_, _) => throw new InvalidOperationException("Closed failed");
         dialog.Closed += fail;
         var task = scope.Host.ShowAsync(dialog);
         dialog.Close("Saved");
@@ -1118,13 +1127,13 @@ public partial class ContentDialogTests
     public void MissingDialogPresenter_ReleasesInvisibleSession() => Run(async scope =>
     {
         scope.Host.Template = (ControlTemplate)XamlReader.Parse("""
-            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
-                TargetType="{x:Type ui:ContentDialogHost}">
-                <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
-            </ControlTemplate>
-            """);
+                                                                <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                                    xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                                                                    TargetType="{x:Type ui:ContentDialogHost}">
+                                                                    <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+                                                                </ControlTemplate>
+                                                                """);
         var task = scope.Host.ShowAsync(scope.CreateDialog());
         Pump(task);
         Assert.Null(await task);
@@ -1136,16 +1145,16 @@ public partial class ContentDialogTests
     public void TemplateWithoutTransitionPresenter_PreservesLifecycleAndTransitionsImmediately() => Run(async scope =>
     {
         scope.Host.Template = (ControlTemplate)XamlReader.Parse("""
-            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
-                TargetType="{x:Type ui:ContentDialogHost}">
-                <Grid>
-                    <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
-                    <ContentPresenter Content="{TemplateBinding CurrentDialog}" />
-                </Grid>
-            </ControlTemplate>
-            """);
+                                                                <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                                    xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                                                                    TargetType="{x:Type ui:ContentDialogHost}">
+                                                                    <Grid>
+                                                                        <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+                                                                        <ContentPresenter Content="{TemplateBinding CurrentDialog}" />
+                                                                    </Grid>
+                                                                </ControlTemplate>
+                                                                """);
         scope.Host.IsAnimationEnabled = true;
         var dialog = scope.CreateDialog();
         var opened = false;
@@ -1212,6 +1221,7 @@ public partial class ContentDialogTests
         {
             SynchronizationContext.SetSynchronizationContext(previous);
         }
+
         Drain();
         dialog.Close("Done");
         Pump(task);
@@ -1222,9 +1232,11 @@ public partial class ContentDialogTests
     private sealed class EnableModel : INotifyPropertyChanged
     {
         private bool _enabled = true;
+
         public bool Enabled
         {
-            get => _enabled; set
+            get => _enabled;
+            set
             {
                 _enabled = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Enabled)));
@@ -1243,14 +1255,16 @@ public partial class ContentDialogTests
 
     private static void Run(Action<Scope> action) => WpfTestThread.Run(() =>
     {
-        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+        SynchronizationContext.SetSynchronizationContext(
+            new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         using var scope = new Scope();
         action(scope);
     });
 
     private static void Run(Func<Scope, Task> action) => WpfTestThread.Run(async () =>
     {
-        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+        SynchronizationContext.SetSynchronizationContext(
+            new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         using var scope = new Scope();
         await action(scope);
     });
@@ -1258,7 +1272,8 @@ public partial class ContentDialogTests
     private static void Drain()
     {
         var frame = new DispatcherFrame();
-        Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
+        Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,
+            new Action(() => frame.Continue = false));
         Dispatcher.PushFrame(frame);
     }
 
@@ -1280,25 +1295,26 @@ public partial class ContentDialogTests
         string openDuration,
         string closeDuration) =>
         (ControlTemplate)XamlReader.Parse($$"""
-            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
-                TargetType="{x:Type ui:ContentDialogHost}">
-                <Grid>
-                    <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
-                    <ui:ContentDialogTransitionPresenter
-                        x:Name="PART_DialogPresenter"
-                        CloseDuration="{{closeDuration}}"
-                        Dialog="{TemplateBinding CurrentDialog}"
-                        OpenDuration="{{openDuration}}" />
-                </Grid>
-            </ControlTemplate>
-            """);
+                                            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                                                TargetType="{x:Type ui:ContentDialogHost}">
+                                                <Grid>
+                                                    <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+                                                    <ui:ContentDialogTransitionPresenter
+                                                        x:Name="PART_DialogPresenter"
+                                                        CloseDuration="{{closeDuration}}"
+                                                        Dialog="{TemplateBinding CurrentDialog}"
+                                                        OpenDuration="{{openDuration}}" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                            """);
 
     private sealed class Scope : IDisposable
     {
         public ContentDialogHost Host { get; } = new() { IsAnimationEnabled = false };
         public Border Background { get; } = new();
+
         public Window Window
         {
             get;
@@ -1328,6 +1344,7 @@ public partial class ContentDialogTests
         }
 
         public Dialog CreateDialog() => new() { Header = "Dialog", Content = "Content" };
+
         public void Dispose()
         {
             Window.Close();
@@ -1339,12 +1356,16 @@ public partial class ContentDialogTests
     {
         public object? Item
         {
-            get; private set;
+            get;
+            private set;
         }
+
         public DependencyObject? Container
         {
-            get; private set;
+            get;
+            private set;
         }
+
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             Item = item;
@@ -1358,7 +1379,9 @@ public partial class ContentDialogTests
     /// <see cref="Dialog" /> theme style. Application subclasses should not need an implicit style that forwards to a
     /// theme resource through <c>StaticResource</c>.
     /// </summary>
-    private sealed class DerivedDialog : Dialog { }
+    private sealed class DerivedDialog : Dialog
+    {
+    }
 
     private sealed class LogicalChildrenDialogProbe : Dialog
     {

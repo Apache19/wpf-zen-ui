@@ -72,7 +72,8 @@ public class InputMethodObservationTests
             Assert.Equal(transition is null ? Array.Empty<string>() : new[] { transition },
                 adapter.Transitions);
             Assert.Equal(reads + (result == SoftKeyboardInputModeCommandResult.Unavailable
-                ? conversion is null ? 2 : 1 : 0), backend.StateReads);
+                ? conversion is null ? 2 : 1
+                : 0), backend.StateReads);
             scope.Clock.Advance(30);
             Assert.Null(scope.Keyboard.InputMethodError);
             if (transition is null)
@@ -211,6 +212,7 @@ public class InputMethodObservationTests
                 await scope.DrainAsync();
                 Assert.Equal("A", scope.Keyboard.InputModeButton?.Content);
             }
+
             Assert.Null(scope.Keyboard.InputMethodError);
         });
     }
@@ -243,10 +245,10 @@ public class InputMethodObservationTests
             if (boundary == "Window")
             {
                 typeof(SoftKeyboard).GetMethod("OnWindowDeactivated",
-                    BindingFlags.Instance | BindingFlags.NonPublic)!
+                        BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(scope.Keyboard, new object?[] { scope.Window, EventArgs.Empty });
                 typeof(SoftKeyboard).GetMethod("OnWindowActivated",
-                    BindingFlags.Instance | BindingFlags.NonPublic)!
+                        BindingFlags.Instance | BindingFlags.NonPublic)!
                     .Invoke(scope.Keyboard, new object?[] { scope.Window, EventArgs.Empty });
             }
             else if (boundary == "Visibility")
@@ -330,6 +332,7 @@ public class InputMethodObservationTests
         var clock = new ManualInputObservationScheduler();
         using var coordinator = new InputMethodObservationCoordinator(clock, () => { });
         var reads = 0;
+
         SoftKeyboardInputObservation Read(bool useImm)
         {
             reads++;
@@ -399,7 +402,8 @@ public class InputMethodObservationTests
         coordinator.CompleteObservation(useImm =>
         {
             calls.Add(useImm);
-            return useImm ? new SoftKeyboardInputObservation(true, 1, true, 0)
+            return useImm
+                ? new SoftKeyboardInputObservation(true, 1, true, 0)
                 : new SoftKeyboardInputObservation(true, null, true, null);
         }, CanInterpretPinyin, () => true);
         Assert.Equal(new[] { false, true }, calls);
@@ -494,10 +498,10 @@ public class InputMethodObservationTests
 
             sample = new SoftKeyboardInputObservation(true, 1, true, 0);
             typeof(SoftKeyboard).GetMethod("OnWindowDeactivated",
-                BindingFlags.Instance | BindingFlags.NonPublic)!
+                    BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(scope.Keyboard, new object?[] { scope.Window, EventArgs.Empty });
             typeof(SoftKeyboard).GetMethod("OnWindowActivated",
-                BindingFlags.Instance | BindingFlags.NonPublic)!
+                    BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(scope.Keyboard, new object?[] { scope.Window, EventArgs.Empty });
             await scope.DrainAsync();
             Assert.Equal("A", ModeCap(scope.Keyboard).Content);
@@ -971,6 +975,7 @@ public class InputMethodObservationTests
             var rebuilds = 0;
             var layoutDescriptor = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(
                 SoftKeyboard.CurrentLayoutProperty, typeof(SoftKeyboard));
+
             void LayoutChanged(object? sender, EventArgs args)
             {
                 rebuilds++;
@@ -1237,18 +1242,21 @@ public class InputMethodObservationTests
             destination.Add(Profile);
             active = Profile;
         }
+
         /// <inheritdoc />
         public bool TryActivate(SoftKeyboardInputMethod inputMethod)
         {
             Profile = inputMethod;
             return true;
         }
+
         /// <inheritdoc />
         public SoftKeyboardInputModeButton? GetInputModeButton(SoftKeyboardInputMethod inputMethod)
         {
             Reads++;
             return Button;
         }
+
         /// <inheritdoc />
         public SoftKeyboardInputModeCommandResult TryInvokeInputModeButton(
             SoftKeyboardInputMethod inputMethod, Rect screenBounds)
@@ -1263,6 +1271,7 @@ public class InputMethodObservationTests
     {
         internal int Invocations { get; private set; }
         internal SoftKeyboardInputModeContribution? Contribution { get; set; }
+
         /// <inheritdoc />
         public SoftKeyboardInputModeContribution GetContribution(SoftKeyboardInputMethod inputMethod,
             SoftKeyboardInputObservation observation)
@@ -1271,6 +1280,7 @@ public class InputMethodObservationTests
                 new SoftKeyboardInputModeButton("extension", "X", "Extension command"),
                 new SoftKeyboardInputModeTransition("toggle"));
         }
+
         /// <inheritdoc />
         public bool TrySwitchMode(SoftKeyboardInputMethod inputMethod,
             SoftKeyboardInputObservation observation, SoftKeyboardInputModeTransition transition)

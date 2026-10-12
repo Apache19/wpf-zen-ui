@@ -5,8 +5,8 @@
 
 extern alias UiNative;
 
-using RECT = UiNative::Windows.Win32.Foundation.RECT;
 using Wpf.Zen.Ui.Controls;
+using RECT = UiNative::Windows.Win32.Foundation.RECT;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.FluentWindow;
 

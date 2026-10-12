@@ -5,7 +5,6 @@
 
 using System.Globalization;
 using System.Linq;
-using TextBlock = System.Windows.Controls.TextBlock;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -15,6 +14,7 @@ using System.Windows.Interop;
 using Wpf.Zen.Ui.Controls;
 using NativeComboBoxItem = System.Windows.Controls.ComboBoxItem;
 using NativeTextBox = System.Windows.Controls.TextBox;
+using TextBlock = System.Windows.Controls.TextBlock;
 using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;

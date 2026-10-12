@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using Wpf.Zen.Ui.Controls;
 using ListBox = System.Windows.Controls.ListBox;
 using ListBoxItem = System.Windows.Controls.ListBoxItem;
+#pragma warning disable xUnit2012
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
@@ -155,8 +156,12 @@ public class StackPanelTests
             Assert.NotNull(last);
             Rect slot = LayoutInformation.GetLayoutSlot((FrameworkElement)last);
             Assert.Equal(panel.ActualHeight, slot.Bottom, 3);
-            Assert.True(panel.Children.Cast<FrameworkElement>().Any(child =>
-                LayoutInformation.GetLayoutSlot(child).Top <= 0));
+
+            Assert.True(panel.Children.Cast<FrameworkElement>().Any(
+                child => LayoutInformation.GetLayoutSlot(child).Top <= 0
+                )
+            );
+
             Assert.InRange(panel.Children.Count, 1, 20);
         });
     }
@@ -239,7 +244,8 @@ public class StackPanelTests
         {
             foreach (string name in new[] { "UiStackPanel", "UiVirtualizingStackPanel" })
             {
-                var panel = (Panel)XamlReader.Parse($"<ui:{name} xmlns:ui=\"http://schemas.thezendev.com/wpf/2027\" Spacing=\"8\" SpacingBrush=\"Red\" Orientation=\"Horizontal\" />");
+                var panel = (Panel)XamlReader.Parse(
+                    $"<ui:{name} xmlns:ui=\"http://schemas.thezendev.com/wpf/2027\" Spacing=\"8\" SpacingBrush=\"Red\" Orientation=\"Horizontal\" />");
                 Assert.Equal(8D, panel.GetValue(UiStackPanel.SpacingProperty));
             }
         });
@@ -360,9 +366,7 @@ public class StackPanelTests
         {
             var panel = new UiVirtualizingStackPanel
             {
-                CanHorizontallyScroll = true,
-                CanVerticallyScroll = true,
-                Spacing = 10,
+                CanHorizontallyScroll = true, CanVerticallyScroll = true, Spacing = 10,
             };
             for (int index = 0; index < 4; index++)
             {
@@ -438,7 +442,8 @@ public class StackPanelTests
         factory.SetValue(UiVirtualizingStackPanel.OrientationProperty, orientation);
         var style = new Style(typeof(ListBoxItem));
         style.Setters.Add(new Setter(orientation == Orientation.Vertical
-            ? FrameworkElement.HeightProperty : FrameworkElement.WidthProperty, new Binding(nameof(Item.Length))));
+            ? FrameworkElement.HeightProperty
+            : FrameworkElement.WidthProperty, new Binding(nameof(Item.Length))));
         var list = new ListBox
         {
             ItemsPanel = new ItemsPanelTemplate(factory),
@@ -481,8 +486,8 @@ public class StackPanelTests
         for (int index = 1; index < slots.Length; index++)
         {
             Assert.Equal(spacing, Along(slots[index].Location, orientation)
-                - Along(slots[index - 1].Location, orientation)
-                - Along(slots[index - 1].Size, orientation), 3);
+                                  - Along(slots[index - 1].Location, orientation)
+                                  - Along(slots[index - 1].Size, orientation), 3);
         }
     }
 

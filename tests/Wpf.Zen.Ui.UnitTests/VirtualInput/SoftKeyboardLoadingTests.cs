@@ -346,5 +346,4 @@ public class SoftKeyboardLoadingTests
             return false;
         }
     }
-
 }

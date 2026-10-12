@@ -6,18 +6,18 @@
 extern alias UiNative;
 
 using System.ComponentModel;
-using System.Linq;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
-using UiMessageBox = Wpf.Zen.Ui.Controls.MessageBox;
-using UiButton = Wpf.Zen.Ui.Controls.Button;
-using Native = UiNative::Windows.Win32.PInvoke;
 using HWND = UiNative::Windows.Win32.Foundation.HWND;
+using Native = UiNative::Windows.Win32.PInvoke;
+using UiButton = Wpf.Zen.Ui.Controls.Button;
+using UiMessageBox = Wpf.Zen.Ui.Controls.MessageBox;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 

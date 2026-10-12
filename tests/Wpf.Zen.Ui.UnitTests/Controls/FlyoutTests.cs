@@ -17,6 +17,8 @@ using Button = System.Windows.Controls.Button;
 using TextBlock = System.Windows.Controls.TextBlock;
 using TextBox = System.Windows.Controls.TextBox;
 using ToggleButton = System.Windows.Controls.Primitives.ToggleButton;
+#pragma warning disable CA1060
+#pragma warning disable SYSLIB1054
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 

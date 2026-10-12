@@ -25,8 +25,10 @@ public class UiScrollViewerTests
     [InlineData(typeof(NavigationViewList), "NavigationView/NavigationViewList", null, false)]
     [InlineData(typeof(NavigationViewList), "NavigationView/NavigationViewList", null, true)]
     [InlineData(typeof(System.Windows.Controls.TextBox), "TextBox/NativeTextBox", null, false)]
-    [InlineData(typeof(System.Windows.Controls.PasswordBox), "PasswordBox/NativePasswordBox", "DefaultPasswordBoxStyle", false)]
-    [InlineData(typeof(System.Windows.Controls.RichTextBox), "RichTextBox/RichTextBoxBaseStyle", "RichTextBoxBaseStyle", false)]
+    [InlineData(typeof(System.Windows.Controls.PasswordBox), "PasswordBox/NativePasswordBox", "DefaultPasswordBoxStyle",
+        false)]
+    [InlineData(typeof(System.Windows.Controls.RichTextBox), "RichTextBox/RichTextBoxBaseStyle", "RichTextBoxBaseStyle",
+        false)]
     [InlineData(typeof(System.Windows.Controls.ContextMenu), "ContextMenu/ContextMenu", "UiContextMenuStyle", false)]
     [InlineData(typeof(System.Windows.Controls.DataGrid), "DataGrid/DataGrid", "DefaultDataGridStyle", false)]
     public void ControlTemplates_KeepAttachedScrollingBindingsActive(
@@ -95,6 +97,7 @@ public class UiScrollViewerTests
             {
                 Assert.Equal(System.Windows.Data.BindingStatus.Active, spillExpression.Status);
             }
+
             UiScrollViewer.SetScrollSpillMode(owner, ScrollSpillMode.Enabled);
             expectedMode = hasExplicitSpillMode ? ScrollSpillMode.Disabled : ScrollSpillMode.Enabled;
             Assert.Equal(expectedMode, viewer.ScrollSpillMode);
@@ -123,8 +126,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ScrollSpillModeEnabled_DoesNotHandleMouseWheelAtScrollBoundary()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 WithScrollableViewer(
                     ScrollSpillMode.Enabled,
@@ -144,8 +146,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ScrollSpillModeDisabled_HandlesMouseWheelAtScrollBoundary()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 WithScrollableViewer(
                     ScrollSpillMode.Disabled,
@@ -165,8 +166,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ScrollSpillModeNative_UsesNativeMouseWheelHandling()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 WithScrollableViewer(
                     ScrollSpillMode.Native,
@@ -186,8 +186,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ScrollSpillMode_DefaultsToEnabled()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 var scrollViewer = new TestUiScrollViewer();
 
@@ -199,8 +198,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ScrollSpillMode_CanBeSetOnTemplateOwner()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 var templateOwner = new System.Windows.Controls.ListBox();
 
@@ -220,8 +218,7 @@ public class UiScrollViewerTests
     [Fact]
     public void DefaultListBoxTemplate_ForwardsAttachedScrollSpillMode()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
                 var resources = new ResourceDictionary
@@ -253,8 +250,7 @@ public class UiScrollViewerTests
     [Fact]
     public void HideButtons_SetOnScrollViewer_CollapsesButtonsAndReclaimsTheirSpace()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 var scrollViewer = new UiScrollViewer
                 {
@@ -301,8 +297,7 @@ public class UiScrollViewerTests
     [Fact]
     public void DefaultListBoxTemplate_ForwardsAssistPropertiesOnlyToItsScrollViewer()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
                 var resources = new ResourceDictionary
@@ -398,8 +393,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ContentStopsOverflowing_ClearsRetainedVerticalOffset()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 var content = new Border { Width = 100d, Height = 400d };
                 var scrollViewer = new TestUiScrollViewer
@@ -451,8 +445,7 @@ public class UiScrollViewerTests
     [Fact]
     public void ContentShrinksPastOffset_CommitsCoercedVerticalOffset()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 var content = new Border { Width = 100d, Height = 500d };
                 var scrollViewer = new TestUiScrollViewer
@@ -502,8 +495,7 @@ public class UiScrollViewerTests
     [Fact]
     public void AutomationPeer_AppliesHorizontalOverflowThresholdSemantics()
     {
-        RunOnStaThread(
-            () =>
+        RunOnStaThread(() =>
             {
                 var scrollViewer = new UiScrollViewer
                 {
