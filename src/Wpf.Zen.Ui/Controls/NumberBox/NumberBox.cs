@@ -512,6 +512,14 @@ public class NumberBox : TextBox
             new FrameworkPropertyMetadata(false)
         );
 
+        InputScopeProperty.OverrideMetadata(
+            typeof(NumberBox),
+            new FrameworkPropertyMetadata(new InputScope()
+            {
+                Names = { new InputScopeName(InputScopeNameValue.Number) }
+            })
+        );
+
         IsReadOnlyProperty.OverrideMetadata(
             typeof(NumberBox),
             new FrameworkPropertyMetadata(
