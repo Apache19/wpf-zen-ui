@@ -74,7 +74,7 @@ public sealed partial class PasswordBox : TextBox
             typeof(PasswordBox),
             new PropertyMetadata(
                 '\u25cf',
-                static (d, e) =>
+                static (d, _) =>
                 {
                     if (d is PasswordBox passwordBox)
                     {
@@ -215,8 +215,16 @@ public sealed partial class PasswordBox : TextBox
                 false,
                 FrameworkPropertyMetadataOptions.Inherits,
                 null,
-                static (d, v) => false
+                static (_, _) => false
             )
+        );
+
+        InputScopeProperty.OverrideMetadata(
+            typeof(PasswordBox),
+            new FrameworkPropertyMetadata(new InputScope
+            {
+                Names = { new InputScopeName(InputScopeNameValue.Password) }
+            })
         );
 
         // Disable undo functionality
@@ -225,7 +233,7 @@ public sealed partial class PasswordBox : TextBox
             new FrameworkPropertyMetadata(
                 false,
                 null,
-                static (d, v) => false
+                static (_, _) => false
             )
         );
     }
@@ -239,26 +247,41 @@ public sealed partial class PasswordBox : TextBox
 
         // Disable copy and cut commands via CommandBindings so ContextMenu MenuItem
         // CommandTarget (PlacementTarget) queries will hit these handlers.
-        CommandBindings.Add(new CommandBinding(ApplicationCommands.Copy, HandleExecutedCommand, HandleCanExecuteCommand));
-        CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut,  HandleExecutedCommand, HandleCanExecuteCommand));
+        CommandBindings.Add(
+            new CommandBinding(
+                ApplicationCommands.Copy,
+                HandleExecutedCommand,
+                HandleCanExecuteCommand
+            )
+        );
 
-        Loaded += (s, e) =>
+        CommandBindings.Add(
+            new CommandBinding(
+                ApplicationCommands.Cut,
+                HandleExecutedCommand,
+                HandleCanExecuteCommand
+            )
+        );
+
+        Loaded += (_, _) =>
         {
             // Disable drag/copy operations
             DataObject.AddCopyingHandler(this, HandleDataObjectCopying);
         };
 
-        Unloaded += (s, e) => { DataObject.RemoveCopyingHandler(this, HandleDataObjectCopying); };
+        Unloaded += (_, _) => { DataObject.RemoveCopyingHandler(this, HandleDataObjectCopying); };
     }
 
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
         DetachRevealButton();
-        base.OnApplyTemplate();
-        _contentHost = GetTemplateChild("PART_ContentHost") as ScrollViewer;
 
+        base.OnApplyTemplate();
+
+        _contentHost = GetTemplateChild("PART_ContentHost") as ScrollViewer;
         _revealButton = GetTemplateChild(RevealButtonPartName) as ButtonBase;
+
         if (_revealButton is not null)
         {
             _revealButton.Click += OnRevealButtonClick;
@@ -272,6 +295,7 @@ public sealed partial class PasswordBox : TextBox
         // template is assigned because WPF may defer applying the replacement until layout.
         DetachRevealButton();
         _contentHost = null;
+
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
@@ -357,7 +381,8 @@ public sealed partial class PasswordBox : TextBox
         var displayText = IsPasswordRevealed && CanRevealPassword
             ? newPassword
             : new string(PasswordChar, newPassword.Length);
-        var caretIndex  = Math.Min(CaretIndex, displayText.Length);
+
+        var caretIndex = Math.Min(CaretIndex, displayText.Length);
 
         UpdateWithLock(() =>
         {
@@ -438,7 +463,7 @@ public sealed partial class PasswordBox : TextBox
         }
 
         _revealButton.Click -= OnRevealButtonClick;
-        _revealButton = null;
+        _revealButton       =  null;
     }
 
     /// <summary>
@@ -597,7 +622,7 @@ public sealed partial class PasswordBox : TextBox
     private bool IsDescendantOfContentHost(DependencyObject? element)
     {
         return _contentHost is not null &&
-               element.FindAncestor<ScrollViewer>() == _contentHost;
+            element.FindAncestor<ScrollViewer>() == _contentHost;
     }
 
     private static int Clamp(int value, int minValue, int maxValue)
