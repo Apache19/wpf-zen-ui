@@ -75,12 +75,12 @@ public class NavigationViewButtonTests
                 window.Show();
                 DrainDispatcher();
 
-                Assert.True(navigationView.Navigate(typeof(BackStackPageOne)));
+                Assert.True(navigationView.NavigateAndCommit(typeof(BackStackPageOne)));
                 Assert.False(navigationView.IsBackEnabled);
                 Assert.Equal(Visibility.Collapsed, titleBarBackButton.Visibility);
                 Assert.Equal(TitleBarContentState.Collapsed, titleBar.LeftContentState);
 
-                Assert.True(navigationView.Navigate(typeof(BackStackPageTwo)));
+                Assert.True(navigationView.NavigateAndCommit(typeof(BackStackPageTwo)));
                 Assert.True(navigationView.IsBackEnabled);
                 Assert.True(titleBarBackButton.IsEnabled);
                 Assert.Equal(Visibility.Visible, paneBackButton.Visibility);

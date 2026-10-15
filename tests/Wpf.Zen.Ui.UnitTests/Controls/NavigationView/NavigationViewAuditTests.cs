@@ -51,7 +51,7 @@ public class NavigationViewAuditTests
                 RaiseQuery(secondBox, "First");
                 Assert.IsType<FirstPage>(navigationView.CurrentLocation?.Page);
 
-                Assert.True(navigationView.Navigate(typeof(SecondPage)));
+                Assert.True(navigationView.NavigateAndCommit(typeof(SecondPage)));
                 Assert.True(navigationView.CanGoBack);
                 window.Content = null;
                 DrainDispatcher();
@@ -85,13 +85,13 @@ public class NavigationViewAuditTests
                 MenuItemsSource = new[] { header },
             };
 
-            Assert.False(navigationView.Navigate("settings"));
+            Assert.False(navigationView.NavigateAndCommit("settings"));
             Assert.Null(navigationView.CurrentLocation);
         });
     }
 
     [Fact]
-    public void NestedNavigationFromNavigatingIsRejectedWithoutCreatingGhostHistory()
+    public void NestedNavigationFromNavigatingIsQueuedWithCommittedHistory()
     {
         WpfTestThread.Run(() =>
         {
@@ -104,20 +104,24 @@ public class NavigationViewAuditTests
                     new NavigationItem("Redirect", typeof(RedirectPage)),
                 },
             };
-            Assert.True(navigationView.Navigate(typeof(FirstPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(FirstPage)));
 
-            bool nestedResult = true;
+            bool nestedResult = false;
             navigationView.Navigating += (_, args) =>
             {
-                if (args.Page is SecondPage)
+                if (args.Page is SecondPage && !nestedResult)
                 {
                     nestedResult = navigationView.Navigate(typeof(RedirectPage));
                 }
             };
 
-            Assert.True(navigationView.Navigate(typeof(SecondPage)));
-            Assert.False(nestedResult);
-            Assert.True(navigationView.GoBack());
+            Assert.True(navigationView.NavigateAndCommit(typeof(SecondPage)));
+            Assert.True(nestedResult);
+            DrainDispatcher();
+            Assert.IsType<RedirectPage>(navigationView.CurrentLocation?.Page);
+            Assert.True(navigationView.GoBackAndCommit());
+            Assert.IsType<SecondPage>(navigationView.CurrentLocation?.Page);
+            Assert.True(navigationView.GoBackAndCommit());
             Assert.IsType<FirstPage>(navigationView.CurrentLocation?.Page);
             Assert.False(navigationView.CanGoBack);
         });
@@ -136,18 +140,18 @@ public class NavigationViewAuditTests
                     new NavigationItem("Second", typeof(SecondPage)),
                 },
             };
-            Assert.True(navigationView.Navigate(typeof(FirstPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(FirstPage)));
 
             navigationView.BackRequested += (_, args) =>
             {
                 Assert.Same(navigationView, args.Source);
                 Assert.Same(navigationView, args.OriginalSource);
             };
-            Assert.True(navigationView.Navigate(typeof(SecondPage)));
-            Assert.True(navigationView.GoBack());
+            Assert.True(navigationView.NavigateAndCommit(typeof(SecondPage)));
+            Assert.True(navigationView.GoBackAndCommit());
 
             navigationView.Navigated += (_, _) => throw new AuditException();
-            Assert.Throws<AuditException>(() => navigationView.Navigate(typeof(SecondPage)));
+            Assert.Throws<AuditException>(() => navigationView.NavigateAndCommit(typeof(SecondPage)));
         });
     }
 
@@ -183,7 +187,7 @@ public class NavigationViewAuditTests
             {
                 window.Show();
                 DrainDispatcher();
-                Assert.True(navigationView.Navigate(typeof(FirstPage)));
+                Assert.True(navigationView.NavigateAndCommit(typeof(FirstPage)));
 
                 _ = CreatePeer(window);
                 var navigationPeer = CreatePeer(navigationView);
@@ -242,7 +246,7 @@ public class NavigationViewAuditTests
     [Fact]
     public void ScopeWaitsForOutstandingEntryBeforeDisposingServices()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             var services = new ServiceCollection();
             _ = services.AddNavigation();
@@ -255,7 +259,7 @@ public class NavigationViewAuditTests
             navigationView.Navigated += (_, args) => page = Assert.IsType<DeferredEntryPage>(args.Page);
             INavigationScope scope = factory.Attach(navigationView);
 
-            Assert.True(scope.Navigation.Navigate(typeof(DeferredEntryPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(DeferredEntryPage)).Succeeded);
             DrainDispatcher();
             Assert.NotNull(page);
 
@@ -264,7 +268,7 @@ public class NavigationViewAuditTests
             Assert.False(page.Dependency.IsDisposed);
 
             page.CompleteEntry();
-            scope.DisposeAsync().GetAwaiter().GetResult();
+            await scope.DisposeAsync().WaitAsync(TimeSpan.FromSeconds(5));
             Assert.True(page.Dependency.IsDisposed);
         });
     }
@@ -281,7 +285,7 @@ public class NavigationViewAuditTests
                 new SinglePageProvider(page)
             );
 
-            Assert.True(scope.Navigation.Navigate(typeof(CountingPage)).Succeeded);
+            Assert.True(scope.Navigation.Navigate(typeof(CountingPage)).WasAccepted);
             scope.Dispose();
             int enteredAtDispose = page.EnteredCount;
             int exitedAtDispose = page.ExitedCount;
@@ -313,6 +317,7 @@ public class NavigationViewAuditTests
                 QueryText = text,
             }
         );
+        DrainDispatcher();
     }
 
     private static AutomationPeer CreatePeer(UIElement element) =>
@@ -384,6 +389,9 @@ public class NavigationViewAuditTests
 
     private sealed class SinglePageProvider(CountingPage page) : INavigationViewPageProvider
     {
-        public object GetPage(Type pageType) => page;
+        public NavigationPageLease GetPage(Type pageType)
+        {
+            return NavigationPageLease.Borrowed(page);
+        }
     }
 }

@@ -37,13 +37,20 @@ internal sealed class NavigationEntry
 
     internal NavigationViewItem? Container { get; set; }
 
-    /// <summary>Gets or sets the source-tree parent, including branches without generated containers.</summary>
+    /// <summary>
+    /// Gets or sets the source-tree parent, including branches without generated containers.
+    /// </summary>
     internal NavigationEntry? Parent { get; set; }
 
-    /// <summary>Gets a value indicating whether this entry is active independently of container realization.</summary>
+    /// <summary>
+    /// Gets a value indicating whether this entry is active independently of container realization.
+    /// </summary>
     internal bool IsActive { get; private set; }
 
-    /// <summary>Gets or sets a value indicating whether an active descendant exists, even without a container.</summary>
+    /// <summary>
+    /// Gets or sets a value indicating whether an active descendant exists, even without a
+    /// container.
+    /// </summary>
     internal bool IsDescendantActive { get; set; }
 
     internal bool IsMenuElement { get; set; }
@@ -138,19 +145,34 @@ internal sealed class NavigationEntry
         }
     }
 
-    internal void Activate(NavigationView navigationView) => SetActiveState(navigationView, true);
+    internal void Activate(NavigationView navigationView)
+    {
+        SetActiveState(navigationView, true);
+    }
 
-    internal void Deactivate(NavigationView navigationView) => SetActiveState(navigationView, false);
+    internal void Deactivate(NavigationView navigationView)
+    {
+        SetActiveState(navigationView, false);
+    }
 
-    /// <summary>Commits activation before projecting it into containers and their extension hooks.</summary>
+    /// <summary>
+    /// Commits activation before projecting it into containers and their extension hooks.
+    /// </summary>
     /// <remarks>
     /// Both navigation and public container activation use this entry as the state owner. Container
     /// release only clears the visual projection, so unrealized items retain their semantic state.
     /// </remarks>
     private void SetActiveState(NavigationView navigationView, bool isActive)
     {
+        object? session = navigationView.NavigationSessionIdentity;
+
         IsActive = isActive;
+
         navigationView.SynchronizeActiveNavigationBranches();
-        Container?.ApplyActiveState(navigationView, isActive);
+
+        if (IsActive == isActive && ReferenceEquals(session, navigationView.NavigationSessionIdentity))
+        {
+            Container?.ApplyActiveState(navigationView, isActive);
+        }
     }
 }

@@ -123,15 +123,14 @@ public partial class NavigationView
     /// Keeps the exposed contribution current when the active page replaces its element.
     /// </summary>
     private static void OnPageHeaderContentChanged(
-        DependencyObject page,
-        DependencyPropertyChangedEventArgs eventArgs)
+        DependencyObject page, DependencyPropertyChangedEventArgs eventArgs)
     {
         if (page is FrameworkElement element)
         {
             var owner = GetPageHeaderOwner(element);
             if (owner is not null)
             {
-                owner.UpdatePageHeaderContent(element);
+                owner.UpdatePageHeader(element);
             }
         }
     }
@@ -141,19 +140,61 @@ public partial class NavigationView
     /// </summary>
     private void UpdatePageHeader(FrameworkElement? page)
     {
-        if (!ReferenceEquals(_pageHeaderPage, page))
-        {
-            if (_pageHeaderPage is not null && ReferenceEquals(GetPageHeaderOwner(_pageHeaderPage), this))
-            {
-                _pageHeaderPage.ClearValue(PageHeaderOwnerProperty);
-            }
+        var revision = ++_pageHeaderRevision;
+        var session  = _navigationSession;
 
-            _pageHeaderPage = page;
-            page?.SetValue(PageHeaderOwnerProperty, new WeakReference<NavigationView>(this));
+        NavigationWorkRegistry.Lease? work = null;
+
+        if (session is { IsStopping: false })
+        {
+            work = session.Work.Acquire();
         }
 
-        UpdatePageHeaderContent(page);
-        UpdatePageHeaderItems(page);
+        using var publication = work;
+
+        var failures = new NavigationFailures();
+
+        if (!ReferenceEquals(_pageHeaderPage, page))
+        {
+            var previous     = _pageHeaderPage;
+            var ownsPrevious = previous is not null && ReferenceEquals(GetPageHeaderOwner(previous), this);
+
+            _pageHeaderPage = page;
+
+            if (ownsPrevious)
+            {
+                failures.Try(() => previous!.ClearValue(PageHeaderOwnerProperty));
+            }
+
+            if (IsPageHeaderPublicationCurrent(page, revision))
+            {
+                var owner = new WeakReference<NavigationView>(this);
+                failures.Try(() => page?.SetValue(PageHeaderOwnerProperty, owner));
+            }
+        }
+
+        if (IsPageHeaderPublicationCurrent(page, revision))
+        {
+            failures.Try(() => UpdatePageHeaderContent(page, revision));
+        }
+
+        if (IsPageHeaderPublicationCurrent(page, revision))
+        {
+            failures.Try(() => UpdatePageHeaderItems(page, revision));
+        }
+
+        failures.ThrowIfAny();
+    }
+
+    private long _pageHeaderRevision;
+
+    /// <summary>
+    /// Page header properties and DataContext bridging may reenter navigation; validate publication
+    /// versions after each external boundary.
+    /// </summary>
+    private bool IsPageHeaderPublicationCurrent(FrameworkElement? page, long revision)
+    {
+        return revision == _pageHeaderRevision && ReferenceEquals(page, _pageHeaderPage);
     }
 
     /// <summary>
@@ -174,23 +215,30 @@ public partial class NavigationView
     /// <summary>
     /// Publishes a page's single element and bridges its inherited data context to the page.
     /// </summary>
-    private void UpdatePageHeaderContent(FrameworkElement? page)
+    private void UpdatePageHeaderContent(FrameworkElement? page, long revision)
     {
-        var content = page is null ? null : GetPageHeaderContent(page);
+        var content  = page is null ? null : GetPageHeaderContent(page);
+        var failures = new NavigationFailures();
+
         if (page is not null && content is not null)
         {
-            EnsurePageHeaderDataContext(page, content);
+            failures.Try(() => EnsurePageHeaderDataContext(page, content));
         }
 
         // A presenter can defer removing the old visual. Keep its local bridge throughout
         // that interval, and prepare the new bridge before publishing the replacement.
         // WPF holds DependencyObject binding sources weakly, so the bridge can follow the
         // element's lifetime without keeping the owning page alive.
-        SetValue(CurrentPageHeaderContentPropertyKey, content);
+        if (IsPageHeaderPublicationCurrent(page, revision))
+        {
+            failures.Try(() => SetValue(CurrentPageHeaderContentPropertyKey, content));
+        }
 
         Debug.WriteLine(
             $"[NavigationView.Header] PAGE contribution published; pageType={page?.GetType().Name ?? "null"}, hasContent={content is not null}."
         );
+
+        failures.ThrowIfAny();
     }
 
     /// <summary>
@@ -214,6 +262,7 @@ public partial class NavigationView
         else
         {
             element.ClearValue(PageHeaderDataContextBindingProperty);
+
             var source = DependencyPropertyHelper.GetValueSource(element, DataContextProperty);
             if (source.BaseValueSource is not (BaseValueSource.Default or BaseValueSource.Inherited))
             {
@@ -224,10 +273,13 @@ public partial class NavigationView
         var bridge = BindingOperations.SetBinding(
             element,
             DataContextProperty,
-            new Binding(nameof(FrameworkElement.DataContext)) { Source = page, Mode = BindingMode.OneWay }
+            new Binding(nameof(FrameworkElement.DataContext))
+            {
+                Source = page,
+                Mode   = BindingMode.OneWay
+            }
         );
 
         element.SetValue(PageHeaderDataContextBindingProperty, bridge);
     }
-
 }

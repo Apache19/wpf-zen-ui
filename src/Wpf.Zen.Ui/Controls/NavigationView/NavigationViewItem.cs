@@ -27,7 +27,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// navigation row, while <see cref="ItemsControl.Items"/> is the authoritative child collection.
 /// This distinction is important: focus, mouse capture and pressed state belong only to the bounded
 /// <c>PART_HeaderButton</c>. The Chevron rendered by built-in templates is a non-interactive state
-/// indicator; inline descendants and detached submenu content must never become part of the button's
+/// indicator; inline descendants and detached submenu content must never become part of the
+/// button's
 /// input or focus-scrolling bounds.
 /// </para>
 /// <para>
@@ -36,7 +37,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// deliberately use a different projection: <c>PART_SubMenuContextMenu</c> receives a recursively
 /// generated tree of native <see cref="MenuItem"/> controls. The projected controls bind back to
 /// the source navigation containers but never reuse them as visuals, allowing WPF's menu system to
-/// own cascading Popup windows, capture, focus, keyboard navigation and dismissal from root to leaf.
+/// own cascading Popup windows, capture, focus, keyboard navigation and dismissal from root to
+/// leaf.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = "PART_SubMenuContextMenu", Type = typeof(ContextMenu))]
@@ -48,7 +50,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: Icon
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="Icon"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
         typeof(object),
@@ -71,7 +75,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: IconMargin
 
-    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IconMargin"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
         nameof(IconMargin),
         typeof(Thickness),
@@ -103,7 +109,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new PropertyMetadata(default(Thickness))
         );
 
-    /// <summary>Identifies the <see cref="Indentation"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="Indentation"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IndentationProperty = IndentationPropertyKey.DependencyProperty;
 
     /// <summary>
@@ -117,7 +125,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: IndentationSize
 
-    /// <summary>Identifies the <see cref="IndentationSize"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IndentationSize"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IndentationSizeProperty =
         DependencyProperty.Register(
             nameof(IndentationSize),
@@ -144,7 +154,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: IsActive
 
-    /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsActive"/> dependency property.
+    /// </summary>
     internal static readonly DependencyPropertyKey IsActivePropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(IsActive),
@@ -153,7 +165,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new PropertyMetadata(false, OnIsActiveChanged)
         );
 
-    /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsActive"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsActiveProperty =
         IsActivePropertyKey.DependencyProperty;
 
@@ -177,7 +191,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the <see cref="IsDescendantActive"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsDescendantActive"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsDescendantActiveProperty =
         IsDescendantActivePropertyKey.DependencyProperty;
 
@@ -210,7 +226,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the <see cref="IsBranchActive"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsBranchActive"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsBranchActiveProperty =
         IsBranchActivePropertyKey.DependencyProperty;
 
@@ -247,7 +265,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </summary>
     /// <remarks>
     /// The public property is read-only. An internal inheritable context receives the owning view's
-    /// value and copies it through the private key, so callers cannot override presentation state on
+    /// value and copies it through the private key, so callers cannot override presentation state
+    /// on
     /// individual items and every item avoids per-instance event subscriptions.
     /// </remarks>
     public static readonly DependencyProperty IsPaneOpenProperty =
@@ -285,8 +304,12 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new FrameworkPropertyMetadata(NavigationViewPaneDisplayMode.Left)
         );
 
-    /// <summary>Identifies the <see cref="PaneDisplayMode"/> dependency property.</summary>
-    /// <remarks>See <see cref="IsPaneOpenProperty"/> for the inherited context contract.</remarks>
+    /// <summary>
+    /// Identifies the <see cref="PaneDisplayMode"/> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// See <see cref="IsPaneOpenProperty"/> for the inherited context contract.
+    /// </remarks>
     public static readonly DependencyProperty PaneDisplayModeProperty =
         PaneDisplayModePropertyKey.DependencyProperty;
 
@@ -320,7 +343,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new FrameworkPropertyMetadata(false)
         );
 
-    /// <summary>Identifies the <see cref="IsSubItem"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsSubItem"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsSubItemProperty = IsSubItemPropertyKey.DependencyProperty;
 
     /// <summary>
@@ -334,7 +359,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: IsExpanded
 
-    /// <summary>Identifies the <see cref="IsExpanded"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsExpanded"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsExpandedProperty =
         DependencyProperty.Register(
             nameof(IsExpanded),
@@ -363,7 +390,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: IsSubmenuOpen
 
-    /// <summary>Identifies the <see cref="IsSubmenuOpen"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsSubmenuOpen"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsSubmenuOpenProperty =
         DependencyProperty.Register(
             nameof(IsSubmenuOpen),
@@ -383,7 +412,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <remarks>
     /// This property represents only transient detached-menu state. The expanded Left pane uses
     /// <see cref="IsExpanded"/> for its inline hierarchy instead. Separating the two states keeps
-    /// an inline branch from opening a ContextMenu merely because <see cref="NavigationView.PaneDisplayMode"/>
+    /// an inline branch from opening a ContextMenu merely because <see
+    /// cref="NavigationView.PaneDisplayMode"/>
     /// selected another control template.
     /// </remarks>
     [Bindable(true)]
@@ -398,7 +428,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: TargetPageTag
 
-    /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="TargetPageTag"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty TargetPageTagProperty =
         DependencyProperty.Register(
             nameof(TargetPageTag),
@@ -407,7 +439,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
         );
 
-    /// <summary>Gets or sets the navigation tag used by directly supplied container items.</summary>
+    /// <summary>
+    /// Gets or sets the navigation tag used by directly supplied container items.
+    /// </summary>
     public string TargetPageTag
     {
         get => (string)GetValue(TargetPageTagProperty);
@@ -418,7 +452,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: TargetPageType
 
-    /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="TargetPageType"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty TargetPageTypeProperty =
         DependencyProperty.Register(
             nameof(TargetPageType),
@@ -427,7 +463,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
         );
 
-    /// <summary>Gets or sets the page type used by directly supplied container items.</summary>
+    /// <summary>
+    /// Gets or sets the page type used by directly supplied container items.
+    /// </summary>
     public Type? TargetPageType
     {
         get => (Type?)GetValue(TargetPageTypeProperty);
@@ -438,7 +476,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: InfoBadge
 
-    /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="InfoBadge"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty InfoBadgeProperty =
         DependencyProperty.Register(
             nameof(InfoBadge),
@@ -457,7 +497,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: SearchText
 
-    /// <summary>Identifies the <see cref="SearchText"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="SearchText"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty SearchTextProperty =
         DependencyProperty.Register(
             nameof(SearchText),
@@ -490,7 +532,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #region DP: NavigationCacheMode
 
-    /// <summary>Identifies the <see cref="NavigationCacheMode"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="NavigationCacheMode"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty NavigationCacheModeProperty =
         DependencyProperty.Register(
             nameof(NavigationCacheMode),
@@ -502,7 +546,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
             )
         );
 
-    /// <summary>Gets or sets the page caching policy used by this direct container item.</summary>
+    /// <summary>
+    /// Gets or sets the page caching policy used by this direct container item.
+    /// </summary>
     public NavigationCacheMode NavigationCacheMode
     {
         get => (NavigationCacheMode)GetValue(NavigationCacheModeProperty);
@@ -511,7 +557,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #endregion
 
-    /// <summary>Gets the realized parent container in the visual menu hierarchy.</summary>
+    /// <summary>
+    /// Gets the realized parent container in the visual menu hierarchy.
+    /// </summary>
     public NavigationViewItem? NavigationViewItemParent => _parentItem;
 
     /// <summary>
@@ -537,7 +585,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </summary>
     internal bool UsesNavigationDataIcon { get; set; }
 
-    /// <summary>Gets the stable identifier used when this container is supplied directly.</summary>
+    /// <summary>
+    /// Gets the stable identifier used when this container is supplied directly.
+    /// </summary>
     public string Id { get; }
 
     internal string SearchableContent { get; private set; } = string.Empty;
@@ -578,7 +628,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         }
     }
 
-    /// <summary>Gets a value indicating whether the effective child menu is open.</summary>
+    /// <summary>
+    /// Gets a value indicating whether the effective child menu is open.
+    /// </summary>
     internal bool IsChildMenuOpen => UsesInlineExpansion ? IsExpanded : IsSubmenuOpen;
 
     static NavigationViewItem()
@@ -603,11 +655,14 @@ public partial class NavigationViewItem : HeaderedItemsControl
         );
     }
 
-    /// <summary>Gets the realized header input surface for automation and focus coordination.</summary>
+    /// <summary>
+    /// Gets the realized header input surface for automation and focus coordination.
+    /// </summary>
     internal ButtonBase? HeaderButton => _headerButton;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with an empty header
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with an empty
+    /// header
     /// and child collection.
     /// </summary>
     public NavigationViewItem()
@@ -624,7 +679,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="header">The content displayed in the item header.</param>
     /// <param name="icon">The optional icon displayed beside the header.</param>
     /// <param name="targetPageType">
-    /// The optional page type activated by the header action. A <see langword="null"/> value creates
+    /// The optional page type activated by the header action. A <see langword="null"/> value
+    /// creates
     /// a grouping item whose header only controls its child presentation.
     /// </param>
     /// <param name="itemsSource">
@@ -751,7 +807,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class for the specified page type.
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class for the specified
+    /// page type.
     /// </summary>
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(Type targetPageType)
@@ -760,7 +817,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header and target page.
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header
+    /// and target page.
     /// </summary>
     /// <param name="name">The text displayed in the item header.</param>
     /// <param name="targetPageType">The page type activated by the header action.</param>
@@ -788,7 +846,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="name">The text displayed in the item header.</param>
     /// <param name="icon">The Fluent symbol displayed beside the header.</param>
     /// <param name="targetPageType">The page type activated by the header action.</param>
-    /// <param name="itemsSource">The source used by the standard WPF items pipeline to generate children.</param>
+    /// <param name="itemsSource">
+    /// The source used by the standard WPF items pipeline to generate children.
+    /// </param>
     // ReSharper disable once UnusedMember.Global
     public NavigationViewItem(string name, FluentSymbolRegular icon, Type targetPageType, IEnumerable itemsSource)
         : this((object?)name, icon, targetPageType, itemsSource)
@@ -796,12 +856,14 @@ public partial class NavigationViewItem : HeaderedItemsControl
     }
 
     /// <summary>
-    /// Marks this item active while preserving inline expansion and submenu-open state, then invokes
+    /// Marks this item active while preserving inline expansion and submenu-open state, then
+    /// invokes
     /// <see cref="OnActivated"/>.
     /// </summary>
     /// <remarks>
     /// Registered items update their navigation entry; unregistered items own local state. This
-    /// method changes activation only and does not navigate, change SelectedItem, or clear other items.
+    /// method changes activation only and does not navigate, change SelectedItem, or clear other
+    /// items.
     /// </remarks>
     public void Activate(NavigationView navigationView)
     {
@@ -835,14 +897,22 @@ public partial class NavigationViewItem : HeaderedItemsControl
         }
     }
 
-    /// <summary>Projects activation without writing back to the owning navigation entry.</summary>
+    /// <summary>
+    /// Projects activation without writing back to the owning navigation entry.
+    /// </summary>
     /// <remarks>
     /// Container generation and release use this path so presentation lifetime cannot activate or
     /// deactivate a semantic item. Hooks observe the completed dependency-property transition.
     /// </remarks>
     internal void ApplyActiveState(NavigationView navigationView, bool isActive)
     {
+        object? session = navigationView.NavigationSessionIdentity;
         SetValue(IsActivePropertyKey, isActive);
+        if (IsActive != isActive || !ReferenceEquals(session, navigationView.NavigationSessionIdentity))
+        {
+            return;
+        }
+
         if (isActive)
         {
             OnActivated(navigationView);
@@ -892,7 +962,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// The template button is intentionally subscribed here instead of handling mouse input on the
     /// container. A detached ContextMenu has its own presentation source, while a Click
     /// raised by the concrete header button unambiguously identifies the intended input surface.
-    /// A missing part leaves a non-interactive custom template but does not compromise item generation.
+    /// A missing part leaves a non-interactive custom template but does not compromise item
+    /// generation.
     /// </remarks>
     public override void OnApplyTemplate()
     {
@@ -938,7 +1009,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <remarks>
     /// WPF copies <see cref="ItemsControl.ItemTemplate"/> and container-presentation properties in
     /// the base implementation only when a data item receives a generated container. A directly
-    /// supplied <see cref="NavigationViewItem"/> is its own container, so the framework deliberately
+    /// supplied <see cref="NavigationViewItem"/> is its own container, so the framework
+    /// deliberately
     /// skips that copy. <see cref="InheritItemContainerPresentationFrom"/> fills that gap for the
     /// child generator without changing the style already selected for the child itself.
     /// </remarks>
@@ -1111,7 +1183,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </remarks>
     protected virtual void OnInvoked() { }
 
-    /// <summary>Sets the effective child-menu state for the active presentation.</summary>
+    /// <summary>
+    /// Sets the effective child-menu state for the active presentation.
+    /// </summary>
     internal void SetChildMenuOpen(bool isOpen, bool focusFirstItem)
     {
         if (isOpen && !HasItems)
@@ -1127,7 +1201,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         }
     }
 
-    /// <summary>Closes this detached submenu and every cascading submenu below it.</summary>
+    /// <summary>
+    /// Closes this detached submenu and every cascading submenu below it.
+    /// </summary>
     internal void CloseSubmenuBranch()
     {
         SetCurrentValue(IsSubmenuOpenProperty, false);
@@ -1339,12 +1415,18 @@ public partial class NavigationViewItem : HeaderedItemsControl
         return builder?.ToString() ?? value;
     }
 
-    private static bool IsAccessKeyMarker(char value) => value is '_' or '&';
+    private static bool IsAccessKeyMarker(char value)
+    {
+        return value is '_' or '&';
+    }
 
     // AutoSuggestBox displays plain text rather than an AccessText visual. Only remove a marker
     // when its following character can be used as a practical keyboard mnemonic. In particular,
     // punctuation followed by whitespace (for example, "Date & Time") is content, not a marker.
-    private static bool IsAccessKeyCharacter(char value) => char.IsLetterOrDigit(value);
+    private static bool IsAccessKeyCharacter(char value)
+    {
+        return char.IsLetterOrDigit(value);
+    }
 
     private void UpdateSearchableContent()
     {
@@ -1497,7 +1579,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         }
     }
 
-    /// <summary>Reports inline state changes only while inline expansion is the active presentation.</summary>
+    /// <summary>
+    /// Reports inline state changes only while inline expansion is the active presentation.
+    /// </summary>
     private static void OnIsExpandedChanged(
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
@@ -1527,7 +1611,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </param>
     protected virtual void OnIsExpandedChanged(bool oldValue, bool newValue) { }
 
-    /// <summary>Called after detached submenu state, projection, and automation have been synchronized.</summary>
+    /// <summary>
+    /// Called after detached submenu state, projection, and automation have been synchronized.
+    /// </summary>
     protected virtual void OnIsSubmenuOpenChanged(bool oldValue, bool newValue) { }
 
     /// <summary>
@@ -1612,7 +1698,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         item.SetCurrentValue(IsSubmenuOpenProperty, false);
     }
 
-    /// <summary>Associates this container with its semantic parent item.</summary>
+    /// <summary>
+    /// Associates this container with its semantic parent item.
+    /// </summary>
     private void AttachToParent(NavigationViewItem parent)
     {
         if (ReferenceEquals(_parentItem, parent))
@@ -1626,7 +1714,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         parent.UpdateDescendantActiveState();
     }
 
-    /// <summary>Releases parent-owned state when this container leaves an item generator.</summary>
+    /// <summary>
+    /// Releases parent-owned state when this container leaves an item generator.
+    /// </summary>
     private void DetachFromParent(NavigationViewItem parent)
     {
         if (!ReferenceEquals(_parentItem, parent))
@@ -1683,7 +1773,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         _parentItem?.UpdateDescendantActiveState();
     }
 
-    /// <summary>Keeps the template-facing branch state synchronized with its source states.</summary>
+    /// <summary>
+    /// Keeps the template-facing branch state synchronized with its source states.
+    /// </summary>
     private void UpdateBranchActiveState()
     {
         bool isBranchActive = IsActive || IsDescendantActive;
@@ -1726,14 +1818,18 @@ public partial class NavigationViewItem : HeaderedItemsControl
         }
     }
 
-    /// <summary>Moves keyboard focus to the bounded header input surface.</summary>
+    /// <summary>
+    /// Moves keyboard focus to the bounded header input surface.
+    /// </summary>
     internal bool FocusHeader()
     {
         ApplyTemplate();
         return _headerButton is { IsEnabled: true, Focusable: true } && _headerButton.Focus();
     }
 
-    /// <summary>Reveals the header row without moving keyboard focus or opening child menus.</summary>
+    /// <summary>
+    /// Reveals the header row without moving keyboard focus or opening child menus.
+    /// </summary>
     /// <remarks>
     /// An expanded container includes its entire subtree and can exceed the viewport. Requesting
     /// only the header lets WPF's ScrollViewer.MakeVisible choose the minimum useful scroll. A
@@ -1761,7 +1857,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// Extends WPF's item-container presentation inheritance to a navigation item that is supplied
     /// directly rather than generated from data.
     /// </summary>
-    /// <param name="owner">The list or parent navigation item whose children include this item.</param>
+    /// <param name="owner">
+    /// The list or parent navigation item whose children include this item.
+    /// </param>
     /// <remarks>
     /// <para>
     /// WPF's internal <c>ItemsControl.PrepareItemsControl</c> copies
@@ -1773,7 +1871,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// item but not that item's directly declared descendants.
     /// </para>
     /// <para>
-    /// Each non-null owner value is bound only while its target property still has the default value.
+    /// Each non-null owner value is bound only while its target property still has the default
+    /// value.
     /// Consequently, an <see cref="ItemsControl.ItemContainerStyle"/> or selector declared directly
     /// on this item, including one supplied by its own Style, remains a branch-local override. A
     /// binding rather than a copied value also keeps the default chain synchronized when the owning
@@ -1869,7 +1968,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         _itemContainerPresentationOwner = null;
     }
 
-    /// <summary>Clears an inherited binding without disturbing an application replacement.</summary>
+    /// <summary>
+    /// Clears an inherited binding without disturbing an application replacement.
+    /// </summary>
     private void ClearInheritedItemContainerPresentationBinding(
         DependencyProperty property,
         BindingBase? inheritedBinding)
@@ -1921,7 +2022,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
         );
     }
 
-    /// <summary>Releases context installed by <see cref="AttachToNavigationViewHost"/>.</summary>
+    /// <summary>
+    /// Releases context installed by <see cref="AttachToNavigationViewHost"/>.
+    /// </summary>
     internal void DetachFromNavigationViewHost(NavigationView navigationView)
     {
         CloseSubmenuBranch();

@@ -9,8 +9,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// Synchronously participates in the successful entry lifecycle of a navigation host.
 /// </summary>
 /// <remarks>
-/// This callback describes navigation state, not WPF visual-tree state. It is independent of
-/// <c>Loaded</c> and cannot cancel a navigation request.
+/// Enters the view before its DataContext model for each activation at the Loaded scheduling
+/// boundary.
+/// Visual reload creates a new activation; an object occupying multiple roles is invoked only once.
 /// </remarks>
 public interface INavigationAware : INavigationExited
 {

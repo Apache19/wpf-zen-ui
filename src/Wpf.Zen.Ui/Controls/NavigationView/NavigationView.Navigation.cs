@@ -18,47 +18,107 @@ public partial class NavigationView
     // do not model parent/child relationships: each entry carries the request that originally
     // described its semantic location, plus a resolved snapshot that can recover a useful path
     // when a dynamic map no longer contains that route during back or forward navigation.
-    private List<NavigationJournalEntry> Journal { get; } = [with(50)];
+    private List<NavigationJournalEntry> Journal        { get; } = [with(50)];
     private List<NavigationJournalEntry> ForwardJournal { get; } = [with(20)];
 
-    private readonly NavigationCache _cache = new();
+    private readonly NavigationCache          _cache               = new(ReleaseCachedInstance);
     private readonly HashSet<NavigationEntry> _unregisteredEntries = [];
-    private INavigationViewPageProvider? _pageService;
-    private INavigationService? _navigationService;
-    private DependencyObject? _navigationContextOwner;
-    private NavigationEntry? _currentEntry;
-    private NavigationJournalEntry? _currentOccurrence;
-    private object? _currentPage;
-    private FrameworkElement? _currentLocationElement;
-    private INavigationLocationSource? _currentLocationSource;
-    private IReadOnlyList<BreadcrumbSegment>? _oneTimeBreadcrumbFallback;
-    private int _isLocationRefreshPending;
-    private bool _isNavigationRequestInProgress;
 
-    /// <summary>Gets a value indicating whether the journal contains an earlier occurrence.</summary>
+    private INavigationViewPageProvider? _pageService;
+    private INavigationService?          _navigationService;
+
+    private NavigationSession?                _navigationSession;
+    private NavigationPageInstance?           _currentInstance;
+    private DependencyObject?                 _navigationContextOwner;
+    private NavigationEntry?                  _currentEntry;
+    private NavigationJournalEntry?           _currentOccurrence;
+    private object?                           _currentPage;
+    private FrameworkElement?                 _currentLocationElement;
+    private INavigationLocationSource?        _currentLocationSource;
+    private EventHandler?                     _currentLocationSourceHandler;
+    private IReadOnlyList<BreadcrumbSegment>? _oneTimeBreadcrumbFallback;
+    private int                               _isLocationRefreshPending;
+    private NavigationRequestCoordinator?     _requests;
+    private Task                              _detachedSessionCompletion = Task.CompletedTask;
+    private long                              _locationRevision;
+    private NavigationProjectionRetirement?   _retiringProjection;
+
+    internal object? NavigationSessionIdentity => _navigationSession;
+
+    /// <summary>
+    /// Gets a value indicating whether the journal contains an earlier occurrence.
+    /// </summary>
     public bool CanGoBack => Journal.Count > 1;
 
-    /// <summary>Gets a value indicating whether the journal contains a later occurrence.</summary>
+    /// <summary>
+    /// Gets a value indicating whether the journal contains a later occurrence.
+    /// </summary>
     public bool CanGoForward => ForwardJournal.Count > 0;
 
     /// <inheritdoc />
     public INavigationState NavigationState => this;
 
-    /// <summary>Navigates to a page identified by its CLR type.</summary>
+    /// <summary>
+    /// Stops the current navigation session and awaits all work, error delivery, and owned resource
+    /// disposal.
+    /// </summary>
+    /// <remarks>
+    /// Host owners using control navigation directly should await this method before final
+    /// shutdown.
+    /// Callers with an explicit scope may instead await that scope's DisposeAsync.
+    /// Call on the UI thread. Lifecycle callbacks should use their scope's RequestStop instead.
+    /// </remarks>
+    /// <returns>
+    /// The stable current session completion task, or a completed task when detached.
+    /// </returns>
+    public Task StopNavigationAsync()
+    {
+        Dispatcher.VerifyAccess();
+
+        var session = _navigationSession;
+        if (session is null)
+        {
+            NavigationCallbackContext.VerifyCanWait(_detachedSessionCompletion);
+            return _detachedSessionCompletion;
+        }
+
+        session.VerifyCanWait();
+        session.RequestStop();
+
+        return session.Completion;
+    }
+
+    /// <summary>
+    /// Navigates to a page identified by its CLR type.
+    /// </summary>
     /// <param name="pageType">The page type to activate.</param>
-    /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
-    public virtual bool Navigate(Type pageType) =>
-        PerformRequest(NavigationRequest.To(pageType)).Succeeded;
+    /// <returns>
+    /// <see langword="true"/> when the request is accepted; otherwise, <see langword="false"/>.
+    /// </returns>
+    public virtual bool Navigate(Type pageType)
+    {
+        var request = NavigationRequest.To(pageType);
+        return PerformRequest(request).WasAccepted;
+    }
 
-    /// <summary>Navigates to a route, menu-item id, or target tag.</summary>
+    /// <summary>
+    /// Navigates to a route, menu-item id, or target tag.
+    /// </summary>
     /// <param name="routeKey">The exact semantic route or host lookup key.</param>
-    /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
-    public virtual bool Navigate(string routeKey) =>
-        PerformRequest(NavigationRequest.To(routeKey)).Succeeded;
+    /// <returns>
+    /// <see langword="true"/> when the request is accepted; otherwise, <see langword="false"/>.
+    /// </returns>
+    public virtual bool Navigate(string routeKey)
+    {
+        var request = NavigationRequest.To(routeKey);
+        return PerformRequest(request).WasAccepted;
+    }
 
-    /// <summary>Replaces frame content without changing semantic location, selection, or history.</summary>
+    /// <summary>
+    /// Replaces frame content without changing semantic location, selection, or history.
+    /// </summary>
     /// <param name="pageTypeToEmbed">The page type to create and display.</param>
-    /// <returns><see langword="true"/> when content is replaced.</returns>
+    /// <returns><see langword="true"/> when the replacement request is accepted.</returns>
     public virtual bool ReplaceContent(Type? pageTypeToEmbed)
     {
         if (pageTypeToEmbed is null)
@@ -66,60 +126,71 @@ public partial class NavigationView
             return false;
         }
 
-        UpdateContent(CreatePageInstance(pageTypeToEmbed));
-        return true;
+        _ = EnsureNavigationSession();
+
+        var result = _requests!.Submit(intent: NavigationIntent.Replace, contentType: pageTypeToEmbed);
+
+        return result.WasAccepted;
     }
 
-    /// <summary>Replaces frame content with an existing element without changing semantic state.</summary>
+    /// <summary>
+    /// Replaces frame content with an existing element without changing semantic state.
+    /// </summary>
     /// <param name="pageInstanceToEmbed">The element to display.</param>
-    /// <returns><see langword="true"/> when content is replaced.</returns>
+    /// <returns><see langword="true"/> when the replacement request is accepted.</returns>
     public virtual bool ReplaceContent(UIElement pageInstanceToEmbed)
     {
-        UpdateContent(pageInstanceToEmbed);
-        return true;
+        _ = EnsureNavigationSession();
+
+        var result = _requests!.Submit(intent: NavigationIntent.Replace, content: pageInstanceToEmbed);
+
+        return result.WasAccepted;
     }
 
-    /// <summary>Navigates to the next journal occurrence.</summary>
-    /// <returns><see langword="true"/> when forward navigation succeeds.</returns>
+    /// <summary>
+    /// Navigates to the next journal occurrence.
+    /// </summary>
+    /// <returns><see langword="true"/> when the forward request is accepted.</returns>
     public virtual bool GoForward()
     {
-        if (ForwardJournal.Count == 0)
-        {
-            return false;
-        }
-
-        var next = ForwardJournal[^1];
-        return NavigateInternal(
-            next.Entry,
-            next.Request,
-            isForwardsNavigated: true,
-            restoredOccurrence: next
-        );
+        _ = EnsureNavigationSession();
+        return _requests!.Submit(intent: NavigationIntent.Forward).WasAccepted;
     }
 
-    /// <summary>Navigates to the preceding journal occurrence.</summary>
-    /// <returns><see langword="true"/> when back navigation succeeds.</returns>
+    /// <summary>
+    /// Navigates to the preceding journal occurrence.
+    /// </summary>
+    /// <returns><see langword="true"/> when the back request is accepted.</returns>
     public virtual bool GoBack()
     {
-        if (Journal.Count <= 1)
-        {
-            return false;
-        }
+        _ = EnsureNavigationSession();
 
-        var previous = Journal[^2];
-        return NavigateInternal(
-            previous.Entry,
-            previous.Request,
-            isBackwardsNavigated: true,
-            restoredOccurrence: previous
-        );
+        return _requests!.Submit(intent: NavigationIntent.Back).WasAccepted;
     }
 
-    /// <summary>Clears navigation history while retaining the current page and semantic location.</summary>
+    /// <summary>
+    /// Clears navigation history while retaining the current page and semantic location.
+    /// </summary>
     public virtual void ClearJournal()
+    {
+        if (_requests is { } requests)
+        {
+            requests.Submit(intent: NavigationIntent.ClearHistory);
+            return;
+        }
+
+        ClearJournalCore();
+    }
+
+    /// <summary>
+    /// Clears history through the request queue so a pending back request cannot retain a deleted
+    /// history position.
+    /// </summary>
+    private void ClearJournalCore()
     {
         Journal.Clear();
         ForwardJournal.Clear();
+
         if (_currentOccurrence is not null)
         {
             // Retaining the current occurrence gives the next navigation a valid back baseline only
@@ -131,7 +202,11 @@ public partial class NavigationView
     }
 
     /// <inheritdoc />
-    NavigationResult INavigationHost.Navigate(NavigationRequest request) => PerformRequest(request);
+    NavigationResult INavigationHost.Navigate(NavigationRequest request, CancellationToken cancellationToken)
+    {
+        _ = EnsureNavigationSession();
+        return _requests!.Submit(request, cancellationToken: cancellationToken);
+    }
 
     /// <inheritdoc />
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -139,8 +214,11 @@ public partial class NavigationView
         "CA1033:Interface methods should be callable by child types",
         Justification = "RequestGoBack has the public overridable GoBack counterpart."
     )]
-    NavigationResult INavigationHost.RequestGoBack() =>
-        GoBack() ? NavigationResult.Success : NavigationResult.Rejected;
+    NavigationResult INavigationHost.RequestGoBack(CancellationToken cancellationToken)
+    {
+        _ = EnsureNavigationSession();
+        return _requests!.Submit(intent: NavigationIntent.Back, cancellationToken: cancellationToken);
+    }
 
     /// <inheritdoc />
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -148,8 +226,11 @@ public partial class NavigationView
         "CA1033:Interface methods should be callable by child types",
         Justification = "RequestGoForward has the public overridable GoForward counterpart."
     )]
-    NavigationResult INavigationHost.RequestGoForward() =>
-        GoForward() ? NavigationResult.Success : NavigationResult.Rejected;
+    NavigationResult INavigationHost.RequestGoForward(CancellationToken cancellationToken)
+    {
+        _ = EnsureNavigationSession();
+        return _requests!.Submit(intent: NavigationIntent.Forward, cancellationToken: cancellationToken);
+    }
 
     /// <inheritdoc />
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -157,7 +238,10 @@ public partial class NavigationView
         "CA1033:Interface methods should be callable by child types",
         Justification = "ClearJournal is the public overridable counterpart."
     )]
-    void INavigationHost.ClearNavigationHistory() => ClearJournal();
+    void INavigationHost.ClearNavigationHistory()
+    {
+        ClearJournal();
+    }
 
     /// <inheritdoc />
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -166,7 +250,7 @@ public partial class NavigationView
         Justification = "Only navigation-scope infrastructure establishes the page-provider lifetime boundary."
     )]
     void INavigationHost.AttachNavigationScope(
-        INavigationService navigationService,
+        INavigationService          navigationService,
         INavigationViewPageProvider pageProvider)
     {
         if (navigationService is null)
@@ -186,8 +270,19 @@ public partial class NavigationView
             );
         }
 
-        _navigationService = navigationService;
-        _pageService = pageProvider;
+        _navigationService         = navigationService;
+        _detachedSessionCompletion = Task.CompletedTask;
+        _pageService               = pageProvider;
+
+        _navigationSession = (navigationService as NavigationService)?.Session
+            ?? throw new InvalidOperationException(
+                "The navigator must belong to a navigation session."
+            );
+
+        _requests = new NavigationRequestCoordinator(
+            _navigationSession, Dispatcher, BeginNavigationRequest, _navigationFrame.StopLoading
+        );
+
         SetNavigationContextOwner(_navigationFrame.Content as DependencyObject);
     }
 
@@ -204,60 +299,97 @@ public partial class NavigationView
             return Task.CompletedTask;
         }
 
-        Task entryCompletion = CancelCurrentNavigationEnter();
-        AbortPendingNavigationTransition();
+        _detachedSessionCompletion = _navigationSession!.Completion;
 
-        var navigationAwareContent = _navigationAwareContent;
-        var navigationAwareTarget  = _navigationAwareTarget;
+        var failures = new NavigationFailures();
+        failures.Try(() => _requests?.Stop());
+        failures.Try(RetirePreviousProjection);
 
-        _navigationAwareContent = null;
-        _navigationAwareTarget  = null;
+        var visualDetach = _visualDetachOperation;
+        _visualDetachOperation = null;
 
-        var callbackFailures = new List<NavigationCallbackException>();
-        NotifyContentAboutNavigationExited(
-            navigationAwareContent,
-            navigationAwareTarget,
-            callbackFailures
-        );
+        failures.Try(() => visualDetach?.Abort());
 
-        DetachCurrentLocationSource();
-        ClearNavigationParent(_currentPage as FrameworkElement);
+        var reveal = _bringActiveBranchIntoViewOperation;
+        _bringActiveBranchIntoViewOperation = null;
 
-        if (_navigationContextOwner is not null)
+        failures.Try(() => reveal?.Abort());
+        failures.Try(StopCurrentActivation);
+        failures.Try(_navigationFrame.StopLoading);
+        failures.Try(DetachCurrentLocationSource);
+
+        var currentPage = _currentPage as FrameworkElement;
+        failures.Try(() => ClearNavigationParent(currentPage));
+
+        var contextOwner = _navigationContextOwner;
+        _navigationContextOwner = null;
+        if (contextOwner is not null)
         {
-            Navigation.ClearContext(_navigationContextOwner);
-            _navigationContextOwner = null;
+            failures.Try(() => Navigation.ClearContext(contextOwner));
         }
 
-        _ = _navigationFrame.Navigate(null);
-
-        _currentEntry?.Deactivate(this);
-        _currentEntry = null;
-        _currentPage = null;
+        var entry = _currentEntry;
+        _currentEntry      = null;
+        _currentPage       = null;
         _currentOccurrence = null;
+        if (entry is not null)
+        {
+            failures.Try(() => entry.Deactivate(this));
+        }
 
         Journal.Clear();
         ForwardJournal.Clear();
         _unregisteredEntries.Clear();
-        _cache.Clear();
 
-        SetSelectedItem(null);
-        SetValue(CurrentLocationPropertyKey, null);
+        failures.Try(_cache.Clear);
 
-        _breadcrumbs.Clear();
+        var instance = _currentInstance;
+        _currentInstance = null;
 
-        RebuildNavigationIndexes();
-        UpdateBackNavigationState();
+        failures.Try(() => instance?.Release());
+        failures.Try(() => _navigationFrame.Navigate(null));
+        failures.Try(() => SetSelectedItem(null));
+        failures.Try(() => SetValue(CurrentLocationPropertyKey, null));
+        failures.Try(_breadcrumbs.Clear);
+        failures.Try(RebuildNavigationIndexes);
+        failures.Try(UpdateBackNavigationState);
+        failures.Try(() => UpdatePageHeader(null));
 
-        CurrentLocationChanged?.Invoke(this, EventArgs.Empty);
-
+        // Transfers the host after clearing old projections. Notifications below may attach a new
+        // session; old cleanup no longer writes host fields.
         _navigationService = null;
-        _pageService = null;
+        _pageService       = null;
+        _navigationSession = null;
+        _requests          = null;
 
-        ReportNavigationCallbackFailures(callbackFailures);
-        return entryCompletion;
+        Volatile.Write(ref _isLocationRefreshPending, 0);
+
+        failures.Try(() => CurrentLocationChanged?.Invoke(this, EventArgs.Empty));
+
+        var failure = failures.Exception;
+
+        return failure is null ? Task.CompletedTask : Task.FromException(failure);
     }
 
+    /// <summary>
+    /// Creates the same session boundary for direct control callers; explicit scopes use the
+    /// factory-supplied identity.
+    /// </summary>
+    private NavigationSession EnsureNavigationSession()
+    {
+        if (_navigationSession is null)
+        {
+            _ = NavigationScope.Attach(this);
+        }
+
+        return _navigationSession
+            ?? throw new InvalidOperationException("The navigation host did not attach a session.");
+    }
+
+    /// <summary>
+    /// Accepts a request and returns awaitable commit completion; the queue serializes commits
+    /// without waiting for page initialization.
+    /// </summary>
     private NavigationResult PerformRequest(NavigationRequest request)
     {
         if (request is null)
@@ -265,57 +397,9 @@ public partial class NavigationView
             throw new ArgumentNullException(nameof(request));
         }
 
-        var mappedNode = NavigationMap.FindNode(request.Target);
-        if (request.Target.RouteKey is null && mappedNode is not null)
-        {
-            request = request.WithTarget(
-                new NavigationTarget(
-                    request.Target.PageType ?? mappedNode.Target?.PageType,
-                    mappedNode.Key,
-                    request.Target.Parameter
-                )
-            );
-        }
+        _ = EnsureNavigationSession();
 
-        var entry = ResolveNavigationEntry(request.Target);
-        if (entry is not null)
-        {
-            if (entry.TargetPageType is null)
-            {
-                // Structural menu entries participate in route lookup so maps and breadcrumbs can
-                // refer to them, but they are not navigation destinations. Preserve the public
-                // result contract instead of passing an absent page type to page activation.
-                return NavigationResult.TargetNotFound;
-            }
-
-            var targetIsMenuLookup = request.Target.RouteKey == entry.Id
-                                     || request.Target.RouteKey == entry.TargetPageTag;
-
-            if (mappedNode is null && targetIsMenuLookup && entry.TargetPageType is { } entryPageType)
-            {
-                mappedNode = NavigationMap.FindNode(NavigationTarget.ForPage(entryPageType));
-                if (mappedNode is not null)
-                {
-                    request = request.WithTarget(
-                        new NavigationTarget(entryPageType, mappedNode.Key, request.Target.Parameter)
-                    );
-                }
-            }
-
-            return NavigateInternal(entry, request)
-                ? NavigationResult.Success
-                : NavigationResult.Rejected;
-        }
-
-        var pageType = request.Target.PageType ?? mappedNode?.Target?.PageType;
-        if (pageType is null)
-        {
-            return NavigationResult.TargetNotFound;
-        }
-
-        return TryNavigateUnregisteredPage(pageType, request)
-            ? NavigationResult.Success
-            : NavigationResult.Rejected;
+        return _requests!.Submit(request);
     }
 
     private NavigationEntry? ResolveNavigationEntry(NavigationTarget target)
@@ -354,158 +438,393 @@ public partial class NavigationView
         );
     }
 
-    private bool TryNavigateUnregisteredPage(Type pageType, NavigationRequest request)
+    /// <summary>
+    /// Menu and service entry points share the request queue, preventing callback requests from
+    /// modifying history recursively.
+    /// </summary>
+    private bool NavigateInternal(NavigationEntry entry)
     {
-        // Code-only targets need semantic lookup state, not a WPF container. Retaining a fabricated
-        // NavigationViewItem for every encountered page type would keep an unnecessary dispatcher-
-        // affine control graph alive for the complete scope. The data model supplies the same page
-        // identity and generated route id without any visual or template state.
-        var entry = new NavigationEntry(new NavigationItem(pageType.Name, pageType), false);
-
-        if (!NavigateInternal(entry, request))
-        {
-            return false;
-        }
-
-        if (!PageTypeIndex.ContainsKey(pageType))
-        {
-            PageTypeIndex.Add(pageType, entry);
-        }
-
-        if (!PageKeyIndex.ContainsKey(entry.Id))
-        {
-            PageKeyIndex.Add(entry.Id, entry);
-        }
-
-        _unregisteredEntries.Add(entry);
-        return true;
+        _ = EnsureNavigationSession();
+        var result = _requests!.Submit(entry: entry);
+        return result.WasAccepted;
     }
 
-    private bool NavigateInternal(
-        NavigationEntry entry,
-        NavigationRequest? request = null,
-        bool isBackwardsNavigated = false,
-        bool isForwardsNavigated = false,
-        NavigationJournalEntry? restoredOccurrence = null)
+    /// <summary>
+    /// Prepares candidate content and history intent without changing page context, location,
+    /// history, or selection.
+    /// </summary>
+    private void BeginNavigationRequest(NavigationTransaction transaction)
     {
-        // Routed callbacks are synchronous and application code may request another navigation
-        // from Navigating, BackRequested, or Navigated. Reject that nested transaction so it cannot
-        // commit a journal occurrence that the outer request immediately overwrites.
-        if (_isNavigationRequestInProgress)
+        if (transaction.Intent == NavigationIntent.ClearHistory)
         {
-            return false;
+            ClearJournalCore();
+            transaction.Finish(NavigationResult.Success);
+            return;
         }
 
-        _isNavigationRequestInProgress = true;
-        try
+        if (transaction.Intent is NavigationIntent.Back or NavigationIntent.Forward)
         {
-            return NavigateInternalCore(
-                entry,
-                request,
-                isBackwardsNavigated,
-                isForwardsNavigated,
-                restoredOccurrence
-            );
-        }
-        finally
-        {
-            _isNavigationRequestInProgress = false;
-        }
-    }
+            var backwards = transaction.Intent == NavigationIntent.Back;
+            if ((backwards && Journal.Count < 2) || (!backwards && ForwardJournal.Count == 0))
+            {
+                transaction.Finish(NavigationResult.Rejected);
+                return;
+            }
 
-    private bool NavigateInternalCore(
-        NavigationEntry entry,
-        NavigationRequest? request,
-        bool isBackwardsNavigated,
-        bool isForwardsNavigated,
-        NavigationJournalEntry? restoredOccurrence)
-    {
-        request ??= CreateRequestForEntry(entry);
-        if (!isBackwardsNavigated
-            && !isForwardsNavigated
-            && IsRedundantRequest(entry, request))
+            var occurrence = backwards ? Journal[^2] : ForwardJournal[^1];
+            transaction.Occurrence = occurrence;
+            transaction.Entry      = occurrence.Entry;
+            transaction.Request    = occurrence.Request;
+
+            if (backwards)
+            {
+                OnBackRequested();
+            }
+        }
+        else if (transaction.Intent != NavigationIntent.Replace)
         {
-            return false;
+            ResolveRequestTarget(transaction);
         }
 
-        if (isBackwardsNavigated)
+        if (!IsCurrentRequest(transaction))
         {
-            OnBackRequested();
+            return;
         }
 
-        var pageInstance = GetNavigationItemInstance(entry);
-        if (OnNavigating(pageInstance))
+        if (transaction.Intent == NavigationIntent.Replace)
         {
-            return false;
-        }
+            if (transaction.Content is null && transaction.ContentType is { } contentType)
+            {
+                transaction.Instance = CreatePageInstance(contentType, transaction);
+            }
+            else
+            {
+                var borrowed = transaction.Content as FrameworkElement
+                    ?? throw new InvalidCastException(
+                        "Navigation content must derive from FrameworkElement."
+                    );
 
-        if (!ReferenceEquals(_currentPage, pageInstance))
-        {
-            ClearNavigationParent(_currentPage as FrameworkElement);
-        }
+                var lease = NavigationPageLease.Borrowed(borrowed);
+                var work  = transaction.AcquireCleanupWork();
 
-        if (pageInstance is FrameworkElement frameworkElement)
-        {
-            // Frame content does not inherit NavigationParent from the host. Setting it on the page
-            // root lets the BreadcrumbContent attached property notify exactly this host.
-            frameworkElement.SetValue(NavigationParentProperty, this);
-        }
+                transaction.Instance = transaction.Session.RetainPage(lease, work);
+            }
 
-        UpdateContent(pageInstance, request.Target.Parameter, request.Target);
-
-        _currentEntry?.Deactivate(this);
-        _currentEntry = entry;
-        _currentEntry.Activate(this);
-
-        _currentPage = pageInstance;
-
-        AttachCurrentLocationSource(pageInstance);
-
-        if (isBackwardsNavigated)
-        {
-            var departedOccurrence = _currentOccurrence
-                ?? throw new InvalidOperationException("Back navigation requires a current journal occurrence.");
-
-            Journal.RemoveAt(Journal.Count - 1);
-            ForwardJournal.Add(departedOccurrence);
-
-            _currentOccurrence = restoredOccurrence
-                ?? throw new InvalidOperationException("Back navigation requires a journal occurrence.");
-
-            _oneTimeBreadcrumbFallback = _currentOccurrence.BreadcrumbSnapshot;
-        }
-        else if (isForwardsNavigated)
-        {
-            _currentOccurrence = restoredOccurrence
-                ?? throw new InvalidOperationException("Forward navigation requires a journal occurrence.");
-
-            ForwardJournal.RemoveAt(ForwardJournal.Count - 1);
-            Journal.Add(_currentOccurrence);
-
-            _oneTimeBreadcrumbFallback = _currentOccurrence.BreadcrumbSnapshot;
+            transaction.Content = transaction.Instance.Page;
         }
         else
         {
-            _currentOccurrence = new NavigationJournalEntry(entry, request);
-            Journal.Add(_currentOccurrence);
-            ForwardJournal.Clear();
+            var entry   = transaction.Entry;
+            var request = transaction.Request;
+
+            if (entry?.TargetPageType is null || request is null)
+            {
+                transaction.Finish(NavigationResult.TargetNotFound);
+                return;
+            }
+
+            if (transaction.Intent == NavigationIntent.Navigate && IsRedundantRequest(entry, request))
+            {
+                transaction.Finish(NavigationResult.Rejected);
+                return;
+            }
+
+            transaction.Instance = GetNavigationItemInstance(entry, transaction);
+            transaction.Content  = transaction.Instance.Page;
         }
 
-        RefreshCurrentLocation();
-        _currentOccurrence.BreadcrumbSnapshot = CurrentLocation?.Breadcrumbs ?? [];
-        UpdateBackNavigationState();
-
-        var isLiveMenuEntry = entry.IsMenuElement && _entriesByItem.Values.Contains(entry);
-        var selectedItem = isLiveMenuEntry ? entry.Item : null;
-        if (!ReferenceEquals(SelectedItem, selectedItem))
+        if (!IsCurrentRequest(transaction))
         {
-            SetSelectedItem(selectedItem);
-            OnSelectionChanged();
+            return;
         }
 
-        OnNavigated(pageInstance);
-        QueueActiveNavigationBranchIntoView();
-        return true;
+        var content = transaction.Content
+            ?? throw new InvalidOperationException("A navigation request requires content.");
+
+        var cancelled = OnNavigating(content);
+        if (!IsCurrentRequest(transaction))
+        {
+            return;
+        }
+
+        if (cancelled || transaction.CancellationToken.IsCancellationRequested)
+        {
+            transaction.Finish(new NavigationResult(NavigationResultStatus.Cancelled));
+            return;
+        }
+
+        transaction.TransitionSettings = GetNavigationTransitionSettings(content);
+
+        var accepted = _navigationFrame.Navigate(content, transaction);
+        if (!accepted && !transaction.IsCommitted)
+        {
+            transaction.Finish(new NavigationResult(NavigationResultStatus.Cancelled));
+        }
+    }
+
+    /// <summary>
+    /// Resolves route and menu identity; temporary targets enter the host index only after commit.
+    /// </summary>
+    private void ResolveRequestTarget(NavigationTransaction transaction)
+    {
+        var request = transaction.Request;
+        if (request is null && transaction.Entry is { } suppliedEntry)
+        {
+            request = CreateRequestForEntry(suppliedEntry);
+        }
+
+        if (request is null)
+        {
+            throw new InvalidOperationException("A semantic navigation request requires a target.");
+        }
+
+        var mappedNode = NavigationMap.FindNode(request.Target);
+        if (request.Target.RouteKey is null && mappedNode is not null)
+        {
+            var mappedTarget = new NavigationTarget(
+                request.Target.PageType ?? mappedNode.Target?.PageType,
+                mappedNode.Key,
+                request.Target.Parameter
+            );
+
+            request = request.WithTarget(mappedTarget);
+        }
+
+        var entry = transaction.Entry ?? ResolveNavigationEntry(request.Target);
+        if (entry is not null)
+        {
+            var menuLookup = request.Target.RouteKey == entry.Id
+                || request.Target.RouteKey == entry.TargetPageTag;
+
+            if (mappedNode is null && menuLookup && entry.TargetPageType is { } entryPageType)
+            {
+                var pageTarget = NavigationTarget.ForPage(entryPageType);
+
+                mappedNode = NavigationMap.FindNode(pageTarget);
+
+                if (mappedNode is not null)
+                {
+                    var mappedTarget = new NavigationTarget(entryPageType, mappedNode.Key, request.Target.Parameter);
+                    request = request.WithTarget(mappedTarget);
+                }
+            }
+        }
+        else
+        {
+            var pageType = request.Target.PageType ?? mappedNode?.Target?.PageType;
+            if (pageType is not null)
+            {
+                entry = new NavigationEntry(new NavigationItem(pageType.Name, pageType), false);
+            }
+        }
+
+        transaction.Entry   = entry;
+        transaction.Request = request;
+    }
+
+    /// <summary>
+    /// Checks session and request identity after each external callback so a stopped outer request
+    /// cannot affect a new session.
+    /// </summary>
+    private bool IsCurrentRequest(NavigationTransaction transaction)
+    {
+        return ReferenceEquals(_navigationSession, transaction.Session)
+            && !transaction.Session.IsStopping
+            && ReferenceEquals(_requests?.Current, transaction)
+            && !transaction.Completion.IsCompleted;
+    }
+
+    /// <summary>
+    /// Establishes complete internal state after Frame commit, then publishes UI projections and
+    /// external notifications in stages.
+    /// </summary>
+    private void CommitNavigationRequest(NavigationTransaction transaction)
+    {
+        transaction.IsCommitted = true;
+
+        var page             = transaction.Content!;
+        var previousInstance = _currentInstance;
+
+        _currentInstance = transaction.Instance!;
+        _currentInstance.Retain();
+
+        var previousPage  = _currentPage;
+        var previousEntry = _currentEntry;
+
+        var replacement = transaction.Intent == NavigationIntent.Replace;
+
+        _currentPage = page;
+
+        if (!replacement)
+        {
+            var entry   = transaction.Entry!;
+            var request = transaction.Request!;
+
+            _currentEntry = entry;
+
+            if (transaction.Intent == NavigationIntent.Back)
+            {
+                ForwardJournal.Add(_currentOccurrence!);
+
+                Journal.RemoveAt(Journal.Count - 1);
+
+                _currentOccurrence         = transaction.Occurrence!;
+                _oneTimeBreadcrumbFallback = _currentOccurrence.BreadcrumbSnapshot;
+            }
+            else if (transaction.Intent == NavigationIntent.Forward)
+            {
+                _currentOccurrence = transaction.Occurrence!;
+
+                ForwardJournal.RemoveAt(ForwardJournal.Count - 1);
+                Journal.Add(_currentOccurrence);
+
+                _oneTimeBreadcrumbFallback = _currentOccurrence.BreadcrumbSnapshot;
+            }
+            else
+            {
+                _currentOccurrence = new NavigationJournalEntry(entry, request);
+
+                Journal.Add(_currentOccurrence);
+                ForwardJournal.Clear();
+            }
+
+            if (!_entriesByItem.Values.Contains(entry))
+            {
+                _unregisteredEntries.Add(entry);
+                IndexUnregisteredNavigationEntries();
+            }
+        }
+
+        // The current record now belongs to the new page; retain cleanup obligations for old
+        // projections separately.
+        // If exit or property notifications reenter stop, detachment takes over remaining steps
+        // before a new session may attach.
+        _retiringProjection = new NavigationProjectionRetirement();
+
+        if (!replacement)
+        {
+            _retiringProjection.Add(() => previousEntry?.Deactivate(this));
+        }
+
+        if (!ReferenceEquals(previousPage, page))
+        {
+            _retiringProjection.Add(() => ClearNavigationParent(previousPage as FrameworkElement));
+        }
+
+        var failures = new NavigationFailures();
+        failures.Try(StopCurrentActivation);
+        failures.Try(RetirePreviousProjection);
+        failures.Try(() => RememberCommittedInstance(transaction));
+
+        // After Frame commit, attempt every independent projection update even if a user
+        // notification throws.
+        void Publish(Action action)
+        {
+            if (IsCurrentRequest(transaction))
+            {
+                failures.Try(action);
+            }
+        }
+
+        if (!replacement)
+        {
+            Publish(() => transaction.Entry!.Activate(this));
+        }
+
+        if (page is FrameworkElement element)
+        {
+            Publish(() => element.SetValue(NavigationParentProperty, this));
+        }
+
+        var parameter = _currentOccurrence?.Request.Target.Parameter;
+
+        Publish(() => SetNavigationContextOwner(page as DependencyObject, parameter));
+        Publish(() => AttachCurrentLocationSource(page));
+        Publish(RefreshCurrentLocation);
+
+        if (_currentOccurrence is { } committedOccurrence
+            && (!ReferenceEquals(CurrentLocation?.Page, page)
+                || !ReferenceEquals(CurrentLocation?.Target, committedOccurrence.Request.Target)))
+        {
+            // A location extension failure must still reflect committed Frame state; the request
+            // result preserves the failure.
+            var unresolved = new NavigationLocation(committedOccurrence.Request.Target, page, []);
+
+            Publish(() => SetValue(CurrentLocationPropertyKey, unresolved));
+            Publish(_breadcrumbs.Clear);
+            Publish(() => CurrentLocationChanged?.Invoke(this, EventArgs.Empty));
+        }
+
+        Publish(UpdateBackNavigationState);
+
+        if (!replacement)
+        {
+            var entry         = transaction.Entry!;
+            var liveMenuEntry = entry.IsMenuElement && _entriesByItem.Values.Contains(entry);
+            var selected      = liveMenuEntry ? entry.Item : null;
+
+            if (!ReferenceEquals(SelectedItem, selected))
+            {
+                Publish(() => SetSelectedItem(selected));
+                Publish(OnSelectionChanged);
+            }
+        }
+
+        Publish(() => OnNavigated(page));
+        Publish(QueueActiveNavigationBranchIntoView);
+        failures.Try(() => previousInstance?.Release());
+        failures.ThrowIfAny();
+    }
+
+    /// <summary>
+    /// Drains transferred projection cleanup, dequeuing each step first so reentrant detachment can
+    /// finish the remainder.
+    /// </summary>
+    private void RetirePreviousProjection()
+    {
+        var retirement = _retiringProjection;
+        if (retirement is null)
+        {
+            return;
+        }
+
+        try
+        {
+            retirement.Drain();
+        }
+        finally
+        {
+            if (ReferenceEquals(retirement, _retiringProjection))
+            {
+                _retiringProjection = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Retains old page and menu projection cleanup independently of the new page publication
+    /// identity.
+    /// </summary>
+    private sealed class NavigationProjectionRetirement
+    {
+        private readonly Queue<Action> _steps = new();
+
+        internal void Add(Action step)
+        {
+            _steps.Enqueue(step);
+        }
+
+        internal void Drain()
+        {
+            var failures = new NavigationFailures();
+            while (_steps.Count > 0)
+            {
+                var step = _steps.Dequeue();
+                failures.Try(step);
+            }
+
+            failures.ThrowIfAny();
+        }
     }
 
     private bool IsRedundantRequest(NavigationEntry entry, NavigationRequest request)
@@ -547,7 +866,9 @@ public partial class NavigationView
         UpdateBackNavigationState();
     }
 
-    /// <summary>Restores code-only targets as fallback lookup entries after a menu rebuild.</summary>
+    /// <summary>
+    /// Restores code-only targets as fallback lookup entries after a menu rebuild.
+    /// </summary>
     private void IndexUnregisteredNavigationEntries()
     {
         foreach (var entry in _unregisteredEntries)
@@ -569,9 +890,13 @@ public partial class NavigationView
         }
     }
 
-    private void UpdateBackNavigationState() => SetValue(IsBackEnabledPropertyKey, CanGoBack);
+    private void UpdateBackNavigationState()
+    {
+        SetValue(IsBackEnabledPropertyKey, CanGoBack);
+    }
 
-    private object GetNavigationItemInstance(NavigationEntry entry)
+    private NavigationPageInstance GetNavigationItemInstance(
+        NavigationEntry entry, NavigationTransaction transaction)
     {
         var targetPageType = entry.TargetPageType;
         if (targetPageType is null)
@@ -581,24 +906,66 @@ public partial class NavigationView
             );
         }
 
-        return _cache.Remember(
-                targetPageType,
-                entry.NavigationCacheMode,
-                NavigationCacheSize,
-                () => CreatePageInstance(targetPageType)
-            )
-            ?? throw new InvalidOperationException(
-                $"Unable to get or create instance of {targetPageType} from cache."
-            );
+        if (entry.NavigationCacheMode != NavigationCacheMode.Disabled
+            && _cache.TryGetValue(targetPageType, entry.NavigationCacheMode, out var cached))
+        {
+            var instance = (NavigationPageInstance)cached!;
+            instance.Retain();
+            return instance;
+        }
+
+        return CreatePageInstance(targetPageType, transaction);
+    }
+
+    /// <summary>
+    /// Only committed pages acquire cache retention rights; request completion releases uncommitted
+    /// candidates.
+    /// </summary>
+    private void RememberCommittedInstance(NavigationTransaction transaction)
+    {
+        if (transaction.Intent == NavigationIntent.Replace || !IsCurrentRequest(transaction))
+        {
+            return;
+        }
+
+        var entry    = transaction.Entry!;
+        var pageType = entry.TargetPageType!;
+        var mode     = entry.NavigationCacheMode;
+        if (mode == NavigationCacheMode.Disabled)
+        {
+            _cache.Remove(pageType);
+            return;
+        }
+
+        var instance = transaction.Instance!;
+        if (_cache.TryGetValue(pageType, mode, out var cached) && ReferenceEquals(cached, instance))
+        {
+            return;
+        }
+
+        instance.Retain();
+        _cache.Remember(pageType, mode, NavigationCacheSize, instance);
+    }
+
+    private static void ReleaseCachedInstance(object? value)
+    {
+        if (value is NavigationPageInstance instance)
+        {
+            instance.Release();
+        }
     }
 
     internal void NotifyNavigationCacheModeChanged(
-        NavigationEntry entry,
+        NavigationEntry     entry,
         NavigationCacheMode oldCacheMode,
-        NavigationCacheMode newCacheMode) =>
+        NavigationCacheMode newCacheMode)
+    {
         _cache.UpdateCacheMode(entry.TargetPageType, oldCacheMode, newCacheMode, NavigationCacheSize);
+    }
 
-    /// <summary>Migrates cache state after mutable menu metadata changes.</summary>
+    /// <summary>
+    /// Migrates cache state after mutable menu metadata changes.
+    /// </summary>
     private void SynchronizeNavigationEntryCacheState(NavigationEntry entry)
     {
         var oldPageType  = entry.LastKnownTargetPageType;
@@ -615,7 +982,7 @@ public partial class NavigationView
             _cache.Remove(oldPageType);
         }
 
-        entry.LastKnownTargetPageType = newPageType;
+        entry.LastKnownTargetPageType      = newPageType;
         entry.LastKnownNavigationCacheMode = newCacheMode;
     }
 
@@ -624,7 +991,7 @@ public partial class NavigationView
     /// container-free activator when no provider is attached. The navigation cache is consulted by
     /// <see cref="GetNavigationItemInstance"/> before this factory is invoked.
     /// </summary>
-    private object CreatePageInstance(Type targetPageType)
+    private NavigationPageInstance CreatePageInstance(Type targetPageType, NavigationTransaction transaction)
     {
         // Every page must derive from FrameworkElement: the navigation host relies on DataContext,
         // attached properties, and breadcrumb declarations that only a FrameworkElement root can
@@ -638,19 +1005,16 @@ public partial class NavigationView
             );
         }
 
-        if (_pageService is not null)
-        {
-            // The provider contract declares a non-nullable result, but a custom implementation
-            // may still violate it. Reject null here, before the navigation cache can store it:
-            // a cached null would poison the entry and reject every later navigation to this type
-            // without re-invoking the provider.
-            return _pageService.GetPage(targetPageType)
-                ?? throw new InvalidOperationException(
-                    $"The page provider {_pageService.GetType().Name} returned null for {targetPageType}."
-                );
-        }
+        var provider = _pageService ?? throw new InvalidOperationException("The page provider is detached.");
 
-        return ActivatorNavigationViewPageProvider.Instance.GetPage(targetPageType);
+        var lease = provider.GetPage(targetPageType)
+            ?? throw new InvalidOperationException(
+                $"The page provider {provider.GetType().Name} returned null for {targetPageType}."
+            );
+
+        var work = transaction.AcquireCleanupWork();
+
+        return transaction.Session.RetainPage(lease, work);
     }
 
     internal void NotifyBreadcrumbDeclarationChanged(FrameworkElement page)
@@ -681,50 +1045,48 @@ public partial class NavigationView
         }
     }
 
-    private void UpdateContent(
-        object? content,
-        object? navigationParameter = null,
-        NavigationTarget? navigationTarget = null
-    )
-    {
-        // Select the host template before Frame receives the destination. Waiting for Navigated
-        // would briefly arrange the new page using the previous page's scrolling policy.
-        UpdateNavigationFrameScrollState(content);
-        SetNavigationContextOwner(content as DependencyObject, navigationParameter);
-
-        // Read page-owned transition declarations only after activation has produced the concrete
-        // instance and Navigating has had a chance to configure it. WPF object navigation may commit
-        // asynchronously, so carrying this snapshot with the request also gives the commit handler
-        // a coherent fallback if a future navigation path supplies non-DependencyObject content.
-        var transitionSettings = GetNavigationTransitionSettings(content);
-        _ = _navigationFrame.Navigate(
-            content,
-            new NavigationFrameState(navigationTarget, transitionSettings)
-        );
-    }
-
-    /// <summary>Moves scope context from the exited page root to the destination page root.</summary>
+    /// <summary>
+    /// Moves scope context from the exited page root to the destination page root.
+    /// </summary>
     private void SetNavigationContextOwner(
         DependencyObject? newOwner,
-        object? navigationParameter = null)
+        object?           navigationParameter = null)
     {
+        var session = _navigationSession;
+        var service = _navigationService;
+
+        var failures = new NavigationFailures();
+
         if (!ReferenceEquals(_navigationContextOwner, newOwner))
         {
-            if (_navigationContextOwner is not null)
+            var previous = _navigationContextOwner;
+            _navigationContextOwner = null;
+
+            if (previous is not null)
             {
-                Navigation.ClearContext(_navigationContextOwner);
+                failures.Try(() => Navigation.ClearContext(previous));
+            }
+
+            if (!ReferenceEquals(session, _navigationSession) || session is null || session.IsStopping)
+            {
+                failures.ThrowIfAny();
+                return;
             }
 
             _navigationContextOwner = newOwner;
         }
 
-        if (_navigationContextOwner is not null && _navigationService is not null)
+        if (newOwner is not null && service is not null && session is { IsStopping: false })
         {
-            Navigation.SetContext(_navigationContextOwner, _navigationService, this, navigationParameter);
+            failures.Try(() => Navigation.SetContext(newOwner, service, this, navigationParameter));
         }
+
+        failures.ThrowIfAny();
     }
 
-    /// <summary>Moves map notifications and resolves the active occurrence against the new graph.</summary>
+    /// <summary>
+    /// Moves map notifications and resolves the active occurrence against the new graph.
+    /// </summary>
     private void ChangeNavigationMap(NavigationMap? oldMap, NavigationMap? newMap)
     {
         if (oldMap is not null)
@@ -743,6 +1105,7 @@ public partial class NavigationView
                 nameof(NavigationMap.Changed),
                 OnNavigationMapChanged
             );
+
             WeakEventManager<NavigationMap, EventArgs>.AddHandler(
                 newMap,
                 nameof(NavigationMap.Changed),
@@ -756,28 +1119,51 @@ public partial class NavigationView
         }
     }
 
-    private void OnNavigationMapChanged(object? sender, EventArgs e) =>
+    private void OnNavigationMapChanged(object? sender, EventArgs e)
+    {
         RefreshCurrentLocationOnDispatcher();
+    }
 
     /// <summary>
-    /// Resolves the current occurrence using deterministic request, page, map, and fallback priority.
+    /// Resolves the current occurrence using deterministic request, page, map, and fallback
+    /// priority.
     /// </summary>
     /// <remarks>
     /// The resolver never infers hierarchy from the previous journal entry or from menu nesting.
-    /// Anonymous pages therefore produce a single leaf unless a caller, page source, or map supplies
+    /// Anonymous pages therefore produce a single leaf unless a caller, page source, or map
+    /// supplies
     /// more information. This prevents ordinary A → D navigation from being misrepresented as a
     /// semantic A → D relationship.
     /// </remarks>
     internal void RefreshCurrentLocation()
     {
-        if (_currentOccurrence is null || _currentPage is null)
+        var session    = _navigationSession;
+        var occurrence = _currentOccurrence;
+        var page       = _currentPage;
+
+        if (session is null || session.IsStopping || occurrence is null || page is null)
         {
             return;
         }
 
-        var request = _currentOccurrence.Request;
-        var context = new NavigationLocationContext(request.Target, _currentPage);
+        using var work     = session.Work.Acquire();
+        var       revision = ++_locationRevision;
+
+        bool IsCurrent()
+        {
+            return ReferenceEquals(session, _navigationSession) && !session.IsStopping
+                && ReferenceEquals(occurrence, _currentOccurrence) && ReferenceEquals(page, _currentPage)
+                && revision == _locationRevision;
+        }
+
+        var request    = occurrence.Request;
+        var context    = new NavigationLocationContext(request.Target, page);
         var descriptor = _currentLocationSource?.GetNavigationLocation(context);
+
+        if (!IsCurrent())
+        {
+            return;
+        }
 
         IReadOnlyList<BreadcrumbSegment> resolved;
 
@@ -790,7 +1176,7 @@ public partial class NavigationView
             resolved = explicitPagePath;
         }
         else if (_currentPage is FrameworkElement pathElement
-                 && GetBreadcrumbPath(pathElement) is { } declaredPath)
+            && GetBreadcrumbPath(pathElement) is { } declaredPath)
         {
             resolved = declaredPath.CreateSnapshot();
         }
@@ -818,9 +1204,10 @@ public partial class NavigationView
 
             if (parent is not null)
             {
-                var combined = new List<BreadcrumbSegment>(NavigationMap.ResolvePath(parent, context));
-                var leaf = CreateLeafSegment(request.Target, fallbackLeafContent);
+                var combined   = new List<BreadcrumbSegment>(NavigationMap.ResolvePath(parent, context));
+                var leaf       = CreateLeafSegment(request.Target, fallbackLeafContent);
                 var mappedLeaf = NavigationMap.FindNode(request.Target);
+
                 if (mappedLeaf?.IsBreadcrumbVisible != false
                     && (combined.Count == 0 || combined[^1].Key != leaf.Key))
                 {
@@ -833,6 +1220,7 @@ public partial class NavigationView
             {
                 var mappedLeaf = NavigationMap.FindNode(request.Target);
                 resolved = NavigationMap.ResolvePath(request.Target, context, leafContentOverride);
+
                 if (resolved.Count == 0 && mappedLeaf is null)
                 {
                     resolved = _oneTimeBreadcrumbFallback is { Count: > 0 } fallback
@@ -842,20 +1230,33 @@ public partial class NavigationView
             }
         }
 
-        _oneTimeBreadcrumbFallback = null;
-
         var immutablePath = SnapshotResolvedPath(resolved);
-        var location = new NavigationLocation(request.Target, _currentPage, immutablePath);
-        SetValue(CurrentLocationPropertyKey, location);
 
-        _breadcrumbs.ReplaceWith(immutablePath);
-
-        if (_currentOccurrence is not null)
+        if (!IsCurrent())
         {
-            _currentOccurrence.BreadcrumbSnapshot = immutablePath;
+            return;
         }
 
-        CurrentLocationChanged?.Invoke(this, EventArgs.Empty);
+        _oneTimeBreadcrumbFallback = null;
+
+        occurrence.BreadcrumbSnapshot = immutablePath;
+
+        var location = new NavigationLocation(request.Target, page, immutablePath);
+        var failures = new NavigationFailures();
+
+        failures.Try(() => SetValue(CurrentLocationPropertyKey, location));
+
+        if (IsCurrent())
+        {
+            failures.Try(() => _breadcrumbs.ReplaceWith(immutablePath, IsCurrent));
+        }
+
+        if (IsCurrent())
+        {
+            failures.Try(() => CurrentLocationChanged?.Invoke(this, EventArgs.Empty));
+        }
+
+        failures.ThrowIfAny();
     }
 
     /// <summary>
@@ -898,9 +1299,19 @@ public partial class NavigationView
 
     private void AttachCurrentLocationSource(object page)
     {
-        DetachCurrentLocationSource();
+        var session  = _navigationSession;
+        var failures = new NavigationFailures();
+
+        failures.Try(DetachCurrentLocationSource);
+
+        if (session is null || session.IsStopping || !ReferenceEquals(session, _navigationSession))
+        {
+            failures.ThrowIfAny();
+            return;
+        }
 
         _currentLocationElement = page as FrameworkElement;
+
         if (_currentLocationElement is not null)
         {
             _currentLocationElement.DataContextChanged += OnCurrentPageDataContextChanged;
@@ -911,38 +1322,76 @@ public partial class NavigationView
 
         if (_currentLocationSource is not null)
         {
-            _currentLocationSource.LocationChanged += OnCurrentLocationSourceChanged;
+            var source = _currentLocationSource;
+
+            EventHandler handler = (_, _) =>
+            {
+                if (ReferenceEquals(session, _navigationSession)
+                    && ReferenceEquals(source, _currentLocationSource) && !session.IsStopping)
+                {
+                    RefreshCurrentLocationOnDispatcher();
+                }
+            };
+
+            _currentLocationSourceHandler = handler;
+
+            failures.Try(() => source.LocationChanged += handler);
+
+            if (!ReferenceEquals(source, _currentLocationSource)
+                || !ReferenceEquals(handler, _currentLocationSourceHandler))
+            {
+                // A subscription accessor may reenter stop before completing its addition; finish
+                // the transfer after it returns.
+                failures.Try(() => source.LocationChanged -= handler);
+            }
         }
+
+        failures.ThrowIfAny();
     }
 
     private void DetachCurrentLocationSource()
     {
-        if (_currentLocationElement is not null)
+        var element = _currentLocationElement;
+        var source  = _currentLocationSource;
+        var handler = _currentLocationSourceHandler;
+
+        _currentLocationElement       = null;
+        _currentLocationSource        = null;
+        _currentLocationSourceHandler = null;
+
+        var failures = new NavigationFailures();
+
+        if (element is not null)
         {
-            _currentLocationElement.DataContextChanged -= OnCurrentPageDataContextChanged;
-            _currentLocationElement = null;
+            failures.Try(() => element.DataContextChanged -= OnCurrentPageDataContextChanged);
         }
 
-        if (_currentLocationSource is not null)
+        if (source is not null && handler is not null)
         {
-            _currentLocationSource.LocationChanged -= OnCurrentLocationSourceChanged;
-            _currentLocationSource = null;
+            failures.Try(() => source.LocationChanged -= handler);
         }
+
+        failures.ThrowIfAny();
     }
 
     private void OnCurrentPageDataContextChanged(
-        object sender,
+        object                             sender,
         DependencyPropertyChangedEventArgs e)
     {
-        if (_currentPage is not null)
+        var session = _navigationSession;
+        if (session is { IsStopping: false } && _currentPage is { } page
+            && ReferenceEquals(sender, _currentLocationElement))
         {
-            AttachCurrentLocationSource(_currentPage);
-            RefreshCurrentLocation();
+            using var work = session.Work.Acquire();
+
+            AttachCurrentLocationSource(page);
+
+            if (ReferenceEquals(session, _navigationSession) && !session.IsStopping)
+            {
+                RefreshCurrentLocation();
+            }
         }
     }
-
-    private void OnCurrentLocationSourceChanged(object? sender, EventArgs e) =>
-        RefreshCurrentLocationOnDispatcher();
 
     /// <summary>
     /// Marshals model notifications because maps and view models are ordinary .NET objects and may
@@ -951,12 +1400,17 @@ public partial class NavigationView
     /// </summary>
     private void RefreshCurrentLocationOnDispatcher()
     {
+        var session = _navigationSession;
+        if (session is null || session.IsStopping)
+        {
+            return;
+        }
+
         if (Dispatcher.CheckAccess())
         {
             RefreshCurrentLocation();
         }
-        else if (!Dispatcher.HasShutdownStarted
-                 && !Dispatcher.HasShutdownFinished)
+        else if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
         {
             // Notifications can arrive concurrently from unrelated view models. Interlocked owns
             // the pending bit across those producers and the dispatcher consumer without relying
@@ -971,18 +1425,12 @@ public partial class NavigationView
                 new Action(() =>
                 {
                     Volatile.Write(ref _isLocationRefreshPending, 0);
-                    RefreshCurrentLocation();
+                    if (ReferenceEquals(session, _navigationSession) && !session.IsStopping)
+                    {
+                        RefreshCurrentLocation();
+                    }
                 })
             );
         }
-    }
-
-    private sealed class NavigationJournalEntry(NavigationEntry entry, NavigationRequest request)
-    {
-        internal NavigationEntry Entry { get; } = entry;
-
-        internal NavigationRequest Request { get; } = request;
-
-        internal IReadOnlyList<BreadcrumbSegment> BreadcrumbSnapshot { get; set; } = [];
     }
 }

@@ -18,7 +18,8 @@ using System.Windows.Threading;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Represents a container that enables navigation of app content. It has a header, a view for the main content, and a menu pane for navigation commands.
+/// Represents a container that enables navigation of app content. It has a header, a view for the
+/// main content, and a menu pane for navigation commands.
 /// </summary>
 /// <remarks>
 /// Navigation infrastructure should depend on <see cref="Wpf.Zen.Ui.INavigationHost"/>, which is
@@ -55,7 +56,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     internal event EventHandler? PaneTitleChangedInternal;
 
     /// <summary>
-    /// Initializes static members of the <see cref="NavigationView"/> class and overrides default property metadata.
+    /// Initializes static members of the <see cref="NavigationView"/> class and overrides default
+    /// property metadata.
     /// </summary>
     static NavigationView()
     {
@@ -80,8 +82,11 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         // templates expose only a host slot, and OnApplyTemplate moves this stable frame between
         // those slots.
 
-        _navigationFrame.Navigated += OnNavigationFrameNavigated;
-        _navigationFrame.Unloaded += OnNavigationFrameUnloaded;
+        _navigationFrame.Navigated         += OnNavigationFrameNavigated;
+        _navigationFrame.NavigationStopped += OnNavigationFrameStopped;
+        _navigationFrame.NavigationFailed  += OnNavigationFrameFailed;
+        _navigationFrame.Unloaded          += OnNavigationFrameUnloaded;
+        _navigationFrame.Loaded            += OnNavigationFrameLoaded;
 
         InitializeNavigationInputSuppression();
 
@@ -96,7 +101,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         BindingOperations.SetBinding(
             _paneBackButton,
             IsEnabledProperty,
-            new Binding(nameof(IsBackEnabled)) { Source = this }
+            new Binding(nameof(IsBackEnabled))
+            {
+                Source = this
+            }
         );
 
         _paneToggleButton = CreateNavigationButton(
@@ -121,7 +129,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         BindingOperations.SetBinding(
             _titleBarBackButton,
             IsEnabledProperty,
-            new Binding(nameof(IsBackEnabled)) { Source = this }
+            new Binding(nameof(IsBackEnabled))
+            {
+                Source = this
+            }
         );
 
         _titleBarToggleButton = CreateNavigationButton(
@@ -132,21 +143,21 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         _titleBarToggleButton.Click += OnToggleButtonClick;
 
-        BackButton = _paneBackButton;
+        BackButton   = _paneBackButton;
         ToggleButton = _paneToggleButton;
 
         // Auto is the default and the initial journal is empty. Apply the derived visibility before
         // either button can be measured in a pane or contributed to a title bar.
         UpdateBackButtonVisibility();
 
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
+        Loaded      += OnLoaded;
+        Unloaded    += OnUnloaded;
         SizeChanged += OnSizeChanged;
 
         // These collections are the direct-content alternative to ItemsSource, matching the two
         // mutually exclusive item paths exposed by WPF ItemsControl. ItemsSource is never copied
         // into them; preserving source identity is required for menu selection and invocation.
-        MenuItems.CollectionChanged += OnMenuItemsCollectionChanged;
+        MenuItems.CollectionChanged       += OnMenuItemsCollectionChanged;
         FooterMenuItems.CollectionChanged += OnFooterMenuItemsCollectionChanged;
 
         Breadcrumbs = new ReadOnlyObservableCollection<BreadcrumbSegment>(_breadcrumbs);
@@ -165,37 +176,43 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </remarks>
     public ReadOnlyObservableCollection<BreadcrumbSegment> Breadcrumbs { get; }
 
-    internal Dictionary<string, NavigationEntry> PageKeyIndex { get; } = [];
-    internal Dictionary<Type, NavigationEntry> PageTypeIndex { get; } = [];
+    internal Dictionary<string, NavigationEntry> PageKeyIndex  { get; } = [];
+    internal Dictionary<Type, NavigationEntry>   PageTypeIndex { get; } = [];
 
     private readonly HashSet<NavigationViewItem> _registeredItems = [];
+
     // Source objects are identities, not values. View models may implement value equality for
     // persistence or comparison; using that equality here would accidentally share selection,
     // parentage and generated containers between two distinct menu entries.
     private readonly Dictionary<object, NavigationEntry> _entriesByItem = new(
         ReferenceComparer<object>.Instance
     );
+
     private readonly HashSet<object> _entriesSeenDuringRebuild = new(
         ReferenceComparer<object>.Instance
     );
+
     private readonly HashSet<INotifyCollectionChanged> _navigationCollections = new(
         ReferenceComparer<INotifyCollectionChanged>.Instance
     );
+
     private readonly HashSet<INotifyPropertyChanged> _navigationItemsWithNotifications = new(
         ReferenceComparer<INotifyPropertyChanged>.Instance
     );
+
     private readonly ObservableCollection<string> _autoSuggestItems = [];
-    private readonly BreadcrumbCollection _breadcrumbs = [];
-    private readonly NavigationViewButton _paneBackButton;
-    private readonly NavigationViewButton _paneToggleButton;
-    private readonly NavigationViewButton _titleBarBackButton;
-    private readonly NavigationViewButton _titleBarToggleButton;
-    private readonly StackPanel _paneButtonsHost = new();
+    private readonly BreadcrumbCollection         _breadcrumbs      = [];
+    private readonly NavigationViewButton         _paneBackButton;
+    private readonly NavigationViewButton         _paneToggleButton;
+    private readonly NavigationViewButton         _titleBarBackButton;
+    private readonly NavigationViewButton         _titleBarToggleButton;
+    private readonly StackPanel                   _paneButtonsHost = new();
+
     private TitleBar? _titleBarContentOwner;
-    private object? _displacedTitleBarLeftContent;
-    private bool _isTitleBarContentContributed;
-    private bool _isTitleBarContentContributionSuppressed;
-    private bool _isLeftPaneWidthInitialized;
+    private object?   _displacedTitleBarLeftContent;
+    private bool      _isTitleBarContentContributed;
+    private bool      _isTitleBarContentContributionSuppressed;
+    private bool      _isLeftPaneWidthInitialized;
 
     /// <summary>
     /// Replaces a resolved path with one reset notification. Ordinary Clear/Add projection would
@@ -204,7 +221,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </summary>
     private sealed class BreadcrumbCollection : ObservableCollection<BreadcrumbSegment>
     {
-        internal void ReplaceWith(IReadOnlyList<BreadcrumbSegment> items)
+        internal void ReplaceWith(IReadOnlyList<BreadcrumbSegment> items, Func<bool>? isCurrent = null)
         {
             if (Count == items.Count && this.SequenceEqual(items))
             {
@@ -212,22 +229,35 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             }
 
             CheckReentrancy();
-            bool countChanged = Count != items.Count;
+
+            var countChanged = Count != items.Count;
+
             Items.Clear();
-            foreach (BreadcrumbSegment item in items)
+
+            foreach (var item in items)
             {
                 Items.Add(item);
             }
 
+            var failures = new NavigationFailures();
+
             if (countChanged)
             {
-                OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+                failures.Try(() => OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count))));
             }
 
-            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
-            OnCollectionChanged(
-                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset)
-            );
+            if (isCurrent?.Invoke() != false)
+            {
+                failures.Try(() => OnPropertyChanged(new PropertyChangedEventArgs("Item[]")));
+            }
+
+            if (isCurrent?.Invoke() != false)
+            {
+                var reset = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
+                failures.Try(() => OnCollectionChanged(reset));
+            }
+
+            failures.ThrowIfAny();
         }
     }
 
@@ -245,9 +275,17 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         private ReferenceComparer() { }
 
-        public bool Equals(T? x, T? y) => ReferenceEquals(x, y);
+        /// <inheritdoc />
+        public bool Equals(T? x, T? y)
+        {
+            return ReferenceEquals(x, y);
+        }
 
-        public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
+        /// <inheritdoc />
+        public int GetHashCode(T obj)
+        {
+            return RuntimeHelpers.GetHashCode(obj);
+        }
     }
 
     protected static void UpdateVisualState(NavigationView navigationView)
@@ -269,7 +307,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
                     ? navigationView.LeftPaneOpenWidth
                     : navigationView.LeftPaneCompactWidth
             );
+
             navigationView._isLeftPaneWidthInitialized = true;
+
             return;
         }
 
@@ -302,8 +342,13 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         return new NavigationViewAutomationPeer(this);
     }
 
-    /// <summary>Gets the realized container representing the current single selection.</summary>
-    internal NavigationViewItem? GetSelectedNavigationContainer() => _currentEntry?.Container;
+    /// <summary>
+    /// Gets the realized container representing the current single selection.
+    /// </summary>
+    internal NavigationViewItem? GetSelectedNavigationContainer()
+    {
+        return _currentEntry?.Container;
+    }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -316,9 +361,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             // properties changing. Remove before add so manually raised or repeated Loaded events
             // cannot multiply the handlers.
             autoSuggestBox.SuggestionChosen -= AutoSuggestBoxOnSuggestionChosen;
-            autoSuggestBox.QuerySubmitted -= AutoSuggestBoxOnQuerySubmitted;
+            autoSuggestBox.QuerySubmitted   -= AutoSuggestBoxOnQuerySubmitted;
             autoSuggestBox.SuggestionChosen += AutoSuggestBoxOnSuggestionChosen;
-            autoSuggestBox.QuerySubmitted += AutoSuggestBoxOnQuerySubmitted;
+            autoSuggestBox.QuerySubmitted   += AutoSuggestBoxOnQuerySubmitted;
         }
 
         UpdatePaneButtonPlacement();
@@ -341,19 +386,19 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         if (AutoSuggestBox is not null)
         {
             AutoSuggestBox.SuggestionChosen -= AutoSuggestBoxOnSuggestionChosen;
-            AutoSuggestBox.QuerySubmitted -= AutoSuggestBoxOnQuerySubmitted;
+            AutoSuggestBox.QuerySubmitted   -= AutoSuggestBoxOnQuerySubmitted;
         }
 
         // Descendant sources can outlive this control. Release every recursively discovered
         // subscription; OnLoaded rebuilds the semantic model if this instance is reused.
-        foreach (INotifyCollectionChanged collection in _navigationCollections)
+        foreach (var collection in _navigationCollections)
         {
             collection.CollectionChanged -= OnNavigationItemsSourceCollectionChanged;
         }
 
         _navigationCollections.Clear();
 
-        foreach (INotifyPropertyChanged item in _navigationItemsWithNotifications)
+        foreach (var item in _navigationItemsWithNotifications)
         {
             item.PropertyChanged -= OnNavigationItemPropertyChanged;
         }
@@ -459,7 +504,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// <summary>
     /// Captures the outgoing Left template's effective Width before a PaneDisplayMode style trigger
     /// destroys its generated subtree. Width is the animated dependency property and therefore
-    /// exposes the current clock value even between layout passes; ActualWidth is only a fallback for
+    /// exposes the current clock value even between layout passes; ActualWidth is only a fallback
+    /// for
     /// a custom template that leaves Width on Auto.
     /// </summary>
     private void CaptureLeftPaneWidth()
@@ -469,7 +515,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             return;
         }
 
-        double width = paneGrid.Width;
+        var width = paneGrid.Width;
         if (double.IsNaN(width))
         {
             width = paneGrid.ActualWidth;
@@ -497,7 +543,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             return;
         }
 
-        bool changesCurrentWidth = IsPaneOpen
+        var changesCurrentWidth = IsPaneOpen
             ? changedProperty == LeftPaneOpenWidthProperty
             : changedProperty == LeftPaneCompactWidthProperty;
 
@@ -507,6 +553,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         }
 
         _ = VisualStateManager.GoToState(this, "PaneReset", false);
+
         if (Template?.FindName("PaneGrid", this) is FrameworkElement paneGrid)
         {
             paneGrid.BeginAnimation(FrameworkElement.WidthProperty, null);
@@ -520,14 +567,15 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// <see cref="NavigationView"/> rather than by a control template because their placement
     /// is selected at runtime and may target <see cref="TitleBar.LeftContent"/>.
     /// </summary>
-    /// <param name="automationId">The stable automation identifier shared by both host-specific instances.</param>
+    /// <param name="automationId">
+    /// The stable automation identifier shared by both host-specific instances.
+    /// </param>
     /// <param name="placement">The host in which the button is placed.</param>
     /// <param name="role">The navigation command represented by the button.</param>
     private NavigationViewButton CreateNavigationButton(
-        string automationId,
+        string                        automationId,
         NavigationViewButtonPlacement placement,
-        NavigationViewButtonRole role
-    )
+        NavigationViewButtonRole      role)
     {
         var button = new NavigationViewButton();
 
@@ -552,13 +600,12 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </summary>
     private void UpdateBackButtonVisibility()
     {
-        Visibility visibility = IsBackButtonVisible switch
+        var visibility = IsBackButtonVisible switch
         {
-            NavigationViewBackButtonVisible.Visible => Visibility.Visible,
-            NavigationViewBackButtonVisible.Collapsed => Visibility.Collapsed,
+            NavigationViewBackButtonVisible.Visible                 => Visibility.Visible,
+            NavigationViewBackButtonVisible.Collapsed               => Visibility.Collapsed,
             NavigationViewBackButtonVisible.Auto when IsBackEnabled => Visibility.Visible,
-            NavigationViewBackButtonVisible.Auto => Visibility.Collapsed,
-            _ => Visibility.Collapsed,
+            _                                                       => Visibility.Collapsed,
         };
 
         _paneBackButton.SetCurrentValue(VisibilityProperty, visibility);
@@ -578,8 +625,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
             if (titleBar is not null)
             {
-                _titleBarContentOwner = titleBar;
-                _displacedTitleBarLeftContent = titleBar.LeftContent;
+                _titleBarContentOwner                    = titleBar;
+                _displacedTitleBarLeftContent            = titleBar.LeftContent;
                 _isTitleBarContentContributionSuppressed = false;
             }
         }
@@ -593,16 +640,13 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         {
             // Once an application replaces the contributed value, its newer value owns the slot.
             // Do not reacquire it during an unrelated pane or visibility update.
-            _isTitleBarContentContributed = false;
+            _isTitleBarContentContributed            = false;
             _isTitleBarContentContributionSuppressed = true;
         }
 
-        if (
-            _titleBarContentOwner is not null
-            && (
-                ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton)
-                || ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)
-            )
+        if (_titleBarContentOwner is not null
+            && (ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton)
+                || ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton))
         )
         {
             _titleBarContentOwner.SetCurrentValue(TitleBar.LeftContentProperty, null);
@@ -611,10 +655,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         _paneButtonsHost.Children.Clear();
 
-        var showBack = IsBackButtonVisible != NavigationViewBackButtonVisible.Collapsed;
+        var showBack   = IsBackButtonVisible != NavigationViewBackButtonVisible.Collapsed;
         var showToggle = IsPaneToggleVisible;
-        var titleButton =
-            titleBar is null ? null
+        var titleButton = titleBar is null ? null
             : showBack ? _titleBarBackButton
             : showToggle ? _titleBarToggleButton
             : null;
@@ -672,15 +715,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             );
         }
 
-        _titleBarContentOwner = null;
-        _displacedTitleBarLeftContent = null;
-        _isTitleBarContentContributed = false;
+        _titleBarContentOwner                    = null;
+        _displacedTitleBarLeftContent            = null;
+        _isTitleBarContentContributed            = false;
         _isTitleBarContentContributionSuppressed = false;
-    }
-
-    internal void ToggleAllExpands()
-    {
-        // TODO: When shift clicked on navigationviewitem
     }
 
     /// <summary>
@@ -703,13 +741,13 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </summary>
     internal bool OnNavigationViewItemClick(NavigationViewItem navigationViewItem)
     {
-        if (!TryGetNavigationEntry(navigationViewItem, out NavigationEntry? entry))
+        if (!TryGetNavigationEntry(navigationViewItem, out var entry))
         {
             return false;
         }
 
         OnItemInvoked();
-        bool navigated = NavigateInternal(entry);
+        var navigated = NavigateInternal(entry);
 
         if (navigated && !navigationViewItem.HasItems)
         {
@@ -719,12 +757,14 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         return navigated;
     }
 
-    /// <summary>Closes every transient navigation-item submenu without altering inline expansion.</summary>
+    /// <summary>
+    /// Closes every transient navigation-item submenu without altering inline expansion.
+    /// </summary>
     internal void CloseAllNavigationViewItemSubmenus()
     {
         // Each root owns one native ContextMenu. Closing that root lets MenuBase dismiss every
         // cascading MenuItem Popup and release capture as one atomic menu-mode transition.
-        foreach (NavigationViewItem item in GetNavigationViewItemRoots())
+        foreach (var item in GetNavigationViewItemRoots())
         {
             item.CloseSubmenuBranch();
         }
@@ -741,7 +781,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </remarks>
     internal void CloseOtherNavigationViewItemSubmenus(NavigationViewItem activeRoot)
     {
-        foreach (NavigationViewItem item in GetNavigationViewItemRoots())
+        foreach (var item in GetNavigationViewItemRoots())
         {
             if (!ReferenceEquals(item, activeRoot))
             {
@@ -779,7 +819,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// Navigate to the page after its name is selected in <see cref="AutoSuggestBox"/>.
     /// </summary>
     private void AutoSuggestBoxOnSuggestionChosen(
-        AutoSuggestBox sender,
+        AutoSuggestBox                          sender,
         AutoSuggestBoxSuggestionChosenEventArgs args
     )
     {
@@ -797,18 +837,17 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     }
 
     private void AutoSuggestBoxOnQuerySubmitted(
-        AutoSuggestBox sender,
-        AutoSuggestBoxQuerySubmittedEventArgs args
-    )
+        AutoSuggestBox                        sender,
+        AutoSuggestBoxQuerySubmittedEventArgs args)
     {
         var suggestions = new List<string>();
-        var querySplit = args.QueryText.Split(' ');
+        var querySplit  = args.QueryText.Split(' ');
 
         foreach (var item in _autoSuggestItems)
         {
-            bool isMatch = true;
+            var isMatch = true;
 
-            foreach (string queryToken in querySplit)
+            foreach (var queryToken in querySplit)
             {
                 if (item.IndexOf(queryToken, StringComparison.CurrentCultureIgnoreCase) < 0)
                 {
@@ -836,13 +875,13 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// Rebuilds presentation-independent entries from an item source and its declared descendants.
     /// </summary>
     private void AddItemsToNavigationIndexes(
-        IEnumerable items,
-        bool isMenuElement = true,
-        NavigationEntry? parent = null)
+        IEnumerable      items,
+        bool             isMenuElement = true,
+        NavigationEntry? parent        = null)
     {
         SubscribeToNavigationCollection(items);
 
-        foreach (object? item in items)
+        foreach (var item in items)
         {
             if (item is null)
             {
@@ -856,12 +895,15 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
                 // realization-scoped fallback entry from ItemContainerStyle bindings. Preserve an
                 // existing fallback while its source object is still present; otherwise an
                 // unrelated collection notification would invalidate a currently realized item.
-                if (_entriesByItem.TryGetValue(item, out NavigationEntry? fallbackEntry))
+                if (_entriesByItem.TryGetValue(item, out var fallbackEntry))
                 {
                     fallbackEntry.IsMenuElement = isMenuElement;
-                    fallbackEntry.Parent = parent;
+                    fallbackEntry.Parent        = parent;
+
                     _entriesSeenDuringRebuild.Add(item);
+
                     IndexNavigationEntry(fallbackEntry);
+
                     if (fallbackEntry.Children is { } fallbackChildren)
                     {
                         AddItemsToNavigationIndexes(fallbackChildren, isMenuElement, fallbackEntry);
@@ -871,9 +913,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
                 continue;
             }
 
-            if (!_entriesByItem.TryGetValue(item, out NavigationEntry? entry))
+            if (!_entriesByItem.TryGetValue(item, out var entry))
             {
-                entry = new NavigationEntry(item, isMenuElement);
+                entry                = new NavigationEntry(item, isMenuElement);
                 _entriesByItem[item] = entry;
             }
             else
@@ -882,12 +924,11 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             }
 
             _entriesSeenDuringRebuild.Add(item);
+
             entry.Parent = parent;
 
-            if (
-                item is INotifyPropertyChanged observableItem
-                && _navigationItemsWithNotifications.Add(observableItem)
-            )
+            if (item is INotifyPropertyChanged observableItem
+                && _navigationItemsWithNotifications.Add(observableItem))
             {
                 observableItem.PropertyChanged += OnNavigationItemPropertyChanged;
             }
@@ -931,12 +972,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
     private void SubscribeToNavigationCollection(IEnumerable items)
     {
-        if (
-            items is INotifyCollectionChanged observable
+        if (items is INotifyCollectionChanged observable
             && !ReferenceEquals(items, MenuItems)
             && !ReferenceEquals(items, FooterMenuItems)
-            && _navigationCollections.Add(observable)
-        )
+            && _navigationCollections.Add(observable))
         {
             observable.CollectionChanged += OnNavigationItemsSourceCollectionChanged;
         }
@@ -963,7 +1002,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         UpdateAutoSuggestBoxSuggestions();
     }
 
-    /// <summary>Establishes both sides of an entry's current container association.</summary>
+    /// <summary>
+    /// Establishes both sides of an entry's current container association.
+    /// </summary>
     /// <remarks>
     /// Source indexing and WPF container preparation share this boundary. Repeated indexing must
     /// not replay activation hooks, while a newly generated container must reflect entry state.
@@ -980,9 +1021,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             DetachNavigationItemContainer(item);
         }
 
-        entry.Container = item;
+        entry.Container      = item;
         item.NavigationEntry = entry;
         _registeredItems.Add(item);
+
         if (item.IsActive != entry.IsActive)
         {
             item.ApplyActiveState(this, entry.IsActive);
@@ -991,7 +1033,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         item.UpdateDescendantActiveState();
     }
 
-    /// <summary>Releases a presentation without changing the entry retained by navigation history.</summary>
+    /// <summary>
+    /// Releases a presentation without changing the entry retained by navigation history.
+    /// </summary>
     private void DetachNavigationItemContainer(NavigationViewItem item)
     {
         _registeredItems.Remove(item);
@@ -1020,7 +1064,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </remarks>
     internal void RegisterGeneratedNavigationItem(NavigationViewItem item, object sourceItem)
     {
-        if (!_entriesByItem.TryGetValue(sourceItem, out NavigationEntry? entry))
+        if (!_entriesByItem.TryGetValue(sourceItem, out var entry))
         {
             entry = new NavigationEntry(sourceItem, true)
             {
@@ -1044,11 +1088,17 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         UpdateAutoSuggestBoxSuggestions();
     }
 
-    /// <summary>Removes a data-generated container before its generator releases or recycles it.</summary>
-    internal void UnregisterGeneratedNavigationItem(NavigationViewItem item) =>
+    /// <summary>
+    /// Removes a data-generated container before its generator releases or recycles it.
+    /// </summary>
+    internal void UnregisterGeneratedNavigationItem(NavigationViewItem item)
+    {
         DetachNavigationItemContainer(item);
+    }
 
-    /// <summary>Closes detached popup presentations while retaining source-owned associations.</summary>
+    /// <summary>
+    /// Closes detached popup presentations while retaining source-owned associations.
+    /// </summary>
     /// <remarks>
     /// Unloaded does not release WPF item containers: reattaching the same visual tree can reuse
     /// them without another PrepareContainerForItemOverride call. Entry associations and root
@@ -1060,10 +1110,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         foreach (var item in _registeredItems)
         {
             // Closing each root also closes its descendants, avoiding repeated subtree walks.
-            if (
-                item.NavigationViewItemParent is not NavigationViewItem parentItem
-                || !_registeredItems.Contains(parentItem)
-            )
+            if (item.NavigationViewItemParent is not NavigationViewItem parentItem
+                || !_registeredItems.Contains(parentItem))
             {
                 item.CloseSubmenuBranch();
             }
@@ -1071,7 +1119,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     }
 
     private void OnNavigationItemsSourceCollectionChanged(
-        object? sender,
+        object?                          sender,
         NotifyCollectionChangedEventArgs e)
     {
         RebuildNavigationIndexes();
@@ -1079,22 +1127,20 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
     private void OnNavigationItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        bool allPropertiesChanged = string.IsNullOrEmpty(e.PropertyName);
+        var allPropertiesChanged = string.IsNullOrEmpty(e.PropertyName);
 
-        if (
-            sender is INavigationItem sourceItem
-            && _entriesByItem.TryGetValue(sourceItem, out NavigationEntry? changedEntry)
+        if (sender is INavigationItem sourceItem
+            && _entriesByItem.TryGetValue(sourceItem, out var changedEntry)
             && changedEntry.Container is { } container
             && (allPropertiesChanged
                 || e.PropertyName == nameof(INavigationItem.Children)
-                || e.PropertyName == nameof(INavigationItem.Icon))
-        )
+                || e.PropertyName == nameof(INavigationItem.Icon)))
         {
             NavigationViewList.SynchronizeDataContainer(container, sourceItem);
         }
 
         if (sender is INavigationItem changedItem
-            && _entriesByItem.TryGetValue(changedItem, out NavigationEntry? cacheEntry)
+            && _entriesByItem.TryGetValue(changedItem, out var cacheEntry)
             && (allPropertiesChanged
                 || e.PropertyName == nameof(INavigationItem.NavigationCacheMode)
                 || e.PropertyName == nameof(INavigationItem.TargetPageType)))
@@ -1110,7 +1156,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         PageKeyIndex.Clear();
         PageTypeIndex.Clear();
-        foreach (NavigationEntry entry in _entriesByItem.Values)
+
+        foreach (var entry in _entriesByItem.Values)
         {
             IndexNavigationEntry(entry);
         }
@@ -1121,26 +1168,30 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
     private void RebuildNavigationIndexes()
     {
-        foreach (INotifyCollectionChanged collection in _navigationCollections)
+        foreach (var collection in _navigationCollections)
         {
             collection.CollectionChanged -= OnNavigationItemsSourceCollectionChanged;
         }
 
         _navigationCollections.Clear();
-        foreach (INotifyPropertyChanged item in _navigationItemsWithNotifications)
+
+        foreach (var item in _navigationItemsWithNotifications)
         {
             item.PropertyChanged -= OnNavigationItemPropertyChanged;
         }
 
         _navigationItemsWithNotifications.Clear();
+
         PageKeyIndex.Clear();
         PageTypeIndex.Clear();
+
         _entriesSeenDuringRebuild.Clear();
+
         AddItemsToNavigationIndexes();
 
-        foreach (object removedItem in _entriesByItem.Keys
-                     .Where(item => !_entriesSeenDuringRebuild.Contains(item))
-                     .ToArray())
+        foreach (var removedItem in _entriesByItem.Keys
+            .Where(item => !_entriesSeenDuringRebuild.Contains(item))
+            .ToArray())
         {
             if (_entriesByItem[removedItem].Container is { } container)
             {
@@ -1184,7 +1235,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
     protected virtual void AddItemsToAutoSuggestBoxItems()
     {
-        foreach (NavigationEntry entry in _entriesByItem.Values)
+        foreach (var entry in _entriesByItem.Values)
         {
             if (entry.TargetPageType is not null && !string.IsNullOrWhiteSpace(entry.SearchText))
             {
@@ -1195,7 +1246,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
     protected virtual bool NavigateToMenuItemFromAutoSuggestBox(string selectedSuggestItem)
     {
-        foreach (NavigationEntry entry in _entriesByItem.Values)
+        foreach (var entry in _entriesByItem.Values)
         {
             if (entry.SearchText == selectedSuggestItem && entry.TargetPageType is not null)
             {
@@ -1215,7 +1266,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// Returns a null entry when the container cannot be associated with a navigation item.
     /// </summary>
     internal bool TryGetNavigationEntry(
-        NavigationViewItem container,
+        NavigationViewItem                       container,
         [NotNullWhen(true)] out NavigationEntry? entry)
     {
         if (container.NavigationEntry is { } containerEntry)
@@ -1224,14 +1275,14 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             return true;
         }
 
-        object? sourceItem = container.Header;
+        var sourceItem = container.Header;
         if (sourceItem is null)
         {
             entry = null;
             return false;
         }
 
-        if (_entriesByItem.TryGetValue(sourceItem, out NavigationEntry? existingEntry))
+        if (_entriesByItem.TryGetValue(sourceItem, out var existingEntry))
         {
             entry = existingEntry;
             return true;
@@ -1253,15 +1304,26 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// <summary>
     /// Determines whether a directly supplied root container still belongs to the semantic menu.
     /// </summary>
-    internal bool ContainsNavigationItemSource(NavigationViewItem item) =>
-        _entriesByItem.TryGetValue(item, out NavigationEntry? entry) && entry.IsMenuElement;
+    internal bool ContainsNavigationItemSource(NavigationViewItem item)
+    {
+        return _entriesByItem.TryGetValue(item, out var entry) && entry.IsMenuElement;
+    }
 
-    /// <summary>Returns the authoritative main-menu sequence without copying source items.</summary>
-    internal IEnumerable GetEffectiveMenuItems() => GetEffectiveItems(MenuItemsSource, MenuItems);
+    /// <summary>
+    /// Returns the authoritative main-menu sequence without copying source items.
+    /// </summary>
+    internal IEnumerable GetEffectiveMenuItems()
+    {
+        return GetEffectiveItems(MenuItemsSource, MenuItems);
+    }
 
-    /// <summary>Returns the authoritative footer-menu sequence without copying source items.</summary>
-    internal IEnumerable GetEffectiveFooterMenuItems() =>
-        GetEffectiveItems(FooterMenuItemsSource, FooterMenuItems);
+    /// <summary>
+    /// Returns the authoritative footer-menu sequence without copying source items.
+    /// </summary>
+    internal IEnumerable GetEffectiveFooterMenuItems()
+    {
+        return GetEffectiveItems(FooterMenuItemsSource, FooterMenuItems);
+    }
 
     private static IEnumerable GetEffectiveItems(object? source, IList directItems)
     {
@@ -1270,7 +1332,12 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             return enumerable;
         }
 
-        return source is null ? directItems : new[] { source };
+        return source is null
+            ? directItems
+            : new[]
+            {
+                source
+            };
     }
 
     /// <summary>
@@ -1296,7 +1363,9 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         }
     }
 
-    /// <summary>Updates template-facing root state from the effective, non-copied sources.</summary>
+    /// <summary>
+    /// Updates template-facing root state from the effective, non-copied sources.
+    /// </summary>
     private void UpdateRootItemState()
     {
         SetValue(HasMenuItemsPropertyKey, GetEffectiveMenuItems().Cast<object>().Any());

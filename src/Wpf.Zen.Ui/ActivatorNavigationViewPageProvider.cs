@@ -11,20 +11,22 @@ namespace Wpf.Zen.Ui;
 /// Creates pages for a container-free navigation scope without requiring dependency injection.
 /// </summary>
 /// <remarks>
-/// Pages are activated through their public parameterless constructor and destinations must derive from
-/// <see cref="FrameworkElement"/>. No design-time placeholder is substituted, so the designer renders the
-/// real page or surfaces construction errors itself. <see cref="NavigationView"/> uses this provider as its
-/// non-DI fallback; DI scopes use their own scoped activator and do not register this provider.
+/// Pages use their public parameterless constructor and must derive from
+/// <see cref="FrameworkElement"/>. The designer renders the real page or surfaces construction
+/// errors. <see cref="NavigationView"/> uses this provider for container-free scopes;
+/// DI scopes use their own scoped activator.
 /// </remarks>
 internal sealed class ActivatorNavigationViewPageProvider : INavigationViewPageProvider
 {
-    /// <summary>Gets the shared stateless provider used by navigation scopes that do not specify one.</summary>
+    /// <summary>
+    /// Gets the shared stateless provider used by navigation scopes that do not specify one.
+    /// </summary>
     public static ActivatorNavigationViewPageProvider Instance { get; } = new();
 
     private ActivatorNavigationViewPageProvider() { }
 
     /// <inheritdoc />
-    public object GetPage(Type pageType)
+    public NavigationPageLease GetPage(Type pageType)
     {
         if (pageType is null)
         {
@@ -45,6 +47,7 @@ internal sealed class ActivatorNavigationViewPageProvider : INavigationViewPageP
                     + $"or supply an {typeof(INavigationViewPageProvider)} to {typeof(NavigationScope)}."
             );
 
-        return (FrameworkElement)emptyConstructor.Invoke(null);
+        var page = (FrameworkElement)emptyConstructor.Invoke(null);
+        return NavigationPageLease.Owned(page);
     }
 }

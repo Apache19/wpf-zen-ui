@@ -5,7 +5,9 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Provides context for <see cref="NavigationView.NavigationCallbackFailed"/>.</summary>
+/// <summary>
+/// Provides context for <see cref="NavigationView.NavigationCallbackFailed"/>.
+/// </summary>
 public sealed class NavigationCallbackFailedEventArgs : EventArgs
 {
     internal NavigationCallbackFailedEventArgs(NavigationCallbackException exception)
@@ -13,16 +15,20 @@ public sealed class NavigationCallbackFailedEventArgs : EventArgs
         Exception = exception;
     }
 
-    /// <summary>Gets the contextual exception produced for the failed callback.</summary>
+    /// <summary>
+    /// Gets the contextual exception produced for the failed callback.
+    /// </summary>
     public NavigationCallbackException Exception { get; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the application has handled the failure.
     /// </summary>
     /// <remarks>
-    /// The default value is <see langword="false"/>. An unhandled failure is rethrown on the
-    /// navigation view's dispatcher to preserve fail-fast behavior. Set this property to
-    /// <see langword="true"/> after logging or presenting the failure to suppress that throw.
+    /// Defaults to false; unhandled errors remain in the owning scope's Completion task.
+    /// Notifications run on the Dispatcher before dependencies are released; handler failures
+    /// accompany the original error.
+    /// Notifications do not recurse. Setting true indicates that the application has logged or
+    /// displayed the error.
     /// </remarks>
     public bool Handled { get; set; }
 }

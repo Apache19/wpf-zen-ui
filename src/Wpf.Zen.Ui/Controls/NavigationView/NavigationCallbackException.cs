@@ -12,32 +12,38 @@ namespace Wpf.Zen.Ui.Controls;
 /// WPF commits object navigation on a dispatcher operation after the original navigation method
 /// has returned. Consequently a callback failure cannot retain the caller's stack. This exception
 /// records the component, displayed content, semantic target, and lifecycle stage so the failure
-/// remains attributable when it reaches the dispatcher exception boundary.
+/// remains attributable in the error event and the owning scope's completion task.
 /// </remarks>
 public sealed class NavigationCallbackException : Exception
 {
     internal NavigationCallbackException(
         NavigationCallbackStage stage,
-        object content,
-        object callbackTarget,
-        NavigationTarget? navigationTarget,
-        Exception innerException
+        object                  content,
+        object                  callbackTarget,
+        NavigationTarget?       navigationTarget,
+        Exception               innerException
     )
         : base(CreateMessage(stage, content, callbackTarget, navigationTarget), innerException)
     {
-        Stage = stage;
-        Content = content;
-        CallbackTarget = callbackTarget;
+        Stage            = stage;
+        Content          = content;
+        CallbackTarget   = callbackTarget;
         NavigationTarget = navigationTarget;
     }
 
-    /// <summary>Gets the lifecycle stage whose callback failed.</summary>
+    /// <summary>
+    /// Gets the lifecycle stage whose callback failed.
+    /// </summary>
     public NavigationCallbackStage Stage { get; }
 
-    /// <summary>Gets the page or content object being transitioned.</summary>
+    /// <summary>
+    /// Gets the page or content object being transitioned.
+    /// </summary>
     public object Content { get; }
 
-    /// <summary>Gets the view or view model whose lifecycle callback failed.</summary>
+    /// <summary>
+    /// Gets the view or view model whose lifecycle callback failed.
+    /// </summary>
     public object CallbackTarget { get; }
 
     /// <summary>
@@ -48,10 +54,9 @@ public sealed class NavigationCallbackException : Exception
 
     private static string CreateMessage(
         NavigationCallbackStage stage,
-        object content,
-        object callbackTarget,
-        NavigationTarget? navigationTarget
-    )
+        object                  content,
+        object                  callbackTarget,
+        NavigationTarget?       navigationTarget)
     {
         string targetDescription = navigationTarget is null
             ? "an untracked content replacement"

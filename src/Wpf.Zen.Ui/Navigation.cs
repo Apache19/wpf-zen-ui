@@ -5,104 +5,125 @@
 
 namespace Wpf.Zen.Ui;
 
-/// <summary>Provides contextual navigation information to a navigated WPF visual tree.</summary>
+/// <summary>
+/// Publishes the navigation service, host, and parameter to the page visual tree as one immutable
+/// snapshot.
+/// </summary>
 /// <remarks>
-/// WPF Frame deliberately creates an inheritance boundary. NavigationView therefore publishes
-/// these inherited, read-only values directly on the navigated page root. Descendant controls can
-/// discover their nearest navigation scope without consulting an application singleton, while
-/// non-visual view models should continue to receive <see cref="INavigationService"/> from the
-/// scope's dependency-injection provider.
+/// Frame forms a property inheritance boundary, so the snapshot is written directly to the page
+/// root. Bindings may use
+/// (Navigation.Context).Parameter; all three values observed in a property notification belong to
+/// the same commit.
 /// </remarks>
 public static class Navigation
 {
-    private static readonly DependencyPropertyKey ServicePropertyKey =
-        DependencyProperty.RegisterAttachedReadOnly(
-            "Service",
-            typeof(INavigationService),
-            typeof(Navigation),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+    private static readonly DependencyPropertyKey ContextPropertyKey
+        = DependencyProperty.RegisterAttachedReadOnly(
+            "Context", typeof(NavigationContext), typeof(Navigation),
+            new FrameworkPropertyMetadata(
+                null,
+                FrameworkPropertyMetadataOptions.Inherits)
         );
 
-    private static readonly DependencyPropertyKey HostPropertyKey =
-        DependencyProperty.RegisterAttachedReadOnly(
-            "Host",
-            typeof(INavigationHost),
-            typeof(Navigation),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
-        );
+    /// <summary>
+    /// Identifies the read-only inheritable navigation context attached property, cleared on page
+    /// exit and scope detachment.
+    /// </summary>
+    public static readonly DependencyProperty ContextProperty
+        = ContextPropertyKey.DependencyProperty;
 
-    private static readonly DependencyPropertyKey ParameterPropertyKey =
-        DependencyProperty.RegisterAttachedReadOnly(
-            "Parameter",
-            typeof(object),
-            typeof(Navigation),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
-        );
-
-    /// <summary>Identifies the read-only attached Service dependency property.</summary>
-    public static readonly DependencyProperty ServiceProperty = ServicePropertyKey.DependencyProperty;
-
-    /// <summary>Identifies the read-only attached Host dependency property.</summary>
-    public static readonly DependencyProperty HostProperty = HostPropertyKey.DependencyProperty;
-
-    /// <summary>Identifies the read-only attached Parameter dependency property.</summary>
-    public static readonly DependencyProperty ParameterProperty = ParameterPropertyKey.DependencyProperty;
-
-    /// <summary>Gets the navigation service belonging to an element's nearest navigated page.</summary>
+    /// <summary>
+    /// Gets the immutable navigation context from the nearest page root, or null outside a scope.
+    /// </summary>
     /// <param name="element">The page root or one of its logical descendants.</param>
-    /// <returns>The nearest contextual service, or <see langword="null"/> outside a scoped page.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "WpfAnalyzers.DependencyProperty",
-        "WPF0042:Avoid side effects in CLR accessors",
-        Justification = "GetValue is the standard read-only attached-property getter and does not mutate navigation state."
-    )]
+    /// <returns>The complete current context, or null.</returns>
+    public static NavigationContext? GetContext(DependencyObject element)
+    {
+        return (NavigationContext?)element.GetValue(ContextProperty);
+    }
+
+    /// <summary>
+    /// Gets the owning session's service, which becomes permanently invalid when that session
+    /// stops.
+    /// </summary>
+    /// <param name="element">The page root or one of its logical descendants.</param>
+    /// <returns>The service from the nearest context, or null.</returns>
     public static INavigationService? GetService(DependencyObject element)
     {
-        return element.GetValue(ServiceProperty) as INavigationService;
+        var context = GetContext(element);
+        return context?.Service;
     }
 
-    /// <summary>Gets the navigation host belonging to an element's nearest navigated page.</summary>
+    /// <summary>
+    /// Gets the navigation host owning the current page.
+    /// </summary>
     /// <param name="element">The page root or one of its logical descendants.</param>
-    /// <returns>The nearest host, or <see langword="null"/> outside a scoped page.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "WpfAnalyzers.DependencyProperty",
-        "WPF0042:Avoid side effects in CLR accessors",
-        Justification = "GetValue is the standard read-only attached-property getter and does not mutate navigation state."
-    )]
+    /// <returns>The host from the nearest context, or null.</returns>
     public static INavigationHost? GetHost(DependencyObject element)
     {
-        return element.GetValue(HostProperty) as INavigationHost;
+        var context = GetContext(element);
+        return context?.Host;
     }
 
-    /// <summary>Gets the parameter supplied by the request that entered the current page.</summary>
+    /// <summary>
+    /// Gets this request's parameter; navigation preserves the page DataContext.
+    /// </summary>
     /// <param name="element">The page root or one of its logical descendants.</param>
-    /// <returns>The request parameter, or <see langword="null"/> when none was supplied.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "WpfAnalyzers.DependencyProperty",
-        "WPF0042:Avoid side effects in CLR accessors",
-        Justification = "GetValue is the standard read-only attached-property getter and does not mutate navigation state."
-    )]
+    /// <returns>The parameter from the nearest context, or null.</returns>
     public static object? GetParameter(DependencyObject element)
     {
-        return element.GetValue(ParameterProperty);
+        var context = GetContext(element);
+        return context?.Parameter;
     }
 
+    /// <summary>
+    /// Publishes context atomically so property notifications observe service and parameter values
+    /// from the same request.
+    /// </summary>
     internal static void SetContext(
-        DependencyObject element,
+        DependencyObject   element,
         INavigationService service,
-        INavigationHost host,
-        object? parameter
-    )
+        INavigationHost    host,
+        object?            parameter)
     {
-        element.SetValue(ServicePropertyKey, service);
-        element.SetValue(HostPropertyKey, host);
-        element.SetValue(ParameterPropertyKey, parameter);
+        var context = new NavigationContext(service, host, parameter);
+        element.SetValue(ContextPropertyKey, context);
     }
 
+    /// <summary>
+    /// Clears the inherited snapshot at once; callers must transfer owned references before
+    /// property callbacks can reenter.
+    /// </summary>
     internal static void ClearContext(DependencyObject element)
     {
-        element.ClearValue(ServicePropertyKey);
-        element.ClearValue(HostPropertyKey);
-        element.ClearValue(ParameterPropertyKey);
+        element.ClearValue(ContextPropertyKey);
     }
+}
+
+/// <summary>
+/// Stores the visual context of one committed navigation without owning session or page resources.
+/// </summary>
+public sealed class NavigationContext
+{
+    internal NavigationContext(INavigationService service, INavigationHost host, object? parameter)
+    {
+        Service   = service;
+        Host      = host;
+        Parameter = parameter;
+    }
+
+    /// <summary>
+    /// Gets the page's session service, which cannot control subsequent sessions after stopping.
+    /// </summary>
+    public INavigationService Service { get; }
+
+    /// <summary>
+    /// Gets the navigation host that published this snapshot.
+    /// </summary>
+    public INavigationHost Host { get; }
+
+    /// <summary>
+    /// Gets this navigation's parameter, or null if none was supplied.
+    /// </summary>
+    public object? Parameter { get; }
 }

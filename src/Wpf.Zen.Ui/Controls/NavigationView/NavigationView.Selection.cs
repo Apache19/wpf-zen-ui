@@ -13,6 +13,8 @@ public partial class NavigationView
 {
     private DispatcherOperation? _bringActiveBranchIntoViewOperation;
 
+    private long _activeBranchesRevision;
+
     /// <summary>
     /// Projects selection through the indexed source hierarchy, including unrealized descendants.
     /// </summary>
@@ -24,8 +26,10 @@ public partial class NavigationView
     /// </remarks>
     internal void SynchronizeActiveNavigationBranches()
     {
-        var entries = _entriesByItem.Values.ToArray();
+        var revision  = ++_activeBranchesRevision;
+        var entries   = _entriesByItem.Values.ToArray();
         var ancestors = new HashSet<NavigationEntry>();
+
         foreach (var activeEntry in entries)
         {
             if (!activeEntry.IsActive)
@@ -51,6 +55,11 @@ public partial class NavigationView
 
         foreach (var entry in entries)
         {
+            if (revision != _activeBranchesRevision)
+            {
+                break;
+            }
+
             entry.Container?.UpdateDescendantActiveState();
         }
     }
@@ -69,26 +78,29 @@ public partial class NavigationView
 
         _bringActiveBranchIntoViewOperation = Dispatcher.BeginInvoke(
             DispatcherPriority.Loaded,
-            new Action(() =>
-            {
-                _bringActiveBranchIntoViewOperation = null;
-                if (!IsLoaded || _currentEntry is not { IsActive: true } activeEntry
-                    || !_entriesByItem.Values.Contains(activeEntry))
+            new Action(
+                () =>
                 {
-                    return;
-                }
+                    _bringActiveBranchIntoViewOperation = null;
 
-                // IsVisible excludes collapsed inline descendants and source containers retained
-                // behind a detached menu. Walking toward the root therefore reveals the deepest
-                // currently displayed representative without changing expansion or keyboard focus.
-                for (var entry = activeEntry; entry is not null; entry = entry.Parent)
-                {
-                    if (entry.Container?.TryBringHeaderIntoView() == true)
+                    if (!IsLoaded || _currentEntry is not { IsActive: true } activeEntry
+                        || !_entriesByItem.Values.Contains(activeEntry))
                     {
-                        break;
+                        return;
+                    }
+
+                    // IsVisible excludes collapsed inline descendants and source containers retained
+                    // behind a detached menu. Walking toward the root therefore reveals the deepest
+                    // currently displayed representative without changing expansion or keyboard focus.
+                    for (var entry = activeEntry; entry is not null; entry = entry.Parent)
+                    {
+                        if (entry.Container?.TryBringHeaderIntoView() == true)
+                        {
+                            break;
+                        }
                     }
                 }
-            })
+            )
         );
     }
 }

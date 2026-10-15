@@ -16,6 +16,10 @@ using Wpf.Zen.Ui.Gallery.Views.Windows;
 
 namespace Wpf.Zen.Ui.Gallery;
 
+/// <summary>
+/// Manages the gallery composition root, stopping the host and awaiting disposal before Dispatcher
+/// shutdown.
+/// </summary>
 public partial class App
 {
     // The .NET Generic Host provides dependency injection, configuration, logging, and other services.
@@ -101,44 +105,64 @@ public partial class App
     /// </summary>
     private void OnExit(object sender, ExitEventArgs e)
     {
-        try
+        if (_stopCompletion is null || !_stopCompletion.IsCompleted)
         {
-            // Use a DispatcherFrame to continue processing UI messages while waiting for StopAsync
-            // to complete. This prevents deadlocks that can occur when synchronously blocking the UI thread.
-            var stopTask = _host.StopAsync();
-
-            var frame = new DispatcherFrame();
-
-            stopTask.ContinueWith(
-                _ => frame.Continue = false,
-                TaskScheduler.FromCurrentSynchronizationContext()
-            );
-
-            // Enter a message loop until stopTask completes
-            Dispatcher.PushFrame(frame);
-
-            stopTask.GetAwaiter().GetResult();
-        }
-        catch
-        {
-            // Ignore exceptions from StopAsync during shutdown to avoid interfering with further cleanup
-        }
-        finally
-        {
-            // Ensure the Host is disposed regardless of whether StopAsync succeeded
-            try
-            {
-                #pragma warning disable IDISP007 // Don't dispose injected
-                _host.Dispose();
-                #pragma warning restore IDISP007 // Don't dispose injected
-            }
-            catch
-            {
-                // Ignore Dispose exceptions during shutdown
-            }
+            Trace.TraceError("[Gallery.Navigation] SHUTDOWN bypassed window cleanup; exitCode={0}.",
+                e.ApplicationExitCode);
         }
     }
 
+    private static Task? _stopCompletion;
+
+    /// <summary>
+    /// Called by the window before normal closure to stop the host and asynchronously dispose the
+    /// container.
+    /// </summary>
+    internal static Task StopServicesAsync()
+    {
+        Application.Current.Dispatcher.VerifyAccess();
+        return _stopCompletion ??= StopServicesCoreAsync();
+    }
+
+    /// <summary>
+    /// Preserves independent stop and disposal failures, attempting both cleanup steps even if
+    /// either fails.
+    /// </summary>
+    private static async Task StopServicesCoreAsync()
+    {
+        // Publishes stable completion before invoking host services that may reenter closing.
+        await System.Windows.Threading.Dispatcher.Yield();
+        var failures = new List<Exception>();
+        try
+        {
+            await _host.StopAsync();
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+
+        try
+        {
+            if (_host is IAsyncDisposable asynchronous)
+            {
+                await asynchronous.DisposeAsync();
+            }
+            else
+            {
+                _host.Dispose();
+            }
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+
+        if (failures.Count > 0)
+        {
+            throw new AggregateException("Gallery service shutdown failed.", failures);
+        }
+    }
     /// <summary>
     /// Occurs when an exception is thrown by an application but not handled.
     /// </summary>

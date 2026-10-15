@@ -66,7 +66,7 @@ public class NavigationScopeTests
 
             using INavigationScope scope = factory.Attach(host);
 
-            Assert.True(scope.Navigation.Navigate(typeof(UnregisteredPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(UnregisteredPage)).Succeeded);
             Assert.NotNull(page);
             Assert.Same(
                 scope.Services.GetRequiredService<ScopedDisposable>(),
@@ -92,7 +92,7 @@ public class NavigationScopeTests
             // path fails identically to the container-free activator instead of rendering
             // template-less content inside the frame.
             InvalidCastException exception = Assert.Throws<InvalidCastException>(() =>
-                scope.Navigation.Navigate(typeof(object)));
+                scope.Navigation.NavigateAndCommit(typeof(object)));
             Assert.Contains("must be derived from", exception.Message);
         });
     }
@@ -116,7 +116,7 @@ public class NavigationScopeTests
 
             using INavigationScope scope = factory.Attach(host);
 
-            Assert.True(scope.Navigation.Navigate(typeof(ProviderCreatedPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ProviderCreatedPage)).Succeeded);
             Assert.Same(registeredPage, navigatedPage);
         });
     }
@@ -137,7 +137,7 @@ public class NavigationScopeTests
                 scope.Services.GetService(typeof(INavigationService))
             );
             Assert.True(
-                scope.Navigation.Navigate(typeof(ContainerFreePage), "without-container").Succeeded
+                scope.Navigation.NavigateAndCommit(typeof(ContainerFreePage), "without-container").Succeeded
             );
             Assert.NotNull(page);
             Assert.Same(scope.Navigation, Wpf.Zen.Ui.Navigation.GetService(page));
@@ -183,9 +183,9 @@ public class NavigationScopeTests
                 pageProvider,
                 scope.Services.GetService(typeof(INavigationViewPageProvider))
             );
-            Assert.True(scope.Navigation.Navigate(typeof(ProviderCreatedPage)).Succeeded);
-            Assert.True(scope.Navigation.Navigate(typeof(ContainerFreePage)).Succeeded);
-            Assert.True(scope.Navigation.Navigate(typeof(ProviderCreatedPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ProviderCreatedPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ContainerFreePage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ProviderCreatedPage)).Succeeded);
 
             Assert.Equal(2, providerPageVisits.Count);
             Assert.Same(suppliedPage, providerPageVisits[0]);
@@ -225,8 +225,8 @@ public class NavigationScopeTests
                 secondScope.Services.GetRequiredService<INavigationService>()
             );
 
-            Assert.True(firstScope.Navigation.Navigate(typeof(ScopedPage), "first-parameter").Succeeded);
-            Assert.True(secondScope.Navigation.Navigate(typeof(ScopedPage), "second-parameter").Succeeded);
+            Assert.True(firstScope.Navigation.NavigateAndCommit(typeof(ScopedPage), "first-parameter").Succeeded);
+            Assert.True(secondScope.Navigation.NavigateAndCommit(typeof(ScopedPage), "second-parameter").Succeeded);
 
             Assert.NotNull(firstPage);
             Assert.NotNull(secondPage);
@@ -264,7 +264,7 @@ public class NavigationScopeTests
             using INavigationScope firstScope = factory.Attach(firstHost, "first");
             INavigationScope secondScope = factory.Attach(secondHost, "second");
 
-            Assert.True(router.Navigate("second", NavigationRequest.To<ScopedPage>()).Succeeded);
+            Assert.True(router.NavigateAndCommit("second", NavigationRequest.To<ScopedPage>()).Succeeded);
             Assert.Equal(0, firstNavigated);
             Assert.Equal(1, secondNavigated);
 
@@ -272,7 +272,7 @@ public class NavigationScopeTests
 
             Assert.Equal(
                 NavigationResultStatus.HostNotFound,
-                router.Navigate("second", NavigationRequest.To<ScopedPage>()).Status
+                router.NavigateAndCommit("second", NavigationRequest.To<ScopedPage>()).Status
             );
         });
     }
@@ -293,7 +293,7 @@ public class NavigationScopeTests
             host.Navigated += (_, args) => page = Assert.IsType<ScopedPage>(args.Page);
             INavigationScope firstScope = factory.Attach(host);
 
-            Assert.True(firstScope.Navigation.Navigate(typeof(ScopedPage)).Succeeded);
+            Assert.True(firstScope.Navigation.NavigateAndCommit(typeof(ScopedPage)).Succeeded);
             Assert.NotNull(page);
             firstScope.Dispose();
 
@@ -302,7 +302,7 @@ public class NavigationScopeTests
 
             using INavigationScope secondScope = factory.Attach(host);
             Assert.NotSame(firstScope.Navigation, secondScope.Navigation);
-            Assert.True(secondScope.Navigation.Navigate(typeof(ScopedPage)).Succeeded);
+            Assert.True(secondScope.Navigation.NavigateAndCommit(typeof(ScopedPage)).Succeeded);
             Assert.NotNull(page);
             Assert.Same(secondScope.Navigation, page.NavigationService);
             Assert.Same(secondScope.Navigation, Wpf.Zen.Ui.Navigation.GetService(page));
@@ -343,9 +343,9 @@ public class NavigationScopeTests
             };
 
             using INavigationScope scope = factory.Attach(host);
-            Assert.True(scope.Navigation.Navigate(typeof(ScopedPage)).Succeeded);
-            Assert.True(scope.Navigation.Navigate(typeof(OtherScopedPage)).Succeeded);
-            Assert.True(scope.Navigation.Navigate(typeof(ScopedPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ScopedPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(OtherScopedPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ScopedPage)).Succeeded);
 
             Assert.Equal(2, scopedPages.Count);
             Assert.Same(scopedPages[0], scopedPages[1]);
@@ -355,7 +355,7 @@ public class NavigationScopeTests
     [Fact]
     public void Dispose_CancelsEntryAndExitsBeforeDisposingScopedDependencies()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             var services = new ServiceCollection();
             _ = services.AddNavigation();
@@ -369,7 +369,7 @@ public class NavigationScopeTests
             host.Navigated += (_, args) => page = Assert.IsType<CancellableEntryPage>(args.Page);
             using INavigationScope scope = factory.Attach(host);
 
-            Assert.True(scope.Navigation.Navigate(typeof(CancellableEntryPage)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(CancellableEntryPage)).Succeeded);
             Dispatcher.CurrentDispatcher.Invoke(
                 static () => { },
                 DispatcherPriority.ApplicationIdle
@@ -385,9 +385,258 @@ public class NavigationScopeTests
 
             // Dispose initiates foreign-thread-safe cleanup without blocking the WPF dispatcher.
             // Await the explicit completion path before asserting service-scope disposal.
-            scope.DisposeAsync().GetAwaiter().GetResult();
+            await scope.DisposeAsync().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             Assert.True(page.Dependency.IsDisposed);
         });
+    }
+
+    /// <summary>
+    /// All entry tasks from consecutive departures must finish before scope services are disposed.
+    /// </summary>
+    [Fact]
+    public void DisposeAsync_WaitsForAllDepartedEntriesBeforeDisposingServices()
+    {
+        WpfTestThread.Run(async () =>
+        {
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            _ = services.AddScoped<ScopedDisposable>();
+            using ServiceProvider provider = services.BuildServiceProvider();
+            var factory = provider.GetRequiredService<INavigationScopeFactory>();
+            var host = new NavigationView();
+            using INavigationScope scope = factory.Attach(host);
+            var dependency = scope.Services.GetRequiredService<ScopedDisposable>();
+            var first = new PendingEntryPage();
+            var second = new PendingEntryPage();
+            try
+            {
+                Assert.True(host.ReplaceContent(first));
+                Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                Assert.True(host.ReplaceContent(second));
+                Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                Assert.True(host.ReplaceContent(new Border()));
+                Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                Assert.True(first.Token.IsCancellationRequested);
+                Assert.True(second.Token.IsCancellationRequested);
+
+                Task detached = scope.DisposeAsync();
+                Assert.False(detached.IsCompleted);
+                Assert.False(dependency.IsDisposed);
+                second.Completion.SetResult(true);
+                Assert.False(detached.IsCompleted);
+                Assert.False(dependency.IsDisposed);
+                first.Completion.SetResult(true);
+                await detached.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+                Assert.True(dependency.IsDisposed);
+                Assert.Equal(1, first.ExitCount);
+                Assert.Equal(1, second.ExitCount);
+            }
+            finally
+            {
+                first.Completion.TrySetResult(true);
+                second.Completion.TrySetResult(true);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Unhandled exit and error event exceptions must not release scope dependencies prematurely.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DisposeAsync_ExitFailureStillDrainsPendingCallbacks(bool eventThrows)
+    {
+        WpfTestThread.Run(async () =>
+        {
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            _ = services.AddScoped<ScopedDisposable>();
+            using ServiceProvider provider = services.BuildServiceProvider();
+            var host = new NavigationView();
+            var factory = provider.GetRequiredService<INavigationScopeFactory>();
+            INavigationScope scope = factory.Attach(host);
+            var dependency = scope.Services.GetRequiredService<ScopedDisposable>();
+            var expected = new InvalidOperationException("退出失败");
+            var page = new PendingEntryPage { ExitAction = () => throw expected };
+            if (eventThrows)
+            {
+                host.NavigationCallbackFailed += (_, _) => throw expected;
+            }
+
+            try
+            {
+                Assert.True(host.ReplaceContent(page));
+                Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                Task detached = scope.DisposeAsync();
+                Assert.False(detached.IsCompleted);
+                Assert.False(dependency.IsDisposed);
+                page.Completion.SetResult(true);
+                _ = await Record.ExceptionAsync(() => detached.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+                Assert.True(detached.IsFaulted);
+                Exception failure = detached.Exception!.Flatten().InnerExceptions[0];
+                if (eventThrows)
+                {
+                    Assert.Contains(expected, detached.Exception!.Flatten().InnerExceptions);
+                }
+                else
+                {
+                    Assert.Same(expected, Assert.IsType<NavigationCallbackException>(failure).InnerException);
+                }
+
+                Assert.True(dependency.IsDisposed);
+                Assert.Equal(1, page.ExitCount);
+            }
+            finally
+            {
+                page.Completion.TrySetResult(true);
+                _ = scope.DisposeAsync();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Location notification failure still waits for old work, clears host references, and allows a
+    /// fresh scope.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DisposeAsync_LocationFailureDrainsAndAllowsReattachment(bool exitAlsoThrows)
+    {
+        WpfTestThread.Run(async () =>
+        {
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            _ = services.AddScoped<ScopedDisposable>();
+            using ServiceProvider provider = services.BuildServiceProvider();
+            var host = new NavigationView();
+            var factory = provider.GetRequiredService<INavigationScopeFactory>();
+            INavigationScope scope = factory.Attach(host);
+            var dependency = scope.Services.GetRequiredService<ScopedDisposable>();
+            var expected = new InvalidOperationException("位置通知失败");
+            var exitFailure = new InvalidOperationException("退出失败");
+            var page = new PendingEntryPage();
+            if (exitAlsoThrows)
+            {
+                page.ExitAction = () => throw exitFailure;
+            }
+
+            EventHandler handler = (_, _) => throw expected;
+            try
+            {
+                Assert.True(host.ReplaceContent(page));
+                Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                host.CurrentLocationChanged += handler;
+                Task detached = scope.DisposeAsync();
+                host.CurrentLocationChanged -= handler;
+                Assert.False(detached.IsCompleted);
+                Assert.False(dependency.IsDisposed);
+                foreach (string fieldName in new[]
+                    { "_navigationService", "_pageService", "_currentPage", "_navigationContextOwner" })
+                {
+                    var field = typeof(NavigationView).GetField(fieldName,
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                    Assert.Null(field.GetValue(host));
+                }
+
+                page.Completion.SetResult(true);
+                _ = await Record.ExceptionAsync(() => detached.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+                Assert.True(detached.IsFaulted);
+                var failures = detached.Exception!.Flatten().InnerExceptions;
+                Assert.Contains(expected, failures);
+                Assert.Equal(exitAlsoThrows ? 2 : 1, failures.Count);
+                if (exitAlsoThrows)
+                {
+                    Assert.Contains(failures, failure => failure is NavigationCallbackException callback
+                        && ReferenceEquals(callback.InnerException, exitFailure));
+                }
+
+                Assert.True(dependency.IsDisposed);
+                Assert.Equal(1, page.ExitCount);
+                using INavigationScope next = factory.Attach(host);
+                var nextDependency = next.Services.GetRequiredService<ScopedDisposable>();
+                Assert.NotSame(dependency, nextDependency);
+                Assert.True(next.Navigation.NavigateAndCommit(typeof(UnregisteredPage)).Succeeded);
+                Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                Assert.False(nextDependency.IsDisposed);
+                await next.DisposeAsync().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+                Assert.True(nextDependency.IsDisposed);
+            }
+            finally
+            {
+                host.CurrentLocationChanged -= handler;
+                page.Completion.TrySetResult(true);
+                _ = scope.DisposeAsync();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Reentrant disposal during page exit on unload must preserve scope services until model exit.
+    /// </summary>
+    [Fact]
+    public void Unload_ReentrantDisposeWaitsForRemainingExitParticipants()
+    {
+        WpfTestThread.Run(async () =>
+        {
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            _ = services.AddScoped<ScopedDisposable>();
+            using ServiceProvider provider = services.BuildServiceProvider();
+            var host = new NavigationView();
+            var factory = provider.GetRequiredService<INavigationScopeFactory>();
+            using INavigationScope scope = factory.Attach(host);
+            var dependency = scope.Services.GetRequiredService<ScopedDisposable>();
+            var model = new PendingEntryPage();
+            model.Completion.SetResult(true);
+            var page = new PendingEntryPage { DataContext = model };
+            page.Completion.SetResult(true);
+            bool? modelSawDisposed = null;
+            page.ExitAction = scope.Dispose;
+            model.ExitAction = () => modelSawDisposed = dependency.IsDisposed;
+            Assert.True(host.ReplaceContent(page));
+            Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+
+            // Windowless unit tests deliver Frame unload directly; client tests cover actual window
+            // closure.
+            var field = typeof(NavigationView).GetField("_navigationFrame",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var frame = (Frame)field.GetValue(host)!;
+            frame.RaiseEvent(new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.UnloadedEvent));
+            Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+            Task detached = scope.DisposeAsync();
+            await detached.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            Assert.Equal(false, modelSawDisposed);
+            Assert.True(dependency.IsDisposed);
+            Assert.Equal(1, page.ExitCount);
+            Assert.Equal(1, model.ExitCount);
+        });
+    }
+
+    /// <summary>
+    /// Simulates a page requiring asynchronous cleanup after cancellation.
+    /// </summary>
+    private sealed class PendingEntryPage : Border, IAsyncNavigationAware
+    {
+        internal TaskCompletionSource<bool> Completion { get; } = new();
+        internal CancellationToken Token { get; private set; }
+        internal int ExitCount { get; private set; }
+        internal Action? ExitAction { get; set; }
+
+        /// <inheritdoc />
+        public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+        {
+            Token = cancellationToken;
+            return Completion.Task;
+        }
+
+        /// <inheritdoc />
+        public void OnNavigationExited()
+        {
+            ExitCount++;
+            ExitAction?.Invoke();
+        }
     }
 
     [Fact]
@@ -417,9 +666,9 @@ public class NavigationScopeTests
             host.Navigated += (_, args) => firstPage = args.Page as ScopedPage ?? firstPage;
             using INavigationScope scope = factory.Attach(host);
 
-            Assert.True(scope.Navigation.Navigate(typeof(ScopedPage), "first-visit").Succeeded);
-            Assert.True(scope.Navigation.Navigate(typeof(OtherScopedPage), "second-visit").Succeeded);
-            Assert.True(scope.Navigation.GoBack().Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ScopedPage), "first-visit").Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(OtherScopedPage), "second-visit").Succeeded);
+            Assert.True(scope.Navigation.GoBackAndCommit().Succeeded);
 
             Assert.NotNull(firstPage);
             Assert.Equal("first-visit", Wpf.Zen.Ui.Navigation.GetParameter(firstPage));
@@ -497,12 +746,12 @@ public class NavigationScopeTests
     {
         public int ProviderPageRequests { get; private set; }
 
-        public object GetPage(Type pageType)
+        public NavigationPageLease GetPage(Type pageType)
         {
             if (pageType == typeof(ProviderCreatedPage))
             {
                 ProviderPageRequests++;
-                return page;
+                return NavigationPageLease.Borrowed(page);
             }
 
             return ActivatorNavigationViewPageProvider.Instance.GetPage(pageType);
@@ -534,6 +783,10 @@ public class NavigationScopeTests
     {
         public bool IsDisposed { get; private set; }
 
-        public void Dispose() => IsDisposed = true;
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
     }
 }

@@ -3,90 +3,89 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Wpf.Zen.Ui;
 
 namespace Wpf.Zen.Ui.DependencyInjection;
 
-/// <summary>Creates a dependency-injection scope for every attached navigation host.</summary>
-internal sealed class NavigationScopeFactory(
-    IServiceScopeFactory serviceScopeFactory,
-    NavigationRouter router
-) : INavigationScopeFactory
+/// <summary>
+/// Creates a child container per attachment and transfers container and route cleanup to the shared
+/// session coordinator.
+/// </summary>
+internal sealed class NavigationScopeFactory(IServiceScopeFactory serviceScopeFactory, NavigationRouter router)
+    : INavigationScopeFactory
 {
     /// <inheritdoc />
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP001:Dispose created",
-        Justification = "Ownership of the created IServiceScope is transferred to the returned NavigationScope; every failure path disposes it locally."
-    )]
     public INavigationScope Attach(INavigationHost host, string? id = null)
     {
-        if (host is null)
-        {
-            throw new ArgumentNullException(nameof(host));
-        }
+        NavigationScope.VerifyAttachmentAccess(host);
 
-        if (!host.Dispatcher.CheckAccess())
-        {
-            throw new InvalidOperationException(
-                "A navigation scope must be attached on the navigation host's dispatcher."
-            );
-        }
+        var serviceScope = serviceScopeFactory.CreateAsyncScope();
 
-        var serviceScope = serviceScopeFactory.CreateScope();
-        var hostAttached = false;
-        var routeRegistered = false;
-
-        ScopedNavigationService? navigationService = null;
+        NavigationScope? scope = null;
 
         try
         {
-            navigationService = serviceScope.ServiceProvider
-               .GetRequiredService<ScopedNavigationService>();
+            var navigation = serviceScope.ServiceProvider.GetRequiredService<ScopedNavigationService>();
+            navigation.Attach(host);
 
-            navigationService.Attach(host);
-
-            // Page activation is bound directly to this host scope. It is intentionally not resolved
-            // as an application service: consumers should not need to register a provider or every
-            // navigable Page merely because the application uses dependency injection.
-            var pageProvider = new DependencyInjectionNavigationViewPageProvider(
-                serviceScope.ServiceProvider
+            var provider = new DependencyInjectionNavigationViewPageProvider(serviceScope.ServiceProvider);
+            scope = new NavigationScope(
+                host,
+                navigation,
+                provider,
+                serviceScope.ServiceProvider,
+                id,
+                () => serviceScope.DisposeAsync().AsTask(),
+                () =>
+                {
+                    if (id is not null)
+                    {
+                        router.Unregister(id, navigation);
+                    }
+                }
             );
 
-            // Reserve an explicit route before mutating the host. A duplicate id then fails without
-            // requiring asynchronous detachment of an otherwise valid host and page lifecycle.
             if (id is not null)
             {
-                router.Register(id, navigationService);
-                routeRegistered = true;
+                router.Register(id, navigation);
             }
 
-            host.AttachNavigationScope(navigationService, pageProvider);
-            hostAttached = true;
-
-            return new NavigationScope(
-                id,
-                host,
-                navigationService,
-                serviceScope,
-                router
-            );
+            scope.AttachHost();
+            return scope;
         }
-        catch
+        catch (Exception exception)
         {
-            if (routeRegistered && id is not null && navigationService is not null)
+            if (scope is not null)
             {
-                router.Unregister(id, navigationService);
+                scope.RollbackAttachment(exception);
             }
 
-            if (hostAttached && navigationService is not null)
+            // Provides a complete asynchronous rollback handle if service resolution fails before
+            // the shared coordinator exists.
+            Task cleanup = ReleaseFailedCreationAsync(serviceScope, exception);
+            if (cleanup.IsCompleted)
             {
-                _ = host.DetachNavigationScope(navigationService);
+                cleanup.GetAwaiter().GetResult();
             }
 
-            serviceScope.Dispose();
-            throw;
+            throw new NavigationAttachmentException(exception, cleanup);
         }
+    }
+
+    private static async Task ReleaseFailedCreationAsync(AsyncServiceScope scope, Exception failure)
+    {
+        var failures = new NavigationFailures();
+        failures.Add(failure);
+        try
+        {
+            await scope.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+
+        failures.ThrowIfAny();
     }
 }

@@ -5,12 +5,23 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Identifies the navigation-aware callback that failed.</summary>
+/// <summary>
+/// Identifies the navigation-aware callback that failed.
+/// </summary>
 public enum NavigationCallbackStage
 {
-    /// <summary>The synchronous notification that a component left navigation state.</summary>
-    Exited,
+    /// <summary>
+    /// A page operation registered through the activation context failed.
+    /// </summary>
+    Operation = 2,
 
-    /// <summary>The notification that a component entered navigation state.</summary>
+    /// <summary>
+    /// The synchronous notification that a component left navigation state.
+    /// </summary>
+    Exited = 0,
+
+    /// <summary>
+    /// The notification that a component entered navigation state.
+    /// </summary>
     Entered,
 }

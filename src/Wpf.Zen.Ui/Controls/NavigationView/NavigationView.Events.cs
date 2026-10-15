@@ -13,7 +13,9 @@ public partial class NavigationView
 {
     #region PaneOpened
 
-    /// <summary>Identifies the <see cref="PaneOpened"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="PaneOpened"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent PaneOpenedEvent = EventManager.RegisterRoutedEvent(
         nameof(PaneOpened),
         RoutingStrategy.Bubble,
@@ -21,7 +23,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs when the navigation pane is opened.</summary>
+    /// <summary>
+    /// Occurs when the navigation pane is opened.
+    /// </summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneOpened
     {
         add => AddHandler(PaneOpenedEvent, value);
@@ -32,7 +36,9 @@ public partial class NavigationView
 
     #region PaneClosed
 
-    /// <summary>Identifies the <see cref="PaneClosed"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="PaneClosed"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent PaneClosedEvent = EventManager.RegisterRoutedEvent(
         nameof(PaneClosed),
         RoutingStrategy.Bubble,
@@ -40,7 +46,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs when the navigation pane is closed.</summary>
+    /// <summary>
+    /// Occurs when the navigation pane is closed.
+    /// </summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneClosed
     {
         add => AddHandler(PaneClosedEvent, value);
@@ -51,7 +59,9 @@ public partial class NavigationView
 
     #region PaneDisplayModeChanged
 
-    /// <summary>Identifies the <see cref="PaneDisplayModeChanged"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="PaneDisplayModeChanged"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent PaneDisplayModeChangedEvent = EventManager.RegisterRoutedEvent(
         nameof(PaneDisplayModeChanged),
         RoutingStrategy.Bubble,
@@ -59,7 +69,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs when <see cref="PaneDisplayMode"/> changes.</summary>
+    /// <summary>
+    /// Occurs when <see cref="PaneDisplayMode"/> changes.
+    /// </summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneDisplayModeChanged
     {
         add => AddHandler(PaneDisplayModeChangedEvent, value);
@@ -70,7 +82,9 @@ public partial class NavigationView
 
     #region SelectionChanged
 
-    /// <summary>Identifies the <see cref="SelectionChanged"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="SelectionChanged"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent SelectionChangedEvent = EventManager.RegisterRoutedEvent(
         nameof(SelectionChanged),
         RoutingStrategy.Bubble,
@@ -78,7 +92,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs when the currently selected navigation item changes.</summary>
+    /// <summary>
+    /// Occurs when the currently selected navigation item changes.
+    /// </summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> SelectionChanged
     {
         add => AddHandler(SelectionChangedEvent, value);
@@ -89,7 +105,9 @@ public partial class NavigationView
 
     #region ItemInvoked
 
-    /// <summary>Identifies the <see cref="ItemInvoked"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="ItemInvoked"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent ItemInvokedEvent = EventManager.RegisterRoutedEvent(
         nameof(ItemInvoked),
         RoutingStrategy.Bubble,
@@ -97,7 +115,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs when a menu item receives an interaction such as a click or tap.</summary>
+    /// <summary>
+    /// Occurs when a menu item receives an interaction such as a click or tap.
+    /// </summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> ItemInvoked
     {
         add => AddHandler(ItemInvokedEvent, value);
@@ -108,7 +128,9 @@ public partial class NavigationView
 
     #region BackRequested
 
-    /// <summary>Identifies the <see cref="BackRequested"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="BackRequested"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent BackRequestedEvent = EventManager.RegisterRoutedEvent(
         nameof(BackRequested),
         RoutingStrategy.Bubble,
@@ -116,7 +138,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs when the back button receives an interaction such as a click or tap.</summary>
+    /// <summary>
+    /// Occurs when the back button receives an interaction such as a click or tap.
+    /// </summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> BackRequested
     {
         add => AddHandler(BackRequestedEvent, value);
@@ -127,7 +151,9 @@ public partial class NavigationView
 
     #region Navigating
 
-    /// <summary>Identifies the <see cref="Navigating"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="Navigating"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent NavigatingEvent = EventManager.RegisterRoutedEvent(
         nameof(Navigating),
         RoutingStrategy.Bubble,
@@ -135,7 +161,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs before a requested navigation is performed and allows it to be cancelled.</summary>
+    /// <summary>
+    /// Occurs before a requested navigation is performed and allows it to be cancelled.
+    /// </summary>
     public event TypedEventHandler<NavigationView, NavigatingEventArgs> Navigating
     {
         add => AddHandler(NavigatingEvent, value);
@@ -146,7 +174,9 @@ public partial class NavigationView
 
     #region Navigated
 
-    /// <summary>Identifies the <see cref="Navigated"/> routed event.</summary>
+    /// <summary>
+    /// Identifies the <see cref="Navigated"/> routed event.
+    /// </summary>
     public static readonly RoutedEvent NavigatedEvent = EventManager.RegisterRoutedEvent(
         nameof(Navigated),
         RoutingStrategy.Bubble,
@@ -154,7 +184,9 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs after the host commits a page to its semantic navigation state.</summary>
+    /// <summary>
+    /// Occurs after the host commits a page to its semantic navigation state.
+    /// </summary>
     /// <remarks>
     /// This event is synchronous with the accepted request so selection, history, and
     /// <see cref="CurrentLocation"/> are already observable by its handlers. WPF may attach the
@@ -176,7 +208,8 @@ public partial class NavigationView
     /// Navigation is already committed when this event is raised and cannot be rolled back. The
     /// event is the explicit observation boundary for synchronous and asynchronous lifecycle
     /// callbacks. If no handler marks <see cref="NavigationCallbackFailedEventArgs.Handled"/>, the
-    /// contextual exception is rethrown on this control's dispatcher.
+    /// contextual exception is retained by the owning navigation scope's Completion task.
+    /// Delivery finishes on this control's dispatcher before scope dependencies are released.
     /// </remarks>
     public event EventHandler<NavigationCallbackFailedEventArgs>? NavigationCallbackFailed;
 
@@ -242,12 +275,14 @@ public partial class NavigationView
         RaiseEvent(eventArgs);
     }
 
-    /// <summary>Raises <see cref="NavigationCallbackFailed"/> and applies fail-fast fallback.</summary>
+    /// <summary>
+    /// Delivers a lifecycle failure and forwards unhandled errors to the session's error collector.
+    /// </summary>
     /// <param name="eventArgs">The contextual callback failure.</param>
     /// <remarks>
     /// Derived controls may override this method to integrate lifecycle failures with an
     /// application-wide error surface. An override should call the base implementation when it
-    /// wants the public event and default unhandled-exception behavior.
+    /// wants the public event and default scope-completion failure behavior.
     /// </remarks>
     protected virtual void OnNavigationCallbackFailed(NavigationCallbackFailedEventArgs eventArgs)
     {

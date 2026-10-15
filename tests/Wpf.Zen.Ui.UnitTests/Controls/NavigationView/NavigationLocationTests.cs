@@ -32,7 +32,7 @@ public class NavigationLocationTests
                     "c")
             );
 
-            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DestinationPage)));
             Assert.Equal(new[] { "B", "C", "D" }, navigationView.Breadcrumbs.Select(x => x.Content));
         });
     }
@@ -60,7 +60,7 @@ public class NavigationLocationTests
                         NavigationTarget.ForPage<DestinationPage>())
                 );
 
-            NavigationResult result = ((INavigationHost)navigationView).Navigate(request);
+            NavigationResult result = ((INavigationHost)navigationView).NavigateAndCommit(request);
 
             Assert.True(result.Succeeded);
             Assert.Equal(new[] { "A", "B", "D" }, navigationView.Breadcrumbs.Select(x => x.Content));
@@ -82,7 +82,7 @@ public class NavigationLocationTests
                 "a");
             navigationView.NavigationMap.Add(destination);
 
-            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DestinationPage)));
             Assert.Equal(new[] { "A", "D" }, navigationView.Breadcrumbs.Select(x => x.Content));
             Assert.False(navigationView.CanGoBack);
 
@@ -106,7 +106,7 @@ public class NavigationLocationTests
                     NavigationTarget.ForPage<ArticleListPage>())
             );
 
-            Assert.True(navigationView.Navigate(typeof(DynamicArticlePage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DynamicArticlePage)));
             var page = Assert.IsType<DynamicArticlePage>(navigationView.CurrentLocation?.Page);
             Assert.Equal(new[] { "Articles", "Initial title" }, navigationView.Breadcrumbs.Select(x => x.Content));
 
@@ -124,8 +124,8 @@ public class NavigationLocationTests
         {
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
 
-            Assert.True(navigationView.Navigate(typeof(ArticleListPage)));
-            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(ArticleListPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DestinationPage)));
 
             BreadcrumbSegment leaf = Assert.Single(navigationView.Breadcrumbs);
             Assert.Equal(nameof(DestinationPage), leaf.Content);
@@ -145,7 +145,7 @@ public class NavigationLocationTests
                 _ = map.Add<DestinationPage>("d", "D", "a");
             });
 
-            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DestinationPage)));
             Assert.Equal(new[] { "A", "D" }, navigationView.Breadcrumbs.Select(x => x.Content));
 
             int locationChanges = 0;
@@ -183,20 +183,20 @@ public class NavigationLocationTests
                 _ = map.Add<ThirdPage>("third", "Third");
             });
 
-            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
-            Assert.True(navigationView.Navigate(typeof(ArticleListPage)));
-            Assert.True(navigationView.GoBack());
+            Assert.True(navigationView.NavigateAndCommit(typeof(DestinationPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(ArticleListPage)));
+            Assert.True(navigationView.GoBackAndCommit());
             Assert.True(navigationView.CanGoForward);
             Assert.Equal("Destination", Assert.Single(navigationView.Breadcrumbs).Content);
 
-            Assert.True(navigationView.GoForward());
+            Assert.True(navigationView.GoForwardAndCommit());
             Assert.False(navigationView.CanGoForward);
             Assert.Equal("Articles", Assert.Single(navigationView.Breadcrumbs).Content);
 
-            Assert.True(navigationView.GoBack());
-            Assert.True(navigationView.Navigate(typeof(ThirdPage)));
+            Assert.True(navigationView.GoBackAndCommit());
+            Assert.True(navigationView.NavigateAndCommit(typeof(ThirdPage)));
             Assert.False(navigationView.CanGoForward);
-            Assert.False(navigationView.GoForward());
+            Assert.False(navigationView.GoForwardAndCommit());
         });
     }
 
@@ -214,13 +214,13 @@ public class NavigationLocationTests
                 NavigationTarget.ForPage<DestinationPage>()
             );
 
-            Assert.Equal(NavigationResultStatus.Rejected, scope.Navigation.Navigate(structural).Status);
-            Assert.True(scope.Navigation.Navigate(destination).Succeeded);
+            Assert.Equal(NavigationResultStatus.Rejected, scope.Navigation.NavigateAndCommit(structural).Status);
+            Assert.True(scope.Navigation.NavigateAndCommit(destination).Succeeded);
             Assert.IsType<DestinationPage>(navigationView.CurrentLocation?.Page);
-            Assert.True(scope.Navigation.Navigate(typeof(ArticleListPage)).Succeeded);
-            Assert.True(scope.Navigation.GoBack().Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(ArticleListPage)).Succeeded);
+            Assert.True(scope.Navigation.GoBackAndCommit().Succeeded);
             Assert.True(scope.Navigation.CanGoForward);
-            Assert.True(scope.Navigation.GoForward().Succeeded);
+            Assert.True(scope.Navigation.GoForwardAndCommit().Succeeded);
             Assert.IsType<ArticleListPage>(navigationView.CurrentLocation?.Page);
         });
     }
@@ -324,7 +324,7 @@ public class NavigationLocationTests
             );
             navigationView.NavigationMap.Add<ArticleListPage>("article", "Article", "category");
 
-            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DestinationPage)));
             Assert.Empty(navigationView.Breadcrumbs);
             Assert.Contains(category, navigationView.NavigationMap);
             Assert.False(navigationView.CanGoBack);
@@ -335,7 +335,7 @@ public class NavigationLocationTests
             Assert.False(navigationView.CanGoBack);
 
             category.IsBreadcrumbVisible = false;
-            Assert.True(navigationView.Navigate(typeof(ArticleListPage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(ArticleListPage)));
             Assert.Equal("Article", Assert.Single(navigationView.Breadcrumbs).Content);
         });
     }
@@ -371,7 +371,7 @@ public class NavigationLocationTests
                 new ExistingPageProvider(page)
             );
 
-            Assert.True(scope.Navigation.Navigate(typeof(Border)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(Border)).Succeeded);
             Dispatcher.CurrentDispatcher.Invoke(
                 static () => { },
                 DispatcherPriority.DataBind
@@ -438,7 +438,7 @@ public class NavigationLocationTests
                 new ExistingPageProvider(page)
             );
 
-            Assert.True(scope.Navigation.Navigate(typeof(Border)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(Border)).Succeeded);
             Assert.Equal(
                 new[] { "Projects", "Imports", "Preview" },
                 navigationView.Breadcrumbs.Select(item => item.Content)
@@ -471,7 +471,7 @@ public class NavigationLocationTests
                 new ExistingPageProvider(page)
             );
 
-            Assert.True(scope.Navigation.Navigate(typeof(Border)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(Border)).Succeeded);
             Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.DataBind);
             Assert.Equal(new[] { "First", "Preview" }, navigationView.Breadcrumbs.Select(x => x.Content));
 
@@ -495,7 +495,7 @@ public class NavigationLocationTests
                 new ExistingPageProvider(page)
             );
 
-            Assert.True(scope.Navigation.Navigate(typeof(Border)).Succeeded);
+            Assert.True(scope.Navigation.NavigateAndCommit(typeof(Border)).Succeeded);
             Assert.Same(navigationView, Wpf.Zen.Ui.Controls.NavigationView.GetNavigationParent(page));
 
             scope.Dispose();
@@ -528,7 +528,10 @@ public class NavigationLocationTests
 
     private sealed class ExistingPageProvider(object page) : INavigationViewPageProvider
     {
-        public object GetPage(Type pageType) => page;
+        public NavigationPageLease GetPage(Type pageType)
+        {
+            return NavigationPageLease.Borrowed((FrameworkElement)page);
+        }
     }
 
     private sealed class ArticleLocationViewModel(string title) : INotifyPropertyChanged

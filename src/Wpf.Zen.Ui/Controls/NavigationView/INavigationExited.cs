@@ -9,8 +9,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// Receives notification when a component leaves the current navigation state.
 /// </summary>
 /// <remarks>
-/// This callback describes navigation state, not WPF visual-tree state. It is independent of
-/// <c>Unloaded</c> and cannot cancel or delay a navigation request.
+/// Delivers exit only to participants whose entry was invoked, in reverse entry order and
+/// deduplicated by reference.
+/// Implementing only exit creates no exit obligation. Exit uses the entry snapshot rather than
+/// rereading DataContext.
 /// </remarks>
 public interface INavigationExited
 {
@@ -18,9 +20,10 @@ public interface INavigationExited
     /// Handles the component leaving the current navigation state.
     /// </summary>
     /// <remarks>
-    /// During a successful transition, the navigation host invokes this callback before entering
-    /// the new component. The host also invokes it when the current navigation surface is genuinely
-    /// detached from the visual tree.
+    /// Page departure, real visual unload, and scope stop end activation; one participant failure
+    /// does not skip other exits.
+    /// Exit requests stopping while asynchronous cleanup may continue. It may request stop but must
+    /// not await its scope completion.
     /// </remarks>
     void OnNavigationExited();
 }

@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -31,13 +32,16 @@ using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
 namespace Wpf.Zen.Ui.WinFormsHostTests;
 
 /// <summary>
-/// Exercises applicationless theme resource lookup through real WPF windows and WinForms <see cref="ElementHost"/>
-/// presentation sources rather than constructing an artificial resource state that a supported host would never use.
+/// Exercises applicationless theme resource lookup through real WPF windows and WinForms <see
+/// cref="ElementHost"/>
+/// presentation sources rather than constructing an artificial resource state that a supported host
+/// would never use.
 /// </summary>
 public class ElementHostThemeTests
 {
     /// <summary>
-    /// Verifies that generated and explicit drop-down input remains inside its Popup boundary when WPF is hosted
+    /// Verifies that generated and explicit drop-down input remains inside its Popup boundary when
+    /// WPF is hosted
     /// by WinForms without an <see cref="Application"/> or WPF <see cref="Window"/>.
     /// </summary>
     [Theory]
@@ -116,8 +120,10 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Verifies that ordinary library-control construction does not activate process-wide theme management. A native
-    /// control that already resolved the Windows ThemeStyle must retain it until the host explicitly initializes or
+    /// Verifies that ordinary library-control construction does not activate process-wide theme
+    /// management. A native
+    /// control that already resolved the Windows ThemeStyle must retain it until the host
+    /// explicitly initializes or
     /// configures <see cref="ThemeManager"/>.
     /// </summary>
     [Fact]
@@ -183,8 +189,10 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Verifies that resources required for every theme graph reach WPF's system-resource lookup when a host has no
-    /// <see cref="Application"/>. Focus adorners use this exact lookup path whenever an element retains WPF's sentinel
+    /// Verifies that resources required for every theme graph reach WPF's system-resource lookup
+    /// when a host has no
+    /// <see cref="Application"/>. Focus adorners use this exact lookup path whenever an element
+    /// retains WPF's sentinel
     /// default <see cref="FrameworkElement.FocusVisualStyle"/> value.
     /// </summary>
     [Fact]
@@ -220,8 +228,10 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Verifies that the slim scroll-bar style scopes WPF's button-size resource overrides where the template Track
-    /// can resolve them without relying on Application.Resources or on SystemResources accepting system-key
+    /// Verifies that the slim scroll-bar style scopes WPF's button-size resource overrides where
+    /// the template Track
+    /// can resolve them without relying on Application.Resources or on SystemResources accepting
+    /// system-key
     /// overrides in a themed dictionary.
     /// </summary>
     [Fact]
@@ -284,8 +294,10 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Verifies that WPF's menu-container preparation resolves <see cref="MenuItem.SeparatorStyleKey"/> from the
-    /// system-theme overlay for a top-level ContextMenu separator, which has no MenuItem ancestor that could provide
+    /// Verifies that WPF's menu-container preparation resolves <see
+    /// cref="MenuItem.SeparatorStyleKey"/> from the
+    /// system-theme overlay for a top-level ContextMenu separator, which has no MenuItem ancestor
+    /// that could provide
     /// the resource through Style.Resources.
     /// </summary>
     [Fact]
@@ -363,7 +375,8 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Verifies that the first explicit theme switch refreshes resources that were originally resolved from
+    /// Verifies that the first explicit theme switch refreshes resources that were originally
+    /// resolved from
     /// Generic.xaml before an applicationless presentation source existed.
     /// </summary>
     [Fact]
@@ -493,11 +506,12 @@ public class ElementHostThemeTests
             Forms.Application.DoEvents();
             DrainDispatcher();
 
-            Assert.True(
-                navigationScope.Navigation
-                   .Navigate(typeof(ElementHostNavigationPage), "from-winforms")
-                   .Succeeded
-            );
+            var submitted = navigationScope.Navigation.Navigate(typeof(ElementHostNavigationPage), "from-winforms");
+            Assert.True(submitted.WasAccepted);
+            DrainDispatcher();
+            Assert.True(submitted.Completion.IsCompleted);
+            var result = submitted.Completion.GetAwaiter().GetResult();
+            Assert.True(result.Succeeded);
             Assert.NotNull(navigatedPage);
             Assert.Null(Application.Current);
             Assert.Same(
@@ -506,12 +520,20 @@ public class ElementHostThemeTests
             );
             Assert.Same(navigationView, Wpf.Zen.Ui.Navigation.GetHost(navigatedPage));
             Assert.Equal("from-winforms", Wpf.Zen.Ui.Navigation.GetParameter(navigatedPage));
+
+            Task stopped = navigationScope.DisposeAsync();
+            DrainDispatcher();
+            Assert.True(stopped.IsCompleted);
+            stopped.GetAwaiter().GetResult();
+            Assert.Null(Wpf.Zen.Ui.Navigation.GetContext(navigatedPage));
         });
     }
 
     /// <summary>
-    /// Verifies that ThemeManager uses WPF's system-theme resource path without creating an Application, and that
-    /// native controls inside a navigated page update after the visual tree has already been presented.
+    /// Verifies that ThemeManager uses WPF's system-theme resource path without creating an
+    /// Application, and that
+    /// native controls inside a navigated page update after the visual tree has already been
+    /// presented.
     /// </summary>
     [Fact]
     public void ThemeSwitch_ReachesGenericAndNativeControls_WithoutApplicationOrRootResources()
@@ -839,8 +861,10 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Verifies that additional Light and Dark palette dictionaries participate in the applicationless system-theme
-    /// overlay and update resource references in both a Frame-isolated page and a detached Popup presentation source.
+    /// Verifies that additional Light and Dark palette dictionaries participate in the
+    /// applicationless system-theme
+    /// overlay and update resource references in both a Frame-isolated page and a detached Popup
+    /// presentation source.
     /// </summary>
     [Fact]
     public void AdditionalPalettes_ReachFrameAndPopup_WithoutApplicationOrRootResources()
@@ -994,14 +1018,20 @@ public class ElementHostThemeTests
     }
 
     /// <summary>
-    /// Restores the process-wide manager state needed to exercise its one-time activation path deterministically.
+    /// Restores the process-wide manager state needed to exercise its one-time activation path
+    /// deterministically.
     /// </summary>
     /// <remarks>
-    /// xUnit does not create a new process for every test, while WPF's SystemResources table and ThemeManager are
-    /// process-wide singletons. Public APIs cannot deactivate theme management, so this test-only reset deliberately
-    /// reflects the same private state whose first transition is under test. Restore is invoked before clearing the
-    /// host reference so WPF never retains an overlay that ThemeManager can no longer remove. A missing member is a
-    /// hard test failure: unlike production reflection, silently degrading here would make the regression test pass
+    /// xUnit does not create a new process for every test, while WPF's SystemResources table and
+    /// ThemeManager are
+    /// process-wide singletons. Public APIs cannot deactivate theme management, so this test-only
+    /// reset deliberately
+    /// reflects the same private state whose first transition is under test. Restore is invoked
+    /// before clearing the
+    /// host reference so WPF never retains an overlay that ThemeManager can no longer remove. A
+    /// missing member is a
+    /// hard test failure: unlike production reflection, silently degrading here would make the
+    /// regression test pass
     /// without exercising the intended path.
     /// </remarks>
     private static void ResetThemeManagerToUnconfiguredState()

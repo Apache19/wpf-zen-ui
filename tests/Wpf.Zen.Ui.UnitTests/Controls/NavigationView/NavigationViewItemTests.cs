@@ -1458,6 +1458,8 @@ public class NavigationViewItemTests
             AttachToNavigationView(item, navigationView);
 
             InvokeClick(item);
+
+            DrainDispatcher();
             string itemId = item.Id;
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
@@ -1588,11 +1590,15 @@ public class NavigationViewItemTests
 
                 InvokeClick(navigableParent);
 
+                DrainDispatcher();
+
                 Assert.Same(navigableParent, navigationView.SelectedItem);
                 Assert.True(navigableParent.IsSubmenuOpen);
                 Assert.Equal(1, invokedCount);
 
                 InvokeClick(groupingParent);
+
+                DrainDispatcher();
 
                 Assert.True(groupingParent.IsSubmenuOpen);
                 Assert.Equal(1, invokedCount);
@@ -1600,6 +1606,7 @@ public class NavigationViewItemTests
                 // Re-entering through the same header surface closes the competing branch,
                 // navigates, and opens this item's child presentation as one deterministic action.
                 InvokeClick(navigableParent);
+                DrainDispatcher();
 
                 Assert.Same(navigableParent, navigationView.SelectedItem);
                 Assert.True(navigableParent.IsSubmenuOpen);
@@ -1653,6 +1660,8 @@ public class NavigationViewItemTests
             AttachToNavigationView(parent, navigationView);
 
             InvokeClick(parent);
+
+            DrainDispatcher();
 
             Assert.Same(parent, navigationView.SelectedItem);
             Assert.True(parent.IsExpanded);
@@ -2122,6 +2131,7 @@ public class NavigationViewItemTests
 
                 Assert.NotNull(projectedItem.Command);
                 projectedItem.Command.Execute(projectedItem.CommandParameter);
+                DrainDispatcher();
                 Assert.Equal("Data leaf", navigationView.SelectedItem);
             }
             finally
@@ -2312,6 +2322,8 @@ public class NavigationViewItemTests
                 DrainDispatcher();
 
                 InvokeClick(parent);
+
+                DrainDispatcher();
                 DrainDispatcher();
                 ContextMenu parentContextMenu = FindSubmenuContextMenu(parent);
                 Assert.True(parentContextMenu.IsOpen);
@@ -2332,6 +2344,7 @@ public class NavigationViewItemTests
 
                 Assert.NotNull(leafMenuItem.Command);
                 leafMenuItem.Command.Execute(leafMenuItem.CommandParameter);
+                DrainDispatcher();
                 Assert.Same(leaf, navigationView.SelectedItem);
             }
             finally

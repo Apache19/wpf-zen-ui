@@ -30,7 +30,7 @@ public class NavigationViewSelectionTests
             var navigation = new NavigationControl();
             navigation.MenuItems.Add(branch);
 
-            Assert.True(navigation.Navigate(typeof(FirstPage)));
+            Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
             first.Deactivate(navigation);
             Assert.False(first.IsActive);
             Assert.False(branch.IsDescendantActive);
@@ -77,7 +77,7 @@ public class NavigationViewSelectionTests
                 var rootA = Assert.IsType<NavigationViewItem>(list.ItemContainerGenerator.ContainerFromItem(branchA));
                 var rootB = Assert.IsType<NavigationViewItem>(list.ItemContainerGenerator.ContainerFromItem(branchB));
                 var scroller = Assert.IsAssignableFrom<NativeScrollViewer>(list.Template.FindName("ScrollViewer", list));
-                Assert.True(navigation.Navigate(typeof(FirstPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
                 DrainDispatcher();
                 Assert.True(rootA.IsDescendantActive);
 
@@ -85,7 +85,7 @@ public class NavigationViewSelectionTests
                 DrainDispatcher();
                 if (navigateWhileUnloaded)
                 {
-                    Assert.True(navigation.Navigate(typeof(SecondPage)));
+                    Assert.True(navigation.NavigateAndCommit(typeof(SecondPage)));
                 }
 
                 window.Content = navigation;
@@ -94,7 +94,7 @@ public class NavigationViewSelectionTests
                 Assert.Same(rootB, list.ItemContainerGenerator.ContainerFromItem(branchB));
                 if (!navigateWhileUnloaded)
                 {
-                    Assert.True(navigation.Navigate(typeof(SecondPage)));
+                    Assert.True(navigation.NavigateAndCommit(typeof(SecondPage)));
                     DrainDispatcher();
                 }
 
@@ -130,7 +130,7 @@ public class NavigationViewSelectionTests
                 var root = Assert.IsType<NavigationViewItem>(list.ItemContainerGenerator.ContainerFromItem(branch));
                 root.IsExpanded = true;
                 DrainDispatcher();
-                Assert.True(navigation.Navigate(typeof(FirstPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
                 DrainDispatcher();
                 var original = Assert.IsType<NavigationViewItem>(root.ItemContainerGenerator.ContainerFromItem(leaf));
 
@@ -176,7 +176,7 @@ public class NavigationViewSelectionTests
             navigation.MenuItems.Add(root);
             navigation.MenuItems.Add(new NavigationItem("Other", typeof(SecondPage)));
 
-            Assert.True(navigation.Navigate(typeof(FirstPage)));
+            Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
             Assert.Null(branch.ItemContainerGenerator.ContainerFromItem(leaf));
             Assert.True(root.IsDescendantActive);
             Assert.True(branch.IsDescendantActive);
@@ -184,10 +184,10 @@ public class NavigationViewSelectionTests
             Assert.False(branch.IsExpanded);
             Assert.Same(leaf, navigation.SelectedItem);
 
-            Assert.True(navigation.Navigate(typeof(SecondPage)));
+            Assert.True(navigation.NavigateAndCommit(typeof(SecondPage)));
             Assert.False(root.IsBranchActive);
             Assert.False(branch.IsBranchActive);
-            Assert.True(navigation.GoBack());
+            Assert.True(navigation.GoBackAndCommit());
             Assert.True(root.IsBranchActive);
 
             children.Clear();
@@ -227,7 +227,7 @@ public class NavigationViewSelectionTests
 
             if (navigateBeforeLoad)
             {
-                Assert.True(navigation.Navigate(typeof(FirstPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
             }
 
             var window = CreateWindow(navigation);
@@ -276,7 +276,7 @@ public class NavigationViewSelectionTests
                 scroller.ScrollToTop();
                 DrainDispatcher();
                 navigation.Navigating += (_, args) => args.Cancel = true;
-                Assert.False(navigation.Navigate(typeof(SecondPage)));
+                Assert.False(navigation.NavigateAndCommit(typeof(SecondPage)));
                 DrainDispatcher();
                 Assert.True(root.IsBranchActive);
                 Assert.Equal(0, scroller.VerticalOffset);
@@ -316,16 +316,16 @@ public class NavigationViewSelectionTests
                 var list = Assert.IsType<NavigationViewList>(navigation.Template.FindName("PART_MenuItemsList", navigation));
                 var scroller = Assert.IsAssignableFrom<NativeScrollViewer>(list.Template.FindName("ScrollViewer", list));
 
-                Assert.True(navigation.Navigate(typeof(FirstPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
                 DrainDispatcher();
                 Assert.True(branch.IsDescendantActive);
                 Assert.False(branch.IsExpanded);
                 Assert.True(root.IsExpanded);
                 AssertHeaderInViewport(branch, scroller);
 
-                Assert.True(navigation.Navigate(typeof(SecondPage)));
-                Assert.True(navigation.Navigate(typeof(FirstPage)));
-                Assert.True(navigation.Navigate(typeof(SecondPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(SecondPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(FirstPage)));
+                Assert.True(navigation.NavigateAndCommit(typeof(SecondPage)));
                 DrainDispatcher();
                 AssertHeaderInViewport(other, scroller);
                 Assert.False(root.IsBranchActive);

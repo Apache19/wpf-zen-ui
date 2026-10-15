@@ -122,15 +122,14 @@ public partial class NavigationView
     /// Republishes a replacement collection only when its declaring page is the active page.
     /// </summary>
     private static void OnPageHeaderItemsChanged(
-        DependencyObject page,
-        DependencyPropertyChangedEventArgs args)
+        DependencyObject page, DependencyPropertyChangedEventArgs args)
     {
         if (page is FrameworkElement element)
         {
             var owner = GetPageHeaderOwner(element);
             if (owner is not null)
             {
-                owner.UpdatePageHeaderItems(element);
+                owner.UpdatePageHeader(element);
             }
         }
     }
@@ -138,7 +137,7 @@ public partial class NavigationView
     /// <summary>
     /// Transfers the collection subscription and publishes the committed page's collection.
     /// </summary>
-    private void UpdatePageHeaderItems(FrameworkElement? page)
+    private void UpdatePageHeaderItems(FrameworkElement? page, long revision)
     {
         // Read the raw property to avoid allocating collections for pages with no declaration.
         var items = (PageHeaderItemCollection?)page?.GetValue(PageHeaderItemsStorageProperty);
@@ -147,14 +146,26 @@ public partial class NavigationView
             return;
         }
 
-        SetValue(CurrentPageHeaderItemsPropertyKey, null);
+        var previous = _activePageHeaderItems;
 
-        if (_activePageHeaderItems is not null)
+        _activePageHeaderItems = null;
+        _pageHeaderItemsPage   = null;
+
+        var failures = new NavigationFailures();
+
+        if (previous is not null)
         {
-            CollectionChangedEventManager.RemoveHandler(
-                _activePageHeaderItems,
-                OnPageHeaderItemsCollectionChanged
+            failures.Try(() => CollectionChangedEventManager.RemoveHandler(
+                previous, OnPageHeaderItemsCollectionChanged)
             );
+        }
+
+        failures.Try(() => SetValue(CurrentPageHeaderItemsPropertyKey, null));
+
+        if (!IsPageHeaderPublicationCurrent(page, revision))
+        {
+            failures.ThrowIfAny();
+            return;
         }
 
         _pageHeaderItemsPage   = page;
@@ -164,14 +175,26 @@ public partial class NavigationView
         {
             // Subscribe before exposing the collection: page contexts are bridged before host
             // collection handlers insert newly contributed elements into a different tree.
-            CollectionChangedEventManager.AddHandler(items, OnPageHeaderItemsCollectionChanged);
-            SynchronizePageHeaderItemContexts();
-            SetValue(CurrentPageHeaderItemsPropertyKey, items);
+            failures.Try(
+                () => CollectionChangedEventManager.AddHandler(
+                    items,
+                    OnPageHeaderItemsCollectionChanged
+                )
+            );
+
+            failures.Try(SynchronizePageHeaderItemContexts);
+
+            if (IsPageHeaderPublicationCurrent(page, revision))
+            {
+                failures.Try(() => SetValue(CurrentPageHeaderItemsPropertyKey, items));
+            }
         }
 
         Debug.WriteLine(
             $"[NavigationView.Header] PAGE items published; pageType={page?.GetType().Name ?? "null"}, itemCount={items?.Count ?? 0}."
         );
+
+        failures.ThrowIfAny();
     }
 
     /// <summary>
@@ -180,6 +203,22 @@ public partial class NavigationView
     private void OnPageHeaderItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
         Dispatcher.VerifyAccess();
+
+        if (!ReferenceEquals(sender, _activePageHeaderItems))
+        {
+            return;
+        }
+
+        var session = _navigationSession;
+
+        NavigationWorkRegistry.Lease? work = null;
+
+        if (session is { IsStopping: false })
+        {
+            work = session.Work.Acquire();
+        }
+
+        using var publication = work;
 
         SynchronizePageHeaderItemContexts();
 
@@ -193,16 +232,30 @@ public partial class NavigationView
     /// </summary>
     private void SynchronizePageHeaderItemContexts()
     {
-        if (_pageHeaderItemsPage is null || _activePageHeaderItems is null)
+        var page     = _pageHeaderItemsPage;
+        var items    = _activePageHeaderItems;
+        var revision = _pageHeaderRevision;
+
+        if (page is null || items is null)
         {
             return;
         }
 
         // Collection notifications reach us before the host removes old children. Their
         // bridges remain attached to the elements throughout removal and subsequent reuse.
-        foreach (var element in _activePageHeaderItems)
+        var snapshot = items.ToArray();
+        var failures = new NavigationFailures();
+
+        foreach (var element in snapshot)
         {
-            EnsurePageHeaderDataContext(_pageHeaderItemsPage, element);
+            if (!IsPageHeaderPublicationCurrent(page, revision))
+            {
+                break;
+            }
+
+            failures.Try(() => EnsurePageHeaderDataContext(page, element));
         }
+
+        failures.ThrowIfAny();
     }
 }

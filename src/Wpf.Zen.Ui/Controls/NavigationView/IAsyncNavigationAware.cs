@@ -9,8 +9,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// Asynchronously participates in the successful entry lifecycle of a navigation host.
 /// </summary>
 /// <remarks>
-/// This callback describes navigation state, not WPF visual-tree state. It is independent of
-/// <c>Loaded</c> and cannot cancel a navigation request.
+/// Enters at the Loaded scheduling boundary after Frame commit; real unload ends activation and
+/// reattachment creates a new one.
+/// The same instance waits for its previous activation to drain. Use INavigationActivationAware to
+/// register subsequent commands.
 /// </remarks>
 public interface IAsyncNavigationAware : INavigationExited
 {
@@ -23,10 +25,11 @@ public interface IAsyncNavigationAware : INavigationExited
     /// work and avoid publishing stale results after cancellation.
     /// </param>
     /// <remarks>
-    /// The navigation host invokes this callback only after it has successfully committed the
-    /// destination and attached its visual tree. Failed or stopped requests do not enter the
-    /// navigation lifecycle. The callback is not awaited by the host: a slow page cannot delay
-    /// lifecycle delivery to a later destination.
+    /// Registers exit responsibility before entry, including synchronous callback failures. Request
+    /// results wait only for Frame commit;
+    /// scope stop waits for this task and associated error delivery. Slow initialization of another
+    /// page does not block requests.
+    /// Callbacks may call RequestStop but must not await scope completion that includes themselves.
     /// </remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
     Task OnNavigationEnteredAsync(CancellationToken cancellationToken);

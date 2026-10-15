@@ -25,7 +25,8 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 public class NavigationViewPageHeaderItemsTests
 {
     /// <summary>
-    /// Verifies event counts and values for both contributions throughout context ownership changes.
+    /// Verifies event counts and values for both contributions throughout context ownership
+    /// changes.
     /// </summary>
     /// <param name="useItems">Whether to publish the element through the header collection.</param>
     [Theory]
@@ -308,13 +309,15 @@ public class NavigationViewPageHeaderItemsTests
                 Assert.Same(grid, VisualTreeHelper.GetParent(button));
                 Assert.Equal(4, grid.Children.Count);
 
-                navigation.Navigating += (_, args) => args.Cancel = true;
+                bool cancelNavigation = true;
+                navigation.Navigating += (_, args) => args.Cancel = cancelNavigation;
                 Assert.False(navigation.Navigate(typeof(NavigationViewPageHeaderTests.PlainPage)));
                 DrainDispatcher();
                 Assert.Same(items, navigation.CurrentPageHeaderItems);
                 Assert.Same(single, singleSlot.Content);
                 Assert.True(button.IsLoaded);
 
+                cancelNavigation = false;
                 Assert.True(navigation.ReplaceContent(new Page { Content = new Grid() }));
                 DrainDispatcher();
                 Assert.Null(navigation.CurrentPageHeaderItems);

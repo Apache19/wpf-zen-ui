@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Reflection;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
@@ -13,7 +12,7 @@ public class NavigationCacheTests
     [Fact]
     public void Remember_DoesNotEvictPermanentEntries_WhenExpirableCacheSizeIsExceeded()
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var permanentPage = new object();
 
         var firstPermanentResult = cache.Remember(
@@ -50,7 +49,7 @@ public class NavigationCacheTests
     [Fact]
     public void Remember_EvictsLeastRecentlyUsedExpirableEntry_WhenExpirableCacheSizeIsExceeded()
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var firstPage = new object();
         var secondPage = new object();
         var recreatedFirstPage = new object();
@@ -86,7 +85,7 @@ public class NavigationCacheTests
         NavigationCacheMode oldCacheMode
     )
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var cachedPage = new object();
         var recreatedPage = new object();
 
@@ -122,7 +121,7 @@ public class NavigationCacheTests
         NavigationCacheMode newCacheMode
     )
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var disabledPage = new object();
         var cachedPage = new object();
 
@@ -167,7 +166,7 @@ public class NavigationCacheTests
         NavigationCacheMode newCacheMode
     )
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var cachedPage = new object();
 
         _ = cache.Remember(
@@ -197,7 +196,7 @@ public class NavigationCacheTests
     [Fact]
     public void UpdateCacheMode_MakesEntryEvictable_WhenCacheModeChangesFromPermanentToExpirable()
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var permanentPage = new object();
         var recreatedPage = new object();
 
@@ -236,7 +235,7 @@ public class NavigationCacheTests
     [Fact]
     public void UpdateCacheMode_PreventsEntryEviction_WhenCacheModeChangesFromExpirableToPermanent()
     {
-        var cache = new NavigationCacheAccessor();
+        var cache = new NavigationCache();
         var expirablePage = new object();
 
         _ = cache.Remember(
@@ -268,39 +267,6 @@ public class NavigationCacheTests
         );
 
         Assert.Same(expirablePage, result);
-    }
-
-    private sealed class NavigationCacheAccessor
-    {
-        private static readonly Type CacheType = typeof(NavigationViewItem).Assembly.GetType(
-            "Wpf.Zen.Ui.Controls.NavigationCache",
-            throwOnError: true
-        )!;
-
-        private static readonly MethodInfo RememberMethod = CacheType.GetMethod(nameof(Remember))!;
-
-        private static readonly MethodInfo UpdateCacheModeMethod = CacheType.GetMethod(
-            nameof(UpdateCacheMode)
-        )!;
-
-        private readonly object _cache = Activator.CreateInstance(CacheType)!;
-
-        public object? Remember(
-            Type entryType,
-            NavigationCacheMode cacheMode,
-            int cacheSize,
-            Func<object?> generate
-        ) => RememberMethod.Invoke(_cache, [entryType, cacheMode, cacheSize, generate]);
-
-        public void UpdateCacheMode(
-            Type entryType,
-            NavigationCacheMode oldCacheMode,
-            NavigationCacheMode newCacheMode,
-            int cacheSize
-        ) => UpdateCacheModeMethod.Invoke(
-            _cache,
-            [entryType, oldCacheMode, newCacheMode, cacheSize]
-        );
     }
 
     private sealed class PermanentPage;

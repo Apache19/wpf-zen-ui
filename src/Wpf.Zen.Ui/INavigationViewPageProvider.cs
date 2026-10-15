@@ -10,7 +10,8 @@ namespace Wpf.Zen.Ui;
 /// </summary>
 /// <remarks>
 /// Applications using <c>Wpf.Zen.Ui.DependencyInjection</c> do not register this interface. The DI
-/// navigation factory automatically activates unregistered concrete pages and injects their registered
+/// navigation factory automatically activates unregistered concrete pages and injects their
+/// registered
 /// constructor dependencies. Implement this contract only when a container-free scope needs custom
 /// creation rules or existing page instances.
 /// </remarks>
@@ -21,9 +22,10 @@ public interface INavigationViewPageProvider
     /// </summary>
     /// <param name="pageType">The type of the page to retrieve.</param>
     /// <remarks>
-    /// Implementations never return <see langword="null"/>: a page is either produced or an exception
+    /// Implementations never return <see langword="null"/>: a page is either produced or an
+    /// exception
     /// is thrown.
     /// </remarks>
     /// <returns>An instance of the specified page type.</returns>
-    object GetPage(Type pageType);
+    NavigationPageLease GetPage(Type pageType);
 }

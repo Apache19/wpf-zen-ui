@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui;
-
 namespace Wpf.Zen.Ui.DependencyInjection;
 
 /// <summary>
@@ -12,6 +10,11 @@ namespace Wpf.Zen.Ui.DependencyInjection;
 /// </summary>
 internal sealed class ScopedNavigationService : NavigationService
 {
-    /// <summary>Binds this scoped service exactly once before pages can resolve it.</summary>
-    internal void Attach(INavigationHost host) => AttachHost(host);
+    /// <summary>
+    /// Binds this scoped service exactly once before pages can resolve it.
+    /// </summary>
+    internal void Attach(INavigationHost host)
+    {
+        AttachHost(host);
+    }
 }

@@ -16,6 +16,12 @@ public class ApplicationHostService : IHostedService
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Stores the application service provider and creates the main window on first activation.
+    /// </summary>
+    /// <param name="serviceProvider">
+    /// The root container owning application windows and services.
+    /// </param>
     public ApplicationHostService(IServiceProvider serviceProvider)
     {
         // If you want, you can do something with these services at the beginning of loading the application.
@@ -34,7 +40,9 @@ public class ApplicationHostService : IHostedService
     /// <summary>
     /// Triggered when the application host is performing a graceful shutdown.
     /// </summary>
-    /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
+    /// <param name="cancellationToken">
+    /// Indicates that the shutdown process should no longer be graceful.
+    /// </param>
     public Task StopAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
@@ -60,13 +68,19 @@ public class ApplicationHostService : IHostedService
         return Task.CompletedTask;
     }
 
-    private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+    private async void OnMainWindowLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is not MainWindow mainWindow)
         {
             return;
         }
 
-        _ = mainWindow.Navigation.Navigate(typeof(DashboardPage));
+        mainWindow.Loaded -= OnMainWindowLoaded;
+        var request = NavigationRequest.To<DashboardPage>();
+        var result = await mainWindow.Navigation.NavigateAsync(request);
+        if (result.Failure is { } failure)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+        }
     }
 }

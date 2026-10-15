@@ -3,37 +3,41 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using Wpf.Zen.Ui;
 
 namespace Wpf.Zen.Ui.DependencyInjection;
 
 /// <summary>
-/// Resolves explicitly registered pages or activates unregistered pages from the dependency-injection
-/// scope owned by one navigation host.
+/// Resolves registered pages or activates unregistered pages from one navigation host's DI scope.
 /// </summary>
 /// <remarks>
-/// This type is an implementation detail of <see cref="NavigationScopeFactory"/> and is deliberately
-/// not registered in the application container. Page activation is navigation infrastructure, not an
-/// application service that every application must configure. Explicit page registrations are still
-/// respected, while an unregistered concrete page is created with <see cref="ActivatorUtilities"/> so
-/// its registered constructor dependencies can be injected.
+/// This type is an implementation detail of <see cref="NavigationScopeFactory"/> and is not
+/// registered in the application container. Explicit page registrations retain their lifetimes.
+/// Unregistered concrete pages use <see cref="ActivatorUtilities"/> to inject constructor
+/// dependencies from the navigation scope.
 /// </remarks>
 internal sealed class DependencyInjectionNavigationViewPageProvider(IServiceProvider serviceProvider)
     : INavigationViewPageProvider
 {
     /// <inheritdoc />
-    public object GetPage(Type pageType)
+    public NavigationPageLease GetPage(Type pageType)
     {
         if (pageType is null)
         {
             throw new ArgumentNullException(nameof(pageType));
         }
 
-        // GetServiceOrCreateInstance preserves explicit registrations (including factories and
-        // lifetimes), but does not force ordinary WPF pages to be listed in IServiceCollection.
-        // The scoped provider is essential: constructor dependencies and INavigationService must
-        // belong to the NavigationView that owns the resulting FrameworkElement.
-        return ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, pageType);
+        // Registered pages retain container ownership; factory-created pages transfer ownership
+        // through their lease. Both resolve dependencies from the current navigation scope.
+        var registered = serviceProvider.GetService(pageType);
+        if (registered is FrameworkElement registeredPage)
+        {
+            return NavigationPageLease.Borrowed(registeredPage);
+        }
+
+        var created = ActivatorUtilities.CreateInstance(serviceProvider, pageType);
+        var page = (FrameworkElement)created;
+        return NavigationPageLease.Owned(page);
     }
 }

@@ -455,296 +455,310 @@ if (navigation.CanGoForward)
 但保留当前页作为后续导航的历史起点。跨线程调用时使用 `GoBackAsync()` 和
 `GoForwardAsync()`。
 
-## 使用依赖注入
+## 请求结果与完成边界
 
-先注册导航基础设施以及页面所依赖的视图模型或服务。页面类型本身无需注册：
+`Navigate`、`GoBack`、`GoForward` 返回的 `NavigationResult` 可能仍为 `Accepted`。
+只有最终结果的 `Succeeded` 才表示 Frame 已提交；此时页面异步初始化可能仍在进行。
+控件上保留的 bool 便捷方法仅表示受理。需要处理结果时，使用作用域服务：
+
+```csharp
+var request = NavigationRequest.To<DetailsPage>(customerId);
+NavigationResult result = await navigation.NavigateAsync(request, cancellationToken);
+if (result.Failure is { } failure)
+{
+    // 此处记录或展示失败；WasCommitted 区分提交前失败和提交后的投影通知失败。
+    logger.LogError(failure, "导航失败，Frame 已提交：{Committed}", result.WasCommitted);
+}
+```
+
+同步提交也可以保留句柄，然后 `await submitted.Completion`。结果包括 `Rejected`、
+`TargetNotFound`、`HostNotFound`、`Cancelled`、`Failed`、`Succeeded`。
+`Superseded` 供采用替代策略的宿主报告；本库 NavigationView 按提交顺序处理已受理请求，
+回调里的新请求排队，不会嵌套修改历史，也不会等待前一页的初始化才允许离页。
+取消令牌只取消尚未提交的请求，不撤销已显示的页面。
+
+Frame 取消、停止或提交前失败不会改动旧位置、历史、选择或上下文。提交后通知失败时，
+结果保留异常和提交事实；位置扩展无法解析时发布目标及页面明确、路径为空的位置。
+NavigationView 内部 Frame 不作为独立公开导航入口，应用通过服务或控件请求导航。
+`ClearHistory` 也通过请求队列执行，避免后退准备中的索引被回调删除。
+
+## 使用依赖注入
 
 ```csharp
 services.AddNavigation();
-
 services.AddSingleton<MainWindow>();
 services.AddScoped<MainWindowViewModel>();
-
-// 只注册页面的构造函数依赖。
 services.AddTransient<DashboardViewModel>();
-services.AddTransient<SettingsViewModel>();
 ```
 
-`AddNavigation()` 不注册也不要求应用注册 `INavigationViewPageProvider`。导航时会先尊重页面
-类型已有的显式 DI 注册；页面未注册时，则由当前导航宿主的子作用域直接创建，并为其注入
-已注册的构造函数依赖。因此，只有页面需要自定义工厂、替换实例或特殊生命周期时，才需要
-显式注册页面类型。
-
-窗口在初始化控件后创建自己的导航作用域：
+窗口初始化控件后挂接一个独立作用域：
 
 ```csharp
-public partial class MainWindow
+_navigationScope = navigationScopes.Attach(RootNavigation, "main");
+DataContext = _navigationScope.Services.GetRequiredService<MainWindowViewModel>();
+```
+
+页面类型无需注册。注册页面由子容器解析和最终释放；未注册页面使用
+ActivatorUtilities 创建，页面本身由导航租约释放，其注册的构造函数依赖仍由子容器释放。
+缓存淘汰不等于 DI 已注册 transient 立即销毁：容器跟踪的对象直到子容器释放才销毁。
+需要按页销毁的页面和模型，应使用显式拥有租约或拥有独立子容器的工厂。
+
+`INavigationService` 的会话身份不可替换。旧作用域请求停止后，旧服务永久失效；
+即使相同 NavigationView 已挂接新作用域，旧服务和旧排队请求也不能操作新会话。
+`INavigationRouter` 只按 Attach 时的显式 id 查找，停止时立即撤销该路由。
+新会话不会等待旧会话的工作；旧会话自己的 Completion 仍包含其全部收尾。
+
+## 正常关闭与受限关闭
+
+会话状态是 `Attaching → Attached → Stopping → Draining → Disposed`。
+`RequestStop()` 立即关闭准入并启动清理，可在回调中调用。
+`Completion` 是稳定的完成任务，包含已启动初始化、显式登记操作、退出、取消、错误交付、
+自有页面销毁及子容器异步释放。清理失败保留在该任务中；多个独立失败一起报告。
+`DisposeAsync()` 请求停止并返回相同完成任务。同步 `Dispose()` 不阻塞 Dispatcher，
+也不承诺返回时资源已经释放。正常关闭必须先等待清理，再销毁宿主和根容器。
+
+WPF 窗口可采用下面的 Closing 协议。若有关闭确认，应在开始清理前完成确认：
+排空期间窗口仍存在，应封闭输入；会话切换时也应停用导航菜单，成功挂接新会话后再恢复。
+托盘等独立输入入口需检查关闭状态，避免再次调用控件便利方法建立隐式会话。
+
+```csharp
+private Task? _closing;
+private bool _closeAllowed;
+
+protected override void OnClosing(CancelEventArgs e)
 {
-    private readonly INavigationScope _navigationScope;
-
-    public MainWindow(INavigationScopeFactory navigationScopes)
+    base.OnClosing(e);
+    if (_closeAllowed || e.Cancel)
     {
-        InitializeComponent();
-
-        _navigationScope = navigationScopes.Attach(RootNavigation, "main");
-        DataContext = _navigationScope.Services
-            .GetRequiredService<MainWindowViewModel>();
+        return;
     }
 
-    public INavigationService Navigation => _navigationScope.Navigation;
+    e.Cancel = true;
+    _closing ??= CloseAfterCleanupAsync();
+}
 
-    protected override void OnClosed(EventArgs e)
+private async Task CloseAfterCleanupAsync()
+{
+    // 先返回 Closing，使重入关闭能看到已发布的任务。
+    await Dispatcher.Yield(DispatcherPriority.Normal);
+    try
     {
-        _navigationScope.Dispose();
-        base.OnClosed(e);
+        IsEnabled = false;
     }
+    catch (Exception failure)
+    {
+        logger.LogError(failure, "关闭输入通知失败。");
+    }
+
+    try
+    {
+        await _navigationScope.DisposeAsync();
+        // 若窗口拥有应用关闭：此处再 await 根容器或 Generic Host 的异步释放。
+    }
+    catch (Exception failure)
+    {
+        // 按应用策略记录清理失败。若有多个独立拥有者，应逐一尝试并汇总错误。
+        logger.LogError(failure, "关闭清理失败。");
+    }
+
+    _closeAllowed = true;
+    Close();
 }
 ```
 
-`Attach` 会创建一个独立的 DI 子作用域。页面或视图模型注入的
-`INavigationService` 只会控制这个作用域对应的 `RootNavigation`：
+生命周期回调、已登记操作和错误事件不能等待包含自己的作用域完成任务；检测到这类
+调用会明确抛出 InvalidOperationException。回调只调用 RequestStop，外部关闭协调者负责等待。
+正常路径不使用超时后强制销毁依赖。若 Dispatcher 已关闭或在排空途中被强制关闭，
+Completion 明确失败，表示受限清理；仍在使用的依赖被保留，不宣称所有 UI 回调已完成。
+直接 Application.Shutdown、操作系统强制终止等不能替代正常关闭协议。
 
-```csharp
-public sealed class DashboardViewModel(INavigationService navigation)
-{
-    public void OpenSettings()
-    {
-        _ = navigation.Navigate(typeof(SettingsPage), new SettingsRequest());
-    }
-}
-```
+## 不使用依赖注入与页面所有权
 
-`Dispose()` 会立即取消当前页面的异步 Enter、同步调用 `OnNavigationExited()`，且不会在非
-UI 线程上阻塞等待 WPF Dispatcher。若 Enter 任务在取消后仍未完成，scoped 服务会延迟到
-该任务完成后再释放，避免回调继续访问已释放的依赖。需要确定等待完整清理时，请在应用的
-异步关闭流程中 `await _navigationScope.DisposeAsync()`；同步的 `OnClosed`/`Dispose(bool)`
-仍可调用 `Dispose()` 发起安全清理。页面的异步保存或关闭确认应由窗口或应用关闭流程负责，
-不要放入已经无法取消或回滚导航的 Exit 回调。
+核心包直接提供 `NavigationScope.Attach(RootNavigation, pageProvider)`。
+省略 provider 时使用公开无参构造函数，所创建页面由作用域拥有。
+无 DI 的 Services 只提供当前 INavigationService 和 INavigationViewPageProvider。
+作用域不销毁调用方传入的 provider；显式作用域也不拥有应用根容器。
 
-### 显式跨宿主导航
-
-只有确实需要从一个作用域控制另一个作用域时才使用 `INavigationRouter`。路由不会猜测
-“当前窗口”，必须传入目标作用域在 `Attach` 时声明的 Id：
-
-```csharp
-await router.NavigateAsync(
-    "secondary-window",
-    NavigationRequest.To<DetailsPage>(customerId)
-);
-```
-
-目标窗口关闭并释放作用域后，路由会返回 `NavigationResultStatus.HostNotFound`。同步路由
-要求调用线程就是目标宿主的 Dispatcher；不确定线程归属时应使用异步方法。
-
-## 不使用依赖注入
-
-核心包直接提供 `NavigationScope.Attach`。它不要求引用
-`Wpf.Zen.Ui.DependencyInjection`，但仍然具有与 DI 模式相同的导航上下文、请求参数、
-缓存、历史和释放行为：
-
-```csharp
-public partial class MainWindow
-{
-    private readonly INavigationScope _navigationScope;
-
-    public MainWindow()
-    {
-        InitializeComponent();
-
-        _navigationScope = NavigationScope.Attach(RootNavigation);
-        _ = _navigationScope.Navigation.Navigate(
-            typeof(DashboardPage),
-            parameter: "startup"
-        );
-    }
-
-    protected override void OnClosed(EventArgs e)
-    {
-        _navigationScope.Dispose();
-        base.OnClosed(e);
-    }
-}
-```
-
-默认（未提供自定义提供器）时，页面通过公开无参构造函数激活。需要自定义构造规则、
-已有页面实例或自定义创建规则时，实现 `INavigationViewPageProvider`。提供自定义提供器
-会取代默认激活，因此提供器必须为每个目标类型产出页面实例，或对未处理类型抛出异常：
+自定义 provider 返回 `NavigationPageLease`，创建时即声明最终释放责任：
 
 ```csharp
 public sealed class ApplicationPageProvider : INavigationViewPageProvider
 {
-    public object GetPage(Type pageType)
+    public NavigationPageLease GetPage(Type pageType)
     {
-        if (pageType == typeof(DashboardPage))
+        if (pageType != typeof(DashboardPage))
         {
-            return new DashboardPage(new DashboardViewModel());
+            throw new InvalidOperationException($"Unhandled page type: {pageType}");
         }
 
-        throw new InvalidOperationException($"Unhandled page type: {pageType}");
+        var model = new DashboardViewModel();
+        try
+        {
+            var page = new DashboardPage(model);
+            return NavigationPageLease.Owned(page, model);
+        }
+        catch (Exception creationFailure)
+        {
+            try
+            {
+                model.Dispose();
+            }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException(creationFailure, cleanupFailure);
+            }
+
+            throw;
+        }
     }
 }
 ```
 
-然后在创建作用域时传入：
+- `Borrowed(page)`：调用方或容器拥有最终销毁责任，导航只管理激活。
+- `Owned(page, model)`：工厂转交页面和可选模型，按引用去重，异步释放优先。
+- `Owned(page, releaseAsync)`：例如转交页面子容器，回调负责其完整释放。
 
-```csharp
-_navigationScope = NavigationScope.Attach(
-    RootNavigation,
-    new ApplicationPageProvider()
-);
-```
+导航不会通过 DataContext 猜测所有权。拥有租约应对应唯一、尚未销毁的页面实例；
+工厂不能为同一活着的对象反复创建互相冲突的拥有租约。同一页面实例在旧会话排空前，
+不能交给另一个会话；借用实例在旧会话完全结束后可以再次交付。已最终释放的自有实例
+不能重新交付，即使改成借用租约也会被拒绝。取消候选、缓存淘汰、清空和作用域
+停止都释放相应保留权，最后一个激活和缓存保留者离开后才最终销毁。
+缓存页面旧任务未结束时，可以显示该实例，但新的进入要等旧激活排空。
 
-作用域不会取得调用方传入的页面提供器的所有权，也不会在释放时自动 Dispose 它。页面
-是否缓存仍由 `NavigationViewItem.NavigationCacheMode` 决定，而不是由页面提供器决定。
-
-无 DI 作用域的 `Services` 是一个最小 `IServiceProvider`，可取得当前作用域的
-`INavigationService` 和 `INavigationViewPageProvider`；其他服务类型返回 `null`。
+直接调用 NavigationView 的 bool 便捷方法会创建隐式无容器会话。
+这类调用方在最终关闭前应 `await navigationView.StopNavigationAsync()`。
+显式作用域更适合需要注入服务、观察错误、跨宿主路由及协调应用关闭的场景。
 
 ## WinForms 与 ElementHost
 
-导航宿主不要求 WPF `Window` 或 `Application.Current`。在 WinForms 中，可以直接把
-`NavigationView` 放进 `ElementHost`，并让 Form 或承载控件拥有作用域：
+宿主不要求 WPF Window 或 Application.Current。把 NavigationView 放入 ElementHost 后
+挂接作用域。Form 应在 FormClosing 中取消首次关闭、异步等待作用域，完成后再次 Close，
+再由 Form 释放 ElementHost。不能在 Dispose(bool) 中阻塞等待 WPF Dispatcher。
 
 ```csharp
-private readonly NavigationView _navigationView = new();
-private readonly INavigationScope _navigationScope;
+private bool _closeAllowed;
+private Task? _closing;
 
-public MainForm()
+protected override void OnFormClosing(FormClosingEventArgs e)
 {
-    InitializeComponent();
-
-    elementHost.Child = _navigationView;
-    _navigationScope = NavigationScope.Attach(_navigationView);
-
-    _ = _navigationScope.Navigation.Navigate(typeof(DashboardPage));
-}
-
-protected override void Dispose(bool disposing)
-{
-    if (disposing)
+    base.OnFormClosing(e);
+    if (_closeAllowed || e.Cancel)
     {
-        _navigationScope.Dispose();
+        return;
     }
 
-    base.Dispose(disposing);
+    e.Cancel = true;
+    _closing ??= CloseAfterCleanupAsync();
+}
+
+private async Task CloseAfterCleanupAsync()
+{
+    await Task.Yield();
+    try
+    {
+        Enabled = false;
+    }
+    catch (Exception failure)
+    {
+        logger.LogError(failure, "关闭输入通知失败。");
+    }
+
+    try
+    {
+        await _navigationScope.DisposeAsync();
+    }
+    catch (Exception failure)
+    {
+        logger.LogError(failure, "导航清理失败。");
+    }
+
+    _closeAllowed = true;
+    Close();
 }
 ```
 
-如果 WinForms 应用本身使用 Microsoft.Extensions.DependencyInjection，也可以改用
-`INavigationScopeFactory.Attach`；宿主仍然是 `NavigationView`，不需要制造一个虚假的
-WPF Window。
+## 页面上下文、进入与后续操作
 
-## 页面中的导航上下文
-
-导航请求的参数不会覆盖页面的 `DataContext`。导航后的页面及其逻辑树后代可以读取：
+上下文以一个只读继承附加属性 `Navigation.Context` 原子发布到页面根节点。
+它包含 Service、Host、Parameter；三个值属于同一次提交。便利读取方法保留：
 
 ```csharp
 INavigationService? navigation = Navigation.GetService(this);
 INavigationHost? host = Navigation.GetHost(this);
 object? parameter = Navigation.GetParameter(this);
+NavigationContext? context = Navigation.GetContext(this);
 ```
 
-这些值由作用域以只读继承附加属性发布到页面根节点。之所以直接发布到页面，是因为 WPF
-`Frame` 会形成属性继承边界，仅把值设置到外层 `NavigationView` 无法可靠到达页面内部。
+绑定使用 `(ui:Navigation.Context).Parameter` 等路径；覆写 OnPropertyChanged 时比较
+Navigation.ContextProperty，再从新 NavigationContext 读取参数。
+原先独立的 ServiceProperty、HostProperty、ParameterProperty 已移除。
+Frame 的属性继承边界使上下文必须直接写入页面，参数不替换 DataContext。
 
-非可视对象和视图模型在 DI 模式下应优先通过构造函数注入 `INavigationService`，而不是
-依赖视觉树查找。
+进入前冻结视图、DataContext 和 INavigableView 模型身份，按引用去重。
+视图先进入、模型后进入，退出按相反顺序。只有真正调用了进入的参与者才取得退出责任，
+部分进入后抛错也需退出；单独实现 INavigationExited 不会收到没有对应进入的退出。
+退出使用快照，不重新读取已经变化的 DataContext。
 
-### 视图模型中的导航参数
-
-`Navigation.GetParameter` 需要传入视觉树中的 `DependencyObject`，纯视图模型无法直接
-调用。DI 模式下，视图模型通过构造函数注入 `INavigationService` 后，有两种取参方式。
-
-**方式 A：在导航感知生命周期回调中读取（推荐）**
-
-视图模型可实现同步的 `INavigationAware` 或异步的 `IAsyncNavigationAware`。宿主在每次
-成功提交导航时调用相应的 Enter 方法。此时位置刷新已完成，本次导航的参数已发布到
-`State.CurrentLocation.Target.Parameter`，可直接读取：
+每次 Frame 提交后在 DispatcherPriority.Loaded 交付进入；真实视觉卸载结束激活，
+重新加载创建新激活。同一 Dispatcher 周期的视觉移动可以合并。
+IAsyncNavigationAware 返回的任务属于初始化责任；需要在初始化后继续执行命令时使用
+INavigationActivationAware：
 
 ```csharp
-public sealed class ArticleViewModel : IAsyncNavigationAware
+public sealed class ArticleViewModel : INavigationActivationAware
 {
-    private readonly INavigationService _navigation;
+    private NavigationActivationContext? _activation;
 
-    public ArticleViewModel(INavigationService navigation)
+    public Task OnNavigationEnteredAsync(NavigationActivationContext context)
     {
-        _navigation = navigation;
+        _activation = context;
+        if (context.Target?.Parameter is not int articleId)
+        {
+            throw new InvalidOperationException("Article navigation requires an integer identifier.");
+        }
+
+        return LoadArticleAsync(articleId, context.CancellationToken);
     }
 
-    public async Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+    public Task SaveAsync()
     {
-        int articleId = (int)(_navigation.State.CurrentLocation?.Target.Parameter ?? 0);
-        await LoadArticleAsync(articleId, cancellationToken);
+        var activation = _activation
+            ?? throw new InvalidOperationException("The page is not active.");
+        return activation.RunAsync(token => SaveArticleAsync(token));
     }
 
     public void OnNavigationExited()
     {
-        // 仅执行必须在离开导航状态时同步完成的状态清理。
+        _activation = null;
+        // 解除本次激活的外部订阅。核心会等待初始化和已登记的 SaveAsync 完成。
     }
 }
 ```
 
-视图模型能收到回调需要满足以下任一条件：
+RunAsync 必须在 UI 线程调用，它先登记工作再执行委托。把操作及全部依赖收尾放在委托中，
+取消后仍需使用依赖的工作也必须等到委托结束。任意未登记的后台任务不在导航完成保证范围内。
+同时实现旧异步接口和上下文接口时优先使用上下文接口；同步接口仍先于异步接口调用。
 
-- 页面实现 `INavigationExited` 且其 `DataContext` 也实现 `INavigationExited`：视图先收到
-  通知，视图抛出的异常不会阻断视图模型的回调；
-- 页面实现 `INavigableView<object>` 且其 `ViewModel` 实现 `INavigationExited`；
-- 页面是普通 `FrameworkElement` 且 `DataContext` 实现 `INavigationExited`。
+回调内只请求 RequestStop，由作用域拥有者在回调外等待 Completion。即使提前保存了
+Completion 的 Task，也不能在该作用域的回调中等待它：该任务本来就包含当前回调。
+公开入口可检测回调内的自等待，无法拦截调用方直接 await 已保存 Task 的行为。
+检测也覆盖页面租约与 DI 资源的异步释放回调，以及宿主已经解除挂接后的
+`StopNavigationAsync` 入口。清理回调应完成自己拥有的资源收尾，由外部拥有者等待作用域。
 
-`OnNavigationEntered` 和 `OnNavigationEnteredAsync` 与 `Loaded`/`Unloaded` 无关，每个成功
-提交的导航都会触发。异步方法收到的令牌不会取消已经提交的导航；它表示这一次导航已被
-后续导航取代，或者宿主已真正卸载/与作用域分离。宿主不会等待异步 Enter 完成，因此旧
-页面的慢请求不会阻塞新页面。实现应把令牌传给网络、数据库等可取消操作，并在取消后避免
-把过期结果写回视图模型。
+NavigationCallbackFailed 在所属 Dispatcher、依赖释放前交付。
+NavigationCallbackException 记录 Entered、Exited 或 Operation 阶段、页面、参与者和目标。
+处理器设置 Handled=true 表示应用已经处理；未处理错误进入所属作用域的 Completion。
+RunAsync 返回的任务仍保留操作异常，调用方捕获该任务异常不会自动设置错误事件的 Handled。
+预期失败需要在明确的应用错误处理边界标记已处理，才能使作用域最终以成功完成。
+处理器自身抛错与原异常一起保存，不递归通知。同一异常从嵌套已登记操作传播时仅通知一次。
+取消源在全部工作收尾后释放；取消是停止请求，不代表工作已经结束。
 
-Exit 是同步回调，并且总在新内容的 Enter 启动前执行。同一个缓存页面实例因参数变化而
-再次导航时，也会先 Exit、取消旧 Enter 的令牌，再用新令牌重新 Enter。
+## 挂接失败与迁移检查
 
-页面回调发生在 WPF `Frame.Navigated` 提交之后，并延迟到 `DispatcherPriority.Loaded`，
-以便页面在挂入 Frame 后建立 `DataContext`。它晚于 `NavigationView.Navigated` 路由事件；
-同时使用两者时，不应假设它们位于同一 dispatcher 轮次。
+挂接发生同步失败且回滚已完成时，直接抛出原始或聚合异常。需要异步回滚时抛出
+NavigationAttachmentException，调用方必须等待其中的 Completion 后再销毁根依赖。
+失败作用域的路由按服务身份撤销，不会误删新会话或同名既有会话。
 
-同步或异步生命周期回调抛出的非取消异常会通过
-`NavigationView.NavigationCallbackFailed` 明确上报，
-其中的 `NavigationCallbackException` 包含回调阶段、页面内容、实际回调对象和语义导航
-目标。处理器记录或展示异常后可设置 `Handled = true`；未处理异常会在控件 Dispatcher
-上重新抛出。宿主已取消令牌时产生的 `OperationCanceledException` 属于正常结束，不会上报。
-
-参数不会覆盖 `DataContext`，需要与页面 `DataContext` 合并时请自行处理。
-
-**方式 B：由页面读取并转发**
-
-不想让视图模型依赖导航框架时，页面读取参数后转发给视图模型的自定义方法。参数发布在
-页面根节点，页面是天然的转发点：
-
-```csharp
-// 页面实现 INavigationAware
-public void OnNavigationEntered()
-{
-    if (DataContext is ArticleViewModel viewModel)
-    {
-        viewModel.ApplyNavigationParameter(Navigation.GetParameter(this));
-    }
-}
-
-public void OnNavigationExited() { }
-```
-
-无 DI 作用域的应用无法构造注入 `INavigationService`，应使用本方式。
-
-**注意事项**
-
-- `Navigated` 路由事件的 `NavigatedEventArgs` 只有 `Page` 属性，不含导航参数。
-- `State.CurrentLocationChanged` 不止在导航时触发（地图变更、`DataContext` 变化、面包屑
-  刷新也会触发）；若通过订阅它读取参数，应使用 `CurrentLocation.Page` 身份或参数变化
-  进行过滤。
-
-## 使用约束
-
-- 一个 `INavigationHost` 同一时间只能附加一个作用域；重复附加会抛出异常。
-- 创建、同步导航和附加作用域必须在宿主 Dispatcher 上执行；跨线程调用使用异步导航。
-- 导航作用域应由真正拥有宿主生命周期的窗口、Tab、Form 或承载控件保存并释放。
-- 不要把 `INavigationService` 注册成应用级 singleton；`AddNavigation()` 会主动替换旧的
-  `INavigationService` 注册，以保证每个宿主使用独立 scoped 实例。
-- 可以直接调用 `NavigationView.Navigate(...)` 进行低层控件导航，但需要完整 Service、
-  Host、Parameter 和释放语义时，应始终先创建导航作用域。
+迁移调用方时检查：provider 返回显式租约；请求等待 Completion；正常关闭迁移至
+Closing/FormClosing；后续命令纳入激活上下文；附加属性改为 Context 快照；
+生命周期回调使用 RequestStop，作用域拥有者观察完整清理结果。

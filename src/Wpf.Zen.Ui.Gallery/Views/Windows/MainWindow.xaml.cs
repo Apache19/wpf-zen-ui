@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.ComponentModel;
 using Wpf.Zen.Ui;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.Controls;
@@ -14,15 +15,28 @@ using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Windows;
 
+/// <summary>
+/// Hosts gallery navigation and awaits page and application service cleanup before the window
+/// closes.
+/// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "IDisposableAnalyzers.Correctness",
     "IDISP006:Implement IDisposable",
-    Justification = "WPF Window owns the navigation scope and deterministically releases it from OnClosed."
+    Justification = "The window awaits navigation and service shutdown before allowing Closing to finish."
 )]
 public partial class MainWindow : IWindow
 {
     private readonly INavigationScope _navigationScope;
+    private Task? _closeCompletion;
+    private bool _closeAllowed;
 
+    /// <summary>
+    /// Creates the window navigation scope and connects dialog and notification services to its
+    /// presentation hosts.
+    /// </summary>
+    /// <param name="navigationScopes">
+    /// The factory creating independent navigation dependencies for this window.
+    /// </param>
     public MainWindow(INavigationScopeFactory navigationScopes)
     {
         InitializeComponent();
@@ -39,9 +53,15 @@ public partial class MainWindow : IWindow
         SetupTrayMenuEvents();
     }
 
+    /// <summary>
+    /// Gets the menu, navigation map, and window presentation model owned by the window navigation
+    /// scope.
+    /// </summary>
     public MainWindowViewModel ViewModel { get; }
 
-    /// <summary>Gets the navigator scoped to the gallery's primary navigation surface.</summary>
+    /// <summary>
+    /// Gets the navigator scoped to the gallery's primary navigation surface.
+    /// </summary>
     public INavigationService Navigation => _navigationScope.Navigation;
 
     private bool _isUserClosedPane;
@@ -73,7 +93,7 @@ public partial class MainWindow : IWindow
 
     private void OnTrayMenuItemClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not MenuItem menuItem)
+        if (_closeCompletion is not null || sender is not MenuItem menuItem)
         {
             return;
         }
@@ -140,11 +160,16 @@ public partial class MainWindow : IWindow
         _ = Focus();
     }
 
-    private void NavigateToPage(Type pageType)
+    private async void NavigateToPage(Type pageType)
     {
         try
         {
-            _ = Navigation.Navigate(pageType);
+            var request = NavigationRequest.To(pageType);
+            var result = await Navigation.NavigateAsync(request);
+            if (result.Failure is { } failure)
+            {
+                Trace.TraceError("[Gallery.Navigation] REQUEST failed; error={0}.", failure);
+            }
         }
         catch (Exception ex)
         {
@@ -168,15 +193,21 @@ public partial class MainWindow : IWindow
     }
 
     /// <summary>
-    /// Navigates an independently presented breadcrumb segment through this window's scoped service.
+    /// Navigates an independently presented breadcrumb segment through this window's scoped
+    /// service.
     /// </summary>
-    private void BreadcrumbBar_OnItemClicked(
+    private async void BreadcrumbBar_OnItemClicked(
         BreadcrumbBar sender,
         BreadcrumbBarItemClickedEventArgs e)
     {
-        if (e.Item is BreadcrumbSegment segment)
+        if (_closeCompletion is null && e.Item is BreadcrumbSegment segment)
         {
-            _ = Navigation.Navigate(segment);
+            var submitted = Navigation.Navigate(segment);
+            var result = await submitted.Completion;
+            if (result.Failure is { } failure)
+            {
+                Trace.TraceError("[Gallery.Navigation] BREADCRUMB failed; error={0}.", failure);
+            }
         }
     }
 
@@ -232,10 +263,63 @@ public partial class MainWindow : IWindow
                 : ThemePreference.Light;
     }
 
-    /// <summary>Releases pages and scoped services owned by this navigation surface.</summary>
-    protected override void OnClosed(EventArgs e)
+    /// <summary>
+    /// Drains navigation and services while the Dispatcher is available; repeated close requests
+    /// share cleanup.
+    /// </summary>
+    protected override void OnClosing(CancelEventArgs e)
     {
-        _navigationScope.Dispose();
-        base.OnClosed(e);
+        base.OnClosing(e);
+        if (_closeAllowed || e.Cancel)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        _closeCompletion ??= CloseAfterCleanupAsync();
+    }
+
+    /// <summary>
+    /// Attempts navigation and root service disposal independently and reports failures before
+    /// allowing WPF to destroy the window.
+    /// </summary>
+    private async Task CloseAfterCleanupAsync()
+    {
+        await Dispatcher.Yield(DispatcherPriority.Normal);
+        var failures = new List<Exception>();
+        try
+        {
+            IsEnabled = false;
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+
+        try
+        {
+            await _navigationScope.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+
+        try
+        {
+            await App.StopServicesAsync();
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+
+        foreach (Exception failure in failures)
+        {
+            Trace.TraceError("[Gallery.Navigation] SHUTDOWN failed; error={0}.", failure);
+        }
+
+        _closeAllowed = true;
+        Close();
     }
 }

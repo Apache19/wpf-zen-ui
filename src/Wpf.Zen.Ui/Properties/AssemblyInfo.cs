@@ -8,6 +8,7 @@ using System.Windows.Markup;
 
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
 [assembly: InternalsVisibleTo("Wpf.Zen.Ui.UnitTests")]
+[assembly: InternalsVisibleTo("Wpf.Zen.Ui.DependencyInjection")]
 
 [assembly: XmlnsPrefix("http://schemas.thezendev.com/wpf/2027", "ui")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027", "Wpf.Zen.Ui")]

@@ -744,14 +744,14 @@ public class NavigationViewTests
                 DrainDispatcher();
 
                 // The navigation view never assigns a data context; the page owns its view model.
-                Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+                Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
                 DrainDispatcher();
                 var firstPage = Assert.IsType<NavigationAwarePageOne>(navigationView.CurrentLocation?.Page);
                 firstViewModel = Assert.IsType<NavigationAwareViewModel>(firstPage.DataContext);
                 Assert.Equal(1, firstViewModel.NavigationEnteredCount);
                 Assert.Equal(0, firstViewModel.NavigationExitedCount);
 
-                Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
+                Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageTwo)));
                 DrainDispatcher();
                 Assert.Equal(1, firstViewModel.NavigationExitedCount);
                 var secondPage = Assert.IsType<NavigationAwarePageTwo>(navigationView.CurrentLocation?.Page);
@@ -770,7 +770,7 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void ReplaceContent_ExitOnlyParticipant_ReceivesExitNotification()
+    public void ReplaceContent_ExitOnlyParticipant_DoesNotAcquireExitResponsibility()
     {
         RunOnStaThread(() =>
         {
@@ -783,7 +783,7 @@ public class NavigationViewTests
 
             Assert.True(navigationView.ReplaceContent(new Border()));
             DrainDispatcher();
-            Assert.Equal(1, page.NavigationExitedCount);
+            Assert.Equal(0, page.NavigationExitedCount);
         });
     }
 
@@ -811,7 +811,7 @@ public class NavigationViewTests
                 Wpf.Zen.Ui.INavigationHost host = navigationView;
                 Assert.Equal(
                     Wpf.Zen.Ui.NavigationResultStatus.Succeeded,
-                    host.Navigate(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "first")).Status);
+                    host.NavigateAndCommit(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "first")).Status);
                 DrainDispatcher();
                 var firstPage = Assert.IsType<NavigationAwarePageOne>(navigationView.CurrentLocation?.Page);
                 firstViewModel = Assert.IsType<NavigationAwareViewModel>(firstPage.DataContext);
@@ -824,7 +824,7 @@ public class NavigationViewTests
                 // (caching is Disabled for unregistered pages) enters.
                 Assert.Equal(
                     Wpf.Zen.Ui.NavigationResultStatus.Succeeded,
-                    host.Navigate(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "second")).Status);
+                    host.NavigateAndCommit(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "second")).Status);
                 DrainDispatcher();
                 Assert.Equal(1, firstViewModel.NavigationExitedCount);
                 var secondPage = Assert.IsType<NavigationAwarePageOne>(navigationView.CurrentLocation?.Page);
@@ -838,7 +838,7 @@ public class NavigationViewTests
                 // rejected without any additional lifecycle notification.
                 Assert.Equal(
                     Wpf.Zen.Ui.NavigationResultStatus.Rejected,
-                    host.Navigate(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "second")).Status);
+                    host.NavigateAndCommit(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "second")).Status);
                 DrainDispatcher();
                 Assert.Equal(1, secondViewModel.NavigationEnteredCount);
                 Assert.Equal(0, secondViewModel.NavigationExitedCount);
@@ -939,12 +939,12 @@ public class NavigationViewTests
 
             Assert.Equal(
                 NavigationResultStatus.Succeeded,
-                host.Navigate(NavigationRequest.To(typeof(NavigationAwarePage), "first")).Status
+                host.NavigateAndCommit(NavigationRequest.To(typeof(NavigationAwarePage), "first")).Status
             );
             DrainDispatcher();
             Assert.Equal(
                 NavigationResultStatus.Succeeded,
-                host.Navigate(NavigationRequest.To(typeof(NavigationAwarePage), "second")).Status
+                host.NavigateAndCommit(NavigationRequest.To(typeof(NavigationAwarePage), "second")).Status
             );
             DrainDispatcher();
 
@@ -1011,7 +1011,7 @@ public class NavigationViewTests
                 args.Handled = true;
             };
 
-            Assert.True(navigationView.Navigate(typeof(DeferredFailingNavigationAwarePage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(DeferredFailingNavigationAwarePage)));
             DrainDispatcher();
             Assert.Null(reportedFailure);
 
@@ -1434,7 +1434,7 @@ public class NavigationViewTests
                 MenuItemsSource = new[] { root },
             };
 
-            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
             Assert.Same(child, navigationView.SelectedItem);
             BreadcrumbSegment breadcrumb = Assert.Single(navigationView.Breadcrumbs);
             Assert.Equal("Child", breadcrumb.Content);
@@ -1459,7 +1459,7 @@ public class NavigationViewTests
             Assert.Same(itemTemplate, breadcrumbBar.ItemTemplate);
             Assert.Same(navigationView.Breadcrumbs, breadcrumbBar.ItemsSource);
 
-            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
             BreadcrumbSegment breadcrumb =
                 Assert.IsType<BreadcrumbSegment>(Assert.Single(breadcrumbBar.Items));
             Assert.Equal("Page", breadcrumb.Content);
@@ -1495,7 +1495,7 @@ public class NavigationViewTests
                     root.Id)
             );
 
-            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
             BreadcrumbSegment rootBreadcrumb = navigationView.Breadcrumbs[0];
             Assert.Equal("Root", rootBreadcrumb.Content);
 
@@ -1503,7 +1503,7 @@ public class NavigationViewTests
             navigationView.Navigated += (_, args) => navigatedPage = args.Page;
 
             Assert.NotNull(rootBreadcrumb.Target);
-            Assert.True(navigationView.Navigate(rootBreadcrumb.Target!.RouteKey!));
+            Assert.True(navigationView.NavigateAndCommit(rootBreadcrumb.Target!.RouteKey!));
 
             Assert.IsType<NavigationAwarePageTwo>(navigatedPage);
         });
@@ -1545,7 +1545,7 @@ public class NavigationViewTests
             };
             bool? navigated = null;
             window.Loaded += (_, _) =>
-                navigated = navigationView.Navigate(typeof(NavigationAwarePageOne));
+                navigated = navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne));
 
             try
             {
@@ -1868,14 +1868,14 @@ public class NavigationViewTests
             var source = new ObservableCollection<object> { first, second };
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView { MenuItemsSource = source };
 
-            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
-            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageTwo)));
             Assert.True(navigationView.CanGoBack);
 
             source.Remove(first);
 
             Assert.True(navigationView.CanGoBack);
-            Assert.True(navigationView.GoBack());
+            Assert.True(navigationView.GoBackAndCommit());
             Assert.False(navigationView.CanGoBack);
             Assert.Null(navigationView.SelectedItem);
             Assert.Equal("First", Assert.Single(navigationView.Breadcrumbs).Content);
@@ -1914,8 +1914,8 @@ public class NavigationViewTests
             root.Children = new[] { replacementChild };
             root.NotifyAllPropertiesChanged();
 
-            Assert.False(navigationView.Navigate(initialChild.Id));
-            Assert.True(navigationView.Navigate(replacementChild.Id));
+            Assert.False(navigationView.NavigateAndCommit(initialChild.Id));
+            Assert.True(navigationView.NavigateAndCommit(replacementChild.Id));
             Assert.Same(replacementChild, navigationView.SelectedItem);
         });
     }
@@ -1941,7 +1941,7 @@ public class NavigationViewTests
             second.TargetPageTag = "updated-second";
             second.NotifyPropertyChanged(nameof(INavigationItem.TargetPageTag));
 
-            Assert.True(navigationView.Navigate("updated-second"));
+            Assert.True(navigationView.NavigateAndCommit("updated-second"));
             Assert.Same(second, navigationView.SelectedItem);
         });
     }
@@ -1962,12 +1962,12 @@ public class NavigationViewTests
                 MenuItemsSource = new[] { cachedItem, otherItem },
             };
 
-            Assert.True(navigationView.Navigate(typeof(CacheProbePage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(CacheProbePage)));
             Assert.Equal(1, CacheProbePage.InstanceCount);
 
             cachedItem.NavigationCacheMode = NavigationCacheMode.Evictable;
-            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
-            Assert.True(navigationView.Navigate(typeof(CacheProbePage)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(NavigationAwarePageTwo)));
+            Assert.True(navigationView.NavigateAndCommit(typeof(CacheProbePage)));
 
             Assert.Equal(1, CacheProbePage.InstanceCount);
         });
@@ -1981,7 +1981,7 @@ public class NavigationViewTests
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
 
             InvalidCastException exception = Assert.Throws<InvalidCastException>(() =>
-                navigationView.Navigate(typeof(object)));
+                navigationView.NavigateAndCommit(typeof(object)));
             Assert.Contains("must be derived from", exception.Message);
         });
     }
@@ -2001,9 +2001,9 @@ public class NavigationViewTests
             navigationView.MenuItemsSource = new[] { item };
 
             Assert.Throws<InvalidOperationException>(() =>
-                navigationView.Navigate(typeof(NavigationAwarePageOne)));
+                navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
             Assert.Throws<InvalidOperationException>(() =>
-                navigationView.Navigate(typeof(NavigationAwarePageOne)));
+                navigationView.NavigateAndCommit(typeof(NavigationAwarePageOne)));
 
             // A null result must fail before the cache write; otherwise the second navigation
             // would hit the poisoned cache entry without re-invoking the provider.
@@ -2041,7 +2041,7 @@ public class NavigationViewTests
     {
         public int CallCount { get; private set; }
 
-        public object GetPage(Type pageType)
+        public NavigationPageLease GetPage(Type pageType)
         {
             CallCount++;
             return null!; // Deliberate contract violation: page providers must produce a page or throw.
@@ -2050,9 +2050,15 @@ public class NavigationViewTests
 
     private sealed class SingleInstancePageProvider(object page) : INavigationViewPageProvider
     {
-        public object GetPage(Type pageType) => page.GetType() == pageType
-            ? page
-            : throw new InvalidOperationException($"No page is registered for {pageType}.");
+        public NavigationPageLease GetPage(Type pageType)
+        {
+            if (page.GetType() != pageType)
+            {
+                throw new InvalidOperationException($"No page is registered for {pageType}.");
+            }
+
+            return NavigationPageLease.Borrowed((FrameworkElement)page);
+        }
     }
 
     private sealed class NavigationAwareViewModel : INavigationAware

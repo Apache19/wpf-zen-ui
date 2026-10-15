@@ -6,59 +6,154 @@
 namespace Wpf.Zen.Ui;
 
 /// <summary>
-/// Creates a navigation scope without requiring a dependency-injection container.
+/// Owns one navigation host session, coordinating stop and asynchronous completion for
+/// container-free and DI usage.
 /// </summary>
 /// <remarks>
-/// This is the container-free counterpart of <see cref="INavigationScopeFactory"/>. Both paths attach the same
-/// immutable navigation service to the host and therefore provide identical page context, request parameters,
-/// history, cache, and detachment behavior. The only difference is page construction and ownership of application
-/// services: this scope uses an activator or a caller-supplied page provider and does not dispose that provider.
+/// For normal shutdown, await DisposeAsync before Dispatcher shutdown.
+/// Lifecycle callbacks use RequestStop; the caller owns external providers and the root container.
 /// </remarks>
 public sealed class NavigationScope : INavigationScope
 {
-    private readonly INavigationHost _host;
-    private readonly object _disposeGate = new();
-    private Task? _disposeTask;
+    private readonly INavigationHost             _host;
+    private readonly NavigationService           _navigation;
+    private readonly INavigationViewPageProvider _pageProvider;
+    private readonly NavigationSession           _session;
 
-    private NavigationScope(
-        INavigationHost host,
-        INavigationService navigation,
-        INavigationViewPageProvider pageProvider
-    )
+    internal NavigationScope(
+        INavigationHost             host,
+        NavigationService           navigation,
+        INavigationViewPageProvider pageProvider,
+        IServiceProvider?           services         = null,
+        string?                     id               = null,
+        Func<Task>?                 releaseResources = null,
+        Action?                     unregister       = null)
     {
-        _host = host;
+        _host         = host;
+        _navigation   = navigation;
+        _pageProvider = pageProvider;
+        _session      = new NavigationSession(host, navigation, releaseResources, unregister);
+        navigation.SetSession(_session);
         Navigation = navigation;
-        Services = new NavigationScopeServiceProvider(navigation, pageProvider);
+        Services   = services ?? new NavigationScopeServiceProvider(navigation, pageProvider);
+        Id         = id;
     }
 
     /// <inheritdoc />
-    public string? Id => null;
+    public string? Id { get; }
 
     /// <inheritdoc />
     public INavigationService Navigation { get; }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// A container-free scope exposes a minimal provider containing its <see cref="INavigationService"/> and
-    /// <see cref="INavigationViewPageProvider"/>. Other service types return <see langword="null"/>.
-    /// </remarks>
     public IServiceProvider Services { get; }
 
-    /// <summary>Attaches a container-free navigation scope to a host.</summary>
-    /// <param name="host">The navigation surface that will own history, selection, and page cache.</param>
+    /// <inheritdoc />
+    public NavigationScopeState State => _session.State;
+
+    /// <inheritdoc />
+    public Task Completion
+    {
+        get
+        {
+            _session.VerifyCanWait();
+            return _session.Completion;
+        }
+    }
+
+    /// <summary>
+    /// Attaches a container-free scope on the current Dispatcher, creating pages through
+    /// parameterless constructors by default.
+    /// </summary>
+    /// <param name="host">The host owning pages, history, and visual projections.</param>
     /// <param name="pageProvider">
-    /// An optional page factory. When omitted, pages are created through their parameterless constructors.
-    /// The returned scope does not take ownership of or dispose a caller-supplied provider.
+    /// An optional external page factory that the scope does not dispose.
     /// </param>
-    /// <returns>A scope whose navigator and page context are bound exclusively to <paramref name="host"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="host"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">
-    /// The call is made from another dispatcher, or the host already has an attached scope.
-    /// </exception>
+    /// <returns>
+    /// An independent session whose service becomes permanently invalid after stopping.
+    /// </returns>
     public static INavigationScope Attach(
-        INavigationHost host,
-        INavigationViewPageProvider? pageProvider = null
-    )
+        INavigationHost host, INavigationViewPageProvider? pageProvider = null)
+    {
+        VerifyAttachmentAccess(host);
+
+        var provider   = pageProvider ?? ActivatorNavigationViewPageProvider.Instance;
+        var navigation = new NavigationService(host);
+        var scope      = new NavigationScope(host, navigation, provider);
+
+        try
+        {
+            scope.AttachHost();
+            return scope;
+        }
+        catch (Exception exception)
+        {
+            scope.RollbackAttachment(exception);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public void RequestStop()
+    {
+        _session.RequestStop();
+    }
+
+    /// <summary>
+    /// Requests stop without blocking the Dispatcher; synchronously completed failures propagate
+    /// directly.
+    /// </summary>
+    /// <remarks>
+    /// Observe asynchronous cleanup through Completion. Application shutdown should use
+    /// DisposeAsync; this method may return
+    /// before disposal and never blocks the UI thread waiting for unfinished work.
+    /// </remarks>
+    public void Dispose()
+    {
+        RequestStop();
+
+        Task completion = _session.Completion;
+
+        if (completion.IsCompleted)
+        {
+            completion.GetAwaiter().GetResult();
+        }
+    }
+
+    /// <inheritdoc />
+    public Task DisposeAsync()
+    {
+        _session.VerifyCanWait();
+        RequestStop();
+        return _session.Completion;
+    }
+
+    /// <summary>
+    /// Acquires rollback responsibility before invoking the external host, undoing attachment even
+    /// after partial success followed by failure.
+    /// </summary>
+    internal void AttachHost()
+    {
+        _session.BeginAttachment();
+        _host.AttachNavigationScope(_navigation, _pageProvider);
+        _session.CompleteAttachment();
+    }
+
+    internal void RollbackAttachment(Exception failure)
+    {
+        _session.Failures.Add(failure);
+
+        RequestStop();
+
+        if (_session.Completion.IsCompleted)
+        {
+            _session.Completion.GetAwaiter().GetResult();
+        }
+
+        throw new NavigationAttachmentException(failure, _session.Completion);
+    }
+
+    internal static void VerifyAttachmentAccess(INavigationHost host)
     {
         if (host is null)
         {
@@ -67,102 +162,18 @@ public sealed class NavigationScope : INavigationScope
 
         if (!host.Dispatcher.CheckAccess())
         {
-            throw new InvalidOperationException(
-                "A navigation scope must be attached on the navigation host's dispatcher."
-            );
+            throw new InvalidOperationException("A navigation scope must attach on its host Dispatcher.");
         }
 
-        var effectivePageProvider = pageProvider ?? ActivatorNavigationViewPageProvider.Instance;
-        var navigation = new NavigationService(host);
-        host.AttachNavigationScope(navigation, effectivePageProvider);
-
-        return new NavigationScope(host, navigation, effectivePageProvider);
-    }
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// Disposal never blocks a foreign thread waiting for the WPF dispatcher. When asynchronous
-    /// detachment is required, cleanup continues in the background; use <see cref="DisposeAsync"/>
-    /// when the caller must observe completion.
-    /// </remarks>
-    public void Dispose()
-    {
-        Task disposeTask = BeginDispose();
-        if (disposeTask.IsCompleted)
+        if (host.Dispatcher.HasShutdownStarted || host.Dispatcher.HasShutdownFinished)
         {
-            disposeTask.GetAwaiter().GetResult();
-        }
-    }
-
-    /// <inheritdoc />
-    public Task DisposeAsync()
-    {
-        return BeginDispose();
-    }
-
-    /// <summary>Creates or returns the one cleanup operation shared by both disposal APIs.</summary>
-    private Task BeginDispose()
-    {
-        lock (_disposeGate)
-        {
-            if (_disposeTask is not null)
-            {
-                return _disposeTask;
-            }
-
-            var completion = new TaskCompletionSource<bool>(
-                TaskCreationOptions.RunContinuationsAsynchronously
-            );
-
-            _disposeTask = completion.Task;
-
-            _ = CompleteDisposeAsync(completion);
-
-            return _disposeTask;
-        }
-    }
-
-    /// <summary>Publishes synchronous and asynchronous cleanup failures through one stable task.</summary>
-    private async Task CompleteDisposeAsync(TaskCompletionSource<bool> completion)
-    {
-        try
-        {
-            await DisposeCoreAsync().ConfigureAwait(false);
-            completion.TrySetResult(true);
-        }
-        catch (Exception exception)
-        {
-            completion.TrySetException(exception);
-        }
-    }
-
-    /// <summary>Marshals host detachment without synchronously waiting across dispatchers.</summary>
-    private async Task DisposeCoreAsync()
-    {
-        if (_host.Dispatcher.CheckAccess())
-        {
-            await _host.DetachNavigationScope(Navigation).ConfigureAwait(false);
-        }
-        else if (!_host.Dispatcher.HasShutdownStarted && !_host.Dispatcher.HasShutdownFinished)
-        {
-            Task detachTask = await _host.Dispatcher
-                .InvokeAsync(() => _host.DetachNavigationScope(Navigation))
-                .Task
-                .ConfigureAwait(false);
-
-            await detachTask.ConfigureAwait(false);
-        }
-        else
-        {
-            // Once the owning Dispatcher has shut down, WPF state can no longer be touched. There
-            // are no container-owned services in this scope, so graceful degradation is complete.
+            throw new InvalidOperationException("The navigation Dispatcher is shutting down.");
         }
     }
 
     private sealed class NavigationScopeServiceProvider(
-        INavigationService navigation,
-        INavigationViewPageProvider pageProvider
-    ) : IServiceProvider
+        INavigationService          navigation,
+        INavigationViewPageProvider pageProvider) : IServiceProvider
     {
         public object? GetService(Type serviceType)
         {
