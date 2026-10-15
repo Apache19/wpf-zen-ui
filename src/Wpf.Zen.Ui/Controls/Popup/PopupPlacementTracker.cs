@@ -10,6 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Wpf.Zen.Ui.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -199,7 +200,9 @@ public static class PopupPlacementTracker
         private          DispatcherOperation? _pendingUpdate;
         private          bool                 _observing;
 
-        private static readonly DependencyPropertyDescriptor[] PlacementInputs =
+        private readonly DependencyPropertySubscriptions _propertySubscriptions = new();
+
+        private static readonly DependencyProperty[] PlacementInputs =
             new[]
             {
                 Popup.PlacementProperty,
@@ -210,9 +213,7 @@ public static class PopupPlacementTracker
                 Popup.ChildProperty,
                 Popup.CustomPopupPlacementCallbackProperty,
                 FrameworkElement.FlowDirectionProperty,
-            }.Select(
-                property => DependencyPropertyDescriptor.FromProperty(property, typeof(Popup))
-            ).ToArray();
+            };
 
         public PlacementController(Popup popup)
         {
@@ -249,6 +250,9 @@ public static class PopupPlacementTracker
             SetActualPlacement(PopupPlacementDirection.None);
         }
 
+        /// <summary>
+        /// Observes placement inputs once per opening and follows the current native popup source.
+        /// </summary>
         private void AttachToPopupSourceAndUpdate()
         {
             if (!_observing)
@@ -259,7 +263,7 @@ public static class PopupPlacementTracker
 
                 foreach (var input in PlacementInputs)
                 {
-                    input.AddValueChanged(_popup, OnPlacementInvalidated);
+                    _propertySubscriptions.Add(_popup, input, OnPlacementInvalidated);
                 }
             }
 
@@ -277,6 +281,9 @@ public static class PopupPlacementTracker
             UpdateActualPlacement();
         }
 
+        /// <summary>
+        /// Stops observation and cancels queued reads before releasing the native source hook.
+        /// </summary>
         private void DetachFromPopupSource()
         {
             if (_observing)
@@ -285,10 +292,7 @@ public static class PopupPlacementTracker
 
                 _popup.LayoutUpdated -= OnPlacementInvalidated;
 
-                foreach (var input in PlacementInputs)
-                {
-                    input.RemoveValueChanged(_popup, OnPlacementInvalidated);
-                }
+                _propertySubscriptions.Clear();
             }
 
             _pendingUpdate?.Abort();
@@ -300,7 +304,7 @@ public static class PopupPlacementTracker
 
         private void OnPlacementInvalidated(object? sender, EventArgs e)
         {
-            // LayoutUpdated covers child/target transforms and layout. Property descriptors also cover changes
+            // LayoutUpdated covers child/target transforms and layout. Property observers also cover changes
             // that do not invalidate layout. Coalesce both after WPF's render/layout work, without a polling timer.
             if (!_observing || _pendingUpdate is not null)
             {

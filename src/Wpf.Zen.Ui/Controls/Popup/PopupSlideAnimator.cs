@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Wpf.Zen.Ui.Infrastructure;
 
 using NativeContextMenu = System.Windows.Controls.ContextMenu;
 using NativeToolTip = System.Windows.Controls.ToolTip;
@@ -276,6 +277,8 @@ public static class PopupSlideAnimator
     /// </remarks>
     private sealed class PopupSlideAnimationController : IDisposable
     {
+        private readonly DependencyPropertySubscriptions _propertySubscriptions = new();
+
         private const int WindowMessageShowWindow = 0x0018;
 
         private readonly DependencyObject _owner;
@@ -384,6 +387,9 @@ public static class PopupSlideAnimator
                    _owner.GetValue(Popup.PopupAnimationProperty) is PopupAnimation.Slide;
         }
 
+        /// <summary>
+        /// Observes child replacement or private-popup animation inputs for the current owner.
+        /// </summary>
         private void AttachOwnerEvents()
         {
             switch (_owner)
@@ -392,9 +398,7 @@ public static class PopupSlideAnimator
                 {
                     popup.Closed += OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                        .FromProperty(Popup.ChildProperty, typeof(Popup))
-                       ?.AddValueChanged(popup, OnPopupChildChanged);
+                    _propertySubscriptions.Add(popup, Popup.ChildProperty, OnPopupChildChanged);
 
                     WatchElement(popup.Child);
                     break;
@@ -418,6 +422,9 @@ public static class PopupSlideAnimator
             }
         }
 
+        /// <summary>
+        /// Silently stops property observation before releasing presentation-source tracking.
+        /// </summary>
         private void DetachOwnerEvents()
         {
             switch (_owner)
@@ -426,9 +433,7 @@ public static class PopupSlideAnimator
                 {
                     popup.Closed -= OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                        .FromProperty(Popup.ChildProperty, typeof(Popup))
-                       ?.RemoveValueChanged(popup, OnPopupChildChanged);
+                    _propertySubscriptions.Remove(popup, Popup.ChildProperty, OnPopupChildChanged);
 
                     break;
                 }
@@ -469,18 +474,20 @@ public static class PopupSlideAnimator
             ForwardExplicitPrivatePopupAnimation();
         }
 
+        /// <summary>
+        /// Observes later animation choices without changing the owner's original value source.
+        /// </summary>
         private void AddPopupAnimationValueChanged(DependencyObject owner)
         {
-            DependencyPropertyDescriptor
-                .FromProperty(Popup.PopupAnimationProperty, owner.GetType())
-               ?.AddValueChanged(owner, OnOwnerPopupAnimationChanged);
+            _propertySubscriptions.Add(owner, Popup.PopupAnimationProperty, OnOwnerPopupAnimationChanged);
         }
 
+        /// <summary>
+        /// Stops animation forwarding without invoking it during controller teardown.
+        /// </summary>
         private void RemovePopupAnimationValueChanged(DependencyObject owner)
         {
-            DependencyPropertyDescriptor
-                .FromProperty(Popup.PopupAnimationProperty, owner.GetType())
-               ?.RemoveValueChanged(owner, OnOwnerPopupAnimationChanged);
+            _propertySubscriptions.Remove(owner, Popup.PopupAnimationProperty, OnOwnerPopupAnimationChanged);
         }
 
         private void WatchElement(IInputElement? element)

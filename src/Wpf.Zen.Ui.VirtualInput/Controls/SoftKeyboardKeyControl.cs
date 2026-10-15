@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Wpf.Zen.Ui.Infrastructure;
 using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
@@ -38,19 +39,7 @@ public class SoftKeyboardKeyControl : ContentControl
 {
     private const string AlternatePopupPartName = "PART_AlternatePopup";
 
-    /// <summary>
-    /// Initializes Popup observation only when a template actually supplies a Popup.
-    /// </summary>
-    private static class PopupObservation
-    {
-        internal static readonly DependencyPropertyDescriptor IsOpenDescriptor
-            = DependencyPropertyDescriptor.FromProperty(Popup.IsOpenProperty, typeof(Popup));
-
-        // An explicit initializer keeps this separate from routed-event type initialization.
-        static PopupObservation()
-        {
-        }
-    }
+    private readonly DependencyPropertySubscriptions _popupSubscriptions = new();
 
     private readonly DispatcherTimer _timer;
 
@@ -552,6 +541,9 @@ public class SoftKeyboardKeyControl : ContentControl
         }
     }
 
+    /// <summary>
+    /// Observes the current template part, including templates applied before the key is loaded.
+    /// </summary>
     private void AttachPopup()
     {
         DetachPopup();
@@ -565,7 +557,7 @@ public class SoftKeyboardKeyControl : ContentControl
 
         // Closed may follow native-window destruction asynchronously. Observe IsOpen itself
         // so an outside dismissal immediately invalidates pending selection requests.
-        PopupObservation.IsOpenDescriptor.AddValueChanged(_popup, OnPopupIsOpenChanged);
+        _popupSubscriptions.Add(_popup, Popup.IsOpenProperty, OnPopupIsOpenChanged);
 
         // A Popup has a separate presentation source. Translate selection into an event on the
         // cap instead of depending on an ancestor route across the popup boundary.
@@ -574,6 +566,9 @@ public class SoftKeyboardKeyControl : ContentControl
         );
     }
 
+    /// <summary>
+    /// Silently releases property observation and routed input from the previous template part.
+    /// </summary>
     private void DetachPopup()
     {
         if (_popup is null)
@@ -581,9 +576,9 @@ public class SoftKeyboardKeyControl : ContentControl
             return;
         }
 
-        // Property descriptors retain their listeners. Remove subscriptions on both template
-        // replacement and unload; Loaded reconnects an unchanged template when reused.
-        PopupObservation.IsOpenDescriptor.RemoveValueChanged(_popup, OnPopupIsOpenChanged);
+        // Stop observing the old template before releasing its popup. Loaded reconnects the
+        // unchanged template when this key is reused after unloading.
+        _popupSubscriptions.Clear();
 
         _popup.RemoveHandler(
             ButtonBase.ClickEvent, new RoutedEventHandler(OnAlternativeClick)

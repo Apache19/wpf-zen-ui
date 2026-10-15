@@ -5,6 +5,7 @@
 
 using System.Windows.Controls;
 using System.Windows.Documents;
+using Wpf.Zen.Ui.Infrastructure;
 
 namespace Wpf.Zen.Ui.Controls;
 
@@ -34,6 +35,8 @@ public class FocusVisualPresenter : Control
 {
     private static readonly object TargetMetadataCacheLock = new();
     private static readonly Dictionary<Type, TargetMetadata> TargetMetadataCache = new();
+
+    private readonly DependencyPropertySubscriptions _propertySubscriptions = new();
 
     private UIElement?      _subscribedElement;
     private TargetMetadata? _targetMetadata;
@@ -217,6 +220,9 @@ public class FocusVisualPresenter : Control
         _hasCapturedDefaultPresenterStyle = true;
     }
 
+    /// <summary>
+    /// Observes only the resolved dependency properties on the current focus target.
+    /// </summary>
     private void SubscribeToAdornedElement()
     {
         if (_subscribedElement is null || _targetMetadata is null)
@@ -224,23 +230,18 @@ public class FocusVisualPresenter : Control
             return;
         }
 
-        foreach (var descriptor in _targetMetadata.ValueDescriptors)
+        foreach (var property in _targetMetadata.Properties)
         {
-            descriptor.AddValueChanged(_subscribedElement, OnAdornedElementValueChanged);
+            _propertySubscriptions.Add(_subscribedElement, property, OnAdornedElementValueChanged);
         }
     }
 
+    /// <summary>
+    /// Releases the previous target without refreshing state during target replacement.
+    /// </summary>
     private void UnsubscribeFromAdornedElement()
     {
-        if (_subscribedElement is null || _targetMetadata is null)
-        {
-            return;
-        }
-
-        foreach (var descriptor in _targetMetadata.ValueDescriptors)
-        {
-            descriptor.RemoveValueChanged(_subscribedElement, OnAdornedElementValueChanged);
-        }
+        _propertySubscriptions.Clear();
     }
 
     private void OnAdornedElementValueChanged(object? sender, EventArgs eventArgs)
@@ -367,6 +368,9 @@ public class FocusVisualPresenter : Control
         }
     }
 
+    /// <summary>
+    /// Resolves property identities once per target type; descriptors are used only for discovery.
+    /// </summary>
     private static TargetMetadata CreateTargetMetadata(Type targetType)
     {
         // DependencyPropertyDescriptor resolves a public dependency property registered by the target type or one of
@@ -378,54 +382,46 @@ public class FocusVisualPresenter : Control
             targetType
         );
 
-        var explicitDescriptor = DependencyPropertyDescriptor.FromProperty(
-            FocusVisual.CornerRadiusProperty,
-            targetType
-        );
-
-        var presenterStyleDescriptor = DependencyPropertyDescriptor.FromProperty(
-            FocusVisual.PresenterStyleProperty,
-            targetType
-        );
-
-        var borderDescriptor = DependencyPropertyDescriptor.FromProperty(
-            Border.CornerRadiusProperty,
-            targetType
-        );
-
-        var descriptors = new List<DependencyPropertyDescriptor>(4);
-
-        AddDescriptor(descriptors, explicitDescriptor);
-        AddDescriptor(descriptors, presenterStyleDescriptor);
-        AddDescriptor(descriptors, conventionalDescriptor);
-        AddDescriptor(descriptors, borderDescriptor);
-
-        return new TargetMetadata(conventionalDescriptor?.DependencyProperty, descriptors.ToArray());
-    }
-
-    private static void AddDescriptor(
-        ICollection<DependencyPropertyDescriptor> descriptors,
-        DependencyPropertyDescriptor? descriptor)
-    {
-        if (descriptor is not null
-            && descriptors.All(candidate => candidate.DependencyProperty != descriptor.DependencyProperty))
+        var properties = new List<DependencyProperty>
         {
-            descriptors.Add(descriptor);
+            FocusVisual.CornerRadiusProperty,
+            FocusVisual.PresenterStyleProperty,
+            Border.CornerRadiusProperty,
+        };
+
+        var conventionalProperty = conventionalDescriptor?.DependencyProperty;
+        if (conventionalProperty is not null && !properties.Contains(conventionalProperty))
+        {
+            properties.Add(conventionalProperty);
         }
+
+        return new TargetMetadata(conventionalProperty, properties.ToArray());
     }
 
+    /// <summary>
+    /// Caches property identities independently of focus-target instances.
+    /// </summary>
     private sealed class TargetMetadata
     {
+        /// <summary>
+        /// Stores the conventional corner-radius property and the unique observed properties.
+        /// </summary>
         public TargetMetadata(
             DependencyProperty? conventionalCornerRadiusProperty,
-            DependencyPropertyDescriptor[] valueDescriptors)
+            DependencyProperty[] properties)
         {
             ConventionalCornerRadiusProperty = conventionalCornerRadiusProperty;
-            ValueDescriptors = valueDescriptors;
+            Properties = properties;
         }
 
+        /// <summary>
+        /// Gets the target type's conventional corner-radius property, if one exists.
+        /// </summary>
         public DependencyProperty? ConventionalCornerRadiusProperty { get; }
 
-        public DependencyPropertyDescriptor[] ValueDescriptors { get; }
+        /// <summary>
+        /// Gets the properties whose changes require refreshing the focus presentation.
+        /// </summary>
+        public DependencyProperty[] Properties { get; }
     }
 }

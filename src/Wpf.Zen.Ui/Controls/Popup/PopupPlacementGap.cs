@@ -4,7 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls.Primitives;
-using System.Windows.Data;
+using Wpf.Zen.Ui.Infrastructure;
 using NativeContextMenu = System.Windows.Controls.ContextMenu;
 
 // ReSharper disable once CheckNamespace
@@ -39,7 +39,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public static class PopupPlacementGap
 {
-    #pragma warning disable WPF0061 // Accessor method for attached property should have standard documentation text
+#pragma warning disable WPF0061 // Accessor method for attached property should have standard documentation text
 
     /// <summary>
     /// Identifies the attached property that specifies equal spacing above and below a Popup's
@@ -134,7 +134,7 @@ public static class PopupPlacementGap
             new PropertyMetadata(null)
         );
 
-    #pragma warning restore WPF0061 // Accessor method for attached property should have standard documentation text
+#pragma warning restore WPF0061 // Accessor method for attached property should have standard documentation text
 
     private static bool ValidateGap(object? value)
     {
@@ -207,7 +207,7 @@ public static class PopupPlacementGap
     }
 
     private static void ReleaseControllerIfUnused(
-        DependencyObject owner,
+        DependencyObject             owner,
         PlacementRectangleController controller)
     {
         if (controller.IsGapEnabled || controller.IsAlignmentEnabled)
@@ -225,14 +225,14 @@ public static class PopupPlacementGap
     /// </summary>
     private sealed class PlacementRectangleController
     {
-        private readonly DependencyObject       _owner;
-        private readonly Popup?                 _popup;
-        private readonly Flyout?                _flyout;
-        private readonly NativeContextMenu?     _contextMenu;
-        private readonly DependencyProperty     _placementRectangleProperty;
-        private readonly DependencyProperty     _placementProperty;
-        private readonly List<PropertyObserver> _propertyObservers = [];
-        private readonly DependencyProperty     _placementTargetProperty;
+        private readonly DependencyObject                 _owner;
+        private readonly Popup?                           _popup;
+        private readonly Flyout?                          _flyout;
+        private readonly NativeContextMenu?               _contextMenu;
+        private readonly DependencyProperty               _placementRectangleProperty;
+        private readonly DependencyProperty               _placementProperty;
+        private readonly List<DependencyPropertyObserver> _propertyObservers = [];
+        private readonly DependencyProperty               _placementTargetProperty;
 
         private UIElement?      _observedTarget;
         private LayoutObserver? _targetLayoutObserver;
@@ -323,9 +323,12 @@ public static class PopupPlacementGap
             RestoreBasePlacementRectangle();
         }
 
+        /// <summary>
+        /// Retains a silent-initialization observer for the controller's attached lifetime.
+        /// </summary>
         private void Observe(DependencyProperty property, EventHandler callback)
         {
-            _propertyObservers.Add(new PropertyObserver(_owner, property, callback));
+            _propertyObservers.Add(new DependencyPropertyObserver(_owner, property, callback));
         }
 
         private void OnPopupOpened(object? sender, EventArgs e)
@@ -400,7 +403,7 @@ public static class PopupPlacementGap
 
             _targetLayoutObserver?.Detach();
 
-            _observedTarget = target;
+            _observedTarget       = target;
             _targetLayoutObserver = null;
 
             if (_observedTarget is not null)
@@ -424,7 +427,7 @@ public static class PopupPlacementGap
             }
 
             _contentLayoutObserver?.Detach();
-            _observedContent = content;
+            _observedContent       = content;
             _contentLayoutObserver = content is null ? null : new LayoutObserver(content, this);
         }
 
@@ -448,11 +451,13 @@ public static class PopupPlacementGap
 
             var appliesHorizontalAlignment = IsAlignmentEnabled
                 && horizontalAlignment != HorizontalAlignment.Stretch
-                && (placement is PlacementMode.Top or PlacementMode.Bottom or PlacementMode.Relative or PlacementMode.Center);
+                && placement is PlacementMode.Top or PlacementMode.Bottom or PlacementMode.Relative
+                    or PlacementMode.Center;
 
             var appliesVerticalAlignment = IsAlignmentEnabled
                 && verticalAlignment != VerticalAlignment.Stretch
-                && (placement is PlacementMode.Left or PlacementMode.Right or PlacementMode.Relative or PlacementMode.Center);
+                && (placement is PlacementMode.Left or PlacementMode.Right or PlacementMode.Relative
+                    or PlacementMode.Center);
 
             if (!appliesVerticalGap && !appliesHorizontalGap
                 && !appliesHorizontalAlignment && !appliesVerticalAlignment)
@@ -480,14 +485,14 @@ public static class PopupPlacementGap
             if (appliesVerticalGap)
             {
                 var gap = GetVertical(_owner);
-                effectiveRectangle.Y -= gap;
+                effectiveRectangle.Y      -= gap;
                 effectiveRectangle.Height += gap * 2D;
             }
 
             if (appliesHorizontalGap)
             {
                 var gap = GetHorizontal(_owner);
-                effectiveRectangle.X -= gap;
+                effectiveRectangle.X     -= gap;
                 effectiveRectangle.Width += gap * 2D;
             }
 
@@ -576,8 +581,8 @@ public static class PopupPlacementGap
         }
 
         private static double GetAlignmentOffset(
-            double targetLength,
-            double popupLength,
+            double              targetLength,
+            double              popupLength,
             HorizontalAlignment alignment)
         {
             return alignment switch
@@ -589,8 +594,8 @@ public static class PopupPlacementGap
         }
 
         private static double GetAlignmentOffset(
-            double targetLength,
-            double popupLength,
+            double            targetLength,
+            double            popupLength,
             VerticalAlignment alignment)
         {
             return alignment switch
@@ -629,71 +634,6 @@ public static class PopupPlacementGap
         }
 
         /// <summary>
-        /// Receives dependency-property changes without registering the owner in a global
-        /// descriptor cache.
-        /// </summary>
-        /// <remarks>
-        /// The controller owns these binding targets. WPF holds their dependency links weakly, so
-        /// the entire
-        /// controller/owner graph can be collected even for an unopened popup. An explicit DP path
-        /// avoids CLR
-        /// PropertyDescriptor subscriptions. Detaching clears the binding before releasing the
-        /// callback.
-        /// </remarks>
-        private sealed class PropertyObserver : DependencyObject
-        {
-            private static readonly DependencyProperty ValueProperty
-                = DependencyProperty.Register(
-                    "Value",
-                    typeof(object),
-                    typeof(PropertyObserver),
-                    new PropertyMetadata(null, OnValueChanged)
-                );
-
-            private EventHandler? _callback;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="PropertyObserver"/> class.
-            /// Establishes a one-way DP observation without notifying the controller during the
-            /// initial transfer.
-            /// </summary>
-            /// <param name="source">The popup surface whose dependency property is
-            /// observed.</param>
-            /// <param name="property">The dependency property, supplied directly to avoid CLR
-            /// property lookup.</param>
-            /// <param name="callback">Receives subsequent effective-value changes on the owning
-            /// dispatcher.</param>
-            public PropertyObserver(DependencyObject source, DependencyProperty property, EventHandler callback)
-            {
-                // Initial transfer establishes the baseline; it must not call into a partially attached controller.
-                BindingOperations.SetBinding(this, ValueProperty, new Binding
-                {
-                    Source = source,
-                    Path   = new PropertyPath(property),
-                    Mode   = BindingMode.OneWay,
-                });
-
-                _callback = callback;
-            }
-
-            /// <summary>
-            /// Stops observation without invoking the controller while the binding value is
-            /// cleared.
-            /// </summary>
-            public void Detach()
-            {
-                _callback = null;
-                BindingOperations.ClearBinding(this, ValueProperty);
-            }
-
-            private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-            {
-                var observer = (PropertyObserver)d;
-                observer._callback?.Invoke(observer, EventArgs.Empty);
-            }
-        }
-
-        /// <summary>
         /// Observes target or popup-content layout without letting that element retain a
         /// resource-owned Popup.
         /// </summary>
@@ -708,7 +648,7 @@ public static class PopupPlacementGap
         private sealed class LayoutObserver
         {
             private readonly WeakReference<PlacementRectangleController> _controller;
-            private UIElement? _target;
+            private          UIElement?                                  _target;
 
             public LayoutObserver(UIElement target, PlacementRectangleController controller)
             {
@@ -726,7 +666,7 @@ public static class PopupPlacementGap
                 }
 
                 _target.LayoutUpdated -= OnLayoutUpdated;
-                _target = null;
+                _target               =  null;
             }
 
             private void OnLayoutUpdated(object? sender, EventArgs e)

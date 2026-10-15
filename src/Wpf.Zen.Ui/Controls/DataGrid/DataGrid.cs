@@ -6,6 +6,7 @@
 using System.Collections.Specialized;
 using System.Windows.Controls;
 using System.Windows.Data;
+using Wpf.Zen.Ui.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -24,7 +25,7 @@ public class DataGrid : System.Windows.Controls.DataGrid
 {
     private readonly Dictionary<DataGridColumn, Dictionary<DependencyProperty, BindingBase>>
         _columnStyleBindings = new();
-    private readonly Dictionary<DataGridColumn, Dictionary<DependencyProperty, ColumnStyleObserver>>
+    private readonly Dictionary<DataGridColumn, Dictionary<DependencyProperty, DependencyPropertyObserver>>
         _columnStyleObservers = new();
     private bool _isReconcilingColumnStyles;
 
@@ -288,6 +289,9 @@ public class DataGrid : System.Windows.Controls.DataGrid
         bindings[targetProperty] = binding;
     }
 
+    /// <summary>
+    /// Observes each column/style property once so clearing an override restores the grid default.
+    /// </summary>
     private void EnsureColumnStylePropertyTracking(
         DataGridColumn column,
         DependencyProperty targetProperty
@@ -295,7 +299,7 @@ public class DataGrid : System.Windows.Controls.DataGrid
     {
         if (!_columnStyleObservers.TryGetValue(column, out var observers))
         {
-            observers = new Dictionary<DependencyProperty, ColumnStyleObserver>();
+            observers = new Dictionary<DependencyProperty, DependencyPropertyObserver>();
             _columnStyleObservers.Add(column, observers);
         }
 
@@ -308,7 +312,7 @@ public class DataGrid : System.Windows.Controls.DataGrid
         // an inherited grid-level style. A binding observer supplies change notification without
         // DependencyPropertyDescriptor's global strong reference to the column. Explicit values and
         // bindings remain untouched because EnsureColumnElementStyleBinding checks precedence first.
-        observers.Add(targetProperty, new ColumnStyleObserver(this, column, targetProperty));
+        observers.Add(targetProperty, new DependencyPropertyObserver(column, targetProperty, OnColumnStylePropertyChanged));
     }
 
     private void OnColumnStylePropertyChanged(object? sender, EventArgs e)
@@ -333,6 +337,9 @@ public class DataGrid : System.Windows.Controls.DataGrid
         }
     }
 
+    /// <summary>
+    /// Releases owned bindings and observation when a column leaves this grid.
+    /// </summary>
     private void RemoveColumnElementStyleTracking(DataGridColumn column)
     {
         RemoveColumnElementStyleBindings(column);
@@ -343,7 +350,7 @@ public class DataGrid : System.Windows.Controls.DataGrid
         }
 
         _columnStyleObservers.Remove(column);
-        foreach (ColumnStyleObserver observer in observers.Values)
+        foreach (DependencyPropertyObserver observer in observers.Values)
         {
             observer.Detach();
         }
@@ -376,55 +383,4 @@ public class DataGrid : System.Windows.Controls.DataGrid
         }
     }
 
-    /// <summary>
-    /// Observes a column dependency property through WPF's binding engine. Unlike
-    /// DependencyPropertyDescriptor, the observer is owned by the grid and does not register the
-    /// column in a process-wide descriptor table, so an abandoned grid remains collectible.
-    /// </summary>
-    private sealed class ColumnStyleObserver : DependencyObject
-    {
-        private static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-            "Value",
-            typeof(object),
-            typeof(ColumnStyleObserver),
-            new PropertyMetadata(null, OnValueChanged)
-        );
-
-        private readonly DataGrid _owner;
-        private readonly DataGridColumn _column;
-
-        internal ColumnStyleObserver(
-            DataGrid owner,
-            DataGridColumn column,
-            DependencyProperty targetProperty
-        )
-        {
-            _owner = owner;
-            _column = column;
-            _ = BindingOperations.SetBinding(
-                this,
-                ValueProperty,
-                new Binding
-                {
-                    Mode = BindingMode.OneWay,
-                    Path = new PropertyPath(targetProperty),
-                    Source = column,
-                }
-            );
-        }
-
-        internal void Detach()
-        {
-            BindingOperations.ClearBinding(this, ValueProperty);
-        }
-
-        private static void OnValueChanged(
-            DependencyObject d,
-            DependencyPropertyChangedEventArgs e
-        )
-        {
-            var observer = (ColumnStyleObserver)d;
-            observer._owner.OnColumnStylePropertyChanged(observer._column, EventArgs.Empty);
-        }
-    }
 }

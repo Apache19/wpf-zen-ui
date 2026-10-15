@@ -84,12 +84,6 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
             )
         );
 
-    private static readonly DependencyPropertyDescriptor? IsPressedDescriptor =
-        DependencyPropertyDescriptor.FromProperty(IsPressedProperty, typeof(ToggleSwitch));
-
-    private static readonly DependencyPropertyDescriptor? IsMouseOverDescriptor =
-        DependencyPropertyDescriptor.FromProperty(IsMouseOverProperty, typeof(ToggleSwitch));
-
     private FrameworkElement?   _track;
     private FrameworkElement?   _thumb;
     private ToggleSwitchPart?   _trackStatePart;
@@ -113,14 +107,6 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
         Loaded   += OnLoaded;
         Unloaded += OnUnloaded;
         IsEnabledChanged += OnIsEnabledChanged;
-
-        // ButtonBase exposes IsPressed as a read-only dependency property and provides no protected
-        // change callback. Cached descriptors let the visual parts receive the exact WPF button
-        // state (including keyboard and capture behavior) instead of approximating it from input
-        // events. If descriptor discovery ever fails, only the convenience part state stops
-        // updating; ToggleButton input behavior and the switch transition remain intact.
-        IsPressedDescriptor?.AddValueChanged(this, OnInteractionStateChanged);
-        IsMouseOverDescriptor?.AddValueChanged(this, OnInteractionStateChanged);
     }
 
     #region DP: TrackStyle
@@ -469,9 +455,14 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
         SetProgressImmediately(GetRequestedProgress());
     }
 
-    private void OnInteractionStateChanged(object? sender, EventArgs e)
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
     {
-        UpdatePartStates();
+        base.OnPropertyChanged(e);
+        if (e.Property == IsPressedProperty || e.Property == IsMouseOverProperty)
+        {
+            UpdatePartStates();
+        }
     }
 
     private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)

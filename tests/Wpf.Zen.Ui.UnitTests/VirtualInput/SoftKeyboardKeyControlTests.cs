@@ -302,6 +302,43 @@ public class SoftKeyboardKeyControlTests
         });
     }
 
+    /// <summary>
+    /// Replacing a template disconnects old popup notifications and observes the replacement.
+    /// </summary>
+    [Fact]
+    public void TemplateReplacement_ObservesOnlyCurrentPopup()
+    {
+        WithCap((cap, requests, _) =>
+        {
+            var originalTemplate = cap.Template;
+            var oldPopup = (Popup)originalTemplate.FindName("PART_AlternatePopup", cap);
+            cap.Template = new ControlTemplate(typeof(SoftKeyboardKeyControl));
+            cap.ApplyTemplate();
+            cap.Template = originalTemplate;
+            cap.ApplyTemplate();
+            cap.UpdateLayout();
+            DrainDispatcher();
+            var currentPopup = (Popup)originalTemplate.FindName("PART_AlternatePopup", cap);
+            Assert.NotSame(oldPopup, currentPopup);
+
+            cap.BeginPress();
+            cap.AdvanceHold();
+            Assert.True(currentPopup.IsOpen);
+
+            // Raising Click on the detached tree would submit if its routed handler remained.
+            var oldButton = new System.Windows.Controls.Button { DataContext = "è" };
+            oldPopup.Child = oldButton;
+            oldButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, oldButton));
+            Assert.Empty(requests);
+            Assert.True(cap.IsAlternatePopupOpen);
+
+            currentPopup.IsOpen = false;
+            Assert.False(cap.IsAlternatePopupOpen);
+            cap.CompletePress(true);
+            Assert.Empty(requests);
+        });
+    }
+
     [Fact]
     public void ReleaseOutside_CancelsPrimaryAction()
     {

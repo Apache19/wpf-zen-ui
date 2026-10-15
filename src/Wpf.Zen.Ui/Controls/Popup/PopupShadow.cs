@@ -12,6 +12,7 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Zen.Ui.Extensions.Wpf;
+using Wpf.Zen.Ui.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -197,6 +198,8 @@ public static class PopupShadow
                       + "and does not affect external consumers.")]
     private sealed class PopupShadowController : IDisposable
     {
+        private readonly DependencyPropertySubscriptions _propertySubscriptions = new();
+
         private const int WS_POPUP          = unchecked((int)0x80000000);
         private const int WS_EX_TRANSPARENT = 0x00000020;
         private const int WS_EX_TOPMOST     = 0x00000008;
@@ -358,6 +361,9 @@ public static class PopupShadow
             SubscribeSourceBorderCornerRadiusChanged();
         }
 
+        /// <summary>
+        /// Mirrors subsequent corner-radius changes while this border supplies the shadow shape.
+        /// </summary>
         private void SubscribeSourceBorderCornerRadiusChanged()
         {
             if (_sourceBorder == null)
@@ -365,13 +371,14 @@ public static class PopupShadow
                 return;
             }
 
-            DependencyPropertyDescriptor
-               .FromProperty(Border.CornerRadiusProperty, typeof(Border))
-              ?.AddValueChanged(_sourceBorder, OnSourceBorderCornerRadiusChanged);
+            _propertySubscriptions.Add(_sourceBorder, Border.CornerRadiusProperty, OnSourceBorderCornerRadiusChanged);
 
             _isSourceBorderCornerRadiusChangedSubscribed = true;
         }
 
+        /// <summary>
+        /// Releases the previous border silently before replacing or closing the shadow source.
+        /// </summary>
         private void UnsubscribeSourceBorderCornerRadiusChanged()
         {
             if (!_isSourceBorderCornerRadiusChangedSubscribed || _sourceBorder == null)
@@ -379,9 +386,7 @@ public static class PopupShadow
                 return;
             }
 
-            DependencyPropertyDescriptor
-               .FromProperty(Border.CornerRadiusProperty, typeof(Border))
-              ?.RemoveValueChanged(_sourceBorder, OnSourceBorderCornerRadiusChanged);
+            _propertySubscriptions.Remove(_sourceBorder, Border.CornerRadiusProperty, OnSourceBorderCornerRadiusChanged);
 
             _isSourceBorderCornerRadiusChangedSubscribed = false;
         }
@@ -395,6 +400,9 @@ public static class PopupShadow
                 _                       => false,
             };
 
+        /// <summary>
+        /// Follows opening and shadow-policy changes for the attached behavior's lifetime.
+        /// </summary>
         private void AttachOwnerEvents()
         {
             // Opened/Closed describe the normal popup lifetime, while IsOpen changes are observed as well because
@@ -407,13 +415,9 @@ public static class PopupShadow
                     popup.Opened += OnOwnerOpened;
                     popup.Closed += OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(Popup.IsOpenProperty, typeof(Popup))
-                      ?.AddValueChanged(popup, OnOwnerIsOpenChanged);
+                    _propertySubscriptions.Add(popup, Popup.IsOpenProperty, OnOwnerIsOpenChanged);
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(Popup.HasDropShadowProperty, typeof(Popup))
-                      ?.AddValueChanged(popup, OnOwnerHasDropShadowChanged);
+                    _propertySubscriptions.Add(popup, Popup.HasDropShadowProperty, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -423,13 +427,9 @@ public static class PopupShadow
                     contextMenu.Opened += OnOwnerOpened;
                     contextMenu.Closed += OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ContextMenu.IsOpenProperty, typeof(ContextMenu))
-                      ?.AddValueChanged(contextMenu, OnOwnerIsOpenChanged);
+                    _propertySubscriptions.Add(contextMenu, ContextMenu.IsOpenProperty, OnOwnerIsOpenChanged);
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ContextMenu.HasDropShadowProperty, typeof(ContextMenu))
-                      ?.AddValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
+                    _propertySubscriptions.Add(contextMenu, ContextMenu.HasDropShadowProperty, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -439,19 +439,18 @@ public static class PopupShadow
                     toolTip.Opened += OnOwnerOpened;
                     toolTip.Closed += OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ToolTip.IsOpenProperty, typeof(ToolTip))
-                      ?.AddValueChanged(toolTip, OnOwnerIsOpenChanged);
+                    _propertySubscriptions.Add(toolTip, ToolTip.IsOpenProperty, OnOwnerIsOpenChanged);
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ToolTip.HasDropShadowProperty, typeof(ToolTip))
-                      ?.AddValueChanged(toolTip, OnOwnerHasDropShadowChanged);
+                    _propertySubscriptions.Add(toolTip, ToolTip.HasDropShadowProperty, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
             }
         }
 
+        /// <summary>
+        /// Stops owner notifications before the controller releases its shadow resources.
+        /// </summary>
         private void DetachOwnerEvents()
         {
             switch (_owner)
@@ -461,13 +460,9 @@ public static class PopupShadow
                     popup.Opened -= OnOwnerOpened;
                     popup.Closed -= OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(Popup.IsOpenProperty, typeof(Popup))
-                      ?.RemoveValueChanged(popup, OnOwnerIsOpenChanged);
+                    _propertySubscriptions.Remove(popup, Popup.IsOpenProperty, OnOwnerIsOpenChanged);
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(Popup.HasDropShadowProperty, typeof(Popup))
-                      ?.RemoveValueChanged(popup, OnOwnerHasDropShadowChanged);
+                    _propertySubscriptions.Remove(popup, Popup.HasDropShadowProperty, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -477,13 +472,9 @@ public static class PopupShadow
                     contextMenu.Opened -= OnOwnerOpened;
                     contextMenu.Closed -= OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ContextMenu.IsOpenProperty, typeof(ContextMenu))
-                      ?.RemoveValueChanged(contextMenu, OnOwnerIsOpenChanged);
+                    _propertySubscriptions.Remove(contextMenu, ContextMenu.IsOpenProperty, OnOwnerIsOpenChanged);
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ContextMenu.HasDropShadowProperty, typeof(ContextMenu))
-                      ?.RemoveValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
+                    _propertySubscriptions.Remove(contextMenu, ContextMenu.HasDropShadowProperty, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -493,13 +484,9 @@ public static class PopupShadow
                     toolTip.Opened -= OnOwnerOpened;
                     toolTip.Closed -= OnOwnerClosed;
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ToolTip.IsOpenProperty, typeof(ToolTip))
-                      ?.RemoveValueChanged(toolTip, OnOwnerIsOpenChanged);
+                    _propertySubscriptions.Remove(toolTip, ToolTip.IsOpenProperty, OnOwnerIsOpenChanged);
 
-                    DependencyPropertyDescriptor
-                       .FromProperty(ToolTip.HasDropShadowProperty, typeof(ToolTip))
-                      ?.RemoveValueChanged(toolTip, OnOwnerHasDropShadowChanged);
+                    _propertySubscriptions.Remove(toolTip, ToolTip.HasDropShadowProperty, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
