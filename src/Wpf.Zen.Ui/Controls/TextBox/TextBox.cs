@@ -19,6 +19,7 @@ public class TextBox : System.Windows.Controls.TextBox
     private const string ClearButtonPartName = "PART_ClearButton";
 
     private readonly TextEditorMouseInputHelper _mouseInputHelper;
+
     private ButtonBase? _clearButton;
 
     #region Interaction appearance
@@ -367,7 +368,7 @@ public class TextBox : System.Windows.Controls.TextBox
         typeof(TextBox),
         new PropertyMetadata(TextBoxIconPlacement.Left),
         static value => value is TextBoxIconPlacement placement
-                     && Enum.IsDefined(typeof(TextBoxIconPlacement), placement)
+            && Enum.IsDefined(typeof(TextBoxIconPlacement), placement)
     );
 
     /// <summary>
@@ -552,7 +553,9 @@ public class TextBox : System.Windows.Controls.TextBox
 
     #region DP: AutoSelect
 
-    /// <summary>Identifies the <see cref="AutoSelect"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="AutoSelect"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty AutoSelectProperty = DependencyProperty.Register(
         nameof(AutoSelect),
         typeof(bool),
@@ -567,6 +570,8 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <remarks>
     /// Enabling this property deliberately replaces any existing selection on every keyboard-focus
     /// entry. This gives repeated mouse and keyboard entry the same predictable select-all behavior.
+    /// The mouse click that gives the editor focus selects all text through button release;
+    /// subsequent clicks and drags use the normal text-selection behavior.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
@@ -702,6 +707,7 @@ public class TextBox : System.Windows.Controls.TextBox
     protected override void OnMouseEnter(MouseEventArgs e)
     {
         base.OnMouseEnter(e);
+
         CoerceValue(ForegroundProperty);
         UpdateVisualBrushes();
     }
@@ -710,6 +716,7 @@ public class TextBox : System.Windows.Controls.TextBox
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
+
         CoerceValue(ForegroundProperty);
         UpdateVisualBrushes();
     }
@@ -751,23 +758,23 @@ public class TextBox : System.Windows.Controls.TextBox
     /// </summary>
     private void UpdateVisualBrushes()
     {
-        Brush? foreground = Foreground;
-        Brush? background = Background;
-        Brush? borderBrush = BorderBrush;
+        var foreground  = Foreground;
+        var background  = Background;
+        var borderBrush = BorderBrush;
 
         if (!IsEnabled)
         {
-            background = DisabledBackground ?? background;
+            background  = DisabledBackground ?? background;
             borderBrush = DisabledBorderBrush ?? borderBrush;
         }
         else if (IsKeyboardFocused)
         {
-            background = FocusedBackground ?? background;
+            background  = FocusedBackground ?? background;
             borderBrush = FocusedBorderBrush ?? borderBrush;
         }
         else if (IsMouseOver)
         {
-            background = MouseOverBackground ?? background;
+            background  = MouseOverBackground ?? background;
             borderBrush = MouseOverBorderBrush ?? borderBrush;
         }
 
@@ -780,6 +787,7 @@ public class TextBox : System.Windows.Controls.TextBox
     public override void OnApplyTemplate()
     {
         DetachClearButton();
+
         base.OnApplyTemplate();
 
         _mouseInputHelper.OnApplyTemplate(GetTemplateChild("PART_ContentHost") as ScrollViewer);
@@ -797,13 +805,14 @@ public class TextBox : System.Windows.Controls.TextBox
         // The old template can remain instantiated until layout applies the replacement. Detach
         // immediately so an obsolete clear button cannot continue mutating this editor.
         DetachClearButton();
+
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     /// <inheritdoc />
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
-        bool shouldRestoreAutomaticSelection = AutoSelect && !IsKeyboardFocused;
+        var shouldRestoreAutomaticSelection = AutoSelect && !IsKeyboardFocused;
 
         // Let TextBoxBase run the native TextEditorMouse focus, IME and hit-test path first. A
         // padding hit is marked handled after focus but deliberately receives no caret or mouse
@@ -815,20 +824,28 @@ public class TextBox : System.Windows.Controls.TextBox
         // template chrome, even when they are inside PART_ContentHost. Intercept that narrow
         // case after the regular bubble handler runs and initialize the native selection state as
         // if the click landed on the nearest edge of TextBoxView.
-        if (
-            e.ChangedButton is MouseButton.Left
-            && _mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e)
-        )
+        if (e.ChangedButton is MouseButton.Left
+            && _mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e))
         {
             e.Handled = true;
         }
 
         if (shouldRestoreAutomaticSelection && IsKeyboardFocused)
         {
-            // TextEditorMouse moves the caret after it assigns keyboard focus. That native ordering
-            // collapses a selection made from the focus event for an ordinary single click, so apply
-            // the same opt-in selection once more after WPF has completed its mouse editing path.
-            SelectAll();
+            // Focus-time SelectAll can make WPF interpret this press as a click inside an existing
+            // selection. TextEditorDragDrop then defers caret placement until MouseUp. Finish this
+            // initial selection gesture by releasing the editor's capture before restoring the
+            // selection; both native MouseMove and MouseUp require that capture to edit it.
+            if (e.ChangedButton == MouseButton.Left && IsMouseCaptured)
+            {
+                ReleaseMouseCapture();
+            }
+
+            // Releasing capture raises routed events whose handlers can move keyboard focus.
+            if (AutoSelect && IsKeyboardFocused)
+            {
+                SelectAll();
+            }
         }
     }
 
@@ -921,7 +938,7 @@ public class TextBox : System.Windows.Controls.TextBox
     {
         if (IsClearButtonEnabled && IsKeyboardFocusWithin)
         {
-            bool shouldShowClearButton = Text.Length > 0;
+            var shouldShowClearButton = Text.Length > 0;
 
             if (IsClearButtonVisible != shouldShowClearButton)
             {
@@ -967,7 +984,7 @@ public class TextBox : System.Windows.Controls.TextBox
         }
 
         _clearButton.Click -= OnClearButtonPartClick;
-        _clearButton = null;
+        _clearButton       =  null;
     }
 
     private static void OnPlaceholderEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -992,7 +1009,7 @@ public class TextBox : System.Windows.Controls.TextBox
 
     private Rect GetSelectionStartCharacterRect()
     {
-        int characterIndex = Math.Max(0, Math.Min(SelectionStart, Text.Length));
+        var characterIndex = Math.Max(0, Math.Min(SelectionStart, Text.Length));
 
         try
         {
