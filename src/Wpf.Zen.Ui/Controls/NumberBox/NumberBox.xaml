@@ -25,7 +25,7 @@
     <system:Double x:Key="NumberBoxButtonHeight">24</system:Double>
     <system:Double x:Key="NumberBoxButtonIconSize">14</system:Double>
 
-    <Style x:Key="NumberBoxRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
+    <Style x:Key="NumberBoxRepeatButtonStyle" TargetType="{x:Type controls:RepeatButton}">
         <Setter Property="MinHeight" Value="0" />
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -40,7 +40,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                <ControlTemplate TargetType="{x:Type controls:RepeatButton}">
                     <Border
                         x:Name="ContentBorder"
                         Padding="{TemplateBinding Padding}"
@@ -81,36 +81,36 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <RepeatButton
+            <controls:RepeatButton
                 Grid.Row="0"
                 Width="25"
                 Margin="1,1,1,0"
                 controls:NumberBox.ButtonKind="Increment">
                 <controls:FontIcon IconSize="10" Source="{m:FluentIconSource ChevronUp24}" />
-                <RepeatButton.Style>
-                    <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
+                <controls:RepeatButton.Style>
+                    <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type controls:RepeatButton}">
                         <Setter Property="Border.CornerRadius" Value="2,2,0,0" />
                     </Style>
-                </RepeatButton.Style>
-            </RepeatButton>
-            <RepeatButton
+                </controls:RepeatButton.Style>
+            </controls:RepeatButton>
+            <controls:RepeatButton
                 Grid.Row="1"
                 Width="25"
                 Margin="1,0,1,1"
                 controls:NumberBox.ButtonKind="Decrement">
-                <RepeatButton.Style>
-                    <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
+                <controls:RepeatButton.Style>
+                    <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type controls:RepeatButton}">
                         <Setter Property="Border.CornerRadius" Value="0,0,2,2" />
                     </Style>
-                </RepeatButton.Style>
+                </controls:RepeatButton.Style>
                 <controls:FontIcon IconSize="10" Source="{m:FluentIconSource ChevronDown24}" />
-            </RepeatButton>
+            </controls:RepeatButton>
         </Grid>
     </DataTemplate>
 
     <DataTemplate x:Key="NumberBoxInlineSpinButtonsTemplate">
         <StackPanel Orientation="Horizontal">
-            <RepeatButton
+            <controls:RepeatButton
                 Width="{StaticResource NumberBoxButtonHeight}"
                 Height="{StaticResource NumberBoxButtonHeight}"
                 Margin="{StaticResource NumberBoxButtonMargin}"
@@ -120,8 +120,8 @@
                 Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
                 <controls:FontIcon IconSize="{StaticResource NumberBoxButtonIconSize}" Source="{m:FluentIconSource ChevronUp24}" />
-            </RepeatButton>
-            <RepeatButton
+            </controls:RepeatButton>
+            <controls:RepeatButton
                 Width="{StaticResource NumberBoxButtonHeight}"
                 Height="{StaticResource NumberBoxButtonHeight}"
                 Margin="{StaticResource NumberBoxButtonMargin}"
@@ -131,7 +131,7 @@
                 Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
                 <controls:FontIcon IconSize="{StaticResource NumberBoxButtonIconSize}" Source="{m:FluentIconSource ChevronDown24}" />
-            </RepeatButton>
+            </controls:RepeatButton>
         </StackPanel>
     </DataTemplate>
 
@@ -276,7 +276,7 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <RepeatButton
+                        <controls:RepeatButton
                             Grid.Row="0"
                             Width="40"
                             Height="36"
@@ -284,8 +284,8 @@
                             controls:NumberBox.ButtonKind="Increment"
                             Style="{StaticResource NumberBoxRepeatButtonStyle}">
                             <controls:FontIcon IconSize="14" Source="{m:FluentIconSource ChevronUp24}" />
-                        </RepeatButton>
-                        <RepeatButton
+                        </controls:RepeatButton>
+                        <controls:RepeatButton
                             Grid.Row="1"
                             Width="40"
                             Height="36"
@@ -293,7 +293,7 @@
                             controls:NumberBox.ButtonKind="Decrement"
                             Style="{StaticResource NumberBoxRepeatButtonStyle}">
                             <controls:FontIcon IconSize="14" Source="{m:FluentIconSource ChevronDown24}" />
-                        </RepeatButton>
+                        </controls:RepeatButton>
                     </Grid>
                 </Border>
             </Popup>
