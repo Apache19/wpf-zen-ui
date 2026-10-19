@@ -1,6 +1,6 @@
 # DateTimePicker 日期时间选择器
 
-`Wpf.Zen.Ui.Controls.DateTimePicker` 编辑可空的完整 `DateTime`。弹出层中的日历和时间列共享一个待提交值；只有 OK 或快捷命令会回写正式值。
+`Wpf.Zen.Ui.Controls.DateTimePicker` 编辑可空的完整 `DateTime`。弹出层中的日历、时间列和快捷命令共享一个待提交值；确认后才会回写正式值。
 
 ```xml
 <ui:DateTimePicker
@@ -61,7 +61,7 @@
 
 禁止日期集合在 UI 线程修改。原生日历不允许将当前高亮的日期加入禁止集合。空值控件打开时即使“现在”不可选，也不会扩大日期范围或自动提交其它日期；用户需要先选有效日期。
 
-| 快捷命令参数 | 提交结果 |
+| 快捷命令参数 | 预选结果 |
 | --- | --- |
 | `Year` | 本地当前年度第一天零点 |
 | `Month` | 本地当前月份第一天零点 |
@@ -69,7 +69,7 @@
 | `Today` | 本地今天零点 |
 | `Now` | 点击时的完整本地时间 |
 
-快捷命令基于执行时的本地时钟，结果具有 `DateTimeKind.Local`。日期不可选时按钮禁用。它们是直接提交命令，不依赖时间字段中的未完成输入。`FirstDayOfWeek` 默认跟随 `Language`；显式设置的值优先。
+快捷命令基于执行时的本地时钟，结果具有 `DateTimeKind.Local`。日期不可选时按钮禁用。执行后更新待提交值、日历显示和时间字段，覆盖时间字段中的未完成输入，弹出层保持打开。`SelectedDateTime`、`SelectedDate` 和主编辑框文本保持原值；通过 OK 确认后才提交，取消则放弃预选结果。`FirstDayOfWeek` 默认跟随 `Language`；显式设置的值优先。
 
 清除按钮遵循库内文本控件惯例：文本非空且控件内有键盘焦点时显示叉号；`IsClearButtonEnabled` 默认为 `true`，设为 `false` 可隐藏并禁用。清除会取消弹出层事务，同步清空 `SelectedDateTime`、`SelectedDate` 和错误草稿，并保留属性绑定。打开按钮与清除按钮在鼠标按下时即将焦点交给内部 TextBox。
 
@@ -114,8 +114,6 @@
 dotnet run --project tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj -- `
     -class Wpf.Zen.Ui.UnitTests.Controls.DateTimePickerTests
 ```
-
-设置 `WPF_DATETIMEPICKER_PREVIEW_DIR` 后，模板测试可在指定目录输出浅色和深色 PNG，供布局检查。
 
 
 ## 占位符及统一机制评估

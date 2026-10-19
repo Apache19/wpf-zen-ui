@@ -828,7 +828,7 @@ public partial class DateTimePicker : Control
     }
 
     /// <summary>
-    /// Applies the same date restrictions to every commit path, including shortcuts and text input.
+    /// Checks date restrictions shared by value assignment, shortcuts, and input confirmation.
     /// </summary>
     private bool IsDateAllowed(DateTime value)
     {

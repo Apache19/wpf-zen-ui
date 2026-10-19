@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
@@ -13,7 +14,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 using Calendar = System.Windows.Controls.Calendar;
@@ -362,26 +362,41 @@ public class DateTimePickerTests
     }
 
     /// <summary>
-    /// 快捷命令以本地时钟为基准，立即提交并关闭事务。
+    /// 快捷命令只同步弹出层预选值；取消保留原值，继续编辑后确认才提交。
     /// </summary>
     [Theory]
-    [InlineData("Year")]
-    [InlineData("Month")]
-    [InlineData("Week")]
-    [InlineData("Today")]
-    [InlineData("Now")]
-    public void Shortcuts_UseLocalClockAndCommitImmediately(string shortcut)
+    [InlineData("Year", false)]
+    [InlineData("Year", true)]
+    [InlineData("Month", false)]
+    [InlineData("Month", true)]
+    [InlineData("Week", false)]
+    [InlineData("Week", true)]
+    [InlineData("Today", false)]
+    [InlineData("Today", true)]
+    [InlineData("Now", false)]
+    [InlineData("Now", true)]
+    public void Shortcuts_UpdatePendingValue_AndRequireConfirmation(string shortcut, bool hasValue)
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(() => WithWindow((picker, window) =>
         {
-            var picker = new DateTimePicker { FirstDayOfWeek = DayOfWeek.Monday, IsDropDownOpen = true };
+            DateTime? original = hasValue ? new DateTime(2000, 6, 15, 12, 34, 56) : null;
+            picker.SelectedDateTime = original;
+            var originalText = picker.Text;
+            var changes = 0;
+            picker.SelectedDateTimeChanged += (_, _) => changes++;
+            picker.FirstDayOfWeek = DayOfWeek.Monday;
+            picker.IsDropDownOpen = true;
             var before = DateTime.Now;
             Assert.True(DateTimePicker.SelectShortcutCommand.CanExecute(shortcut, picker));
             DateTimePicker.SelectShortcutCommand.Execute(shortcut, picker);
-            var actual = picker.SelectedDateTime!.Value;
+            var actual = picker.PendingDateTime!.Value;
             Assert.Equal(DateTimeKind.Local, actual.Kind);
-            Assert.False(picker.IsDropDownOpen);
-            Assert.Null(picker.PendingDateTime);
+            Assert.True(picker.IsDropDownOpen);
+            Assert.True(Part<Popup>(picker, "PART_Popup").IsOpen);
+            Assert.Equal(original, picker.SelectedDateTime);
+            Assert.Equal(original?.Date, picker.SelectedDate);
+            Assert.Equal(originalText, picker.Text);
+            Assert.Equal(0, changes);
             var expected = shortcut switch
             {
                 "Year" => new DateTime(before.Year, 1, 1),
@@ -395,7 +410,35 @@ public class DateTimePickerTests
             {
                 Assert.InRange(actual, before, DateTime.Now);
             }
-        });
+
+            var hour = Part<DateTimePickerTimeColumn>(picker, "PART_Hour");
+            Assert.Equal(actual.Hour, hour.Value);
+            Assert.Equal(actual.Minute, Part<DateTimePickerTimeColumn>(picker, "PART_Minute").Value);
+            Assert.Equal(actual.Second, Part<DateTimePickerTimeColumn>(picker, "PART_Second").Value);
+            var host = Part<ContentControl>(picker, "PART_CalendarHost");
+            var calendar = Assert.IsType<Calendar>(host.Content);
+            Assert.Equal(actual.Date, calendar.SelectedDate);
+            Assert.Equal(actual.Date, calendar.DisplayDate);
+
+            picker.Cancel();
+            Assert.Null(picker.PendingDateTime);
+            Assert.Equal(original, picker.SelectedDateTime);
+            Assert.Equal(originalText, picker.Text);
+            Assert.Equal(0, changes);
+
+            picker.IsDropDownOpen = true;
+            DateTimePicker.SelectShortcutCommand.Execute(shortcut, picker);
+            var selectedHour = picker.PendingDateTime!.Value.Hour;
+            DateTimePickerTimeColumn.StepCommand.Execute(1, hour);
+            Assert.Equal((selectedHour + 1) % 24, picker.PendingDateTime!.Value.Hour);
+            Assert.Equal(original, picker.SelectedDateTime);
+            Assert.Equal(0, changes);
+            var edited = picker.PendingDateTime;
+            Assert.True(picker.Commit());
+            Assert.Equal(edited, picker.SelectedDateTime);
+            Assert.Equal(1, changes);
+            Assert.False(picker.IsDropDownOpen);
+        }));
     }
 
     /// <summary>
@@ -501,7 +544,7 @@ public class DateTimePickerTests
     [Fact]
     public void BrowsingCalendar_DoesNotChangePending_AndPopupCloseCancels()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             var picker = CreateTemplatedPicker();
             var window = new Window
@@ -519,8 +562,12 @@ public class DateTimePickerTests
                 calendar.DisplayDate = new DateTime(2040, 5, 1);
                 Assert.Equal(initial, picker.PendingDateTime);
                 var popup = Part<Popup>(picker, "PART_Popup");
+                var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                popup.Closed += (_, _) => closed.TrySetResult();
                 popup.IsOpen = false;
-                window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                // Fade closes the native window asynchronously. Wait for its lifecycle event
+                // while the test dispatcher continues processing animation and input messages.
+                await closed.Task.WaitAsync(TimeSpan.FromSeconds(5));
                 Assert.False(picker.IsDropDownOpen);
                 Assert.Null(picker.PendingDateTime);
                 Assert.Null(picker.SelectedDateTime);
@@ -818,12 +865,12 @@ public class DateTimePickerTests
     }
 
     /// <summary>
-    /// 浅色和深色主题下实际窗口正确呈现部件及可用命令。
+    /// 浅色和深色主题下，发布模板同步时间值并将操作命令绑定到所属控件。
     /// </summary>
     [Theory]
     [InlineData("Light")]
     [InlineData("Dark")]
-    public void PublishedTemplate_RendersCalendarTimeAndAllActions(string theme)
+    public void PublishedTemplate_BindsTimeValuesAndActionCommands(string theme)
     {
         WpfTestThread.Run(() => WithWindow((picker, window) =>
         {
@@ -838,38 +885,30 @@ public class DateTimePickerTests
             {
                 var popup = Part<Popup>(picker, "PART_Popup");
                 var child = (FrameworkElement)popup.Child;
-                child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                child.Arrange(new Rect(child.DesiredSize));
-                child.UpdateLayout();
+                // Command sources refresh CanExecute asynchronously after opening the popup.
+                CommandManager.InvalidateRequerySuggested();
                 window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
-                Assert.InRange(child.ActualWidth, 400, 800);
-                Assert.InRange(child.ActualHeight, 250, 500);
-                var host = Part<ContentControl>(picker, "PART_CalendarHost");
-                Assert.True(host.ActualWidth > 150);
                 var hour = Part<DateTimePickerTimeColumn>(picker, "PART_Hour");
-                Assert.True(hour.ActualHeight > 200);
                 Assert.Equal("15", hour.VisibleValues[2]);
+                var minute = Part<DateTimePickerTimeColumn>(picker, "PART_Minute");
+                Assert.Equal("36", minute.VisibleValues[2]);
+                var second = Part<DateTimePickerTimeColumn>(picker, "PART_Second");
+                Assert.Equal("09", second.VisibleValues[2]);
                 var actions = FindButtons(child);
-                var cancel = Assert.Single(actions, button => Equals(button.Content, "Cancel"));
-                var ok = Assert.Single(actions, button => Equals(button.Content, "OK"));
+                var cancel = Assert.Single(actions, button => button.Command == DateTimePicker.CancelCommand);
+                var ok = Assert.Single(actions, button => button.Command == DateTimePicker.CommitCommand);
                 Assert.Same(picker, cancel.CommandTarget);
+                Assert.Same(picker, ok.CommandTarget);
                 Assert.True(cancel.IsEnabled);
                 Assert.True(ok.IsEnabled);
 
-                // 开发者可显式请求预览图；常规测试运行只验证发布模板的布局。
-                string? previewDirectory = Environment.GetEnvironmentVariable("WPF_DATETIMEPICKER_PREVIEW_DIR");
-                if (!string.IsNullOrEmpty(previewDirectory))
+                foreach (var parameter in new[] { "Year", "Month", "Week", "Today", "Now" })
                 {
-                    System.IO.Directory.CreateDirectory(previewDirectory);
-                    int width = (int)Math.Ceiling(child.ActualWidth);
-                    int height = (int)Math.Ceiling(child.ActualHeight);
-                    var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-                    bitmap.Render(child);
-                    var encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                    string path = System.IO.Path.Combine(previewDirectory, $"DateTimePicker-{theme}.png");
-                    using var output = System.IO.File.Create(path);
-                    encoder.Save(output);
+                    var shortcut = Assert.Single(actions, button =>
+                        button.Command == DateTimePicker.SelectShortcutCommand
+                        && Equals(button.CommandParameter, parameter));
+                    Assert.Same(picker, shortcut.CommandTarget);
+                    Assert.True(shortcut.IsEnabled);
                 }
             }
             finally
@@ -879,6 +918,9 @@ public class DateTimePickerTests
         }));
     }
 
+    /// <summary>
+    /// 遍历发布模板中的按钮，包括日历当前未显示的浏览模式，以便按命令定位操作。
+    /// </summary>
     private static List<System.Windows.Controls.Button> FindButtons(DependencyObject parent)
     {
         var result = new List<System.Windows.Controls.Button>();

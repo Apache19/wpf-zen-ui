@@ -42,8 +42,8 @@ public partial class DateTimePicker
     );
 
     /// <summary>
-    /// Commits a local-time shortcut. The case-sensitive parameter is Year, Month, Week, Today, or
-    /// Now.
+    /// Selects a local-time shortcut as the pending value for popup confirmation.
+    /// The case-sensitive parameter is Year, Month, Week, Today, or Now.
     /// </summary>
     public static RoutedUICommand SelectShortcutCommand { get; } = new(
         "Select date and time", nameof(SelectShortcutCommand), typeof(DateTimePicker)
@@ -330,6 +330,9 @@ public partial class DateTimePicker
         e.Handled    = true;
     }
 
+    /// <summary>
+    /// Updates the displayed calendar and pending date/time for continued popup editing.
+    /// </summary>
     private void OnShortcutExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         var value = GetShortcutValue(e.Parameter as string);
@@ -337,9 +340,8 @@ public partial class DateTimePicker
         // query and execution.
         if (IsDropDownOpen && value.HasValue && IsDateAllowed(value.Value))
         {
-            SetCurrentValue(SelectedDateTimeProperty, value.Value);
-            UpdateFormattedText();
-            CloseAndRestoreFocus();
+            SetCurrentValue(DisplayDateProperty, value.Value.Date);
+            SetPendingValue(value.Value);
         }
 
         e.Handled = true;
