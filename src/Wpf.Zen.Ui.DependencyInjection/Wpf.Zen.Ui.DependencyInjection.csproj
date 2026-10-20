@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>Wpf.Zen.Ui.DependencyInjection</PackageId>
-    <TargetFrameworks>net8.0-windows;net472</TargetFrameworks>
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Dependency injection for the WPF Zen UI.</Description>
     <CommonTags>$(CommonTags);dependency;injection;standard</CommonTags>
