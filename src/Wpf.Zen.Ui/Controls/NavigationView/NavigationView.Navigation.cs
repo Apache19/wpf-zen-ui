@@ -827,6 +827,10 @@ public partial class NavigationView
         }
     }
 
+    /// <summary>
+    /// Compares resolved destinations while preserving occurrence parameters and explicit path
+    /// overrides. Menu lookup aliases do not create a new occurrence of the current destination.
+    /// </summary>
     private bool IsRedundantRequest(NavigationEntry entry, NavigationRequest request)
     {
         if (!ReferenceEquals(_currentEntry, entry) || _currentOccurrence is null)
@@ -834,13 +838,45 @@ public partial class NavigationView
             return false;
         }
 
-        var current = _currentOccurrence.Request;
-        return current.Target.RouteKey == request.Target.RouteKey
-            && current.Target.PageType == request.Target.PageType
+        var current         = _currentOccurrence.Request;
+        var currentPageType = current.Target.PageType ?? entry.TargetPageType;
+        var requestedType   = request.Target.PageType ?? entry.TargetPageType;
+        var currentRoute    = GetDestinationRouteKey(current.Target, entry);
+        var requestedRoute  = GetDestinationRouteKey(request.Target, entry);
+
+        return currentRoute == requestedRoute
+            && currentPageType == requestedType
             && Equals(current.Target.Parameter, request.Target.Parameter)
             && request.Breadcrumbs is null
             && request.BreadcrumbParent is null
             && request.BreadcrumbContent is null;
+    }
+
+    /// <summary>
+    /// Resolves route identity for duplicate detection without changing the request retained by
+    /// location, breadcrumbs, or history.
+    /// </summary>
+    /// <remarks>
+    /// A map placement is semantic identity, even when its key also matches a menu id or tag.
+    /// Otherwise, an entry's id and tag are only lookup aliases for its page type. Type-only
+    /// requests and menu invocations therefore compare equally after resolving to the same entry.
+    /// Explicit route keys that are not menu aliases remain distinct destinations.
+    /// </remarks>
+    private string? GetDestinationRouteKey(NavigationTarget target, NavigationEntry entry)
+    {
+        var mappedNode = NavigationMap.FindNode(target);
+        if (mappedNode is not null)
+        {
+            return mappedNode.Key;
+        }
+
+        var routeKey = target.RouteKey;
+        if (routeKey == entry.Id || routeKey == entry.TargetPageTag)
+        {
+            return null;
+        }
+
+        return routeKey;
     }
 
     /// <summary>
