@@ -16,8 +16,6 @@
     <Style x:Key="{x:Static t:StyleKeys.UiSeparatorStyle}" TargetType="{x:Type controls:Separator}">
         <Setter Property="Background" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="Focusable" Value="false" />
-        <Setter Property="DefaultMarginHorizontal" Value="0,2,0,2" />
-        <Setter Property="DefaultMarginVertical" Value="2,0,2,0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:Separator}">
