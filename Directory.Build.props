@@ -14,8 +14,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Copyright>Copyright (c) 2021-2025 Leszek Pomianowski and WPF UI Contributors; Copyright (c) 2026 WPF Zen UI Contributors.</Copyright>
-    <PackageProjectUrl>https://gitee.com/apachezy/wpfui</PackageProjectUrl>
-    <RepositoryUrl>https://gitee.com/apachezy/wpfui</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Apache19/wpf-zen-ui</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Apache19/wpf-zen-ui</RepositoryUrl>
     <PackageIcon>Icon.png</PackageIcon>
     <RepositoryBranch>main</RepositoryBranch>
     <RepositoryType>git</RepositoryType>
@@ -79,7 +79,7 @@
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
       </PropertyGroup>
       <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.Gitee" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
       </ItemGroup>
     </When>
   </Choose>

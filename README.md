@@ -1,6 +1,6 @@
 # WPF Zen UI
 
-[English](https://gitee.com/apachezy/wpfui/blob/main/README.md) | [简体中文](https://gitee.com/apachezy/wpfui/blob/main/README.zh-CN.md)
+[English](https://github.com/Apache19/wpf-zen-ui/blob/main/README.md) | [简体中文](https://github.com/Apache19/wpf-zen-ui/blob/main/README.zh-CN.md)
 
 WPF controls, themes, navigation, and dialogs for Windows desktop applications.
 This library is an independently maintained, refactored fork of
@@ -37,11 +37,11 @@ and use its controls directly:
 ## Source and issues
 
 Source code and issue tracking are available in the
-[WPF Zen UI repository](https://gitee.com/apachezy/wpfui).
+[WPF Zen UI repository](https://github.com/Apache19/wpf-zen-ui).
 
 ## License
 
-Distributed under the [MIT License](https://gitee.com/apachezy/wpfui/blob/main/LICENSE).
+Distributed under the [MIT License](https://github.com/Apache19/wpf-zen-ui/blob/main/LICENSE).
 The package includes `LICENSE` and `ThirdPartyNotices.txt`. Preserve applicable
 copyright and permission notices when redistributing the library.
 Third-party components and SDK-derived material retain their applicable upstream

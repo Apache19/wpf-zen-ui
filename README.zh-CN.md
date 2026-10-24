@@ -1,6 +1,6 @@
 # WPF Zen UI
 
-[English](https://gitee.com/apachezy/wpfui/blob/main/README.md) | [简体中文](https://gitee.com/apachezy/wpfui/blob/main/README.zh-CN.md)
+[English](https://github.com/Apache19/wpf-zen-ui/blob/main/README.md) | [简体中文](https://github.com/Apache19/wpf-zen-ui/blob/main/README.zh-CN.md)
 
 面向 Windows 桌面应用的 WPF 控件、主题、导航与对话框库。
 本库由 [WPF UI](https://github.com/lepoco/wpfui) 分支而来，经过重构并独立维护，
@@ -34,11 +34,11 @@ dotnet add package Wpf.Zen.Ui --version 1.0.0
 
 ## 源码与问题反馈
 
-源码和问题跟踪位于 [WPF Zen UI 仓库](https://gitee.com/apachezy/wpfui)。
+源码和问题跟踪位于 [WPF Zen UI 仓库](https://github.com/Apache19/wpf-zen-ui)。
 
 ## 许可证
 
-本库采用 [MIT 许可证](https://gitee.com/apachezy/wpfui/blob/main/LICENSE) 分发。
+本库采用 [MIT 许可证](https://github.com/Apache19/wpf-zen-ui/blob/main/LICENSE) 分发。
 NuGet 包包含 `LICENSE` 和 `ThirdPartyNotices.txt`，再分发时请保留适用的版权和许可声明。
 第三方组件及源自 SDK 的材料仍适用各自的上游条款，
 详见包内的 `ThirdPartyNotices.txt` 与 `licenses/WindowsSdkLicense.txt`。

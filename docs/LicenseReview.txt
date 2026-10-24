@@ -127,7 +127,7 @@ net8.0-windows 没有额外 NuGet 运行时依赖，声明 WPF 框架引用。
 实际还原图中另外包括以下构建相关包：
    Microsoft.Build.Tasks.Git 10.0.402                  MIT
    Microsoft.SourceLink.Common 10.0.402                MIT
-   Microsoft.SourceLink.Gitee 10.0.402                 MIT
+   Microsoft.SourceLink.GitHub 10.0.402                 MIT
    Microsoft.Windows.CsWin32 0.3.367                   MIT（工具本身）
    PolySharp 1.16.0                                   MIT
    System.Buffers 4.6.1                               MIT
@@ -186,7 +186,7 @@ UnsafeReflection.cs 与 UnsafeNativeMethods.cs 的历史头部提及 Windows 逆
    - 保留原版权，不把所有代码宣称为新项目独占。
    - Gallery IsPackable=false；核心包没有 Gallery DLL、其独立资源文件或应用图标。
    - 生成 .snupkg；符号、源文件嵌入同样属于对外披露范围。
-   - NuGet 项目地址指向实际 Git remote 对应的 Gitee 仓库。
+   - NuGet 项目地址指向实际 Git remote 对应的 GitHub 仓库。
    - 尚未上传 NuGet，不存在本审计替维护者接受发布条款或对外保证的行为。
 
 NuGet 条款要求发布者有相应权限，提供适用条款，并自行承担发布内容责任。
@@ -238,3 +238,43 @@ InfoBadgeTests 原有两项类型断言已按预期的 UiBorder 模板修正，
 并验证可压缩内边距配置；InfoBadge 的全部 4 项测试通过。
 
 最终包与符号包的 SHA-256 记录在同目录 LicenseReviewHashes.txt。
+
+十、迁移 GitHub 后的发布验证（2026-10-24）
+
+主仓库：https://github.com/Apache19/wpf-zen-ui。
+origin 使用 HTTPS；当前环境连接 SSH 22 端口失败，HTTPS fetch 成功。
+原 Gitee 远程保留为 gitee，main 已跟踪 origin/main。
+本地 HEAD 与导入后的 origin/main 均为：
+efaf8a21de13e722c019460c0ad55477e45f8eaa。
+
+构建工具改为 Microsoft.SourceLink.GitHub 10.0.402（PrivateAssets=All）。
+PackageProjectUrl、RepositoryUrl、中英文 README 的仓库、许可与语言链接
+均已切换至 GitHub；上游项目与第三方来源链接保持各自的原始地址。
+
+首次在线校验发现 10 个源码文件混用 CRLF/LF，已按仓库现有换行规则统一；
+该操作没有改变 Git 归一化后的源码内容。清理 WPF 构建缓存并重新构建后，
+核心库两个目标框架 Release 构建成功，16 条现有警告、0 错误。
+
+最终 nupkg 中 net472、net8.0-windows7.0 两份 PDB 的 Source Link 在线校验
+均通过，映射为 raw.githubusercontent.com 下上述提交的源码。
+snupkg 的对应 PDB 与 nupkg 中的 PDB 逐字节哈希一致。
+已核对 manifest 的 GitHub 项目地址、仓库地址和提交标识，以及包内图标、
+README、LICENSE、ThirdPartyNotices 和 Windows SDK 许可文件。
+
+独立消费项目位于仓库外的临时目录：
+C:/Users/apach/AppData/Local/Temp/WpfZenUiGitHubValidation-20261024。
+仅 PackageReference 引用 Wpf.Zen.Ui 1.0.0，不使用仓库 ProjectReference，
+并通过 packages-final 全新缓存从本地发行包源还原；安装包与最终 nupkg
+的 SHA-256 一致。net472、net8.0-windows、net10.0-windows 均构建成功，
+0 警告、0 错误；不合并主题配置与显式初始化主题两种方式共六次运行均通过。
+验证涵盖 XAML 命名空间、FluentWindow 创建、Button/InfoBadge/ComboBox/ListView
+模板与布局、InfoBadge 的 UiBorder 根元素、Regular/Filled 嵌入字体及字形、
+可视内容渲染、ContentDialog 构造和 DataGrid 类型移除。
+这是当前 Windows 环境的安装与运行冒烟验证；net472 在本机已安装的
+.NET Framework 4.x 上运行，不能替代原生 4.7.2 环境及全部 Windows 版本测试。
+
+日志位于 artifacts/github-release-build.log、github-sourcelink-test.log、
+github-consumer-build.log 和 github-consumer-runtime.log。
+当前迁移配置和文档修改尚未提交；正式发行宜提交并推送后从固定提交重新打包，
+更新哈希与验证记录，使包元数据和仓库中的发布配置也对应同一提交。
+本次未上传 NuGet，许可审查中尚待专项确认的 SDK 条款边界并未因此解决。
