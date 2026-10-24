@@ -12,10 +12,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.ContentControlThemeFontFamily}">Segoe Ui</FontFamily>
-
-    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.SegoeFluentIcons}">Segoe Fluent Icons</FontFamily>
-
     <!--  https://github.com/microsoft/fluentui-system-icons  -->
     <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIcons}">/Wpf.Zen.Ui;component/Resources/Fonts/#FluentSystemIcons-Regular</FontFamily>
 

@@ -1,14 +1,30 @@
-WPF-UI
+Wpf.Zen.Ui
 
 THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
 Do Not Translate or Localize
 
 This project incorporates components from the projects listed below. The original copyright notices and the licenses under which the authors received such components are set forth below.
 
-1.	microsoft/fluentui-system-icons version 1.1.242 (https://github.com/microsoft/fluentui-system-icons), included in Wpf.Ui.
-2.	dotnet/wpf version 8.0 (https://github.com/dotnet/wpf), included in Wpf.Ui.
-3.	microsoft/microsoft-ui-xaml version 3.0 (https://github.com/microsoft/microsoft-ui-xaml), included in Wpf.Ui.
-4.	microsoft/segoe-fluent-icons-font version 3.0 (https://learn.microsoft.com/en-us/windows/apps/design/style/segoe-fluent-icons-font), included in Wpf.Ui.
+1. microsoft/fluentui-system-icons 1.1.325 (https://github.com/microsoft/fluentui-system-icons): embedded FluentSystemIcons-Regular.ttf and FluentSystemIcons-Filled.ttf fonts.
+2. dotnet/wpf (https://github.com/dotnet/wpf): incorporated WPF implementations and adaptations.
+3. microsoft/microsoft-ui-xaml (https://github.com/microsoft/microsoft-ui-xaml): incorporated control and theme adaptations.
+4. primer/primitives (https://github.com/primer/primitives): status color palette values.
+5. microsoft/CsWin32 (https://github.com/microsoft/CsWin32): Win32 interop generation tool; the tool's MIT license is reproduced for attribution, not as a relicensing of SDK-derived declarations or documentation.
+6. Sergio0694/PolySharp (https://github.com/Sergio0694/PolySharp): generated compatibility types for .NET Framework.
+
+The upstream WPF UI copyright and MIT permission notice are retained in LICENSE.
+NuGet dependencies are listed in the package manifest and retain their own licenses.
+
+WINDOWS SDK INPUTS AND GENERATED DOCUMENTATION
+CsWin32 consumes Microsoft.Windows.SDK.Win32Metadata 71.0.37-preview,
+Microsoft.Windows.WDK.Win32Metadata 0.13.25-experimental and
+Microsoft.Windows.SDK.Win32Docs 0.1.42-alpha during the build. These packages
+carry Microsoft Windows SDK terms, not the MIT license of the CsWin32 tool.
+The metadata and generator assemblies are not included as files in this package;
+generated interop declarations and API documentation are included in the library
+and XML documentation. Applicable upstream rights are not replaced by this
+project's MIT license. The SDK license supplied with the metadata packages is
+retained in licenses/WindowsSdkLicense.txt for reference.
 
 %% microsoft/fluentui-system-icons NOTICES AND INFORMATION BEGIN HERE
 =========================================
@@ -90,8 +106,84 @@ SOFTWARE
 =========================================
 END OF microsoft/microsoft-ui-xaml NOTICES AND INFORMATION
 
-%% microsoft/segoe-fluent-icons-font NOTICES AND INFORMATION BEGIN HERE
+%% primer/primitives NOTICES AND INFORMATION BEGIN HERE
 =========================================
-You may use the Segoe and icon fonts, or glyphs included in this file (“Software”) solely to design, develop and test your programs that run on a Microsoft Platform, a Microsoft Platform includes but is not limited to any hardware or software product or service branded by trademark, trade dress, copyright or some other recognized means, as a product or service of Microsoft. This license does not grant you the right to distribute or sublicense all or part of the Software to any third party.  By using the Software, you agree to these terms. If you do not agree to these terms, do not use the Software.
+MIT License
+
+Copyright (c) 2018 GitHub Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 =========================================
-END OF microsoft/segoe-fluent-icons-font NOTICES AND INFORMATION
+END OF primer/primitives NOTICES AND INFORMATION
+
+%% microsoft/CsWin32 NOTICES AND INFORMATION BEGIN HERE
+Source: https://raw.githubusercontent.com/microsoft/CsWin32/v0.3.367/LICENSE
+=========================================
+The MIT License (MIT)
+
+Copyright (c) Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+=========================================
+END OF microsoft/CsWin32 NOTICES AND INFORMATION
+
+
+%% Sergio0694/PolySharp NOTICES AND INFORMATION BEGIN HERE
+Source: https://raw.githubusercontent.com/Sergio0694/PolySharp/99a4dcece8e10c8bedf0871ac4cdb8650f2b649a/LICENSE
+=========================================
+MIT License
+
+Copyright (c) 2026 Sergio Pedri
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+=========================================
+END OF Sergio0694/PolySharp NOTICES AND INFORMATION

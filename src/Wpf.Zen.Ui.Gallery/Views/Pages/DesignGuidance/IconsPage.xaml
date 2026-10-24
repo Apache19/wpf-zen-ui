@@ -29,7 +29,7 @@
 
         <ui:TextBlock
             Grid.Row="0"
-            Text="WPF Zen UI uses Fluent System Icons. Although this font was also created by Microsoft, it does not contain all the icons for Windows 11. If you need the missing icons, add Segoe Fluent Icons to your application."
+            Text="WPF Zen UI includes the regular and filled Fluent System Icons fonts from Microsoft."
             TextWrapping="WrapWithOverflow" />
         <ui:HyperlinkButton
             Grid.Row="1"

@@ -5,7 +5,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming;assembly=Wpf.Zen.Ui"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="WPF Zen UI - Editor"
     Width="1250"
@@ -179,7 +178,7 @@
                 BorderThickness="0"
                 VerticalScrollBarVisibility="Visible">
                 <RichTextBox.Document>
-                    <FlowDocument FontFamily="{DynamicResource {x:Static theming:FontFamilyKeys.ContentControlThemeFontFamily}}">
+                    <FlowDocument>
                         <FlowDocument.Blocks>
                             <Paragraph>
                                 Evil Is Evil. Lesser, Greater, Middling, Makes No Difference. The Degree Is Arbitrary, The Definitions Blurred.<LineBreak />

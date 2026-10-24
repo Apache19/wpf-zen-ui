@@ -15,7 +15,7 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class InfoBadgeTests
 {
     /// <summary>
-    /// Ensures the default presenter forwards native content templates and formatting.
+    /// Ensures the UiBorder-based template forwards content templates, formatting and alignment.
     /// </summary>
     [Fact]
     public void DefaultStyle_ForwardsContentPresentationProperties()
@@ -34,7 +34,8 @@ public class InfoBadgeTests
             };
 
             badge.ApplyTemplate();
-            var border = Assert.IsType<Border>(VisualTreeHelper.GetChild(badge, 0));
+            var templateRoot = VisualTreeHelper.GetChild(badge, 0);
+            var border = Assert.IsType<UiBorder>(templateRoot);
             var presenter = Assert.IsType<ContentPresenter>(badge.Template.FindName("ContentPresenter", badge));
 
             Assert.Equal(42, presenter.Content);
@@ -51,7 +52,8 @@ public class InfoBadgeTests
     }
 
     /// <summary>
-    /// Checks that local appearance values are preserved as severity changes.
+    /// Checks that UiBorder preserves local appearance as severity changes and supports
+    /// compressible padding without multiplying the control's opacity.
     /// </summary>
     [Fact]
     public void DefaultStyle_HonorsLocalAppearanceAndDoesNotMultiplyOpacity()
@@ -72,13 +74,15 @@ public class InfoBadgeTests
 
             badge.ApplyTemplate();
             badge.Severity = BadgeSeverity.Critical;
-            var border = Assert.IsType<Border>(VisualTreeHelper.GetChild(badge, 0));
+            var templateRoot = VisualTreeHelper.GetChild(badge, 0);
+            var border = Assert.IsType<UiBorder>(templateRoot);
 
             Assert.Same(Brushes.Purple, border.Background);
             Assert.Same(Brushes.Black, border.BorderBrush);
             Assert.Equal(badge.BorderThickness, border.BorderThickness);
             Assert.Equal(badge.CornerRadius, border.CornerRadius);
             Assert.Equal(badge.Padding, border.Padding);
+            Assert.True(border.IsPaddingCompressible);
             Assert.Equal(1.0, border.Opacity);
         });
     }
@@ -161,6 +165,7 @@ public class InfoBadgeTests
             Assert.Equal(6, badge.ActualHeight);
         });
     }
+
     /// <summary>
     /// Loads the compiled dictionary so tests exercise WPF template bindings.
     /// </summary>

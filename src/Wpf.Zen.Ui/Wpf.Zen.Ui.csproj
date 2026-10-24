@@ -4,7 +4,8 @@
     <PackageId>Wpf.Zen.Ui</PackageId>
     <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>WPF Zen UI provides the Fluent experience in your known and loved WPF framework. Intuitive design, themes, navigation and new immersive controls. All natively and effortlessly.</Description>
+    <Description>WPF controls, themes, navigation, and dialogs for .NET Framework 4.7.2 and .NET 8 or later. An independently maintained and refactored fork of WPF UI.</Description>
+    <PackageReleaseNotes>First release under the Wpf.Zen.Ui package name. Versioning starts at 1.0.0; APIs and XAML namespaces differ from upstream WPF UI.</PackageReleaseNotes>
     <UseWPF>true</UseWPF>
     <LangVersion>preview</LangVersion>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute;System.Diagnostics.CodeAnalysis.UnscopedRefAttribute</PolySharpExcludeGeneratedTypes>

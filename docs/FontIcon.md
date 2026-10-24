@@ -142,7 +142,7 @@ public sealed class AppIconSource : FontIconSource
     public override string Glyph => "★";
 
     /// <inheritdoc />
-    public override FontFamily FontFamily { get; } = new FontFamily("Segoe UI Symbol");
+    public override FontFamily FontFamily { get; } = new FontFamily("Courier New");
 }
 ```
 

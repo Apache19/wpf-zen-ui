@@ -1,35 +1,51 @@
 # WPF Zen UI
 
-This library is a refactored fork of [WPF UI](https://github.com/lepoco/wpfui).
+[English](https://gitee.com/apachezy/wpfui/blob/main/README.md) | [简体中文](https://gitee.com/apachezy/wpfui/blob/main/README.zh-CN.md)
 
-## Text selection rendering
+WPF controls, themes, navigation, and dialogs for Windows desktop applications.
+This library is an independently maintained, refactored fork of
+[WPF UI](https://github.com/lepoco/wpfui), not an official upstream release.
 
-Call `Wpf.Zen.Ui.WpfCompatibility.EnableModernTextSelectionRendering()` at the beginning of your
-application's `Main`, before creating controls, initializing themes, or loading XAML resources.
-For WPF applications with `App.xaml`, use an explicit entry point and set `StartupObject` to its
-type, as shown in the gallery and Simple example. Call the API before constructing `App` and
-calling `InitializeComponent`; the `Startup` event can be too late.
+Version `1.0.0` is the first release under the `Wpf.Zen.Ui` package name.
+Its version numbers are independent of upstream WPF UI. Namespaces and APIs have
+been refactored; this package is not a drop-in replacement for upstream packages.
 
-This enables WPF's built-in selection background beneath text for all `TextBox` and `PasswordBox`
-controls in the host. Their default selection opacity becomes 1; explicit opacity and brush alpha
-still apply. `RichTextBox` is unaffected. The renderer requires .NET Framework 4.7.2 or modern .NET;
-custom selection foregrounds via `SelectionTextBrush` require .NET Framework 4.8 or modern .NET.
-WPF caches this setting, so the API is for startup configuration, not switching renderers at runtime.
+## Getting started
 
-`WpfCompatibility.IsModernTextSelectionRenderingEnabled` reports whether the host explicitly requests
-the new renderer, including through runtime configuration. It is `false` when no switch is configured.
-Styles can read it with an `x:Static` source in a one-time `DataTrigger` binding. The library's `TextBox`
-style uses this to apply `AccentTextSecondary` as the selection brush only when enabled; otherwise it
-leaves the selection brush unset. Configure the switch before loading styles, since `x:Static` captures
-the value when XAML loads and does not track later changes.
+Install the package in your WPF application:
 
-## Documentation
+```shell
+dotnet add package Wpf.Zen.Ui --version 1.0.0
+```
 
-- [Font icons and icon presentation](docs/FontIcon.md)
-- [Navigation, semantic routes, and breadcrumbs](docs/Navigation.md)
-- [ContentDialog and modal content](docs/ContentDialog.md)
-- [ComboBox selection and text search](docs/ComboBox.md)
-- [Snackbar notifications](docs/Snackbar.md)
+The package supports .NET Framework 4.7.2 and .NET 8 for Windows, and compatible
+later targets. Declare the library's XML namespace in a window or user control
+and use its controls directly:
+
+```xml
+<Window
+    x:Class="MyApp.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027">
+    <Grid>
+        <ui:Button Content="Hello, WPF Zen UI" />
+    </Grid>
+</Window>
+```
+
+## Source and issues
+
+Source code and issue tracking are available in the
+[WPF Zen UI repository](https://gitee.com/apachezy/wpfui).
+
+## License
+
+Distributed under the [MIT License](https://gitee.com/apachezy/wpfui/blob/main/LICENSE).
+The package includes `LICENSE` and `ThirdPartyNotices.txt`. Preserve applicable
+copyright and permission notices when redistributing the library.
+Third-party components and SDK-derived material retain their applicable upstream
+terms; see `ThirdPartyNotices.txt` and `licenses/WindowsSdkLicense.txt` in the package.
 
 ## Original Repository
 
@@ -41,3 +57,5 @@ the value when XAML loads and does not track later changes.
 ## Attributions
 
 - Status colors follow the [GitHub Primer](https://github.com/primer/primitives) palette (MIT License, Copyright (c) 2018 GitHub Inc.)
+- Embedded Fluent System Icons fonts are from
+  [Microsoft Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT License).

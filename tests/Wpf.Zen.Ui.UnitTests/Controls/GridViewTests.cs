@@ -16,7 +16,6 @@ using NativeGridViewColumnHeader = System.Windows.Controls.GridViewColumnHeader;
 using NativeGridViewColumnHeaderRole = System.Windows.Controls.GridViewColumnHeaderRole;
 using NativeGridViewHeaderRowPresenter = System.Windows.Controls.GridViewHeaderRowPresenter;
 using NativeGridViewRowPresenter = System.Windows.Controls.GridViewRowPresenter;
-using UiDataGrid = Wpf.Zen.Ui.Controls.DataGrid;
 using UiGridView = Wpf.Zen.Ui.Controls.GridView;
 using UiGridViewColumn = Wpf.Zen.Ui.Controls.GridViewColumn;
 using UiListView = Wpf.Zen.Ui.Controls.ListView;
@@ -292,6 +291,9 @@ public class GridViewTests
         });
     }
 
+    /// <summary>
+    /// The GridView header template loads and ListView items inherit selection-indicator visibility.
+    /// </summary>
     [Fact]
     public void DefaultTemplates_LoadAndSelectionIndicatorSettingIsInherited()
     {
@@ -309,16 +311,8 @@ public class GridViewTests
                 View = view,
                 Width = 600,
             };
-            var dataGrid = new UiDataGrid
-            {
-                Height = 120,
-                ItemsSource = new[] { new TestRow("First"), new TestRow("Second") },
-                SelectedIndex = 0,
-                Width = 600,
-            };
             var root = new StackPanel();
             root.Children.Add(listView);
-            root.Children.Add(dataGrid);
 
             root.Measure(new Size(600, 240));
             root.Arrange(new Rect(0, 0, 600, 240));
@@ -340,22 +334,12 @@ public class GridViewTests
             var listIndicator = Assert.IsType<Rectangle>(
                 listViewItem.Template.FindName("SelectionIndicator", listViewItem)
             );
-            var dataGridRow = Assert.IsType<DataGridRow>(
-                dataGrid.ItemContainerGenerator.ContainerFromIndex(0)
-            );
-            var dataGridIndicator = Assert.IsType<Rectangle>(
-                dataGridRow.Template.FindName("ActiveRectangle", dataGridRow)
-            );
-
             Assert.Equal(Visibility.Visible, listIndicator.Visibility);
-            Assert.Equal(Visibility.Visible, dataGridIndicator.Visibility);
 
             listView.IsSelectionIndicatorVisible = false;
-            dataGrid.IsSelectionIndicatorVisible = false;
             root.UpdateLayout();
 
             Assert.Equal(Visibility.Collapsed, listIndicator.Visibility);
-            Assert.Equal(Visibility.Collapsed, dataGridIndicator.Visibility);
         });
     }
 

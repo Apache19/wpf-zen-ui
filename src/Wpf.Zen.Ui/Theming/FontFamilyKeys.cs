@@ -5,19 +5,26 @@
 
 namespace Wpf.Zen.Ui.Theming;
 
-#pragma warning disable SA1516 // Elements should be separated by blank line
-
+/// <summary>
+/// Provides resource keys for the library's embedded Fluent System Icons font families.
+/// </summary>
 public static class FontFamilyKeys
 {
-    public static ComponentResourceKey ContentControlThemeFontFamily { get; } = Create(nameof(ContentControlThemeFontFamily));
-    public static ComponentResourceKey SegoeFluentIcons              { get; } = Create(nameof(SegoeFluentIcons));
-    public static ComponentResourceKey FluentSystemIcons             { get; } = Create(nameof(FluentSystemIcons));
-    public static ComponentResourceKey FluentSystemIconsFilled       { get; } = Create(nameof(FluentSystemIconsFilled));
+    /// <summary>
+    /// Gets the key for the embedded regular Fluent System Icons font family.
+    /// </summary>
+    public static ComponentResourceKey FluentSystemIcons { get; } = Create(nameof(FluentSystemIcons));
 
+    /// <summary>
+    /// Gets the key for the embedded filled Fluent System Icons font family.
+    /// </summary>
+    public static ComponentResourceKey FluentSystemIconsFilled { get; } = Create(nameof(FluentSystemIconsFilled));
+
+    /// <summary>
+    /// Creates an assembly-scoped key resolved through the library's theme resource dictionary.
+    /// </summary>
     private static ComponentResourceKey Create(object resourceId)
     {
         return new ComponentResourceKey(typeof(ThemeResourceAnchor), resourceId);
     }
 }
-
-#pragma warning disable SA1516 // Elements should be separated by blank line

@@ -488,7 +488,7 @@ public class IconContentTests
             text.Inlines.Add(span);
             var badge = new Badge { Icon = source };
             var host = new StackPanel { Children = { presenter, text, badge } };
-            var scopedFont = new FontFamily("Segoe UI Symbol");
+            var scopedFont = new FontFamily("Courier New");
             host.Resources[TestFontSource.ResourceKey] = scopedFont;
             var window = CreateHiddenWindow(host);
 
@@ -574,7 +574,7 @@ public class IconContentTests
 
         public override string Glyph => "★";
 
-        public override FontFamily FontFamily { get; } = new FontFamily("Segoe UI");
+        public override FontFamily FontFamily { get; } = new FontFamily("Arial");
 
         public override object FontFamilyResourceKey => ResourceKey;
     }

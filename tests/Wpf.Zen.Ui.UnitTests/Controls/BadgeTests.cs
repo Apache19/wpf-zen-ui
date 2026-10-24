@@ -735,10 +735,10 @@ public class BadgeTests
     private sealed class TestFontIcon : FontIconSource
     {
         /// <inheritdoc />
-        public override string Glyph => "★";
+        public override string Glyph => "A";
 
         /// <inheritdoc />
-        public override FontFamily FontFamily { get; } = new FontFamily("Segoe UI Symbol");
+        public override FontFamily FontFamily { get; } = new FontFamily("Courier New");
     }
 
     /// <summary>

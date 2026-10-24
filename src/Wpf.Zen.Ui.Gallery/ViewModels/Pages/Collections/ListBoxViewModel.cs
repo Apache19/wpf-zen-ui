@@ -13,7 +13,6 @@ public partial class ListBoxViewModel : ViewModel
         "Arial",
         "Comic Sans MS",
         "Courier New",
-        "Segoe UI",
         "Times New Roman",
     ];
 }

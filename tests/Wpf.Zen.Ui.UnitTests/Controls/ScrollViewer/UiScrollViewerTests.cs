@@ -30,7 +30,6 @@ public class UiScrollViewerTests
     [InlineData(typeof(System.Windows.Controls.RichTextBox), "RichTextBox/RichTextBoxBaseStyle", "RichTextBoxBaseStyle",
         false)]
     [InlineData(typeof(System.Windows.Controls.ContextMenu), "ContextMenu/ContextMenu", "UiContextMenuStyle", false)]
-    [InlineData(typeof(System.Windows.Controls.DataGrid), "DataGrid/DataGrid", "DefaultDataGridStyle", false)]
     public void ControlTemplates_KeepAttachedScrollingBindingsActive(
         Type ownerType,
         string resourcePath,

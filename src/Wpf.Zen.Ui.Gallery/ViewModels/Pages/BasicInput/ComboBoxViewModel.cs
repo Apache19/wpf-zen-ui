@@ -10,7 +10,7 @@ public partial class ComboBoxViewModel : ViewModel
     [ObservableProperty]
     public partial ObservableCollection<string> ComboBoxFontFamilies { get; set; } =
     [
-        "Arial", "Comic Sans MS", "Segoe UI", "Times New Roman",
+        "Arial", "Comic Sans MS", "Courier New", "Times New Roman",
     ];
 
     [ObservableProperty]

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <IsPackable>false</IsPackable>
     <StartupObject>Wpf.Zen.Ui.Gallery.Program</StartupObject>
     <TargetFrameworks>net472;net10.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>

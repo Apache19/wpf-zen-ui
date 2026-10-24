@@ -150,7 +150,6 @@ public class DependencyPropertyObservationTests
     [InlineData("ContextMenu")]
     [InlineData("ToolTip")]
     [InlineData("FocusPresenter")]
-    [InlineData("DataGrid")]
     [InlineData("KeyboardTemplate")]
     public void UnloadedOwnerCanBeCollected(string scenario)
     {
@@ -305,14 +304,6 @@ public class DependencyPropertyObservationTests
             var presenter = new FocusVisualPresenter();
             presenter.SetAdornedElement(source);
             return [new WeakReference(source), new WeakReference(presenter)];
-        }
-
-        if (scenario == "DataGrid")
-        {
-            var grid = new Wpf.Zen.Ui.Controls.DataGrid();
-            var column = new DataGridTextColumn();
-            grid.Columns.Add(column);
-            return [new WeakReference(grid), new WeakReference(column)];
         }
 
         DependencyObject owner = scenario switch

@@ -1,0 +1,240 @@
+Wpf.Zen.Ui 1.0.0 发布许可与知识产权审计
+审计日期：2026-10-24（Asia/Shanghai）
+
+一、结论与适用范围
+
+本次已完成当前可访问仓库及待发布 NuGet 包的技术与文档层面许可审计。
+结论：已核验的主要开源来源具有 MIT 授权依据，已补齐发现的归属声明缺口；
+没有据此发现必须将本库整体改用 GPL 等强 copyleft 许可证的证据。
+但不能出具“全部材料均为 MIT”“所有司法辖区均不侵权”或“律师审核通过”的结论。
+Windows SDK 输入及生成文档的合同适用边界、品牌商标检索仍有待专项确认。
+这些是待确认事项，并不表示已经认定本库侵权或禁止发布。
+
+审计对象：Wpf.Zen.Ui 1.0.0，net472、net8.0-windows，及配套 snupkg。
+检查基线：Git HEAD d45b0e81f902f07ae490de7e0469dfb10880419b，加本次未提交修改。
+扫描范围：src/Wpf.Zen.Ui 下 579 个现存 Git 跟踪文件、公共构建配置、发布文档、
+15 个已还原构建/依赖包的许可元数据，以及最终打包文件。
+Gallery、样例和测试应用本身不作为本次二进制发布对象。
+按维护者要求，仅移除其中的 DataGrid 专属页面、模型及测试，保留其他开发内容。
+对整个公开源码仓库、Gallery 素材、其他独立 NuGet 包的许可不能套用本结论。
+
+本报告不是律师法律意见、法律尽调证明或政府/平台审批。
+没有进行各国商标、专利、出口管制或所有历史贡献者权属的完整检索。
+自动检索、Git 历史和上游许可证不能排除未注明来源的复制或第三方权利。
+正式法律判断应由了解实际发布主体、地区和业务用途的执业律师作出。
+
+二、权属前提
+
+维护者在本次会话确认：新增代码为个人独立开发，没有雇主、客户或合作方权利问题。
+这是维护者提供的事实，不是已查验劳动合同、委托合同后的独立认定。
+本项目不能把上游代码、字体或贡献者作品重新宣称为维护者独占所有。
+LICENSE 保留 Leszek Pomianowski 与 WPF UI Contributors 的原版权声明，
+同时列出 WPF Zen UI Contributors 的本项目新增贡献；源文件原有声明继续保留。
+Authors=thezendev.com 是现有发布展示身份，不构成版权转让或域名权属证明。
+
+三、源码与第三方材料
+
+1. 上游 WPF UI
+   依据：上游 LICENSE、仓库历史、本项目文件头和 README 的 fork 说明。
+   授权：MIT。复制、修改、商业使用和再分发须遵守其声明保留条件。
+   当前处理：包根目录保留 LICENSE，README 明确为独立维护的重构 fork。
+   未继续使用上游 Logo 作为 NuGet 包标识；没有声称得到上游认可。
+   来源：https://github.com/lepoco/wpfui/blob/main/LICENSE
+
+2. dotnet/wpf 与 microsoft/microsoft-ui-xaml
+   证据：Border/Badge 几何实现、DateTimeHelper、主题资源等的来源注释。
+   授权依据：相关上游 MIT 许可证；ThirdPartyNotices.txt 保留完整许可正文。
+   WPF 本地参考仓库 E:/Repos/WPF/wpf/LICENSE.TXT 的正文也已核对。
+   来源：https://github.com/dotnet/wpf/blob/main/LICENSE.TXT
+         https://github.com/microsoft/microsoft-ui-xaml/blob/main/LICENSE
+
+3. 已移除的 DataGrid 来源
+   此前 DataGrid 主题注明参考 Windows Community Toolkit，并已补录该许可。
+   维护者现已决定删除整个 DataGrid 控件、主题及 Gallery 示例；对应来源代码
+   不再进入当前发行包，ThirdPartyNotices.txt 因此移除其专属声明。
+   全仓库现存生产源码未再检索到 WindowsCommunityToolkit 来源链接。
+   Gallery 使用的 CommunityToolkit.Mvvm 是另一个组件，不属于这次移除范围。
+   此调整适用于重新生成的发行包，不撤销旧源码或已分发旧包的声明保留义务。
+
+4. GitHub Primer 配色
+   证据：Resources/Theme/Light.xaml:175、Dark.xaml:160 的明确来源注释，
+         以及审计前已存在的 README 致谢。
+   范围：SystemFillColor 状态前景、背景、边框和弱化颜色族。
+   当前处理：保留来源并提供 Copyright (c) 2018 GitHub Inc. 的完整 MIT 正文。
+   不依赖“单个色值是否有版权”的争论来删除现有归属声明。
+   来源：https://raw.githubusercontent.com/primer/primitives/main/LICENSE
+
+四、字体、图片及其他二进制资源
+
+1. 两份 Fluent System Icons 字体
+   已直接读取 TTF name、OS/2 表，字体家族名为 FluentSystemIcons-Regular/Filled。
+   内部版本显示 Version 1.0，网址字段为 fontello.com；这些字段不是许可证明。
+   OS/2.fsType=0 也不单独构成使用授权，因此进一步比对了正式上游文件。
+   两份本地字体与 Microsoft fluentui-system-icons 的 1.1.325 标签文件逐字节
+   SHA-256 一致，对应标签 LICENSE 为 MIT。
+
+   Regular SHA-256：
+   13DF0C9696990222FEF5F55B823C06F0BC7D87A6183FD13BC4FFB4B582052A56
+   Filled SHA-256：
+   50AE9D0DC087496323E8FCD27798D3367C3F73E3D7BF41CB1D3592A337C2E811
+
+   上游路径：
+   https://raw.githubusercontent.com/microsoft/fluentui-system-icons/1.1.325/fonts/FluentSystemIcons-Regular.ttf
+   https://raw.githubusercontent.com/microsoft/fluentui-system-icons/1.1.325/fonts/FluentSystemIcons-Filled.ttf
+   https://raw.githubusercontent.com/microsoft/fluentui-system-icons/1.1.325/LICENSE
+
+   本次将第三方声明中的字体版本锁定为已核验的 1.1.325。
+
+2. 系统字体资源清理
+   已移除未用于库内控件的 Segoe UI / Segoe Fluent Icons 字体资源及对应公开 Key。
+   Gallery 编辑器的旧 Key 引用已移除；示例和测试改用其他系统字体。
+   当前包仅嵌入两份 Fluent System Icons 字体，相应 MIT 声明继续保留。
+   README 和第三方声明已移除不再适用于当前材料的字体说明。
+
+3. 工具箱位图
+   16 张 BMP 作为控件的设计器资源嵌入；已拼图目视检查，未见原项目 Logo。
+   Git --follow 历史可追溯至上游 2022 年的工具箱图标提交及后续资源整理。
+   它们仍作为上游派生材料保留原许可证；未证明每张图最初绘制者的完整权利链。
+   不能因移除了 branding 文件夹而认为库内已不存在任何上游图片。
+
+4. ColorAdjustment.ps / ColorAdjustment.hlsl
+   项目包含像素着色器源码与编译字节码，历史记录表明相关调整来自本 fork 的提交。
+   本次记录来源及文件哈希；未用原始编译器重建验证字节码可复现性。
+   维护者的个人独立开发确认适用于其新增部分，不能替代未知第三方来源的授权。
+
+5. 新 NuGet 图标
+   assets/nuget-icon.png 于 2026-10-24 在本会话使用内置 imagegen 生成，
+   之后缩小至 256x256 PNG；没有上传或引用原 WPF UI Logo 作为生成参考图。
+   主题为深蓝背景、青色几何 Z 与蓝色层叠折面。
+   SHA-256：6462243B64BBA3A70293B67AAAC92D02BF09F490119DAEA0638E832C04436651
+   生成记录说明了制作来源，不保证独创性、可登记版权或商标可注册性。
+   OpenAI 个人服务条款约定其与用户之间的输出权利，并提示输出可能不唯一；
+   适用个人/企业服务合同、地区版本须以维护者实际账号关系为准。
+   未作全球商标图样近似检索，也没有对该 Z 图形取得独占权的保证。
+   参考：https://openai.com/policies/terms-of-use/
+
+五、依赖与生成代码
+
+最终 nupkg 清单中，net472 的直接 NuGet 依赖只有：
+   Microsoft.Bcl.AsyncInterfaces 10.0.13（MIT）
+其当前解析的传递依赖链为：
+   System.Threading.Tasks.Extensions 4.6.3（MIT）
+   System.Runtime.CompilerServices.Unsafe 6.1.2（MIT）
+net8.0-windows 没有额外 NuGet 运行时依赖，声明 WPF 框架引用。
+这些依赖的 DLL 没有被重新塞进本 nupkg；NuGet 根据 manifest 单独还原。
+未来依赖解析可能改变，因此每次发布和依赖升级都需要重新核查。
+
+实际还原图中另外包括以下构建相关包：
+   Microsoft.Build.Tasks.Git 10.0.402                  MIT
+   Microsoft.SourceLink.Common 10.0.402                MIT
+   Microsoft.SourceLink.Gitee 10.0.402                 MIT
+   Microsoft.Windows.CsWin32 0.3.367                   MIT（工具本身）
+   PolySharp 1.16.0                                   MIT
+   System.Buffers 4.6.1                               MIT
+   System.IO.Hashing 10.0.13                           MIT
+   System.Memory 4.6.3                                 MIT
+   System.Numerics.Vectors 4.6.1                       MIT
+   Microsoft.Windows.SDK.Win32Metadata 71.0.37-preview Microsoft SDK 专有许可
+   Microsoft.Windows.WDK.Win32Metadata 0.13.25-experimental 同上
+   Microsoft.Windows.SDK.Win32Docs 0.1.42-alpha         WinSDKLicenseURL
+
+以上分类结合消费依赖链、包文件和 PrivateAssets 判断；project.assets.json 中
+存在 runtime 资产，并不等于该资产一定传递给本库消费者或已被重新分发。
+CsWin32 分析器还携带工具自身的第三方组件及 NOTICE；本 nupkg 不分发分析器。
+未将工具 NOTICE 中出现 Apache 等许可误判为本库必然包含对应运行时代码。
+
+PolySharp 生成的兼容类型实际出现在 net472 的 XML 文档/程序集接口描述中。
+本次补充 Sergio Pedri 的 PolySharp 1.16.0 许可证，精确对应其包中的提交：
+https://raw.githubusercontent.com/Sergio0694/PolySharp/99a4dcece8e10c8bedf0871ac4cdb8650f2b649a/LICENSE
+
+CsWin32、SDK 与文档需要区分：
+   a. 工具本身采用 MIT，不代表所有输入和生成内容自动被重新许可为 MIT。
+   b. 实际包包含 Windows.Win32 互操作定义，XML 文档中还包含微软 API 文档段落。
+   c. metadata / Win32Docs 工具输入文件及分析器 DLL 没有直接作为文件打入包。
+   d. 两个 metadata 包带有一致的 Windows SDK 许可；其文件已完整保留至
+      licenses/WindowsSdkLicense.txt 并纳入包，SHA-256 为：
+      0E97876EAA1FC79558E0D51DC0BEE286D36DCA8E95F7876259FFDF947396BCA1
+   e. 保留许可不等于自动解决其可分发范围、适用代码及合同要求的解释问题。
+      在正式法律放行前，应就当前生成声明及文档的分发方式取得专项法律判断。
+
+微软项目讨论确认工具与元数据的许可不同，另有明确标为非权威的生成代码说明。
+本报告没有把讨论回复当成权利人的新增授权或律师意见。
+来源：https://github.com/microsoft/CsWin32/discussions/563
+      https://github.com/microsoft/win32metadata/blob/main/LICENSE
+      https://github.com/microsoft/CsWin32/blob/v0.3.367/LICENSE
+
+六、Win32、隐私与平台使用边界
+
+UnsafeReflection.cs 与 UnsafeNativeMethods.cs 的历史头部提及 Windows 逆向工程。
+该注释本身不能证明侵权，也不能证明取得了所有相关合同或商业秘密使用权。
+当前实现可见 Win32 调用及 WPF 内部状态使用；未进行所有历史实现来源的逐行比对。
+尚未对具体 Windows/SDK 合同、反规避规则或各国逆向工程例外出具法律判断。
+维护者明确的独立开发事实有帮助，但不能消灭上游来源自身可能存在的历史争议。
+
+针对当前核心项目检索，没有发现已识别的遥测 SDK、自动上传客户端或固定后台
+数据收集端点；HyperlinkButton 可依调用者配置打开外部链接。
+这是有限源码检索结果，不是完整隐私/安全审计或不联网保证。
+若以后添加遥测、账号服务、联网更新或个人信息处理，应另行评估隐私披露。
+
+七、NuGet 发布材料与实际包检查
+
+已核对：
+   - id=Wpf.Zen.Ui，version=1.0.0，license expression=MIT。
+   - README 明确独立 fork 身份、上游来源和不保证 API 直接替换。
+   - 包含 LICENSE、ThirdPartyNotices.txt、README.md、Icon.png。
+   - 包含 licenses/WindowsSdkLicense.txt，第三方条款适用边界有说明。
+   - 保留原版权，不把所有代码宣称为新项目独占。
+   - Gallery IsPackable=false；核心包没有 Gallery DLL、其独立资源文件或应用图标。
+   - 生成 .snupkg；符号、源文件嵌入同样属于对外披露范围。
+   - NuGet 项目地址指向实际 Git remote 对应的 Gitee 仓库。
+   - 尚未上传 NuGet，不存在本审计替维护者接受发布条款或对外保证的行为。
+
+NuGet 条款要求发布者有相应权限，提供适用条款，并自行承担发布内容责任。
+平台接受上传不等于平台认可全部版权、商标或专利权属。
+来源：https://www.nuget.org/policies/terms
+
+八、剩余事项与后续维护
+
+需专项确认：Windows SDK 输入、生成代码与生成文档的分发合同边界。
+未完成：目标市场的名称/图形商标检索、专利自由实施检索、完整历史贡献权利链。
+尚无法独立核实：发布主体与展示身份、NuGet 账号权限、所有适用服务合同。
+本报告没有认定这些事项存在侵权，也不能把未完成检索写成“已经通过”。
+
+建议正式上传前固定发布提交与标签、保存最终包哈希和许可快照。
+当源码、字体、图标、生成器、依赖或分发范围变化时，重新执行相关审计。
+如果未来发布 Gallery 或其他独立包，需要单独审查它们新增的资源与依赖。
+保留其他代码的版权头、必要第三方声明及仍用于开发的测试、示例和参考实现。
+
+九、证据与本次改动
+
+本地辅助证据（artifacts 目录被 Git 忽略，不属于发布包）：
+   artifacts/legal-audit-evidence.json：579 个现存源码文件的 SHA-256、字体元数据、
+      依赖许可证及最终包条目；由 artifacts/legal-audit.py 读取生成。
+   artifacts/toolbox-assets-review.png：工具箱位图目视检查拼图。
+   artifacts/fluent-upstream-regular.ttf / fluent-upstream-filled.ttf：上游比对副本。
+   artifacts/nuget-release-pack.log：本次打包日志。
+
+验证结果：删除 DataGrid 后，核心库两个目标框架 Release 构建成功，16 条现有代码
+警告、0 错误；Gallery 两个目标框架构建成功，10 条现有警告、0 错误。
+ListView、GridView、依赖属性观察及 UiScrollViewer 相关 60 项测试全部通过。
+重新 pack 成功；已逐项校验包内许可文件与源文件哈希一致，并检查未打入
+Gallery、metadata、分析器或其他字体文件；DataGrid 类型及主题资源也已移除。
+此验证不能替代律师审查或完整运行时测试。
+
+本次确定性修复：
+   - 保留 PolySharp 的归属与完整许可证。
+   - 删除 DataGrid 控件及 Gallery 示例后，移除其专属的 Windows Community Toolkit
+     许可声明；保留其他代码、字体、生成器和 SDK 材料仍需要的声明。
+   - 记录 CsWin32 工具许可，明确不据此把 SDK 材料改许可为 MIT。
+   - 精确核验并记录 Fluent System Icons 1.1.325 来源与文件哈希。
+   - 将实际 SDK 许可原文随包保留，说明第三方条款边界。
+   - 更新 README 的第三方许可提示并重新核对最终包。
+
+
+字体资源清理后的补充验证：核心库和 Gallery 的两个目标框架均构建成功。
+BadgeTests 与 IconContentTests 共 45 项测试通过；包内字体定义仅保留
+Fluent System Icons 的 Regular / Filled 资源。
+InfoBadgeTests 原有两项类型断言已按预期的 UiBorder 模板修正，
+并验证可压缩内边距配置；InfoBadge 的全部 4 项测试通过。
+
+最终包与符号包的 SHA-256 记录在同目录 LicenseReviewHashes.txt。

@@ -93,7 +93,7 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("DataGrid", typeof(DataGridPage)), new NavigationItem("ListBox",  typeof(ListBoxPage)),
+                new NavigationItem("ListBox", typeof(ListBoxPage)),
                 new NavigationItem("ListView", typeof(ListViewPage)), new NavigationItem("TreeView", typeof(TreeViewPage)),
                 new NavigationItem("VirtualizingWrapPanel", typeof(VirtualizingWrapPanelPage)),
                 #if DEBUG
@@ -231,7 +231,6 @@ public partial class MainWindowViewModel : ViewModel
         AddPage<SliderPage>("Slider", basicInput);
 
         string collections = AddPage<CollectionsPage>("Collections", isBreadcrumbVisible: false);
-        AddPage<DataGridPage>("DataGrid", collections);
         AddPage<ListBoxPage>("ListBox", collections);
         AddPage<ListViewPage>("ListView", collections);
         AddPage<TreeViewPage>("TreeView", collections);
