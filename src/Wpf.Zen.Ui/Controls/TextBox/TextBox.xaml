@@ -250,6 +250,7 @@
             <Trigger Property="UseTextBlockAppearance" Value="True">
                 <Setter Property="IsReadOnly" Value="True" />
                 <Setter Property="Padding" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxTextBlockAppearanceControlTemplate}" />
             </Trigger>
             <Trigger Property="IsReadOnly" Value="True">
