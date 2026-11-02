@@ -10,10 +10,42 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
+using Dialog = Wpf.Zen.Ui.Controls.ContentDialog;
+
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public partial class ContentDialogTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InitialFocus_TriesExplicitTargetBeforeMarkedVisuals(bool useExplicitTarget)
+    {
+        Run(scope =>
+        {
+            var automatic = new TextBox();
+            var disabled = new TextBox { IsEnabled = false };
+            var marked = new TextBox { IsTabStop = false };
+            var body = new StackPanel();
+            body.Children.Add(automatic);
+            body.Children.Add(disabled);
+            body.Children.Add(marked);
+            Dialog.SetIsInitialFocus(disabled, true);
+            Dialog.SetIsInitialFocus(marked, true);
+
+            var dialog = scope.CreateDialog();
+            dialog.Content = body;
+            dialog.InitialFocus = useExplicitTarget ? automatic : disabled;
+            var task = scope.Host.ShowAsync(dialog);
+            Drain();
+
+            var expected = useExplicitTarget ? automatic : marked;
+            Assert.Same(expected, Keyboard.FocusedElement);
+            dialog.Close();
+            Pump(task);
+        });
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

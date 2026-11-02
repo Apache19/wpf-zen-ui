@@ -213,8 +213,8 @@ public partial class ContentDialog
         );
 
     /// <summary>
-    /// Gets or sets the initial focus target. Default null searches body content, skipping Danger and Caution buttons.
-    /// An explicit target may select these buttons, elements outside the Tab order, or focusable 3D elements.
+    /// Gets or sets the preferred focus target. The default is null.
+    /// If this target cannot take focus, the dialog tries elements marked with IsInitialFocus.
     /// Targets outside the dialog or unavailable targets are ignored.
     /// </summary>
     /// <remarks>
@@ -226,6 +226,42 @@ public partial class ContentDialog
     {
         get => (IInputElement?)GetValue(InitialFocusProperty);
         set => SetValue(InitialFocusProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the attached property that marks a visual element for initial keyboard focus.
+    /// </summary>
+    public static readonly DependencyProperty IsInitialFocusProperty =
+        DependencyProperty.RegisterAttached(
+            "IsInitialFocus",
+            typeof(bool),
+            typeof(ContentDialog),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// Gets whether the element requests keyboard focus when its dialog opens.
+    /// </summary>
+    /// <param name="element">The element to inspect.</param>
+    /// <returns>True when marked for initial focus. The default is false.</returns>
+    public static bool GetIsInitialFocus(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsInitialFocusProperty);
+    }
+
+    /// <summary>
+    /// Marks a visual element as an initial focus target for its containing dialog.
+    /// </summary>
+    /// <remarks>
+    /// Each time the dialog opens, it tries its explicit InitialFocus target first, then marked
+    /// descendants in visual tree order until one takes focus. Changing the mark while the
+    /// dialog is open takes effect the next time it opens.
+    /// </remarks>
+    /// <param name="element">The visual element to mark.</param>
+    /// <param name="value">True to request focus, or false to clear the request.</param>
+    public static void SetIsInitialFocus(DependencyObject element, bool value)
+    {
+        element.SetValue(IsInitialFocusProperty, value);
     }
 
     #endregion

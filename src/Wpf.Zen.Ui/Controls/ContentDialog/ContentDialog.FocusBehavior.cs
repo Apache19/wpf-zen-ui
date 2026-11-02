@@ -9,15 +9,15 @@ using Wpf.Zen.Ui.Extensions.Wpf;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Provides content-first initial focus while avoiding destructive actions during automatic selection.</summary>
+/// <summary>
+/// Selects the keyboard focus target when a dialog opens.
+/// </summary>
 public partial class ContentDialog
 {
     /// <summary>
-    /// Focuses InitialFocus when it is an enabled, visible dialog descendant; otherwise respects
-    /// focus already inside, searches the realized body, and finally focuses the dialog itself.
-    /// Automatic selection skips Danger and Caution buttons to avoid accidental activation.
-    /// An explicit InitialFocus remains authoritative, including targets outside the Tab order and 3D elements.
-    /// The host calls this after templates are realized.
+    /// Tries the explicit target, then marked visual descendants in depth-first order.
+    /// If neither takes focus, preserves focus inside the dialog or searches the realized body
+    /// for a tab stop, skipping Danger and Caution buttons. The final fallback is the dialog.
     /// </summary>
     protected internal virtual void SetInitialFocus()
     {
@@ -26,6 +26,12 @@ public partial class ContentDialog
         if (InitialFocus is DependencyObject target
             && ContentDialogHost.Contains(this, target)
             && TryFocus(InitialFocus))
+        {
+            return;
+        }
+
+        var markedTarget = this.FindDescendant<DependencyObject>(TryFocusMarkedElement);
+        if (markedTarget is not null)
         {
             return;
         }
@@ -51,6 +57,17 @@ public partial class ContentDialog
         }
     }
 
+    /// <summary>
+    /// Attempts focus during traversal so a rejected request leaves later candidates eligible.
+    /// </summary>
+    private static bool TryFocusMarkedElement(DependencyObject element)
+    {
+        return element is IInputElement input && GetIsInitialFocus(element) && TryFocus(input);
+    }
+
+    /// <summary>
+    /// Checks the visibility and input state required for a visual to receive keyboard focus.
+    /// </summary>
     private static bool CanFocus(DependencyObject element)
     {
         return element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
@@ -68,7 +85,7 @@ public partial class ContentDialog
 
     /// <summary>
     /// Applies an explicit focus request without treating Tab participation as focus eligibility.
-    /// WPF permits programmatic focus on IsTabStop=false elements; only automatic discovery skips them.
+    /// Only automatic discovery requires tab participation.
     /// </summary>
     private static bool TryFocus(IInputElement element)
     {
